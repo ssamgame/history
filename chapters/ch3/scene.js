@@ -1,6 +1,8 @@
 // 3장 장면: 비바람 속 삼교천(고려 진영, 둑 자리, 냇물을 건너는 거란군)과 남쪽의 귀주 벌판.
 import * as THREE from 'three';
 import { backdropMountains } from '../kit/terrain.js';
+import { tent, tree, spearRack } from '../kit/buildings.js';
+import { BUILD } from '../kit/town.js';
 import { groundMaterial } from '../../core/textures.js';
 import { mat, makePerson } from '../../core/people.js';
 import { scatter } from '../../core/props.js';
@@ -55,14 +57,16 @@ export function buildCh3Scene(world) {
   const water = new THREE.Mesh(new THREE.PlaneGeometry(200, RIVER_W).rotateX(-Math.PI / 2), new THREE.MeshPhongMaterial({ color: 0x4d6a78, transparent: true, opacity: 0.88, shininess: 30 }));
   water.position.set(0, -0.45, RIVER_Z); L.add(water);
 
-  // 고려 진영 (남쪽 강둑)
+  // 고려 진영 (남쪽 강둑): 맞배 천막, 창걸이, 쌀가마
   for (const [x, z] of [[-14, 9], [-6, 12], [8, 11], [16, 8], [22, 12]]) {
-    const t = mk(new THREE.ConeGeometry(2.3, 2.7, 4), 0xd8d0bc, x, 1.35, z); t.rotation.y = Math.PI / 4;
-    mk(new THREE.CylinderGeometry(0.06, 0.06, 0.9, 4), 0x5a3f2a, x, 3.0, z);
-    const door = mk(new THREE.PlaneGeometry(0.85, 1.15), 0x3a2c20, 0.9, -0.72, 0.9, t, false);
-    door.rotation.order = 'YXZ'; door.rotation.set(-0.54, Math.PI / 4, 0);
+    const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rand() * 0.5 - 0.25; L.add(g); tent(g, { color: 0xd8d0bc });
     world.addCollider({ x, z, r: 1.8 });
   }
+  const put = (fn, x, z, ry = 0, p = {}, r = 0.9) => { const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = ry; L.add(g); fn(g, p); if (r) world.addCollider({ x, z, r }); return g; };
+  put(spearRack, 2, 12.5, 0); put(spearRack, -19, 11, 0.3); put(BUILD.rice, 12, 13, 0.2, { n: 6 }, 1.3);
+  // 냇가: 강둑의 버드나무와 갈대(둑 막을 자리와 거란군이 건너는 여울은 비운다)
+  for (const [x, z] of [[-34, -4.6], [-28, -4.8], [-12, -4.6], [16, -4.7], [24, -4.6], [32, -4.9], [-30, -11.6], [-10, -11.8], [18, -11.6], [28, -11.8]]) put(tree, x, z, rand() * 3, { kind: 'willow', x, z }, 0);
+  scatter(world, { kind: 'grass', count: 90, area: { x0: -42, x1: 42, z0: -12.5, z1: -3.8 }, avoid: [{ x: DAM_X, z: RIVER_Z, r: 4.5 }, { x: 4, z: RIVER_Z, r: 9 }], seed: 41, ground: groundH, scale: [1.1, 1.9], color: 0x8a8a52 });
   const flagPoles = [];
   for (const [x, z, c] of [[-10, 2, 0xb8452f], [0, 2, 0xd9a441], [10, 2, 0xb8452f]]) {
     mk(new THREE.CylinderGeometry(0.07, 0.07, 4.4, 5), 0x5a3f2a, x, 2.2, z);
