@@ -83,7 +83,7 @@ export function buildArena(world, arena) {
     if (arena.map) g.add(mapFloor(arena.map));
     for (const r of arena.roads || []) { const m = new THREE.Mesh(box(r.w, 0.05, r.d), mat(r.color || 0x8f7556, r.kind || 'earth')); m.position.set(r.x, r.y ?? 0.04, r.z); m.rotation.y = r.ry || 0; m.receiveShadow = true; g.add(m); }
     for (const p of arena.props || []) {
-      const pg = new THREE.Group(); pg.position.set(p.x, 0, p.z); pg.rotation.y = p.ry || 0; if (p.scale) pg.scale.setScalar(p.scale); g.add(pg);
+      const pg = new THREE.Group(); pg.position.set(p.x, p.y || 0, p.z); pg.rotation.y = p.ry || 0; if (p.scale) pg.scale.setScalar(p.scale); g.add(pg);
       const r = BUILD[p.type](pg, p);
       if (p.type === 'crowd') bakeStatic(pg, m => m.material.map === taegukgiTexture()); // 서 있는 무리는 한 덩어리로
       if (p.type === 'water') pg.position.y = 0.32; // 무대 땅 위로 물이 보이게

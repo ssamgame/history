@@ -98,3 +98,29 @@ export function sceneGround(L, { bounds, margin = 12, color = 0x5f7a4c, kind = '
   if (mountains) { const mr = mountainRing(field, { color, center: [(bounds.x0 + bounds.x1) / 2, (bounds.z0 + bounds.z1) / 2], radius: 110 }); if (mr) L.add(mr); }
   return field.heightAt;
 }
+
+// 먼 도시 모습(산줄기 대신 또는 함께): 안개 속에 겹겹이 선 지붕과 건물의 실루엣. 한 번에 그린다(그림자 없음).
+// style: 'hanok'(낮은 기와지붕 줄, 개항 무렵 한성) / 'brick'(벽돌 건물과 굴뚝, 1910~40년대) / 'concrete'(네모난 빌딩, 1950~80년대)
+export function skyline(field, { center = [0, 0], radius = 80, style = 'brick', color = 0x55524c, arc = [0, Math.PI * 2], seed = 3 } = {}) {
+  const geos = [];
+  const n = Math.round(40 * (arc[1] - arc[0]) / (Math.PI * 2)) + 6;
+  for (let i = 0; i < n; i++) {
+    const a = arc[0] + (i + hash(i, seed) * 0.6) / n * (arc[1] - arc[0]);
+    const r = radius + hash(seed, i) * 22;
+    const x = center[0] + Math.sin(a) * r, z = center[1] + Math.cos(a) * r;
+    if (field.inWater(x, z)) continue;
+    const ground = Math.max(0, field.heightAt(x, z)) - 0.5;
+    if (style === 'hanok') {
+      const w = 6 + hash(i, 2) * 5, h = 2.2 + hash(i, 4) * 1.2;
+      const body = new THREE.BoxGeometry(w, h, 4); body.translate(0, h / 2, 0);
+      const roof = new THREE.ConeGeometry(w * 0.72, 2.2, 4, 1); roof.rotateY(Math.PI / 4); roof.scale(1, 1, 0.55); roof.translate(0, h + 1.0, 0);
+      for (const geo of [body, roof]) { geo.rotateY(a); geo.translate(x, ground, z); geos.push(geo); }
+    } else {
+      const w = 5 + hash(i, 2) * 7, h = style === 'concrete' ? 8 + hash(i, 4) * 22 : 5 + hash(i, 4) * 9;
+      const body = new THREE.BoxGeometry(w, h, 5); body.translate(0, h / 2, 0); body.rotateY(a); body.translate(x, ground, z); geos.push(body);
+      if (style === 'brick' && hash(i, 7) > 0.7) { const c = new THREE.CylinderGeometry(0.6, 0.8, 6, 6); c.translate(x + 2, ground + h + 3, z); geos.push(c); } // 공장 굴뚝
+    }
+  }
+  if (!geos.length) return null;
+  return new THREE.Mesh(merge(geos), new THREE.MeshLambertMaterial({ color, flatShading: true }));
+}

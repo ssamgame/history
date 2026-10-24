@@ -8,7 +8,7 @@ import { LOOKS } from '../../content/characters.js';
 import { createWeather } from '../../core/weather.js';
 import * as LM from '../joseon/landmarks.js';
 import * as BLD from './buildings.js';
-import { terrainField, terrainMesh, mountainRing } from './terrain.js';
+import { terrainField, terrainMesh, mountainRing, skyline } from './terrain.js';
 const { hipRoof, gableRoof } = LM;
 
 const box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
@@ -148,8 +148,24 @@ export const BUILD = {
   },
   // 부두(배를 대는 곳)
   pier(g, p) { BLD.pier(g, p); return 0; },
-  // 큰 나무
+  // 큰 나무. kind: pine·willow·bare·poplar (없으면 둥근 활엽수)
   tree(g, p) { BLD.tree(g, p); return 0.6; },
+  // 가게: style 'hanok'(기와·초가 가게와 좌판) / 'modern'(1910~30년대 2층 상점), sign 간판 글
+  shop(g, p) { BLD.shop(g, p); return { rect: [p.w || 5, 3.6] }; },
+  // 상하이 석고문 골목집(n칸)
+  lanehouse(g, p) { BLD.lanehouse(g, p); return { rect: [(p.n || 3) * 3.6, 5] }; },
+  // 시멘트 건물(1950~80년대): floors 층수, sign 세로 간판
+  concrete(g, p) { BLD.concrete(g, p); return { rect: [p.w || 7, p.d || 5] }; },
+  // 군 막사
+  barracks(g, p) { BLD.barracks(g, p); return { rect: [p.w || 9, 4] }; },
+  // 시장 노점
+  stall(g, p) { BLD.stall(g, p); return { rect: [p.w || 2.6, 1.8] }; },
+  // 다리(돌·나무): 물 위에 놓는 장식(부딪힘 없음)
+  bridge(g, p) { BLD.bridge(g, p); return 0; },
+  // 물가에 매어 둔 나룻배
+  boat(g, p) { BLD.boat(g, p); return 0; },
+  // 축대와 계단: 위에 놓을 부품은 y를 h만큼 준다
+  terrace(g, p) { BLD.terrace(g, p); return { rect: [p.w || 8, p.d || 6] }; },
   // 책상과 책 (학교·연구실)
   desk(g) {
     add(g, box(1.6, 0.75, 0.9), 0x7a5a3c, 0, 0.38, 0, 'wood');
@@ -273,11 +289,13 @@ export function buildTown(world, layout) {
     pave.position.set((f.x0 + f.x1) / 2, 0.01, (f.z0 + f.z1) / 2); pave.receiveShadow = true; L.add(pave);
   }
   L.add(terrainMesh(field, { color: kind === 'stone' ? 0x7d7158 : color, kind: kind === 'stone' ? 'earth' : kind, roads: layout.roads || [] }));
+  // skyline: { style: 'hanok'|'brick'|'concrete', arc: [시작, 끝] 라디안, color } — 도시 장면의 먼 건물 실루엣
+  if (layout.skyline) { const sk = skyline(field, { center: [(layout.bounds.x0 + layout.bounds.x1) / 2, (layout.bounds.z0 + layout.bounds.z1) / 2], ...layout.skyline }); if (sk) L.add(sk); }
   if (layout.mountains !== false) { const mr = mountainRing(field, { color: kind === 'stone' ? 0x6a7a58 : color, center: [(layout.bounds.x0 + layout.bounds.x1) / 2, (layout.bounds.z0 + layout.bounds.z1) / 2] }); if (mr) L.add(mr); }
   for (const r of layout.roads || []) { const m = new THREE.Mesh(box(r.w, 0.05, r.d), mat(r.color || 0x8f7556, r.kind || 'earth')); m.position.set(r.x, 0.025, r.z); m.receiveShadow = true; L.add(m); }
   const named = {};
   for (const p of layout.props || []) {
-    const g = new THREE.Group(); g.position.set(p.x, 0, p.z); g.rotation.y = p.ry || 0; if (p.scale) g.scale.setScalar(p.scale); L.add(g);
+    const g = new THREE.Group(); g.position.set(p.x, p.y || 0, p.z); g.rotation.y = p.ry || 0; if (p.scale) g.scale.setScalar(p.scale); L.add(g); // y: 축대 위에 올린 부품
     const r = BUILD[p.type](g, p);
     if (p.type === 'crowd') BLD.bakeStatic(g, m => m.material.map === flagTex); // 서 있는 무리는 한 덩어리로(태블릿 성능), 깃발은 그대로 흔들린다
     if (r && p.solid !== false) addFootprint(world, p, r);

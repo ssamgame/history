@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kit gallery</title>
+<link rel="stylesheet" href="../styles.css">
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+<style>#bar { position: fixed; z-index: 99; left: 4px; bottom: 4px; font: 12px sans-serif; color: #fff; background: #0008; padding: 2px 6px; }</style>
+</head>
+<body>
+<div id="stage"></div>
+<div id="bar"></div>
+<script type="module">
+  // 개발용: 장 부품 상자(chapters/kit)의 건물·소품을 한 마당에 늘어놓고 본다. ?set=era|trees|all, &cam=x,y,z,tx,ty,tz
+  import { createWorld } from '../core/world.js';
+  import { buildTown } from '../chapters/kit/town.js';
+  const q = new URLSearchParams(location.search);
+  const world = createWorld(document.getElementById('stage'), { quality: q.get('q') || 'medium' });
+  world.setMood(q.get('mood') || 'morning');
+  const SETS = {
+    era: [
+      { type: 'shop', x: -24, z: 0, sign: '포목점', awning: 0x8a2f24 }, { type: 'shop', x: -17, z: 0, thatch: true, seed: 3 },
+      { type: 'shop', x: -9, z: 0, style: 'modern', sign: '양화점', awning: 0x2f6b5e }, { type: 'lanehouse', x: 2, z: 0, n: 3 },
+      { type: 'concrete', x: 14, z: 0, floors: 3, sign: '다방' }, { type: 'concrete', x: 23, z: 0, floors: 2, color: 0xd6cfc0, awning: 0x8a2f24, w: 6 },
+      { type: 'barracks', x: -20, z: 12 }, { type: 'stall', x: -11, z: 12, color: 0xd8cdb0 }, { type: 'stall', x: -7, z: 12, color: 0x8a6a48, seed: 4 },
+      { type: 'terrace', x: 3, z: 12, w: 8, d: 6, h: 1.2 }, { type: 'hanok', x: 3, z: 11, y: 1.2, tile: true },
+      { type: 'water', x: 18, z: 14, w: 12, d: 8 }, { type: 'bridge', x: 18, z: 14, len: 9, style: 'stone' }, { type: 'boat', x: 22, z: 15, ry: 0.4 },
+    ],
+    trees: [
+      { type: 'tree', x: -12, z: 0 }, { type: 'tree', x: -6, z: 0, kind: 'pine' }, { type: 'tree', x: 0, z: 0, kind: 'willow' },
+      { type: 'tree', x: 6, z: 0, kind: 'bare' }, { type: 'tree', x: 12, z: 0, kind: 'poplar' },
+    ],
+  };
+  const props = q.get('set') === 'all' ? [...SETS.era, ...SETS.trees.map(p => ({ ...p, z: p.z - 12 }))] : SETS[q.get('set') || 'era'];
+  buildTown(world, { ground: q.get('ground') || 'earth', groundColor: 0x9a8a6a, bounds: { x0: -30, x1: 30, z0: -16, z1: 22 }, start: [0, 30], props, nature: false,
+    skyline: q.get('sky') ? { style: q.get('sky') } : null });
+  const cam = (q.get('cam') || '0,26,48,0,2,4').split(',').map(Number);
+  world.setFixedCamera(cam.slice(0, 3), cam.slice(3));
+  window.__world = world;
+  let last = performance.now();
+  (function frame(now) { const dt = Math.min(0.05, (now - last) / 1000); last = now; world.step(dt, { x: 0, z: 0 }); world.render(); requestAnimationFrame(frame); })(last);
+  world.render(); world.renderer.info.autoReset = false; world.renderer.info.reset(); world.render();
+  document.getElementById('bar').textContent = `calls ${world.renderer.info.render.calls} tris ${world.renderer.info.render.triangles}`;
+</script>
+</body>
+</html>

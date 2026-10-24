@@ -228,6 +228,41 @@ export function tree(g, p = {}) {
   let s = Math.abs(Math.round((p.x || 0) * 13 + (p.z || 0) * 7)) + 3;
   const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
   const base = new THREE.Color(p.color || 0x4f7344);
+  // kind: 'pine'(굽은 붉은 줄기의 소나무, 납작한 잎 층) 'willow'(물가 버드나무, 늘어진 잎) 'bare'(겨울 빈 가지) 'poplar'(길가의 키 큰 미루나무)
+  if (p.kind === 'pine') {
+    P.cyl(0.16, 0.3, 4.2, 7, 0x8a4a32, 'wood', [0.25, 2.1, 0], [0.04, 0, -0.14]);
+    [[0.6, 4.4, 0, 1.7], [-0.3, 3.6, 0.3, 1.3], [0.9, 3.2, -0.4, 1.1]].forEach(([x, y, z, rad]) => {
+      const c = new THREE.Color(p.color || 0x3f5f3a).multiplyScalar(0.85 + r() * 0.3).getHex();
+      const geo = new THREE.SphereGeometry(rad, 8, 5); geo.scale(1, 0.38, 1);
+      P.add(geo, c, 'grain', [x, y, z]);
+    });
+    return P.into(g);
+  }
+  if (p.kind === 'willow') { // 늘어진 가지: 가늘고 긴 잎 줄기를 둥글게 늘어뜨린다
+    P.cyl(0.22, 0.36, 2.8, 7, 0x5e4330, 'wood', [0, 1.4, 0], [0.08, 0, 0.05]);
+    const leaf = new THREE.Color(p.color || 0x8aa85a);
+    P.add(new THREE.IcosahedronGeometry(1.3, 1).scale(1.2, 0.7, 1.2), leaf.getHex(), 'grain', [0, 3.7, 0]);
+    for (let k = 0; k < 12; k++) {
+      const a = k * (Math.PI * 2 / 12) + r() * 0.3, rad = 1.1 + r() * 0.5, len = 1.8 + r() * 0.9;
+      const geo = new THREE.CylinderGeometry(0.22, 0.05, len, 5); geo.translate(0, -len / 2, 0);
+      P.add(geo, leaf.clone().multiplyScalar(k % 2 ? 0.85 : 1.05).getHex(), 'grain', [Math.sin(a) * rad, 3.7, Math.cos(a) * rad], [Math.cos(a) * 0.15, 0, -Math.sin(a) * 0.15]);
+    }
+    return P.into(g);
+  }
+  if (p.kind === 'bare') {
+    P.cyl(0.18, 0.3, 2.6, 6, 0x4e3a2a, 'wood', [0, 1.3, 0]);
+    for (let k = 0; k < 6; k++) {
+      const a = k * 1.05 + r(), up = 0.5 + r() * 0.4;
+      P.cyl(0.03, 0.09, 1.9, 4, 0x4e3a2a, 'wood', [Math.sin(a) * 0.6, 3.0 + k * 0.1, Math.cos(a) * 0.6], [Math.cos(a) * up, 0, -Math.sin(a) * up]);
+    }
+    return P.into(g);
+  }
+  if (p.kind === 'poplar') {
+    P.cyl(0.14, 0.22, 2.0, 6, 0x6b5a48, 'wood', [0, 1.0, 0]);
+    const geo = new THREE.SphereGeometry(1, 8, 7); geo.scale(0.9, 3.0, 0.9);
+    P.add(geo, p.color || 0x5a7a40, 'grain', [0, 4.6, 0]);
+    return P.into(g);
+  }
   P.cyl(0.2, 0.34, 2.4, 7, 0x5e4330, 'wood', [0, 1.2, 0], [0.05, 0, -0.06]);
   for (let k = 0; k < 3; k++) {
     const a = k * 2.1 + r();
@@ -486,4 +521,178 @@ export function cityGate(g, p = {}) {
     for (const sz of [-1, 1]) { const m = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 0.5), new THREE.MeshLambertMaterial({ map: t })); m.position.set(0, H + 3.3, sz * ((LD - 1.3) / 2 + 0.02)); if (sz < 0) m.rotation.y = Math.PI; g.add(m); }
   }
   return g;
+}
+
+// ── 시대·장소별 건물 (2026-10-24 전면 개선) ──
+// 간판·현판 글: 나무판(또는 천)에 쓴 글자. 같은 글은 한 번만 그린다.
+const signTex = new Map();
+function signMaterial(text, { bg = '#2b241c', fg = '#f2e6b0', vertical = false } = {}) {
+  const key = `${text}|${bg}|${fg}|${vertical}`;
+  if (signTex.has(key)) return signTex.get(key);
+  const cv = document.createElement('canvas'); cv.width = vertical ? 64 : 256; cv.height = vertical ? 256 : 64;
+  const c = cv.getContext('2d'); c.fillStyle = bg; c.fillRect(0, 0, cv.width, cv.height);
+  c.strokeStyle = fg; c.globalAlpha = 0.5; c.lineWidth = 4; c.strokeRect(4, 4, cv.width - 8, cv.height - 8); c.globalAlpha = 1;
+  c.fillStyle = fg; c.textAlign = 'center'; c.textBaseline = 'middle';
+  if (vertical) { c.font = 'bold 40px "Nanum Gothic", sans-serif'; [...text].forEach((ch, i, a) => c.fillText(ch, 32, 128 + (i - (a.length - 1) / 2) * 46)); }
+  else { c.font = 'bold 38px "Nanum Gothic", sans-serif'; c.fillText(text, 128, 34, 236); }
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace;
+  const m = new THREE.MeshLambertMaterial({ map: t }); signTex.set(key, m);
+  return m;
+}
+// 가게 물건: 바구니·자루·항아리·옷감 두루마리(색만 조금씩 다르게)
+function goods(P, x, y, z, w, seed = 1) {
+  const cols = [0xc8a040, 0x8a2f24, 0x5a7a4a, 0xd8c9a0, 0x3a5a7a, 0xb46a3a];
+  for (let i = 0; i < Math.max(2, Math.floor(w / 0.55)); i++) {
+    const gx = x - w / 2 + 0.3 + i * 0.55, c = cols[(seed + (i % 2) * 2) % cols.length]; // 가게마다 두 가지 색만(그리기 횟수를 줄인다)
+    if ((i + seed) % 3 === 0) P.cyl(0.2, 0.16, 0.3, 8, 0x8a6a48, 'wood', [gx, y + 0.15, z]);            // 바구니
+    else if ((i + seed) % 3 === 1) P.add(new THREE.SphereGeometry(0.2, 7, 5), c, 'cloth', [gx, y + 0.18, z]); // 자루·과일
+    else P.cyl(0.12, 0.12, 0.45, 8, c, 'cloth', [gx, y + 0.12, z], [0, 0, Math.PI / 2]);                  // 옷감 두루마리
+  }
+}
+
+// 가게. style 'hanok'(개항 무렵 기와 가게: 판자 덧문을 연 가게 앞, 천 차양, 좌판) / 'modern'(1910~30년대 2층 상점: 평평한 앞벽, 유리 진열창, 차양, 2층 난간)
+// w 너비, sign 간판 글, awning 차양 색
+export function shop(g, p = {}) {
+  const P = parts(), w = p.w || 5, d = 3.4, awn = p.awning ?? 0x8a6a48;
+  if (p.style === 'modern') {
+    const h = 5.2, wall = p.color || 0xd6c8a8;
+    P.box(w, h, d, wall, 'grain', [0, h / 2, -0.2]);
+    P.box(w + 0.3, 0.5, d + 0.2, 0x8a7a62, 'stone', [0, h + 0.1, -0.2]);                 // 앞벽 위 돌림띠
+    P.box(w + 0.1, 0.25, d + 0.1, 0x6b5a48, 'wood', [0, 2.7, -0.2]);                     // 층 띠
+    P.box(w - 0.8, 1.6, 0.05, 0, null, [0, 1.35, d / 2 - 0.15], [0, 0, 0], { material: glass() }); // 진열창
+    P.box(w - 0.6, 0.12, 0.3, 0x5a3f2a, 'wood', [0, 0.5, d / 2 - 0.1]);
+    goods(P, 0, 0.56, d / 2 - 0.4, w - 1.2, p.seed || 1);
+    for (let i = 0; i < Math.max(1, Math.floor(w / 1.6)); i++) P.box(0.9, 1.2, 0.05, 0, null, [-w / 2 + 0.9 + i * 1.6, 3.9, d / 2 - 0.15], [0, 0, 0], { material: glass() });
+    P.box(w, 0.08, 0.6, 0x5a3f2a, 'wood', [0, 3.05, d / 2 + 0.1]);                       // 2층 발코니
+    for (let x = -w / 2 + 0.2; x <= w / 2 - 0.1; x += 0.4) P.box(0.05, 0.6, 0.05, 0x3a2c20, 'wood', [x, 3.35, d / 2 + 0.36]);
+    P.box(w, 0.06, 0.06, 0x3a2c20, 'wood', [0, 3.65, d / 2 + 0.36]);
+    P.box(w - 0.2, 0.06, 1.3, awn, 'cloth', [0, 2.45, d / 2 + 0.45], [0.28, 0, 0]);     // 차양
+  } else {
+    const base = 0.3, top = base + 2.1;
+    P.box(w + 0.3, base, d + 0.3, 0x9a8a6e, 'stone', [0, base / 2, 0]);
+    P.box(w, 2.1, 0.12, 0xcdb58e, 'earth', [0, base + 1.05, -d / 2 + 0.1]);              // 뒷벽
+    for (const s of [-1, 1]) P.box(0.12, 2.1, d, 0xcdb58e, 'earth', [s * (w / 2 - 0.06), base + 1.05, 0]);
+    for (let x = -w / 2 + 0.1; x <= w / 2; x += w / 3) P.cyl(0.1, 0.11, 2.1, 7, WOOD, 'wood', [x, base + 1.05, d / 2 - 0.1]);
+    P.box(w, 0.14, 0.14, DARKWOOD, 'wood', [0, top, d / 2 - 0.1]);
+    for (const s of [-1, 1]) P.box(0.9, 1.6, 0.06, WOOD, 'wood', [s * (w / 2 - 0.55), base + 1.0, d / 2 - 0.25], [0, s * 0.6, 0]); // 활짝 연 판자 덧문
+    P.box(w - 1.2, 0.7, 1.0, 0x8a6a48, 'wood', [0, base + 0.35, d / 2 - 0.1]);         // 좌판
+    goods(P, 0, base + 0.7, d / 2 - 0.1, w - 1.4, p.seed || 1);
+    const r = roofSurface({ W: w + 1.4, D: d + 1.4, H: 1.3, lift: 0.35, profile: 'tile', thick: 0.1 });
+    P.add(r.top, p.thatch ? 0xd2b07a : TILE, p.thatch ? 'thatch' : 'tile', [0, top + 0.08, 0], [0, 0, 0], { smooth: true });
+    P.add(r.under, 0x7a5a3c, 'wood', [0, top + 0.08, 0], [0, 0, 0], { smooth: true, shadow: false });
+    P.box(w - 0.4, 0.05, 1.4, awn, 'cloth', [0, top - 0.25, d / 2 + 0.65], [0.3, 0, 0]);   // 천 차양
+    for (const s of [-1, 1]) P.cyl(0.04, 0.04, 1.9, 5, DARKWOOD, 'wood', [s * (w / 2 - 0.4), base + 0.85, d / 2 + 1.25]);
+  }
+  P.into(g);
+  if (p.sign) {
+    const vertical = p.style !== 'modern';
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(vertical ? 0.5 : Math.min(w - 0.6, 3.2), vertical ? 1.7 : 0.6), signMaterial(p.sign, { vertical, bg: p.style === 'modern' ? '#f2efe6' : '#2b241c', fg: p.style === 'modern' ? '#2b241c' : '#f2e6b0' }));
+    m.position.set(vertical ? w / 2 - 0.1 : 0, vertical ? 1.5 : 4.85, d / 2 + (vertical ? 0.02 : 0.02)); g.add(m);
+  }
+  return g;
+}
+
+// 상하이 석고문 골목집: 회색 벽돌 2층 집이 나란히(n칸), 칸마다 돌 문틀과 검은 대문, 문 위 둥근 장식, 작은 창, 기와지붕
+export function lanehouse(g, p = {}) {
+  const P = parts(), n = p.n || 3, uw = 3.6, w = n * uw, d = 5, h = 5.6;
+  P.box(w, h, d, 0x7d7a74, 'stone', [0, h / 2, 0]);
+  for (let i = 0; i < n; i++) {
+    const x = -w / 2 + uw / 2 + i * uw;
+    P.box(1.7, 2.6, 0.2, 0xc9c2b4, 'stone', [x, 1.3, d / 2 + 0.05]);                     // 돌 문틀
+    P.box(1.2, 2.2, 0.1, 0x1e1c1a, 'wood', [x, 1.1, d / 2 + 0.12]);                      // 검은 대문
+    P.add(new THREE.CylinderGeometry(0.85, 0.85, 0.22, 14, 1, false, -Math.PI / 2, Math.PI), 0xc9c2b4, 'stone', [x, 2.6, d / 2 + 0.05], [Math.PI / 2, 0, 0]); // 문 위 반원 장식
+    P.box(1.0, 1.1, 0.05, 0, null, [x, 4.1, d / 2 + 0.03], [0, 0, 0], { material: glass() });
+    P.box(0.12, h, 0.12, 0x5a5650, 'stone', [x + uw / 2, h / 2, d / 2 + 0.03]);             // 칸 나눔
+  }
+  P.box(w + 0.2, 0.25, d + 0.2, 0x5a5650, 'stone', [0, h, 0]);
+  const r = roofSurface({ W: w + 0.6, D: d + 0.8, H: 1.4, lift: 0.15, profile: 'tile', thick: 0.1 });
+  P.add(r.top, 0x3a3e40, 'tile', [0, h + 0.12, 0], [0, 0, 0], { smooth: true });
+  P.add(r.under, 0x5a4a3a, 'wood', [0, h + 0.12, 0], [0, 0, 0], { smooth: true, shadow: false });
+  return P.into(g);
+}
+
+// 시멘트(콘크리트) 건물(1950~80년대): 평평한 옥상과 난간, 층마다 창 줄, 1층 가게 셔터, 옥상 물탱크. floors 층수, sign 세로 간판
+export function concrete(g, p = {}) {
+  const P = parts(), w = p.w || 7, d = p.d || 5, floors = p.floors || 3, fh = 2.6, h = floors * fh, col = p.color || 0xc8c2b4;
+  P.box(w, h, d, col, 'stone', [0, h / 2, 0]);
+  P.box(w + 0.15, 0.6, d + 0.15, new THREE.Color(col).multiplyScalar(0.85).getHex(), 'stone', [0, h + 0.3, 0]); // 옥상 난간
+  for (let f = 0; f < floors; f++) {
+    const y = f * fh + 1.5;
+    if (f > 0) P.box(w + 0.1, 0.12, d + 0.1, new THREE.Color(col).multiplyScalar(0.9).getHex(), 'stone', [0, f * fh, 0]);
+    const cols = Math.max(1, Math.floor((w - 0.6) / 1.5));
+    for (let i = 0; i < cols; i++) {
+      const x = -((cols - 1) * 1.5) / 2 + i * 1.5;
+      if (f === 0 && p.shop !== false) continue;
+      P.box(1.0, 1.1, 0.05, 0, null, [x, y, d / 2 + 0.02], [0, 0, 0], { material: glass() });
+      P.box(1.1, 0.08, 0.18, 0x9a948a, 'stone', [x, y - 0.6, d / 2 + 0.08]);
+    }
+  }
+  if (p.shop !== false) { // 1층 가게: 셔터와 유리문
+    P.box(w - 0.6, 2.0, 0.06, 0x8a8e92, 'grain', [-(w - 0.6) / 4, 1.0, d / 2 + 0.03]);
+    P.box((w - 0.6) / 2 - 0.2, 2.0, 0.05, 0, null, [(w - 0.6) / 4, 1.0, d / 2 + 0.04], [0, 0, 0], { material: glass() });
+    P.box(w, 0.1, 0.9, p.awning ?? 0x3a6a8a, 'cloth', [0, 2.3, d / 2 + 0.4], [0.2, 0, 0]);
+  }
+  if (p.tank !== false) { P.cyl(0.6, 0.6, 1.0, 10, 0x8a8e92, 'grain', [w / 2 - 1.2, h + 1.0, -d / 2 + 1.2]); for (const s of [-1, 1]) P.box(0.08, 0.6, 0.08, 0x5a5a5a, 'grain', [w / 2 - 1.2 + s * 0.4, h + 0.3, -d / 2 + 1.2]); }
+  P.into(g);
+  if (p.sign) { const m = new THREE.Mesh(new THREE.PlaneGeometry(0.6, Math.min(h - 1, 2.6)), signMaterial(p.sign, { vertical: true, bg: p.signBg || '#f2efe6', fg: '#8a2f24' })); m.position.set(w / 2 - 0.4, h - Math.min(h - 1, 2.6) / 2 - 0.3, d / 2 + 0.06); g.add(m); }
+  return g;
+}
+
+// 막사: 긴 나무 집, 함석 맞배지붕, 작은 창 줄, 끝의 문
+export function barracks(g, p = {}) {
+  const P = parts(), w = p.w || 9, d = 4, h = 2.6, col = p.color || 0x6b5a42;
+  P.box(w, 0.3, d, 0x7a7060, 'stone', [0, 0.15, 0]);
+  P.box(w, h, d, col, 'wood', [0, 0.3 + h / 2, 0]);
+  for (let x = -w / 2 + 1; x < w / 2 - 0.5; x += 1.6) for (const s of [-1, 1]) P.box(0.8, 0.6, 0.05, 0, null, [x, 1.9, s * (d / 2 + 0.02)], [0, s < 0 ? Math.PI : 0, 0], { material: glass() });
+  P.box(0.05, 1.9, 1.1, 0x3a2c20, 'wood', [w / 2 + 0.02, 1.25, 0]);
+  const slope = Math.hypot(d / 2 + 0.4, 1.3), ang = Math.atan2(1.3, d / 2 + 0.4);
+  for (const s of [-1, 1]) P.box(w + 0.4, 0.08, slope, p.roof || 0x6b6862, 'grain', [0, 0.3 + h + 0.65, s * (d / 4 + 0.2)], [s * ang, 0, 0]);
+  return P.into(g);
+}
+
+// 시장 노점: 네 기둥과 천 차양, 물건을 늘어놓은 좌판
+export function stall(g, p = {}) {
+  const P = parts(), w = p.w || 2.6, c = p.color || 0xd8cdb0;
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) P.cyl(0.05, 0.05, 2.2, 5, 0x5a3f2a, 'wood', [sx * w / 2, 1.1, sz * 0.8]);
+  P.box(w + 0.4, 0.06, 2.0, c, 'cloth', [0, 2.25, 0], [0.12, 0, 0]);
+  P.box(w, 0.7, 1.1, 0x8a6a48, 'wood', [0, 0.35, 0.2]);
+  goods(P, 0, 0.7, 0.2, w - 0.2, p.seed || 2);
+  return P.into(g);
+}
+
+// 다리: 'stone'(돌 무지개다리) / 'wood'(나무 널다리). 길이 len, +z 방향으로 건넌다
+export function bridge(g, p = {}) {
+  const P = parts(), len = p.len || 10, w = p.w || 3;
+  if (p.style === 'wood') {
+    P.box(w, 0.2, len, 0x7a5a3c, 'wood', [0, 0.35, 0]);
+    for (let z = -len / 2 + 1; z <= len / 2 - 1; z += 2.5) for (const s of [-1, 1]) P.cyl(0.14, 0.14, 2.2, 6, 0x5e4330, 'wood', [s * (w / 2 - 0.2), -0.6, z]);
+    for (const s of [-1, 1]) { P.box(0.1, 0.1, len, 0x5e4330, 'wood', [s * w / 2, 1.1, 0]); for (let z = -len / 2; z <= len / 2; z += 1.25) P.box(0.08, 0.75, 0.08, 0x5e4330, 'wood', [s * w / 2, 0.75, z]); }
+  } else {
+    const arch = new THREE.Shape(); arch.moveTo(-len / 2, -1.2); arch.lineTo(-len / 2, 0.6); arch.lineTo(len / 2, 0.6); arch.lineTo(len / 2, -1.2); arch.lineTo(len * 0.3, -1.2); arch.absarc(0, -1.2, len * 0.3, 0, Math.PI, false); arch.lineTo(-len / 2, -1.2);
+    const geo = new THREE.ExtrudeGeometry(arch, { depth: w, bevelEnabled: false, curveSegments: 14 }); geo.translate(0, 0, -w / 2); geo.rotateY(Math.PI / 2);
+    P.add(geo, 0xb3ab99, 'stone', [0, 0, 0]);
+    for (const s of [-1, 1]) P.box(0.3, 0.5, len, 0xa39b8c, 'stone', [s * (w / 2 - 0.15), 0.85, 0]);
+  }
+  return P.into(g);
+}
+
+// 나룻배·고깃배: 앞뒤가 들린 나무배와 노 하나(사람이 타지 않은 채 물가에 매어 둠)
+export function boat(g, p = {}) {
+  const P = parts(), L = p.len || 4.2;
+  const hg = new THREE.BoxGeometry(1.7, 0.55, L, 1, 1, 6); const pos = hg.attributes.position;
+  for (let i = 0; i < pos.count; i++) { const z = pos.getZ(i) / (L / 2), y = pos.getY(i); pos.setX(i, pos.getX(i) * (1 - Math.pow(Math.abs(z), 3) * 0.75) * (y < 0 ? 0.7 : 1)); pos.setY(i, y + Math.pow(Math.abs(z), 2) * 0.35); }
+  hg.computeVertexNormals();
+  P.add(hg, p.color || 0x7a5a3c, 'wood', [0, 0.15, 0]);
+  P.box(1.3, 0.06, L * 0.6, 0x5e4330, 'wood', [0, 0.3, 0]);
+  P.box(0.07, 0.07, 3, 0x6b4a32, 'wood', [0.5, 0.55, L * 0.15], [0.15, 0.3, 0]);
+  return P.into(g);
+}
+
+// 축대(돌로 쌓은 단)와 앞 계단: 건물을 한 단 높이 올려 세울 때 쓴다(위에 놓는 부품은 y로 올린다). w×d 크기, h 높이
+export function terrace(g, p = {}) {
+  const P = parts(), w = p.w || 8, d = p.d || 6, h = p.h || 1.2, stone = p.color || 0xa39b8c;
+  P.box(w, h, d, stone, 'stone', [0, h / 2, 0]);
+  P.box(w + 0.2, 0.15, d + 0.2, new THREE.Color(stone).multiplyScalar(1.1).getHex(), 'stone', [0, h + 0.02, 0]);
+  if (p.steps !== false) { const n = Math.max(2, Math.round(h / 0.3)), sw = p.stepW || 2.4; for (let i = 0; i < n; i++) P.box(sw, h - i * (h / n), 0.42, 0xb3ab99, 'stone', [p.stepX || 0, (h - i * (h / n)) / 2, d / 2 + 0.21 + i * 0.42]); }
+  return P.into(g);
 }
