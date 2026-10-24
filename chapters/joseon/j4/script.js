@@ -15,7 +15,7 @@ export default {
 
   start: [
     { who: 'guide', text: '너는 이순신 함대의 젊은 수군이야. 포구에 우리 배들이 모여 있어.' },
-    { who: 'guide', text: '느낌표가 있는 사람에게 차례로 말을 걸어 봐.' },
+    { who: 'guide', text: '바다 건너 일본군이 몰려온다는 소문이 돌고 있어. 부두의 수군에게 먼저 소식을 물어보자.' },
   ],
 
   goals: ['부두의 수군에게 말을 걸어 보자', '포구 백성의 이야기를 들어 보자', '지휘하는 이순신을 찾아가자', '한산도 앞바다에서 싸우자', '배운 내용을 확인해 보자'],
@@ -35,7 +35,7 @@ export default {
         { who: 'commoner', text: '곽재우 같은 사람들이 고향을 지키려고 스스로 의병을 일으켰대요.', src: ['S34'] },
         { who: 'commoner', text: '이순신 장군님은 저쪽 지휘소에 계세요.' },
       ],
-      later: [{ who: 'commoner', text: '바다만큼은 꼭 지켜 주세요.' }],
+      later: [{ who: 'commoner', text: '육지 소식은 늘 나빠요. 바다만큼은 꼭 지켜 주세요.' }],
     },
     signPanok: { always: [
       { who: 'narr', text: '판옥선은 조선 수군의 주력 전투선이에요.', src: ['S50'] },

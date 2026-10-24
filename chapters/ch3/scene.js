@@ -1,5 +1,6 @@
 // 3장 장면: 비바람 속 삼교천(고려 진영, 둑 자리, 냇물을 건너는 거란군)과 남쪽의 귀주 벌판.
 import * as THREE from 'three';
+import { backdropMountains } from '../kit/terrain.js';
 import { groundMaterial } from '../../core/textures.js';
 import { mat, makePerson } from '../../core/people.js';
 import { scatter } from '../../core/props.js';
@@ -167,5 +168,6 @@ export function buildCh3Scene(world) {
     hides.forEach((h, i) => { if (!h.taken) h.mesh.rotation.y = Math.sin(t + i) * 0.2; });
   });
   scene.setFlags(false);
+  backdropMountains(world.level, { color: 0x4f6a42, radius: 130 }); // 먼 산줄기(깊이감)
   return scene;
 }

@@ -1,6 +1,7 @@
 // 2장 장면: 눈 덮인 흥화진 성, 북쪽의 거란 진영, 성 남쪽의 눈 들판.
 import { makeSign } from '../../core/signs.js';
 import * as THREE from 'three';
+import { backdropMountains } from '../kit/terrain.js';
 import { hanok } from '../kit/buildings.js';
 import { groundMaterial } from '../../core/textures.js';
 import { mat, makePerson } from '../../core/people.js';
@@ -131,6 +132,7 @@ export function buildCh2Scene(world) {
   ring.rotation.x = -Math.PI / 2; ring.position.set(0, 0.08, -6); ring.visible = false; L.add(ring);
   world.onUpdate((dt, t) => { if (ring.visible) ring.material.opacity = 0.55 + Math.sin(t * 4) * 0.3; });
 
+  backdropMountains(world.level, { color: 0xc8ccd0, radius: 130 }); // 먼 산줄기(깊이감)
   return {
     ring, stairs: { x: 0, z: -6, r: 1.6 }, ladders, captives, khitan, khitanFront,
     wallCam: { pos: [0, 10.5, -36], target: [0, 2.5, -13] },

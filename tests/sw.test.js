@@ -8,7 +8,7 @@ const MUST = [
   'chapters/index.js', 'chapters/ch1/chapter.js', 'chapters/ch1/scene.js', 'chapters/ch1/script.js',
 ];
 
-test('sw: cache name is versioned', () => eq(CACHE, 'goryeo-v54'));
+test('sw: cache name is versioned', () => eq(CACHE, 'goryeo-v55'));
 
 test('sw: PRECACHE lists every file the game imports for ch1', () => {
   for (const f of MUST) ok(PRECACHE.includes(f), `missing ${f}`);

@@ -17,7 +17,7 @@ export default {
 
   start: [
     { who: 'guide', text: '너는 고려의 젊은 병사야. 진영을 둘러보며 무슨 일이 일어났는지 알아보자.' },
-    { who: 'guide', text: '머리 위에 노란 느낌표가 있는 사람에게 가서 말을 걸어 봐.' },
+    { who: 'guide', text: '진영 분위기가 어수선해. 머리 위에 노란 느낌표가 뜬 병사에게 무슨 일인지 물어보자.' },
   ],
 
   goals: ['진영의 병사에게 말을 걸어 보자', '지휘소에 있는 서희를 찾아가자', '강가의 나루터(빛나는 원)로 가자', '서희와 함께 담판을 지켜보자', '배운 내용을 확인해 보자'],
@@ -29,7 +29,7 @@ export default {
         { who: 'soldier', text: '80만 대군이라고 큰소리를 친대.', src: ['S16'] },
         { who: 'soldier', text: '서희 님이 너를 찾으셔. 왼쪽 지휘소로 가 봐!' },
       ],
-      later: [{ who: 'soldier', text: '서희 님은 왼쪽 지휘소에 계셔.' }],
+      later: [{ who: 'soldier', text: '서희 님은 왼쪽 지휘소에 계셔. 오늘따라 말씀이 적으셔서 다들 숨죽이고 있어.' }],
     },
     officer: {
       always: [
@@ -53,7 +53,7 @@ export default {
         { who: 'seohui', text: '왔구나. 땅을 떼어 주고 달랠 수는 없다.', src: ['S17'] },
         { who: 'seohui', text: '내가 직접 소손녕을 만나 담판을 짓겠다. 강가 나루터로 오너라.' },
       ],
-      later: [{ who: 'seohui', text: '나루터에서 기다리마.' }],
+      later: [{ who: 'seohui', text: '강가 나루터에서 기다리마. 마음을 단단히 먹고 오너라.' }],
     },
   },
 

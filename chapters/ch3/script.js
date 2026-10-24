@@ -23,7 +23,7 @@ export default {
         { who: 'gangamchan', text: '적이 반드시 이 냇물을 건널 것이다. 쇠가죽을 꿰어 물을 막아 두어라.', src: ['S3', 'S5'] },
         { who: 'gangamchan', text: '병사에게 가서 쇠가죽을 모으는 일을 도와라.' },
       ],
-      later: [{ who: 'gangamchan', text: '서둘러라. 적이 곧 냇물에 닿는다.' }],
+      later: [{ who: 'gangamchan', text: '서둘러라. 적이 곧 냇물에 닿는다. 하나라도 빠뜨리면 안 된다.' }],
     },
     soldier: {
       tooEarly: [{ who: 'soldier', text: '먼저 강감찬 님께 가 봐. 명령을 내리실 거야.' }],
@@ -31,7 +31,7 @@ export default {
         { who: 'soldier', text: '쇠가죽을 모아 오라는 명령이야!' },
         { who: 'soldier', text: '진영 곳곳에 쇠가죽 묶음이 있어. 다 모아서 냇물 위쪽 둑으로 가져가자.' },
       ],
-      later: [{ who: 'soldier', text: '쇠가죽을 다 모으면 둑으로 가져가!' }],
+      later: [{ who: 'soldier', text: '쇠가죽을 다 모으면 냇물 위쪽 둑으로 가져가! 비 때문에 물이 많이 불었어.' }],
     },
   },
 

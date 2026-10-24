@@ -1,6 +1,7 @@
 // 1장 장면: 노을 진 고려 진영, 강, 강 건너 거란 진영, 강동 6주 빛기둥.
 import { makeSign } from '../../core/signs.js';
 import * as THREE from 'three';
+import { backdropMountains } from '../kit/terrain.js';
 import { curvedHipRoof } from '../kit/buildings.js';
 import { groundMaterial } from '../../core/textures.js';
 import { mat, makePerson, labelSprite } from '../../core/people.js';
@@ -247,5 +248,6 @@ export function buildCh1Scene(world) {
     }
     if (gangdongPillars.visible) gangdongPillars.children.forEach((c, i) => { if (c.isMesh) c.material.opacity = 0.25 + Math.sin(t * 2 + i) * 0.1; });
   });
+  backdropMountains(world.level, { color: 0x6a7a4a, radius: 130 }); // 먼 산줄기(깊이감)
   return scene;
 }

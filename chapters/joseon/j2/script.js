@@ -14,7 +14,7 @@ export default {
 
   start: [
     { who: 'guide', text: '너는 궁궐에서 심부름을 하는 아이야. 오늘은 궁궐 안이 바빠 보여.' },
-    { who: 'guide', text: '느낌표가 있는 사람에게 차례로 말을 걸어 봐.' },
+    { who: 'guide', text: '무슨 일로 바쁠까? 마당 남쪽에서 한숨 쉬는 백성에게 먼저 다가가 보자.' },
   ],
 
   goals: ['마당 남쪽의 백성에게 말을 걸어 보자', '집현전 앞의 학자에게 말을 걸어 보자', '전각 앞의 세종을 찾아가자', '세종과 함께 글자를 만들어 보자', '배운 내용을 확인해 보자'],
@@ -34,7 +34,7 @@ export default {
         { who: 'scholar', text: '우리 집현전 학자들도 새 글자 만드는 일을 돕고 있단다.', src: ['S29'] },
         { who: 'scholar', text: '세종께서 전각 앞에서 너를 찾으셨다.' },
       ],
-      later: [{ who: 'scholar', text: '전각 앞으로 가 보아라.' }],
+      later: [{ who: 'scholar', text: '전하께서 전각 앞에 계시다. 어서 가 보아라.' }],
     },
     signThrone: { always: [
       { who: 'narr', text: '근정전은 1395년 경복궁을 지을 때 세운 으뜸 전각이에요.', src: ['S46'] },

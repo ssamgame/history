@@ -124,3 +124,12 @@ export function skyline(field, { center = [0, 0], radius = 80, style = 'brick', 
   if (!geos.length) return null;
   return new THREE.Mesh(merge(geos), new THREE.MeshLambertMaterial({ color, flatShading: true }));
 }
+
+// 손으로 만든 장면(고려·조선편)에 먼 산줄기만 둘러 깊이감을 준다(한 번에 그린다). 바다 쪽 등 비울 방향은 skip(라디안 [시작, 끝]).
+export function backdropMountains(L, { center = [0, 0], radius = 120, color = 0x5f7a4c, skip = null, seed = 1 } = {}) {
+  const inArc = a => { if (!skip) return false; const t = ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2); return t >= skip[0] && t <= skip[1]; };
+  const field = { heightAt: () => 0, inWater: (x, z) => inArc(Math.atan2(x - center[0], z - center[1])) };
+  const m = mountainRing(field, { center, color, radius, seed });
+  if (m) L.add(m);
+  return m;
+}

@@ -15,7 +15,7 @@ export default {
 
   start: [
     { who: 'guide', text: '너는 수원 화성을 쌓는 젊은 일꾼이야. 공사장이 무척 바빠.' },
-    { who: 'guide', text: '느낌표가 있는 사람에게 차례로 말을 걸어 봐.' },
+    { who: 'guide', text: '커다란 돌을 어떻게 저 높이까지 올릴까? 공사를 맡은 관리 나리께 먼저 여쭈어 보자.' },
   ],
 
   goals: ['공사장의 관리에게 말을 걸어 보자', '돌을 나르는 일꾼에게 말을 걸어 보자', '거중기 옆의 정약용을 찾아가자', '차일 아래의 정조를 찾아가자', '거중기로 성을 쌓아 보자', '배운 내용을 확인해 보자'],
@@ -27,7 +27,7 @@ export default {
         { who: 'official', text: '탕평의 뜻을 새긴 비석을 성균관에 세우시기도 했다네.', src: ['S41'] },
         { who: 'official', text: '지금 임금께서도 탕평을 이어 가고 계시지.', src: ['S41'] },
       ],
-      later: [{ who: 'official', text: '공사가 빨리 끝나야 할 텐데.' }],
+      later: [{ who: 'official', text: '일꾼들이 지치지 않아야 공사가 빨리 끝날 텐데. 저쪽 일꾼들에게도 가 보아라.' }],
     },
     worker: {
       tooEarly: [{ who: 'worker', text: '저기 관리 나리께 먼저 인사드려.' }],
@@ -35,7 +35,7 @@ export default {
         { who: 'worker', text: '1794년 정월에 성 쌓는 공사를 시작했어.', src: ['S39'] },
         { who: 'worker', text: '돌이 너무 무거워! 정약용 나리가 만든 기계를 보러 가 봐.' },
       ],
-      later: [{ who: 'worker', text: '영차, 영차!' }],
+      later: [{ who: 'worker', text: '영차, 영차! 이 돌 하나 옮기는 데도 여럿이 붙어야 해.' }],
     },
     jeongyakyong: {
       tooEarly: [{ who: 'jeongyakyong', text: '공사장을 먼저 둘러보고 오너라.' }],

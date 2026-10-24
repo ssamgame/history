@@ -1,6 +1,7 @@
 // 조선편 1장 장면: 장맛비 속 압록강의 섬 위화도. 고려군 진영(천막, 지휘 천막, 깃발)과 북쪽(요동 쪽)을 향해 늘어선 군사들.
 // 회군 때 군사들은 돌아서서 남쪽 물길을 건너 개경 쪽으로 간다.
 import * as THREE from 'three';
+import { backdropMountains } from '../../kit/terrain.js';
 import { groundMaterial } from '../../../core/textures.js';
 import { mat, makePerson } from '../../../core/people.js';
 import { scatter } from '../../../core/props.js';
@@ -129,6 +130,7 @@ export function buildJ1Scene(world) {
     for (const f of flags) f.rotation.y = -Math.PI / 2 + Math.sin(t * 3 + f.position.x) * 0.3;
   });
 
+  backdropMountains(world.level, { color: 0x5a6e4a, radius: 130 }); // 먼 산줄기(깊이감)
   return {
     army, setTurn, rain, flags,
     start: [0, 9],
