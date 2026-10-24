@@ -1,6 +1,7 @@
 // 4장 장면: 흐린 하늘 아래 다섯 구역 — 압록강 가(저고여 사건), 개경 궁궐 앞, 강화도 해협, 처인성, 충주성. 안개가 서로를 가린다.
 import * as THREE from 'three';
-import { curvedHipRoof } from '../kit/buildings.js';
+import { curvedHipRoof, tree, wall, hanok, boat, straw, woodpile } from '../kit/buildings.js';
+import { backdropMountains } from '../kit/terrain.js';
 import { groundMaterial } from '../../core/textures.js';
 import { mat, makePerson } from '../../core/people.js';
 import { scatter } from '../../core/props.js';
@@ -51,6 +52,11 @@ export function buildCh4Scene(world) {
     mk(new THREE.BoxGeometry(60, 0.04, 3), 0x8f7556, JEOGO_X, 0.03, 2, L, false); // 강가 길
     scatter(world, { kind: 'grass', count: 90, area: { x0: JEOGO_X - 28, x1: JEOGO_X + 28, z0: -4.5, z1: -1 }, seed: 61, scale: [1.6, 2.6], color: 0x7a8a50 }); // 갈대
     scatter(world, { kind: 'pine', count: 14, area: { x0: JEOGO_X - 30, x1: JEOGO_X + 30, z0: 8, z1: 24 }, seed: 62, scale: [1, 1.4] });
+    // 강둑의 버드나무와 바위, 강 건너 솔숲과 먼 산(국경의 강가)
+    for (const [x, z] of [[-26, -3.6], [-12, -3.4], [14, -3.5], [24, -3.7], [-20, -17], [-4, -17.5], [10, -17], [26, -17.3]]) { const g = new THREE.Group(); g.position.set(JEOGO_X + x, 0, z); g.rotation.y = rand() * 3; L.add(g); tree(g, { kind: 'willow', x, z }); }
+    scatter(world, { kind: 'rock', count: 16, area: { x0: JEOGO_X - 30, x1: JEOGO_X + 30, z0: -18, z1: -15 }, seed: 63, scale: [0.6, 1.4] });
+    scatter(world, { kind: 'pine', count: 26, area: { x0: JEOGO_X - 40, x1: JEOGO_X + 40, z0: -40, z1: -20 }, seed: 64, scale: [1, 1.6] });
+    backdropMountains(L, { center: [JEOGO_X, 0], radius: 75, color: 0x5f7050, seed: 3 });
     const ENVOY = { robe: 0x8a6a2a, hat: 'fur', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache' } };
     const SHADOW = { robe: 0x2a2622, hat: 'topknot', trim: 0x1e1a16, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } };
     const envoy = makePerson(ENVOY), aide = makePerson(LOOKS.mongol);
@@ -95,8 +101,8 @@ export function buildCh4Scene(world) {
     mk(new THREE.BoxGeometry(21, 0.45, 8), 0x2f6b5e, x0, 5.3, -12);
     hipRoof(26, 12, 4, 0x3d4846, x0, 5.5, -12);
     world.addCollider({ x: x0 - 6, z: -12, r: 6 }); world.addCollider({ x: x0 + 6, z: -12, r: 6 }); world.addCollider({ x: x0, z: -12, r: 6 });
-    for (const sx of [-1, 1]) {
-      mk(new THREE.BoxGeometry(1.2, 3, 30), 0x8c8577, x0 + sx * 15, 1.5, 2);
+    for (const sx of [-1, 1]) { // 기와를 얹은 궁궐 담장
+      const g = new THREE.Group(); g.position.set(x0 + sx * 15, 0, 2); g.rotation.y = Math.PI / 2; L.add(g); wall(g, { w: 30, h: 2.8, color: 0x9a8c7a });
     }
     // 박석을 깐 마당과 석등 두 개
     mk(new THREE.BoxGeometry(28.6, 0.06, 22), 0xa59c8a, x0, 0.03, 3, L, false);
@@ -118,8 +124,8 @@ export function buildCh4Scene(world) {
     const sea = new THREE.Mesh(new THREE.PlaneGeometry(130, 60).rotateX(-Math.PI / 2), new THREE.MeshPhongMaterial({ color: 0x46708a, shininess: 30, transparent: true, opacity: 0.92 }));
     sea.position.set(GANGHWA_X, -0.5, -26); L.add(sea);
     const island = mk(new THREE.ConeGeometry(26, 9, 9), 0x4f6b4a, GANGHWA_X, 1.5, -40); island.scale.set(1.4, 1, 0.7);
-    for (let i = 0; i < 6; i++) mk(new THREE.BoxGeometry(2.4, 1.6, 2), 0xd8d0bc, GANGHWA_X - 10 + i * 4, 4.2, -34 + (i % 2) * 2);
-    for (let i = 0; i < 3; i++) mk(new THREE.BoxGeometry(1.6, 0.5, 4), 0x6b4a32, GANGHWA_X - 8 + i * 8, -0.25, -14 - i * 3);
+    for (let i = 0; i < 6; i++) { const g = new THREE.Group(); g.position.set(GANGHWA_X - 10 + i * 4, 3.4, -34 + (i % 2) * 2); g.scale.setScalar(0.55); g.rotation.y = (i % 3 - 1) * 0.2; L.add(g); hanok(g, { tile: i === 2 }); } // 섬의 집들(도읍을 옮긴 강화도)
+    for (let i = 0; i < 3; i++) { const g = new THREE.Group(); g.position.set(GANGHWA_X - 8 + i * 8, -0.7, -14 - i * 3); g.rotation.y = 0.3 * (i - 1); L.add(g); boat(g, { len: 4.6 }); }
   }
   // 강화도 섬의 소나무 (섬 원뿔 높이에 맞춰 심는다)
   {
@@ -137,7 +143,14 @@ export function buildCh4Scene(world) {
       if (Math.abs(a - Math.PI / 2) < 0.18) continue; // 남쪽(+z) 성문 자리
       const seg = mk(new THREE.BoxGeometry(2.1, 2.4, 1.4), 0x8a7356, CHEOIN_X + Math.cos(a) * CHEOIN_R, 1.2, Math.sin(a) * CHEOIN_R, cheoin);
       seg.rotation.y = -a + Math.PI / 2;
+      for (const d of [-0.6, 0, 0.6]) { // 흙성 위 나무 울타리(목책)
+        const st = mk(new THREE.CylinderGeometry(0.07, 0.09, 0.9, 5), 0x6b4a32, 0, 0, 0, cheoin);
+        st.position.set(CHEOIN_X + Math.cos(a) * (CHEOIN_R + 0.35) - Math.sin(a) * d, 2.85, Math.sin(a) * (CHEOIN_R + 0.35) + Math.cos(a) * d);
+      }
     }
+    // 성 안: 피란 온 백성들의 초가와 짚더미·장작(남쪽 성문 쪽, 싸움 자리와 떨어진 곳)
+    for (const [dx, dz, ry] of [[-6.2, 4.6, 0.5], [6.2, 4.4, -0.5]]) { const g = new THREE.Group(); g.position.set(CHEOIN_X + dx, 0, dz); g.rotation.y = ry; g.scale.setScalar(0.8); cheoin.add(g); hanok(g, {}); world.addCollider({ x: CHEOIN_X + dx, z: dz, r: 2 }); }
+    for (const [dx, dz, fn] of [[-2.8, 8.2, straw], [3, 8.4, woodpile]]) { const g = new THREE.Group(); g.position.set(CHEOIN_X + dx, 0, dz); cheoin.add(g); fn(g); }
     for (let i = 0; i < 8; i++) {
       const a = Math.PI + 0.3 + i * 0.35;
       const who = i % 2 ? LOOKS.monk : LOOKS.villager;
