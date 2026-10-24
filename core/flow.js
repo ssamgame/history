@@ -1,5 +1,6 @@
 // 한 장을 단계(해설 → 탐험 → 미니게임 → 퀴즈) 순서로 실행하고, 단계마다 체크포인트를 남긴다.
 import { computeStars } from './save.js';
+import { bakeLevel } from './bake.js';
 import { showQuizView, endQuizView } from './quizview.js';
 
 export const STAGES = ['intro', 'explore', 'minigame', 'quiz'];
@@ -25,7 +26,8 @@ export async function runChapter(meta, chapter, ctx, save, { resumeStage = 'intr
       checkpoint('intro');
       await ctx.screens.showIntroCard(meta, chapter.script.intro);
     }
-    chapter.buildScene(ctx.world, ctx);
+    const built = chapter.buildScene(ctx.world, ctx);
+    if (chapter.bake !== false && ctx.world?.level && ctx.world.npcs) bakeLevel(ctx.world, built); // 움직이지 않는 조각을 재질별로 합쳐 태블릿에서 가볍게
     if (from > 0) chapter.enterStage?.(ctx, STAGES[from]);
 
     if (from <= 1) {

@@ -89,3 +89,20 @@ test('graphics: 시대별 새 부품(가게·석고문 집·시멘트 건물·�
     ok(meshes > 0 && meshes <= 12, `${type} ${JSON.stringify(p)}: ${meshes}번`);
   }
 });
+
+import { bakeLevel } from '../core/bake.js';
+test('bake: 움직이지 않는 장면 조각은 재질별로 합치고, 장면이 돌려준 것·사람·움직이는 것은 그대로 둔다', () => {
+  const w = testWorld();
+  try {
+    const L = w.level, red = new THREE.MeshLambertMaterial({ color: 0xff0000 });
+    for (let i = 0; i < 20; i++) { const m = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), red); m.position.set(i, 0, 0); L.add(m); }
+    const kept = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), red); L.add(kept);
+    const spinner = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), red); L.add(spinner);
+    w.onUpdate(dt => { spinner.rotation.y += dt; });
+    const r = bakeLevel(w, { door: kept });
+    ok(r.after < r.before, JSON.stringify(r));
+    ok(kept.parent === L && spinner.parent === L, '돌려준 것과 움직이는 것은 그대로');
+    let reds = 0; L.traverse(o => { if (o.isMesh && o.material === red) reds++; });
+    eq(reds, 3, '스무 개가 하나로 + 둘');
+  } finally { w.dispose(); }
+});
