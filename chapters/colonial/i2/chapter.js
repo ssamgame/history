@@ -17,7 +17,7 @@ const JONGNO = { // 탑골 공원 문에서 종로 거리, 시장, 큰길로
 };
 
 export default makeKitChapter({
-  id: 'i2', mood: 'morning', script,
+  id: 'i2', mood: 'earlySpring', script,
   player: { robe: 0x22262e, hat: 'cap', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   order: ['student', 'leader', 'yugwansun'],
   spot: [0, 4],

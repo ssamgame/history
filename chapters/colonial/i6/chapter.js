@@ -21,7 +21,7 @@ const FLAGS = {
 };
 
 export default makeKitChapter({
-  id: 'i6', mood: 'morning', script,
+  id: 'i6', mood: 'haze', script,
   player: { robe: 0x6b6a4a, hat: 'cap', gear: 'rifle', trim: 0xa8392b, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   order: ['soldier', 'kimgu', 'officer'],
   spot: [0, 3],

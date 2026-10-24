@@ -57,6 +57,54 @@ export const MOODS = {
     hemi: [0xcfd8d8, 0x4a5444, 0.9],
     particles: 'rain', clouds: 0.85, cloud: 0xb0b8b8,
   },
+  // 봄: 옅은 하늘과 부드러운 햇살 (조선 2장 경복궁)
+  spring: {
+    skyTop: 0x8ab4dc, skyHorizon: 0xf6e8e0, skyBottom: 0x93a07c,
+    fog: [0xeee6dc, 45, 150],
+    sun: { color: 0xfff2dc, intensity: 1.45, dir: [25, 30, 15] },
+    hemi: [0xf8f0ea, 0x63704c, 0.85],
+    particles: null, clouds: 0.25,
+  },
+  // 한여름: 높고 짙은 하늘, 강한 햇빛과 짧은 그림자 (조선 3장 한양, 현대 1장 광복)
+  summer: {
+    skyTop: 0x4f8fd0, skyHorizon: 0xe6eef0, skyBottom: 0x7f9a6a,
+    fog: [0xdfe8e4, 50, 160],
+    sun: { color: 0xfff8e6, intensity: 1.7, dir: [12, 40, 10] },
+    hemi: [0xf2f6f4, 0x5a6a44, 0.75],
+    particles: null, clouds: 0.3,
+  },
+  // 한낮의 도시: 맑고 담백한 빛 (근대 5장 전찻길, 현대 6장 서울)
+  noon: {
+    skyTop: 0x6f9ed0, skyHorizon: 0xe8e6de, skyBottom: 0x8a8a80,
+    fog: [0xe2e0d8, 45, 150],
+    sun: { color: 0xfffaf0, intensity: 1.55, dir: [18, 38, 14] },
+    hemi: [0xf2f2ee, 0x6a6a60, 0.8],
+    particles: null, clouds: 0.2,
+  },
+  // 이른 봄: 차갑고 맑은 3월 아침 (일제 2장 3·1 운동)
+  earlySpring: {
+    skyTop: 0x7aa2cc, skyHorizon: 0xe4e8ea, skyBottom: 0x8a8c80,
+    fog: [0xdfe3e4, 40, 140],
+    sun: { color: 0xf6f4ec, intensity: 1.35, dir: [28, 26, 12] },
+    hemi: [0xeef1f2, 0x6a6a5a, 0.85],
+    particles: null, clouds: 0.3,
+  },
+  // 숲·산골: 나무 사이로 드는 초록빛, 옅은 산안개 (고려 5장 해인사, 일제 4장 만주)
+  forest: {
+    skyTop: 0x7aa0b8, skyHorizon: 0xdfe8dc, skyBottom: 0x5f7454,
+    fog: [0xc8d8c8, 30, 120],
+    sun: { color: 0xfff2d6, intensity: 1.35, dir: [-20, 32, 12] },
+    hemi: [0xe6efe2, 0x405a38, 0.9],
+    particles: null, clouds: 0.4,
+  },
+  // 옅은 안개: 조금 가라앉은 잿빛 낮(너무 어둡지 않게) (일제 5장 경성, 6장 충칭)
+  haze: {
+    skyTop: 0x8a96a2, skyHorizon: 0xd8d4c8, skyBottom: 0x80806e,
+    fog: [0xcfcbc0, 30, 120],
+    sun: { color: 0xf4ead6, intensity: 1.15, dir: [22, 30, 16] },
+    hemi: [0xe8e4da, 0x5e5e50, 0.95],
+    particles: null, clouds: 0.6, cloud: 0xd8d4cc,
+  },
   sea: {
     skyTop: 0x5d8fc4, skyHorizon: 0xd8eef5, skyBottom: 0x2f6f8f,
     fog: [0xcfe4ec, 60, 220],

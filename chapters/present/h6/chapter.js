@@ -24,7 +24,7 @@ const SPLIT = {
 };
 
 export default makeKitChapter({
-  id: 'h6', mood: 'morning', script,
+  id: 'h6', mood: 'noon', script,
   player: { robe: 0x5d7a9a, hat: 'short', trim: 0xe6dcc3, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   order: ['student', 'builder', 'citizen'],
   spot: [0, 3],

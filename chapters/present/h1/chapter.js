@@ -25,7 +25,7 @@ const SQUARE = {
 };
 
 export default makeKitChapter({
-  id: 'h1', mood: 'morning', script,
+  id: 'h1', mood: 'summer', script,
   player: { robe: 0xe9e4da, hat: 'short', trim: 0x2b241c, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   order: ['citizen', 'grandma', 'kimgu'],
   spot: [0, 3],

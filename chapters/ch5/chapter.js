@@ -38,7 +38,7 @@ function addNumberTags(world) {
 
 export default {
   id: 'ch5',
-  mood: 'morning',
+  mood: 'forest',
   script,
   quizzes: script.quizzes,
 

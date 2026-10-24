@@ -18,7 +18,7 @@ const SHANTY = {
 };
 
 export default makeKitChapter({
-  id: 'h5', mood: 'morning', script,
+  id: 'h5', mood: 'sea', script,
   player: { robe: 0x5d7a9a, hat: 'short', trim: 0xe6dcc3, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   order: ['mother', 'grandma', 'student'],
   spot: [0, 3],

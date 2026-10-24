@@ -31,7 +31,7 @@ const TOWN3 = { // 상점·학교·학회
 };
 
 export default makeKitChapter({
-  id: 'i5', mood: 'morning', script,
+  id: 'i5', mood: 'haze', script,
   player: { robe: 0xe9e4da, hat: 'braid', trim: 0x2c3a5a, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   order: ['student', 'linguist', 'historian'],
   spot: [0, 3],

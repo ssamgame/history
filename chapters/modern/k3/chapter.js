@@ -72,7 +72,7 @@ async function gobuScene(ctx) {
 }
 
 export default makeKitChapter({
-  id: 'k3', mood: 'morning', script,
+  id: 'k3', mood: 'autumn', script,
   player: { robe: 0xddd2bb, hat: 'topknot', trim: 0x8a2f24, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   order: ['peasant', 'jeonbongjun', 'farmer'],
   spot: [0, 3],

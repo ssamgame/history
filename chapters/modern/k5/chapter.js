@@ -23,7 +23,7 @@ const LINE = { // 서대문(남쪽)에서 청량리(북쪽)로 뻗은 선로
 };
 
 export default makeKitChapter({
-  id: 'k5', mood: 'morning', script,
+  id: 'k5', mood: 'noon', script,
   player: { robe: 0x22262e, hat: 'cap', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   order: ['gentleman', 'woman', 'student'],
   spot: [0, 5],

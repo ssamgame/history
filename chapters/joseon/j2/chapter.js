@@ -46,7 +46,7 @@ export const VOWELS = {
 
 export default {
   id: 'j2',
-  mood: 'morning',
+  mood: 'spring',
   player: LOOKS.kid,
   script,
   quizzes: script.quizzes,

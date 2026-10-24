@@ -49,7 +49,7 @@ export function gaugeSVG(level) {
 
 export default {
   id: 'j3',
-  mood: 'morning',
+  mood: 'summer',
   player: { robe: 0x4a6a7a, hat: 'topknot', trim: 0x2b241c, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   script,
   quizzes: script.quizzes,

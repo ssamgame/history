@@ -25,7 +25,7 @@ const GENERALS = {
 };
 
 export default makeKitChapter({
-  id: 'i4', mood: 'morning', script,
+  id: 'i4', mood: 'forest', script,
   player: { robe: 0x5a6448, hat: 'cap', gear: 'rifle', trim: 0x2b241c, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   order: ['soldier', 'hongbeomdo', 'kimjwajin'],
   spot: [0, 3],
