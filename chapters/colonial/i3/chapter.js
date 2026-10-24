@@ -25,16 +25,18 @@ export default makeKitChapter({
   order: ['messenger', 'ahnchangho', 'kimgu'],
   spot: [0, 3],
   layout: {
-    ground: 'stone', groundColor: 0x9a948a, bounds: { x0: -16, x1: 16, z0: -6, z1: 11 }, start: [0, 9],
+    // 1919년 이후 중국 상하이: 회색 벽돌 2층 석고문 골목집이 줄지어 선 거리(임시 정부 청사도 이런 집), 길가 가게와 가로수, 멀리 큰 도시의 건물들
+    ground: 'stone', groundColor: 0x9a948a, bounds: { x0: -16, x1: 16, z0: -6, z1: 11 }, start: [0, 9], hill: 0.5, mountains: false,
+    skyline: { style: 'brick', color: 0x5a5650 },
     roads: [{ x: 0, z: 2, w: 40, d: 6, color: 0x7a746a }],
     props: [
-      { type: 'western', x: 0, z: -9, w: 10, d: 5, h: 7, color: 0x8a5a4a },
+      { type: 'lanehouse', x: 0, z: -9, n: 3 },
       { type: 'flagpole', x: 6, z: -5 },
-      { type: 'western', x: -12, z: -9, w: 7, d: 5, h: 6, color: 0x7a6a5a },
-      { type: 'western', x: 12, z: -9, w: 7, d: 5, h: 6, color: 0x9a6a4a },
-      { type: 'western', x: -12, z: 11, w: 7, d: 4, h: 5, color: 0x8a7a6a },
-      { type: 'western', x: 12, z: 11, w: 7, d: 4, h: 5, color: 0x7a5a4a },
-      { type: 'desk', x: -4, z: -5 }, { type: 'tree', x: 4, z: 11 },
+      { type: 'lanehouse', x: -14, z: -9, n: 2 }, { type: 'lanehouse', x: 14, z: -9, n: 2 },
+      { type: 'shop', x: -12, z: 11.5, w: 6, style: 'modern', ry: Math.PI, awning: 0x8a2f24, seed: 2 },
+      { type: 'shop', x: 12, z: 11.5, w: 6, style: 'modern', ry: Math.PI, awning: 0x2f4a6a, seed: 5 },
+      { type: 'desk', x: -4, z: -5 }, { type: 'tree', x: 17, z: 5, color: 0x5a7a40 }, { type: 'tree', x: -17, z: 5, color: 0x5a7a40 },
+      { type: 'lamp', x: -9, z: -1.2 }, { type: 'lamp', x: 9, z: -1.2 }, { type: 'cart', x: 16, z: 4, ry: 1.5 },
     ],
     npcs: [
       { id: 'messenger', look: 'student', x: -6, z: 6, ry: Math.PI * 0.8 },

@@ -30,13 +30,16 @@ export default makeKitChapter({
   order: ['soldier', 'hongbeomdo', 'kimjwajin'],
   spot: [0, 3],
   layout: {
-    ground: 'grass', groundColor: 0x4f6b3e, bounds: { x0: -15, x1: 15, z0: -9, z1: 11 }, start: [0, 9],
+    // 1920년 만주의 깊은 산골짜기: 가파른 산이 둘러싼 좁은 골짜기, 솔숲 속 천막 진영과 장작, 골짜기를 따라 난 흙길
+    ground: 'grass', groundColor: 0x4f6b3e, bounds: { x0: -15, x1: 15, z0: -9, z1: 11 }, start: [0, 9], hill: 2.4,
     roads: [{ x: 0, z: 0, w: 4, d: 24, color: 0x7a6a50 }],
     props: [
-      { type: 'tent', x: -10, z: 6, color: 0x8a8a6a }, { type: 'tent', x: -12, z: 0, color: 0x8a8a6a }, { type: 'tent', x: 11, z: 7, color: 0x8a8a6a },
+      { type: 'tent', x: -10, z: 6, color: 0x8a8a6a }, { type: 'tent', x: -12, z: 0, color: 0x8a8a6a }, { type: 'tent', x: 11, z: 7, color: 0x8a8a6a }, { type: 'tent', x: 12.5, z: 1, color: 0x7a7a5a },
       { type: 'flagpole', x: 4, z: 5 },
       { type: 'crowd', x: 8, z: -4, n: 6, cols: 3, looks: ['independenceArmy'], face: -Math.PI / 2 },
-      { type: 'desk', x: -5, z: -6 },
+      { type: 'desk', x: -5, z: -6 }, { type: 'woodpile', x: -14.5, z: 4 }, { type: 'woodpile', x: 15, z: -3 },
+      { type: 'tree', x: -15.5, z: -8, kind: 'pine' }, { type: 'tree', x: -9, z: -10.5, kind: 'pine' }, { type: 'tree', x: 9, z: -10.5, kind: 'pine' },
+      { type: 'tree', x: 15.5, z: -9, kind: 'pine' }, { type: 'tree', x: -16.5, z: 9, kind: 'pine' }, { type: 'tree', x: 16.5, z: 10, kind: 'pine' },
     ],
     npcs: [
       { id: 'soldier', look: 'independenceArmy', x: -5, z: 6, ry: Math.PI * 0.8 },

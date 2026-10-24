@@ -26,13 +26,15 @@ export default makeKitChapter({
   order: ['soldier', 'kimgu', 'officer'],
   spot: [0, 3],
   layout: {
-    ground: 'earth', groundColor: 0x9a8a6a, bounds: { x0: -16, x1: 16, z0: -8, z1: 11 }, start: [0, 9],
+    // 1940년대 중국 충칭의 훈련장: 언덕이 많은 땅, 흙 연병장에 줄지어 선 대원들과 태극기, 나무 막사와 천막, 장작
+    ground: 'earth', groundColor: 0x9a8a6a, bounds: { x0: -16, x1: 16, z0: -8, z1: 11 }, start: [0, 9], hill: 1.9,
     props: [
       { type: 'flagpole', x: 0, z: -7 }, { type: 'flagpole', x: -5, z: -7 }, { type: 'flagpole', x: 5, z: -7 },
       { type: 'crowd', x: -8, z: -3, n: 10, cols: 5, looks: ['gwangbokgun'], face: 0 },
       { type: 'crowd', x: 8, z: -3, n: 10, cols: 5, looks: ['gwangbokgun'], face: 0 },
       { type: 'tent', x: -13, z: 8, color: 0x8a8a6a }, { type: 'tent', x: 13, z: 8, color: 0x8a8a6a }, { type: 'tent', x: -13, z: 2, color: 0x8a8a6a },
-      { type: 'western', x: 12, z: -10, w: 7, d: 4, h: 4, color: 0x8a7a6a },
+      { type: 'barracks', x: 12, z: -11, w: 9 }, { type: 'barracks', x: -12, z: -11, w: 9, color: 0x7a6a52 },
+      { type: 'woodpile', x: 16, z: 2 }, { type: 'tree', x: -17.5, z: -4 }, { type: 'tree', x: 17.5, z: -6, color: 0x5a7a40 },
     ],
     npcs: [
       { id: 'soldier', look: 'gwangbokgun', x: -5, z: 6, ry: Math.PI * 0.8 },

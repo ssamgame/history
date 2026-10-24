@@ -11,8 +11,8 @@ export default {
     { who: 'narr', text: '독립운동의 힘을 하나로 모으려고, 1919년 9월 중국 상하이에서 여러 임시 정부를 통합한 대한민국 임시 정부가 세워졌어요.', src: ['S51'] },
   ],
   start: [
-    { who: 'guide', text: '여기는 중국 상하이야. 낯선 거리에 우리 독립운동가들이 모여 있어.' },
-    { who: 'guide', text: '느낌표가 있는 사람에게 차례로 말을 걸어 봐.' },
+    { who: 'guide', text: '여기는 중국 상하이야. 회색 벽돌집이 줄지어 선 낯선 거리인데, 귀를 기울이면 우리말이 들려.' },
+    { who: 'guide', text: '나라 밖에서 무슨 일을 하고 있을까? 서류 뭉치를 든 연락원에게 먼저 말을 걸어 보자.' },
   ],
   goals: ['연락원에게 말을 걸어 보자', '안창호를 만나자', '청사 앞의 김구를 찾아가자', '임시 정부의 일을 도와 보자', '배운 내용을 확인해 보자'],
   minigameTitle: '대한민국 임시 정부',
@@ -22,18 +22,18 @@ export default {
         { who: 'messenger', text: '임시 정부는 비밀 조직을 두어 나라 안팎의 독립운동 단체와 연락해요.', src: ['S51'] },
         { who: 'messenger', text: '독립신문을 펴내 동포들에게 독립운동 소식을 전하고 있어요.', src: ['S51'] },
       ],
-      later: [{ who: 'messenger', text: '오늘도 전할 소식이 많아요.' }],
+      later: [{ who: 'messenger', text: '오늘도 몰래 전할 소식이 한가득이에요. 안창호 선생님께 가 보세요. 저기 계세요.' }],
     },
     ahnchangho: {
-      tooEarly: [{ who: 'ahnchangho', text: '연락원부터 만나 보시오.' }],
+      tooEarly: [{ who: 'ahnchangho', text: '우리가 나라 안과 어떻게 연락하는지, 연락원에게 먼저 들어 보시오.' }],
       first: [
         { who: 'ahnchangho', text: '대한민국 임시 정부는 모든 국민이 평등하고 국민에게 주권이 있는 민주주의 정치 체계를 갖추었소.', src: ['S51'] },
         { who: 'ahnchangho', text: '임시 정부의 헌법에는 \'대한민국은 민주 공화제로 한다\'라는 내용을 담았소.', src: ['S51'] },
       ],
-      later: [{ who: 'ahnchangho', text: '국민이 주인인 나라를 만들 것이오.' }],
+      later: [{ who: 'ahnchangho', text: '나라를 되찾으면 왕이 아니라 국민이 주인인 나라를 만들 것이오. 청사 앞의 김구 선생도 만나 보시오.' }],
     },
     kimgu: {
-      tooEarly: [{ who: 'kimgu', text: '안창호 선생께 먼저 다녀오게.' }],
+      tooEarly: [{ who: 'kimgu', text: '임시 정부가 어떤 나라를 꿈꾸는지 안창호 선생께 먼저 듣고 오게.' }],
       first: [
         { who: 'kimgu', text: '임시 정부는 독립운동 자금을 모으고, 다른 나라에 외교 기관을 두어 독립을 도와 달라고 요청하오.', src: ['S51'] },
         { who: 'kimgu', text: '독립군 단체를 아래에 두고 만주 지역에서 투쟁을 벌이기도 하지.', src: ['S51'] },

@@ -12,7 +12,7 @@ export default {
   ],
   start: [
     { who: 'guide', text: '1919년 3월 1일, 서울 탑골 공원이야. 사람들이 품속에 무언가를 숨기고 모여들어.' },
-    { who: 'guide', text: '느낌표가 있는 사람에게 차례로 말을 걸어 봐.' },
+    { who: 'guide', text: '다들 긴장한 얼굴이야. 무엇을 숨기고 있는지 저기 학생에게 살짝 물어보자.' },
   ],
   goals: ['학생에게 말을 걸어 보자', '종교 지도자를 만나자', '유관순의 이야기를 들어 보자', '만세 운동에 함께하자', '배운 내용을 확인해 보자'],
   minigameTitle: '대한 독립 만세',
@@ -22,18 +22,18 @@ export default {
         { who: 'student', text: '오늘 탑골 공원에서 독립 선언서를 읽고 만세 시위를 할 거예요.', src: ['S51'] },
         { who: 'student', text: '품속에 태극기를 숨겨 왔어요. 함께 나눠 주실래요?' },
       ],
-      later: [{ who: 'student', text: '조금만 기다리면 시작이에요!' }],
+      later: [{ who: 'student', text: '쉿, 조금만 기다리면 시작이에요! 저쪽 신사분이 종교 지도자예요. 말씀을 들어 보세요.' }],
     },
     leader: {
-      tooEarly: [{ who: 'leader', text: '저기 학생들에게 먼저 가 보게.' }],
+      tooEarly: [{ who: 'leader', text: '오늘 이 공원에 무슨 일이 있는지, 저기 학생들에게 먼저 들어 보게.' }],
       first: [
         { who: 'leader', text: '우리 민족 대표들은 같은 시각 태화관에 모여 독립을 선언하오.', src: ['S51'] },
         { who: 'leader', text: '조선이 독립한 나라이며 조선인이 이 나라의 주인임을 세계에 알릴 것이오.', src: ['S51'] },
       ],
-      later: [{ who: 'leader', text: '모두 한마음이오.' }],
+      later: [{ who: 'leader', text: '종교도 신분도 달라도 오늘은 모두 한마음이오. 저 소녀의 각오도 들어 보시오.' }],
     },
     yugwansun: {
-      tooEarly: [{ who: 'yugwansun', text: '종교 지도자분의 말씀부터 들어 보세요.' }],
+      tooEarly: [{ who: 'yugwansun', text: '먼저 종교 지도자분의 말씀을 들어 보세요. 그다음에 제 고향 이야기를 할게요.' }],
       first: [
         { who: 'yugwansun', text: '만세 시위가 전국으로 퍼지고 있어요. 학생, 노동자, 농민, 상인 모두가 함께해요.', src: ['S51'] },
         { who: 'yugwansun', text: '저는 고향 천안으로 내려가 만세 시위를 이끌 거예요.', src: ['S51'] },

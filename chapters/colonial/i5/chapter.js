@@ -36,15 +36,18 @@ export default makeKitChapter({
   order: ['student', 'linguist', 'historian'],
   spot: [0, 3],
   layout: {
-    ground: 'earth', groundColor: 0x9a8a6a, bounds: { x0: -16, x1: 16, z0: -6, z1: 11 }, start: [0, 9],
+    // 1920~40년대 경성 골목: 뾰족탑 학교와 벽돌 건물, 길가의 2층 상점과 가로등, 조선어 학회가 있던 기와집, 멀리 벽돌 건물과 굴뚝
+    ground: 'earth', groundColor: 0x9a8a6a, bounds: { x0: -16, x1: 16, z0: -6, z1: 11 }, start: [0, 9], hill: 1.2,
+    skyline: { style: 'brick', color: 0x4e4a46, arc: [Math.PI * 0.55, Math.PI * 1.45] },
     roads: [{ x: 0, z: 2, w: 36, d: 5, color: 0x8a8070 }],
     props: [
       { type: 'western', x: -9, z: -9, w: 10, d: 5, h: 6, tower: true, color: 0x8a4a3a },
-      { type: 'western', x: 9, z: -9, w: 8, d: 5, h: 5, color: 0x9a7a5a },
+      { type: 'hanok', x: 9, z: -8.5, tile: true, scale: 1.3 },
       { type: 'desk', x: 5, z: -4.5 }, { type: 'desk', x: 9, z: -4.5 },
-      { type: 'hanok', x: -13, z: 8, tile: true }, { type: 'hanok', x: 13, z: 8, tile: true }, { type: 'hanok', x: -5, z: 10.5 },
+      { type: 'shop', x: -13, z: 8.5, w: 5, style: 'modern', ry: Math.PI, sign: '서점', awning: 0x2f6b5e, seed: 2 },
+      { type: 'shop', x: 13, z: 8.5, w: 5, style: 'modern', ry: Math.PI, sign: '양화점', awning: 0x8a2f24, seed: 4 },
       { type: 'crowd', x: -10, z: -2, n: 6, cols: 3, looks: ['student', 'schoolgirl'], face: 0.4 },
-      { type: 'tree', x: 5, z: 10.5 },
+      { type: 'lamp', x: -6, z: -0.8 }, { type: 'lamp', x: 6, z: 4.8 }, { type: 'tree', x: 17, z: -5, kind: 'poplar' }, { type: 'tree', x: -17, z: 4, kind: 'poplar' },
     ],
     npcs: [
       { id: 'student', look: 'student', x: -4, z: 6, ry: Math.PI * 0.8 },

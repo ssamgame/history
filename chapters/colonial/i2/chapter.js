@@ -22,14 +22,18 @@ export default makeKitChapter({
   order: ['student', 'leader', 'yugwansun'],
   spot: [0, 4],
   layout: {
-    ground: 'stone', groundColor: 0xb0a890, bounds: { x0: -16, x1: 16, z0: -6, z1: 11 }, start: [0, 9],
+    // 1919년 3월 1일 서울 탑골 공원: 돌 마당의 팔각정과 모여든 사람들, 공원 담 너머 종로의 가게들, 멀리 도성의 지붕과 북쪽 산
+    ground: 'stone', groundColor: 0xb0a890, bounds: { x0: -16, x1: 16, z0: -6, z1: 11 }, start: [0, 9], hill: 1.3,
+    skyline: { style: 'hanok', color: 0x4a4e4c, arc: [Math.PI * 0.55, Math.PI * 1.45] },
     props: [
       { type: 'pavilion', x: 0, z: -7 },
       { type: 'crowd', x: -10, z: -2, n: 12, cols: 4, flags: 0.6, looks: ['student', 'commoner', 'schoolgirl', 'woman', 'gentleman'], face: 0.3 },
       { type: 'crowd', x: 9, z: -2, n: 12, cols: 4, flags: 0.6, looks: ['commoner', 'student', 'peasant', 'schoolgirl'], face: -0.3 },
       { type: 'hanok', x: 13, z: 8, tile: true, scale: 1.3 },
-      { type: 'wall', x: -9, z: 11.5, w: 14 }, { type: 'tree', x: -13, z: 7 }, { type: 'tree', x: 6, z: 10 },
-      { type: 'flagpole', x: 4, z: -3 },
+      { type: 'wall', x: -9, z: 11.5, w: 14 }, { type: 'wall', x: -17, z: 2, w: 16, ry: Math.PI / 2 }, { type: 'wall', x: 17, z: -4, w: 10, ry: Math.PI / 2 },
+      { type: 'shop', x: -20, z: -5, w: 5, style: 'modern', ry: Math.PI / 2, sign: '양복점', awning: 0x2f6b5e, seed: 1 }, { type: 'shop', x: 20, z: 3, w: 5, ry: -Math.PI / 2, sign: '포목점', seed: 3 },
+      { type: 'tree', x: -13, z: 7 }, { type: 'tree', x: 17, z: 11.5, color: 0x5a7a40 }, { type: 'tree', x: -8, z: -8.5, color: 0x5a7a40 }, { type: 'tree', x: 9, z: -8.5 },
+      { type: 'flagpole', x: 4, z: -3 }, { type: 'lamp', x: -15, z: 9.5 },
     ],
     npcs: [
       { id: 'student', look: 'student', x: -4, z: 6, ry: Math.PI * 0.8 },

@@ -26,16 +26,21 @@ export default makeKitChapter({
   order: ['farmer', 'teacher', 'porter'],
   spot: [0, 4],
   layout: {
-    ground: 'earth', groundColor: 0x8a7d66, bounds: { x0: -16, x1: 16, z0: -7, z1: 11 }, start: [0, 9],
+    // 1910~30년대 항구 마을: 부두에 쌓인 쌀가마와 붉은 벽돌 쌀 창고, 선로와 기차, 멀리 공장 굴뚝, 길가 가게와 초가
+    ground: 'earth', groundColor: 0x8a7d66, bounds: { x0: -16, x1: 16, z0: -7, z1: 11 }, start: [0, 9], hill: 1.1,
+    skyline: { style: 'brick', color: 0x4e4a46, arc: [Math.PI * 0.35, Math.PI * 0.75] },
     roads: [{ x: 0, z: 2, w: 36, d: 4, color: 0x8a8070 }],
     props: [
       { type: 'water', x: 0, z: -40, w: 260, d: 50 },
       { type: 'steamship', x: -6, z: -20, ry: Math.PI / 2, solid: false },
-      { type: 'rice', x: -9, z: -6, n: 9 }, { type: 'rice', x: -4, z: -6, n: 9 },
+      { type: 'pier', x: -8, z: -13, w: 10, d: 4, solid: false },
+      { type: 'rice', x: -9, z: -6, n: 9 }, { type: 'rice', x: -4, z: -6, n: 9 }, { type: 'rice', x: -12.5, z: -11, n: 6 },
+      { type: 'barracks', x: -15, z: -6.5, w: 7, color: 0x8a4a3a, roof: 0x5a5e62, ry: Math.PI / 2 },
       { type: 'train', x: 10, z: -4, ry: Math.PI / 2, cars: 2, track: 50, solid: false },
-      { type: 'western', x: 13, z: 9, w: 8, d: 5, h: 6, dome: true, color: 0xb8b0a0 },
-      { type: 'western', x: -2, z: 10.5, w: 6, d: 4, h: 4, color: 0x8a4a3a },
-      { type: 'hanok', x: -13, z: 9 }, { type: 'hanok', x: -13, z: 3 },
+      { type: 'western', x: 13, z: 9.5, w: 8, d: 5, h: 6, dome: true, color: 0xb8b0a0, ry: Math.PI },
+      { type: 'shop', x: 18.5, z: -1, w: 5, style: 'modern', ry: -Math.PI / 2, awning: 0x5a5e62, seed: 2 },
+      { type: 'hanok', x: -13, z: 9, ry: 0.3 }, { type: 'hanok', x: -13, z: 3, ry: 0.6 },
+      { type: 'tree', x: 17, z: 4, kind: 'poplar' }, { type: 'tree', x: -17.5, z: 6, kind: 'poplar' }, { type: 'tree', x: 17.5, z: -6, kind: 'poplar' },
     ],
     npcs: [
       { id: 'farmer', look: 'peasant', x: -8, z: 6, ry: Math.PI * 0.8 },
