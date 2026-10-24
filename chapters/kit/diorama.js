@@ -48,7 +48,10 @@ function build(spec) {
     sh.moveTo(w.from, -Math.sin(a) * r); sh.absarc(0, 0, r - 0.05, -a, a, false); sh.lineTo(w.from, Math.sin(a) * r);
     const m = new THREE.Mesh(new THREE.ShapeGeometry(sh, 24).rotateX(-Math.PI / 2), new THREE.MeshPhongMaterial({ color: 0x4f86a6, shininess: 60 })); m.position.y = 0.04; scene.add(m);
   }
-  for (const rd of spec.road || []) { const m = new THREE.Mesh(new THREE.BoxGeometry(rd.w, 0.05, rd.d), mat(rd.color ?? 0x9a8058, 'earth')); m.position.set(rd.x, 0.03, rd.z); m.rotation.y = rd.ry || 0; m.receiveShadow = true; scene.add(m); }
+  for (const rd0 of spec.road || []) {
+    const rd = { ...rd0 }, chord = off => 2 * Math.sqrt(Math.max(0, (r - 0.1) ** 2 - off * off)); // 긴 길은 받침 끝에서 자른다
+    if (rd.d >= rd.w) rd.d = Math.min(rd.d, chord(Math.abs(rd.x) + rd.w / 2)); else rd.w = Math.min(rd.w, chord(Math.abs(rd.z) + rd.d / 2));
+    const m = new THREE.Mesh(new THREE.BoxGeometry(rd.w, 0.05, rd.d), mat(rd.color ?? 0x9a8058, 'earth')); m.position.set(rd.x, 0.03, rd.z); m.rotation.y = rd.ry || 0; m.receiveShadow = true; scene.add(m); }
   for (const p of spec.props || []) {
     const g = new THREE.Group(); g.position.set(p.x, p.y || 0, p.z); g.rotation.y = p.ry || 0; if (p.scale) g.scale.setScalar(p.scale); scene.add(g);
     BUILD[p.type](g, p);
