@@ -90,6 +90,32 @@ test('kit: 역사책 쪽마다 그림이 있고, 근대 5장은 찾기 대신 �
   ok(k5.parts.tram.route.some(r => r.alight && r.board), '정류장에서 손님이 타고 내린다');
 });
 
+import { DIORAMA } from '../chapters/modern/dioramas.js';
+import { BUILD } from '../chapters/kit/town.js';
+import { LOOKS } from '../content/characters.js';
+import { readBook } from '../core/minigame.js';
+test('kit: 역사책 쪽마다 3D 재현 그림 설계가 있고, 부품·생김새가 모두 있다', async () => {
+  for (const meta of KIT) {
+    const { script } = (await meta.load()).default;
+    for (const p of Object.values(script.parts || {})) if (p.type === 'book') for (const pg of p.pages) {
+      const d = DIORAMA[pg.pic]; ok(d, `${meta.id} ${pg.title}: 재현 그림 ${pg.pic}`);
+      for (const pr of d?.props || []) ok(BUILD[pr.type], `${pg.pic}: 부품 ${pr.type}`);
+      for (const [look] of d?.people || []) ok(LOOKS[look], `${pg.pic}: 생김새 ${look}`);
+    }
+  }
+});
+
+test('kit: 역사책은 그림이 찍히면 사진과 헷갈리지 않게 \'재현 그림\' 표를 단다', async () => {
+  const ui = document.createElement('div'); document.body.append(ui);
+  const pages = [{ title: '가', lines: [{ text: '글' }], scene: {}, figure: '<svg></svg>' }, { title: '나', lines: [{ text: '글' }], figure: '<svg id="f"></svg>' }];
+  const done = readBook({ ui }, { title: '책', pages, render: () => 'data:image/png;base64,AA==' });
+  ok(ui.querySelector('img.book-diorama'), '그림');
+  eq(ui.querySelector('.book-badge')?.textContent, '재현 그림');
+  ui.querySelector('.book-next').click(); await new Promise(r => setTimeout(r, 260));
+  ok(!ui.querySelector('img.book-diorama') && ui.querySelector('#f'), '설계 없는 쪽은 예전 그림');
+  ui.querySelector('.book-next').click(); await done; ui.remove();
+});
+
 test('kit: 근대 5장부터 현대편까지는 찾기·차례 맞히기 대신 역사책·문서·이정표 걷기로 본다 (선생님 의견)', async () => {
   const from = KIT.findIndex(m => m.id === 'k5');
   for (const meta of KIT.slice(from)) {

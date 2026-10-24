@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>diorama gallery</title>
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+<style>body { margin: 0; background: #efe3c6; display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; font: 12px sans-serif; } figure { margin: 0; background: #fbf5e6; } img { width: 100%; display: block; } figcaption { padding: 2px 4px; }</style>
+</head>
+<body>
+<script type="module">
+  // 개발용: 역사책 재현 그림(chapters/modern/dioramas.js)을 모두 찍어 늘어놓는다. ?only=gobu,tram
+  import { renderDiorama } from '../chapters/kit/diorama.js';
+  import { DIORAMA } from '../chapters/modern/dioramas.js';
+  const only = new URLSearchParams(location.search).get('only');
+  const keys = only ? only.split(',') : Object.keys(DIORAMA);
+  for (const k of keys) {
+    const f = document.createElement('figure'); const img = document.createElement('img');
+    img.src = renderDiorama(DIORAMA[k], k) || ''; const c = document.createElement('figcaption'); c.textContent = k;
+    f.append(img, c); document.body.append(f);
+  }
+  document.title = 'done';
+</script>
+</body>
+</html>

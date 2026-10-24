@@ -509,7 +509,8 @@ export function fitFigures(ctx, { title, figures, circles, easy = false, hint = 
 
 // 역사책 넘기기: 한 쪽마다 왼쪽에 그림, 오른쪽에 제목·해·해설(출처). '다음'을 누르면 책장이 넘어간다. 마지막 쪽에서 '다 읽었어요'.
 // pages: [{ title, year?, figure(SVG 글), lines: [{ who: 'narr', text, src }] }]. 읽은 해설은 역사 수첩에 적는다. 늘 true로 끝난다.
-export function readBook(ctx, { title, pages }) {
+// render(page): 그 쪽의 재현 그림(데이터 주소)을 돌려주면 평면 그림 대신 보여 주고 '재현 그림'이라고 적는다(없거나 실패하면 page.figure).
+export function readBook(ctx, { title, pages, render = null }) {
   return new Promise(resolve => {
     const screen = el('section', 'screen order book');
     const card = el('div', 'card wide');
@@ -525,7 +526,9 @@ export function readBook(ctx, { title, pages }) {
     let i = 0;
     const show = () => {
       const p = pages[i];
-      pic.innerHTML = p.figure || '';
+      const url = render && p.scene ? render(p) : null;
+      if (url) { const img = el('img', 'book-diorama'); img.src = url; img.alt = `${p.title} 재현 그림`; pic.replaceChildren(img, el('span', 'book-badge', '재현 그림')); }
+      else pic.innerHTML = p.figure || '';
       text.replaceChildren(el('h3', null, p.title), ...(p.year ? [el('div', 'book-year', p.year)] : []),
         ...p.lines.map(l => { const q = el('p', null, l.text); if (l.src) q.append(' ', el('span', 'book-src', `[${l.src.join('·')}]`)); return q; }));
       for (const l of p.lines) ctx.notebook?.record(l);

@@ -9,6 +9,8 @@
 //   collect : 장면 속 빛나는 곳에 차례로 가기 { title, spots: [{ x, z }], seconds, howto }
 // 모든 부분에 fail(다시 할 때 힌트), done(끝난 뒤 대사), before/after(ctx, scene) 를 둘 수 있다.
 import * as THREE from 'three';
+import { renderDiorama } from './diorama.js';
+import { DIORAMA } from '../modern/dioramas.js';
 import { showHowTo, chooseCards, sortCards, placeOnBoard, orderCards, timingBar, readBook, showDocument } from '../../core/minigame.js';
 import { sayAll, placePlayer, talkInOrder, setTalkStep, tryPart, sumParts } from '../joseon/common.js';
 import { buildTown } from './town.js';
@@ -82,7 +84,7 @@ function runPart(ctx, scene, part, easy) {
     case 'order': return orderCards(ctx, { title: part.title, cards: part.cards, hint: typeof part.fail === 'string' ? part.fail : undefined, easy });
     case 'gauge': return timingBar(ctx, { title: part.title, prompt: part.prompt, label: part.label, zone: part.zone, seconds: part.seconds, easy });
     case 'collect': return collect(ctx, scene, part, easy);
-    case 'book': return readBook(ctx, { title: part.title, pages: part.pages });
+    case 'book': return readBook(ctx, { title: part.title, pages: part.pages.map(p => ({ ...p, scene: p.scene || DIORAMA[p.pic] })), render: p => renderDiorama(p.scene, `${part.title}|${p.title}`) });
     case 'scene': return part.play(ctx, scene).then(() => true); // 짧은 장면(관아를 차지하는 모습 등)
     case 'doc': return showDocument(ctx, { title: part.title, heading: part.heading, intro: part.docIntro, items: part.items, src: part.src });
     case 'drive': case 'stops': case 'deliver': case 'find': case 'ambush': case 'sneak': return PLAY[part.type](ctx, part, easy);
