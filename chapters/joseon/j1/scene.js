@@ -2,6 +2,8 @@
 // 회군 때 군사들은 돌아서서 남쪽 물길을 건너 개경 쪽으로 간다.
 import * as THREE from 'three';
 import { backdropMountains } from '../../kit/terrain.js';
+import { tent, tree, boat, spearRack } from '../../kit/buildings.js';
+import { BUILD } from '../../kit/town.js';
 import { groundMaterial } from '../../../core/textures.js';
 import { mat, makePerson } from '../../../core/people.js';
 import { scatter } from '../../../core/props.js';
@@ -58,10 +60,7 @@ export function buildJ1Scene(world) {
   // 동쪽 통로(x 2.5~12)는 비워 둔다: 회군 때 군사들이 이 길로 남쪽 물길까지 걸어간다
   const tents = [[-13, 4], [-9, -4], [-14, -7], [16, 5], [16, -3], [-6, 10], [-13, 10]];
   for (const [x, z] of tents) {
-    const t = mk(new THREE.ConeGeometry(2.1, 2.5, 4), 0xd8d0bc, x, 1.25, z); t.rotation.y = Math.PI / 4;
-    mk(new THREE.CylinderGeometry(0.06, 0.06, 0.8, 4), 0x5a3f2a, x, 2.8, z);
-    const door = mk(new THREE.PlaneGeometry(0.8, 1.05), 0x3a2c20, 0.82, -0.66, 0.82, t, false);
-    door.rotation.order = 'YXZ'; door.rotation.set(-0.54, Math.PI / 4, 0);
+    const g = new THREE.Group(); g.position.set(x, groundH(x, z), z); g.rotation.y = rand() * 0.6 - 0.3; L.add(g); tent(g, { color: 0xd8d0bc });
     world.addCollider({ x, z, r: 1.7 });
   }
   const command = new THREE.Group(); command.position.set(0, 0, -6); L.add(command);
@@ -76,12 +75,13 @@ export function buildJ1Scene(world) {
     const f = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 1.9).translate(0.65, 0, 0), new THREE.MeshLambertMaterial({ color: c, side: THREE.DoubleSide }));
     f.position.set(x, 3.6, z); f.rotation.y = -Math.PI / 2; L.add(f); flags.push(f);
   }
-  // 젖은 짐: 활과 화살 통, 덮어 둔 짐
-  for (const [x, z] of [[-11, 1.5], [-4, -9.5], [-3, 5.5]]) {
-    mk(new THREE.BoxGeometry(1.2, 0.7, 0.9), 0x7a5a3c, x, 0.35, z).rotation.y = x;
-    mk(new THREE.BoxGeometry(1.3, 0.12, 1.0), 0x5d6b52, x, 0.76, z).rotation.y = x;
-    world.addCollider({ x, z, r: 0.8 });
-  }
+  // 젖은 짐: 거적을 덮은 쌀가마(군량)와 창걸이
+  const put = (fn, x, z, ry = 0, p = {}) => { const g = new THREE.Group(); g.position.set(x, groundH(x, z), z); g.rotation.y = ry; L.add(g); fn(g, p); return g; };
+  for (const [x, z] of [[-11, 1.5], [-4, -9.5]]) { put(BUILD.rice, x, z, x, { n: 6 }); mk(new THREE.BoxGeometry(2.6, 0.08, 2.6), 0x8a7a52, x, groundH(x, z) + 1.25, z).rotation.set(0.08, x, 0.05); world.addCollider({ x, z, r: 1.3 }); }
+  put(spearRack, -3, 5.5, 0.4); world.addCollider({ x: -3, z: 5.5, r: 0.9 });
+  // 섬 가장자리의 버드나무와 남쪽 물가에 매어 둔 나룻배(회군하는 동쪽 길은 비운다)
+  for (const [x, z] of [[-23, 2], [-21, -9], [23, -2], [22, 8], [-19, 13.5], [-8, 14.5], [17, 13.5], [-12, -13.5], [16, -13]]) { const g = put(tree, x, z, rand() * 3, { kind: 'willow', x, z }); g.position.y = Math.max(-0.3, g.position.y); }
+  for (const [x, z, ry] of [[-14, 17.5, 0.5], [-5, 18, -0.2], [18, 17.5, 0.3]]) { const g = new THREE.Group(); g.position.set(x, -0.75, z); g.rotation.y = ry; L.add(g); boat(g, { len: 4.4 }); }
   // 빗물 웅덩이
   {
     const puddle = new THREE.MeshPhongMaterial({ color: 0x5a6670, shininess: 90, specular: 0x9aa6b0, transparent: true, opacity: 0.75 });
