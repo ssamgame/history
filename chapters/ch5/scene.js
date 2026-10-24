@@ -1,7 +1,8 @@
 // 5장 장면: 아침 산사의 경판 작업장 — 바닷물 통, 솥, 그늘 말림 선반, 판각대, 옻칠 작업대, 경판 더미.
 import * as THREE from 'three';
 import { backdropMountains, surroundings } from '../kit/terrain.js';
-import { curvedHipRoof } from '../kit/buildings.js';
+import { curvedHipRoof, hanok } from '../kit/buildings.js';
+import { makeFire } from '../../core/fire.js';
 import { groundMaterial } from '../../core/textures.js';
 import { mat } from '../../core/people.js';
 import { scatter } from '../../core/props.js';
@@ -69,6 +70,18 @@ export function buildCh5Scene(world) {
     mk(new THREE.CylinderGeometry(0.06, 0.1, 0.9, 6), 0x6b6862, px, y + 0.45, pz);
     world.addCollider({ x: px, z: pz, r: 1.4 });
   }
+  // 법당으로 가는 박석 길과 석등 둘, 담 너머 양옆의 요사채(스님들이 지내는 기와집)
+  { const m = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.05, 19), mat(0xb3ab99, 'stone')); m.position.set(0, 0.03, 1.5); m.receiveShadow = true; L.add(m); }
+  for (const sx of [-1, 1]) {
+    const lx = sx * 2.4, lz = -7.4;
+    mk(new THREE.CylinderGeometry(0.42, 0.5, 0.3, 8), 0xb3ab99, lx, 0.15, lz);
+    mk(new THREE.CylinderGeometry(0.13, 0.13, 1.0, 8), 0xb3ab99, lx, 0.8, lz);
+    mk(new THREE.BoxGeometry(0.62, 0.55, 0.62), 0xb3ab99, lx, 1.58, lz);
+    const glow = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.32, 0.64), new THREE.MeshBasicMaterial({ color: 0xffd38a })); glow.position.set(lx, 1.58, lz); L.add(glow);
+    mk(new THREE.ConeGeometry(0.56, 0.42, 4), 0xb3ab99, lx, 2.08, lz).rotation.y = Math.PI / 4;
+    world.addCollider({ x: lx, z: lz, r: 0.55 });
+    const g = new THREE.Group(); g.position.set(sx * 21, 0, -5); g.rotation.y = -sx * Math.PI / 2; g.scale.setScalar(1.2); L.add(g); hanok(g, { tile: true });
+  }
   // 바닷물 통 옆에 쌓은 통나무
   for (let k = 0; k < 6; k++) {
     const lg = mk(new THREE.CylinderGeometry(0.22, 0.22, 2.4, 7), 0x8a5a3a, -12.4, 0.22 + Math.floor(k / 3) * 0.4, -3.6 + (k % 3) * 0.46 + (k >= 3 ? 0.23 : 0));
@@ -84,7 +97,7 @@ export function buildCh5Scene(world) {
     const tub = mk(new THREE.CylinderGeometry(1.2, 1.1, 0.9, 12), 0x6b4a32, x - 1.6, 0.45, z);
     mk(new THREE.CylinderGeometry(1.05, 1.05, 0.05, 12), 0x4a7f9c, x - 1.6, 0.86, z, L, false);
     mk(new THREE.CylinderGeometry(0.9, 0.7, 0.9, 12), 0x3a3a3a, x + 1.4, 0.75, z);
-    const fire = new THREE.Mesh(new THREE.ConeGeometry(0.5, 0.9, 6), new THREE.MeshBasicMaterial({ color: 0xe2742c })); fire.position.set(x + 1.4, 0.2, z); L.add(fire);
+    const fire = makeFire({ size: 0.45, detail: world.quality.particles }); fire.group.position.set(x + 1.4, 0.15, z); fire.setLit(true); L.add(fire.group); // 솥 아래 장작불
     stations.push(fire);
     world.addCollider({ x: x - 1.6, z, r: 1.3 }); world.addCollider({ x: x + 1.4, z, r: 1 });
     void tub;
@@ -123,7 +136,7 @@ export function buildCh5Scene(world) {
   world.addNpc('artisan4', LOOKS.artisan, 9, 0.3, Math.PI);
   world.addNpc('monk', LOOKS.monk, 0, 3, Math.PI);
 
-  world.onUpdate((dt, t) => { for (const f of stations) { const s = 0.8 + Math.sin(t * 12) * 0.15; f.scale.set(s, s + 0.2, s); } });
+  world.onUpdate((dt, t) => { for (const f of stations) f.update(dt, t); });
   backdropMountains(world.level, { color: 0x4f6a3e, radius: 130 }); // 먼 산줄기(깊이감)
   surroundings(world, { bounds: world.bounds, trees: ['pine', 'pine', 'tree'], count: 12, seed: 5 }); // 걷는 곳 바깥에 그 장소다운 집·나무(깊이감)
   return { library, start: [0, 9] };
