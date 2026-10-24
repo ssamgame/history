@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { backdropMountains, surroundings } from '../../kit/terrain.js';
 import { makeFire } from '../../../core/fire.js';
-import { curvedHipRoof } from '../../kit/buildings.js';
+import { curvedHipRoof, tent, woodpile, jars } from '../../kit/buildings.js';
 import { groundMaterial } from '../../../core/textures.js';
 import { mat, makePerson } from '../../../core/people.js';
 import { scatter } from '../../../core/props.js';
@@ -73,6 +73,12 @@ export function buildJ5Scene(world) {
   hipRoof(6, 8, 1.6, 0x3d4846, 0, 2.4, 0, store);
   for (let i = 0; i < 5; i++) mk(new THREE.CylinderGeometry(0.4, 0.45, 0.8, 10), 0xc8a476, -2.8, 0.4, -2 + i * 1.0, store);
   world.addCollider({ x: 12, z: -4.5, r: 2.4 }); world.addCollider({ x: 12, z: -1.5, r: 2.4 });
+  mk(new THREE.BoxGeometry(1.2, 0.12, 8), 0xf4f6f8, 0, 3.95, 0, store, false); // 창고 지붕에 쌓인 눈
+  // 성안 살림: 눈 덮인 군막, 화톳불 옆 장작, 창고 옆 장독대(얼마 남지 않은 양식)
+  const put = (fn, x, z, ry = 0, p = {}, r = 0) => { const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = ry; L.add(g); fn(g, p); if (r) world.addCollider({ x, z, r }); return g; };
+  put(tent, -11, -0.5, Math.PI / 2 + 0.2, { color: 0xcfc4a8 }, 1.8); put(tent, 7, 8.5, 0.3, { color: 0xcfc4a8 }, 1.8);
+  put(woodpile, 1.6, 10.6, 0.2, {}, 0.8); put(woodpile, -5.2, -9.6, 0.4, {}, 0.8);
+  put(jars, 10.6, 2.2, -Math.PI / 2, { n: 4 }, 1.0);
   // 성벽 안쪽 화톳불 여섯 (처음엔 꺼져 있음)
   const firePos = [[-12, 7.5], [-1, 10], [10, 8], [13.5, 4], [-13.5, -4], [-7, -8.5]];
   const fires = firePos.map(([x, z]) => {
