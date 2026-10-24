@@ -164,6 +164,10 @@ export const BUILD = {
   bridge(g, p) { BLD.bridge(g, p); return 0; },
   // 물가에 매어 둔 나룻배
   boat(g, p) { BLD.boat(g, p); return 0; },
+  // 망루·창걸이·과녁(진영)
+  watchtower(g, p) { BLD.watchtower(g, p); return { rect: [3, 3] }; },
+  spearRack(g, p) { BLD.spearRack(g, p); return 0.9; },
+  archeryTarget(g) { BLD.archeryTarget(g); return 0.6; },
   // 논(들판): 논두렁과 벼 포기. ripe면 누렇게 익은 벼. 밟고 지나갈 수 있다
   paddy(g, p) { BLD.paddy(g, p); return 0; },
   // 축대와 계단: 위에 놓을 부품은 y를 h만큼 준다

@@ -707,3 +707,35 @@ export function paddy(g, p = {}) {
   for (let c = 0; c < cells; c++) for (let row = 0; row < Math.floor(d / 0.8) - 1; row++) P.box(cw - 0.8, 0.35, 0.18, rice, 'grain', [-w / 2 + (c + 0.5) * cw, 0.2, -d / 2 + 0.8 + row * 0.8]);
   return P.into(g);
 }
+
+// ── 고려·조선 진영 소품 ──
+// 망루: 네 기둥 위 판자 망대와 난간, 사다리, 작은 지붕. h 망대 높이
+export function watchtower(g, p = {}) {
+  const P = parts(), h = p.h || 4.5, w = 2.6;
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) P.cyl(0.12, 0.16, h + 2.2, 6, 0x6b4a32, 'wood', [sx * w / 2 * 0.85, (h + 2.2) / 2, sz * w / 2 * 0.85], [sz * 0.04, 0, -sx * 0.04]);
+  for (const y of [h * 0.35, h * 0.7]) for (const s of [-1, 1]) { P.box(w * 0.9, 0.1, 0.1, 0x5e4330, 'wood', [0, y, s * w / 2 * 0.85], [0, 0, s * 0.5]); P.box(0.1, 0.1, w * 0.9, 0x5e4330, 'wood', [s * w / 2 * 0.85, y, 0], [s * 0.5, 0, 0]); } // 엇갈린 버팀목
+  P.box(w + 0.4, 0.18, w + 0.4, 0x7a5a3c, 'wood', [0, h, 0]);
+  for (const s of [-1, 1]) { P.box(w + 0.4, 0.7, 0.08, 0x7a5a3c, 'wood', [0, h + 0.45, s * (w / 2 + 0.2)]); P.box(0.08, 0.7, w + 0.4, 0x7a5a3c, 'wood', [s * (w / 2 + 0.2), h + 0.45, 0]); }
+  for (let k = 0; k < Math.floor(h / 0.45); k++) P.box(0.7, 0.06, 0.08, 0x5e4330, 'wood', [0, 0.3 + k * 0.45, w / 2 + 0.55]); // 사다리 가로대
+  for (const s of [-1, 1]) P.box(0.07, h, 0.07, 0x5e4330, 'wood', [s * 0.35, h / 2, w / 2 + 0.55]);
+  const r = roofSurface({ W: w + 1.2, D: w + 1.2, H: 1.0, lift: 0.3, profile: 'thatch', thick: 0.12 });
+  P.add(r.top, p.roof ?? 0xb89a68, 'thatch', [0, h + 1.9, 0], [0, 0, 0], { smooth: true });
+  return P.into(g);
+}
+// 창걸이: 두 기둥과 가로대에 기대어 세운 창들
+export function spearRack(g, p = {}) {
+  const P = parts(), n = p.n || 5;
+  for (const s of [-1, 1]) P.cyl(0.07, 0.08, 1.6, 6, 0x5e4330, 'wood', [s * 1.1, 0.8, 0]);
+  P.box(2.4, 0.08, 0.08, 0x5e4330, 'wood', [0, 1.4, 0]);
+  for (let i = 0; i < n; i++) { const x = -0.9 + i * (1.8 / (n - 1)); P.cyl(0.03, 0.03, 2.8, 4, 0x6b4a32, 'wood', [x, 1.35, 0.18], [-0.12, 0, 0]); P.add(new THREE.ConeGeometry(0.06, 0.3, 4), 0xb8bcc0, 'grain', [x, 2.85, 0.35], [-0.12, 0, 0]); }
+  return P.into(g);
+}
+// 과녁: 나무 받침에 세운 둥근 짚 과녁(가운데 붉은 점)
+export function archeryTarget(g) {
+  const P = parts();
+  for (const s of [-1, 1]) P.cyl(0.06, 0.07, 1.9, 5, 0x5e4330, 'wood', [s * 0.5, 0.95, -0.15], [0.2, 0, 0]);
+  P.cyl(0.75, 0.75, 0.25, 16, 0xd2b07a, 'thatch', [0, 1.4, 0], [Math.PI / 2, 0, 0]);
+  P.cyl(0.45, 0.45, 0.27, 16, 0xe6dcc3, 'cloth', [0, 1.4, 0], [Math.PI / 2, 0, 0]);
+  P.cyl(0.18, 0.18, 0.29, 12, 0xb8452f, 'cloth', [0, 1.4, 0], [Math.PI / 2, 0, 0]);
+  return P.into(g);
+}

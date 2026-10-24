@@ -2,7 +2,9 @@
 import { makeSign } from '../../core/signs.js';
 import * as THREE from 'three';
 import { backdropMountains, surroundings } from '../kit/terrain.js';
-import { curvedHipRoof } from '../kit/buildings.js';
+import { curvedHipRoof, tent, cart, boat, watchtower, spearRack, archeryTarget } from '../kit/buildings.js';
+import { BUILD } from '../kit/town.js';
+import { makeFire } from '../../core/fire.js';
 import { groundMaterial } from '../../core/textures.js';
 import { mat, makePerson, labelSprite } from '../../core/people.js';
 import { scatter } from '../../core/props.js';
@@ -126,43 +128,42 @@ export function buildCh1Scene(world) {
     world.addCollider({ x: px - 2, z: pz, r: 3.3 }); world.addCollider({ x: px + 2, z: pz, r: 3.3 });
     flag(px - 4.6, pz + 3.6, 0xb8452f); flag(px + 4.6, pz + 3.6, 0xd9a441);
   }
-  // 천막
+  // 천막: 앞뒤가 세모인 맞배 천막(기둥과 줄). 자리와 부딪힘은 예전 그대로
   for (const [x, z] of [[10, 3], [15, -4], [-3, 8], [-17, 11], [17, 13], [-21, -1], [21, 4]]) {
-    const t = mk(new THREE.ConeGeometry(2.4, 2.8, 4), 0xe6dcc3, x, 1.4, z);
-    t.rotation.y = Math.PI / 4 + rand() * 0.3;
-    // 천막 꼭대기 장대와 어두운 출입구
-    mk(new THREE.CylinderGeometry(0.06, 0.06, 0.9, 4), 0x5a3f2a, x, 3.1, z);
-    // 네모뿔의 한 면 가운데(45도 방향)에 면 기울기(0.545)만큼 눕혀 붙인다
-    const door = mk(new THREE.PlaneGeometry(0.9, 1.2), 0x3a2c20, 0.94, -0.75, 0.94, t, false);
-    door.rotation.order = 'YXZ'; door.rotation.set(-0.545, Math.PI / 4, 0);
+    const g = new THREE.Group(); g.position.set(x, groundH(x, z), z); g.rotation.y = rand() * 0.6 - 0.3 + (x > 0 ? -0.4 : 0.4); L.add(g);
+    tent(g, { color: 0xe6dcc3 });
     world.addCollider({ x, z, r: 1.9 });
   }
-  for (const [x, z] of [[12.5, 6.5], [13.4, 7.2], [-6, 10], [19, 0]]) {
-    mk(new THREE.BoxGeometry(1, 1, 1), 0x8a6a45, x, 0.5, z).rotation.y = rand();
-    world.addCollider({ x, z, r: 0.7 });
+  // 군량과 물자: 쌀가마 더미, 군량 수레, 창걸이(예전 상자 자리)
+  const put = (fn, x, z, ry = 0, p = {}) => { const g = new THREE.Group(); g.position.set(x, groundH(x, z), z); g.rotation.y = ry; L.add(g); fn(g, p); return g; };
+  put(BUILD.rice, 12.9, 6.8, 0.3, { n: 6 }); world.addCollider({ x: 12.9, z: 6.8, r: 1.4 });
+  put(cart, -6, 10, 0.8, { load: true }); world.addCollider({ x: -6, z: 10, r: 1.2 });
+  put(spearRack, 19, 0, -Math.PI / 2); world.addCollider({ x: 19, z: 0, r: 0.9 });
+  put(spearRack, -16, 6, Math.PI / 2); world.addCollider({ x: -16, z: 6, r: 0.9 });
+  put(archeryTarget, -7, 27, Math.PI); world.addCollider({ x: -7, z: 27, r: 0.6 }); // 궁수가 연습하는 과녁
+  // 목책 모서리의 망루(강 건너를 살핀다)
+  for (const sx of [-1, 1]) { put(watchtower, sx * 28.5, -12, 0, { h: 4.5 }); world.addCollider({ x: sx * 28.5, z: -12, r: 1.6 }); }
+  // 진영 안 흙길: 성문에서 나루터로, 천막 사이를 가로질러(땅 높낮이를 따라 깐다)
+  for (const [cx, cz, w, d] of [[1.5, 9, 3, 46], [0, 3, 40, 2.4]]) {
+    const geo = new THREE.PlaneGeometry(w, d, Math.max(1, Math.round(w / 2)), Math.max(1, Math.round(d / 2))); geo.rotateX(-Math.PI / 2);
+    const pp = geo.attributes.position;
+    for (let i = 0; i < pp.count; i++) pp.setY(i, groundH(pp.getX(i) + cx, pp.getZ(i) + cz) + 0.04);
+    geo.computeVertexNormals();
+    const m = new THREE.Mesh(geo, mat(0x9a8058, 'earth')); m.position.set(cx, 0, cz); m.receiveShadow = true; L.add(m);
   }
   flag(-4, 29, 0xb8452f); flag(4, 29, 0xd9a441); flag(26, -10, 0xb8452f); flag(-26, -10, 0xd9a441);
 
-  // 모닥불과 불티
-  const fx = 6, fz = 10.5, flames = [];
+  // 모닥불: 돌을 두른 화톳불(겹친 불꽃·불티·연기, core/fire.js)
+  const fx = 6, fz = 10.5;
   for (let i = 0; i < 7; i++) { const a = (i / 7) * Math.PI * 2; mk(new THREE.DodecahedronGeometry(0.28, 0), 0x77736a, fx + Math.cos(a) * 0.8, 0.15, fz + Math.sin(a) * 0.8); }
-  for (const c of [0xe2742c, 0xf2b33d]) {
-    const f = new THREE.Mesh(new THREE.ConeGeometry(0.45, 1.2, 5), new THREE.MeshBasicMaterial({ color: c }));
-    f.position.set(fx, 0.6, fz); L.add(f); flames.push(f);
-  }
+  for (let i = 0; i < 4; i++) mk(new THREE.CylinderGeometry(0.1, 0.12, 1.1, 5), 0x4e3826, fx + Math.cos(i * 1.6) * 0.25, 0.15, fz + Math.sin(i * 1.6) * 0.25).rotation.set(Math.PI / 2, i * 0.8, 0.3);
+  const fire = makeFire({ size: 0.75, detail: q.particles }); fire.group.position.set(fx, 0.45, fz); fire.setLit(true); L.add(fire.group);
   world.addCollider({ x: fx, z: fz, r: 1.1 });
-  const emberCount = Math.round(80 * q.particles);
-  const emberGeo = new THREE.BufferGeometry();
-  const emberPos = new Float32Array(emberCount * 3), emberLife = new Float32Array(emberCount);
-  for (let i = 0; i < emberCount; i++) emberLife[i] = rand() * 2.5;
-  emberGeo.setAttribute('position', new THREE.BufferAttribute(emberPos, 3));
-  const embers = new THREE.Points(emberGeo, new THREE.PointsMaterial({ color: 0xffb35c, size: 0.12, transparent: true, opacity: 0.9 }));
-  L.add(embers);
 
   // 나루터와 배, 빛나는 원
   mk(new THREE.BoxGeometry(2.4, 0.2, 5), 0x8a6a45, 8, 0.05, -16.6);
   for (const dx of [-1.1, 1.1]) for (const dz of [-14.6, -18.6]) mk(new THREE.CylinderGeometry(0.12, 0.12, 1.6, 5), 0x5a3f2a, 8 + dx, -0.3, dz);
-  mk(new THREE.BoxGeometry(1.8, 0.6, 4), 0x6b4a32, 8, -0.25, -20.6);
+  { const g = new THREE.Group(); g.position.set(8, -0.55, -20.8); L.add(g); boat(g, { len: 4.4 }); } // 나루터에 매어 둔 나룻배
   const ring = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.25, 28), new THREE.MeshBasicMaterial({ color: 0xd9a441, transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
   ring.rotation.x = -Math.PI / 2; ring.position.set(8, 0.1, -13.4); ring.visible = false; L.add(ring);
 
@@ -215,7 +216,7 @@ export function buildCh1Scene(world) {
   world.addSpot('signGangdong', makeSign('강동 6주'), -1.5, 16.5);
   world.addSpot('signSong', makeSign('고려와 송, 거란'), 9.5, 18);
 
-  const scene = { ring, khitanGroup, gangdongPillars, sonn, emberCount, retreating: false,
+  const scene = { ring, khitanGroup, gangdongPillars, sonn, emberCount: fire.emberCount, retreating: false,
     ferry: { x: 8, z: -13.4, r: 1.6 },
     negotiationSpot: {
       seohui: [0, -32.8, Math.PI], player: [1.7, -31.6, Math.PI],
@@ -223,20 +224,11 @@ export function buildCh1Scene(world) {
     },
   };
 
-  // 움직임: 깃발, 불꽃, 불티, 물결, 빛나는 원, 거란군 철수, 빛기둥
+  // 움직임: 깃발, 화톳불, 물결, 빛나는 원, 거란군 철수, 빛기둥
   const rp = riverGeo.attributes.position;
   world.onUpdate((dt, t) => {
     for (const f of flags) f.m.rotation.y = Math.sin(t * 2 + f.ph) * 0.35;
-    flames.forEach((f, i) => { const s = 0.8 + Math.sin(t * 13 + i * 2) * 0.15 - (i ? 0.2 : 0); f.scale.set(s, s + 0.2, s); });
-    for (let i = 0; i < emberCount; i++) {
-      emberLife[i] += dt;
-      if (emberLife[i] > 2.5) emberLife[i] = 0;
-      const k = emberLife[i];
-      emberPos[i * 3] = fx + Math.sin(i * 12.9 + k * 2) * 0.4 * k;
-      emberPos[i * 3 + 1] = 0.8 + k * 1.4;
-      emberPos[i * 3 + 2] = fz + Math.cos(i * 7.3 + k * 2) * 0.4 * k;
-    }
-    emberGeo.attributes.position.needsUpdate = true;
+    fire.update(dt, t);
     if (world.quality.water === 'waves') {
       for (let i = 0; i < rp.count; i++) rp.setY(i, Math.sin(rp.getX(i) * 0.35 + t * 1.6) * 0.08 + Math.cos(rp.getZ(i) * 1.3 + t) * 0.05);
       rp.needsUpdate = true;

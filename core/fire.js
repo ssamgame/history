@@ -45,7 +45,7 @@ export function makeFire({ size = 1, detail = 1 } = {}) {
     m.userData.k = i / 3; group.add(m); return m;
   });
   const fire = {
-    group, lit: false,
+    group, lit: false, emberCount: n, // 불티 수(화질이 낮으면 적다)
     setLit(on) { fire.lit = on; flames.visible = glow.visible = floor.visible = embers.visible = on; smokes.forEach(s => { s.visible = on; }); },
     update(dt, t) {
       if (!fire.lit) return;
