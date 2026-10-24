@@ -11,8 +11,8 @@ export default {
     { who: 'narr', text: '흥선 대원군은 서양 나라들이 교류하자고 하는 것을 거절했어요.', src: ['S51'] },
   ],
   start: [
-    { who: 'guide', text: '여기는 강화도 바닷가 마을이야. 바다 건너 낯선 배가 보이네.' },
-    { who: 'guide', text: '느낌표가 있는 사람에게 차례로 말을 걸어 봐.' },
+    { who: 'guide', text: '짠 바닷바람이 부는 강화도 바닷가 마을이야. 저 멀리 바다에 검은 연기를 뿜는 배가 떠 있지?' },
+    { who: 'guide', text: '마을 사람들은 저 배를 어떻게 생각할까? 머리 위에 느낌표가 뜬 사람에게 다가가서 물어보자.' },
   ],
   goals: ['마을 어르신에게 말을 걸어 보자', '젊은 선비의 이야기를 들어 보자', '관아 앞의 조선 관리를 찾아가자', '강화도 조약을 살펴보자', '배운 내용을 확인해 보자'],
   minigameTitle: '강화도 조약',
@@ -23,22 +23,22 @@ export default {
         { who: 'elder', text: '양반에게도 세금을 내게 하셨다네.', src: ['S51'] },
         { who: 'elder', text: '서양 나라들이 교류하자고 했지만 모두 거절하셨어.', src: ['S51'] },
       ],
-      later: [{ who: 'elder', text: '바다 건너 배들이 자꾸 찾아온다네.' }],
+      later: [{ who: 'elder', text: '저런 배가 자꾸 나타나니 고기잡이 나가기도 겁이 난다네. 저 선비에게도 물어보게.' }],
     },
     scholar: {
-      tooEarly: [{ who: 'scholar', text: '마을 어르신의 이야기부터 들어 보시오.' }],
+      tooEarly: [{ who: 'scholar', text: '이 마을 일은 어르신이 제일 잘 아시오. 먼저 어르신께 여쭈어 보시오.' }],
       first: [
         { who: 'scholar', text: '흥선 대원군이 물러난 뒤, 나라 안에서 문을 열고 다른 나라와 교류하자는 목소리가 커졌소.', src: ['S51'] },
         { who: 'scholar', text: '다른 나라와 교류할 수 있게 항구를 여는 것을 개항이라고 하오.', src: ['S51'] },
       ],
-      later: [{ who: 'scholar', text: '관아 앞에 가 보시오.' }],
+      later: [{ who: 'scholar', text: '돌 축대 위의 관아에 가 보시오. 나라의 앞날이 걸린 일로 관리들이 바쁘다오.' }],
     },
     official: {
-      tooEarly: [{ who: 'official', text: '먼저 마을 사람들의 이야기를 들어 보아라.' }],
+      tooEarly: [{ who: 'official', text: '지금은 바쁘다. 마을 사람들에게 요즘 무슨 일이 있었는지 먼저 들어 보아라.' }],
       first: [
         { who: 'official', text: '일본이 무력을 앞세워 개항을 요구하였다.', src: ['S51'] },
         { who: 'official', text: '결국 1876년, 조선은 일본과 강화도 조약을 맺었다.', src: ['S51'] },
-        { who: 'official', text: '조약에 어떤 내용이 들어 있는지 살펴보아라.' },
+        { who: 'official', text: '이 조약에 무엇이 쓰여 있는지 너도 똑똑히 살펴보아라.' },
       ],
     },
     signTreaty: { always: [

@@ -14,8 +14,8 @@ export default {
     { who: 'narr', text: '일제는 이토 히로부미를 보내 1905년 을사늑약을 맺고 대한 제국의 외교권을 빼앗았어요.', src: ['S51'] },
   ],
   start: [
-    { who: 'guide', text: '을사늑약 소식에 한성이 술렁이고 있어. 나라를 지키려는 사람들을 만나 보자.' },
-    { who: 'guide', text: '느낌표가 있는 사람에게 차례로 말을 걸어 봐.' },
+    { who: 'guide', text: '을사늑약 소식에 온 나라가 술렁이고 있어. 왼쪽 솔숲에는 의병들이, 오른쪽에는 학교와 신문사가 보이지?' },
+    { who: 'guide', text: '같은 나라를 지키려 해도 방법은 달랐대. 길가의 학생부터 무슨 일인지 물어보자.' },
   ],
   goals: ['학생에게 말을 걸어 보자', '의병을 만나자', '학교 앞의 안창호를 찾아가자', '나라를 지키려는 노력을 정리하자', '배운 내용을 확인해 보자'],
   minigameTitle: '나라를 지키려는 노력',
@@ -26,10 +26,10 @@ export default {
         { who: 'student', text: '하지만 일제의 방해로 회의장에 들어가지도 못했대요.', src: ['S51'] },
         { who: 'student', text: '일제는 이 일을 빌미로 고종 황제를 물러나게 하고 군대를 해산했어요.', src: ['S51'] },
       ],
-      later: [{ who: 'student', text: '의병들이 곳곳에서 일어났대요.' }],
+      later: [{ who: 'student', text: '솔숲 쪽에 의병들이 모여 있어요. 무기를 들고 싸우겠다는 분들이에요. 가서 이야기를 들어 보세요.' }],
     },
     uibyeong: {
-      tooEarly: [{ who: 'uibyeong', text: '먼저 저 학생의 이야기를 들어 보게.' }],
+      tooEarly: [{ who: 'uibyeong', text: '한성 소식은 학생들이 빠르지. 저 학생에게 먼저 들어 보고 오게.' }],
       first: [
         { who: 'uibyeong', text: '유학자, 농민, 여성, 어린이까지 여러 사람이 의병으로 나섰네.', src: ['S51'] },
         { who: 'uibyeong', text: '해산된 군인들도 함께해 의병 운동이 더 조직적이 되었지.', src: ['S51'] },
@@ -38,7 +38,7 @@ export default {
       later: [{ who: 'uibyeong', text: '우리는 만주와 연해주로 가서도 계속 싸울 것이네.' }],
     },
     ahnchangho: {
-      tooEarly: [{ who: 'ahnchangho', text: '의병의 이야기부터 들어 보게.' }],
+      tooEarly: [{ who: 'ahnchangho', text: '무기를 든 의병들은 무엇을 지키려 하는지, 그 이야기부터 듣고 오게.' }],
       first: [
         { who: 'ahnchangho', text: '민족의 실력을 키워 나라를 지켜야 하오. 이것을 애국 계몽 운동이라 하오.', src: ['S51'] },
         { who: 'ahnchangho', text: '나와 이승훈 등은 학교를 세워 새로운 지식을 가르치고, 민족의 산업을 일으키려 하오.', src: ['S51'] },

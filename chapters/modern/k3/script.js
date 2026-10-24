@@ -11,8 +11,8 @@ export default {
     { who: 'narr', text: '특히 전라도 고부에서는 군수의 횡포에 농민의 불만이 커졌어요.', src: ['S51'] },
   ],
   start: [
-    { who: 'guide', text: '여기는 1894년 전라도 고부의 들판이야. 농민들의 표정이 어두워.' },
-    { who: 'guide', text: '느낌표가 있는 사람에게 차례로 말을 걸어 봐.' },
+    { who: 'guide', text: '1894년 전라도 고부야. 누렇게 익은 논이 끝없이 펼쳐졌는데, 이상하게도 농민들의 얼굴은 어두워.' },
+    { who: 'guide', text: '풍년인데 왜 걱정일까? 마을 어귀의 농민에게 사정을 물어보자.' },
   ],
   goals: ['고부 농민에게 말을 걸어 보자', '전봉준을 찾아가자', '농민군의 이야기를 들어 보자', '농민군과 함께하자', '배운 내용을 확인해 보자'],
   minigameTitle: '동학 농민 운동',
@@ -22,18 +22,18 @@ export default {
         { who: 'peasant', text: '세금이 자꾸 늘어서 먹고살기가 너무 힘들어요.', src: ['S51'] },
         { who: 'peasant', text: '고부 군수는 백성을 괴롭히기만 해요.', src: ['S51'] },
       ],
-      later: [{ who: 'peasant', text: '전봉준 장군님이 우리를 이끌어 주신대요.' }],
+      later: [{ who: 'peasant', text: '농사를 지어도 남는 게 없어요. 전봉준 장군님이 앞장서 주신다니 마음이 놓여요.' }],
     },
     jeonbongjun: {
-      tooEarly: [{ who: 'jeonbongjun', text: '마을 사람들의 이야기를 먼저 들어 보게.' }],
+      tooEarly: [{ who: 'jeonbongjun', text: '농민들이 얼마나 힘든지 먼저 그들에게 직접 들어 보게.' }],
       first: [
         { who: 'jeonbongjun', text: '나는 동학의 지도자 전봉준이오. 군수의 횡포를 더는 참을 수 없소.', src: ['S51'] },
         { who: 'jeonbongjun', text: '농민들과 함께 고부 관아를 습격할 것이오.', src: ['S51'] },
       ],
-      later: [{ who: 'jeonbongjun', text: '마을을 돌며 농민들을 모아 주게.' }],
+      later: [{ who: 'jeonbongjun', text: '혼자서는 아무것도 바꿀 수 없네. 마을을 돌며 뜻을 함께할 농민들을 모아 주게.' }],
     },
     farmer: {
-      tooEarly: [{ who: 'farmer', text: '전봉준 장군님께 먼저 인사드리게.' }],
+      tooEarly: [{ who: 'farmer', text: '우리를 이끌 분은 전봉준 장군님이시네. 장군님 말씀부터 듣고 오게.' }],
       first: [
         { who: 'farmer', text: '고부에서 시작한 우리 운동이 큰 농민 운동이 되었어.', src: ['S51'] },
         { who: 'farmer', text: '마을마다 다니며 함께할 농민들을 모으자!' },

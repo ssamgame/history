@@ -696,3 +696,14 @@ export function terrace(g, p = {}) {
   if (p.steps !== false) { const n = Math.max(2, Math.round(h / 0.3)), sw = p.stepW || 2.4; for (let i = 0; i < n; i++) P.box(sw, h - i * (h / n), 0.42, 0xb3ab99, 'stone', [p.stepX || 0, (h - i * (h / n)) / 2, d / 2 + 0.21 + i * 0.42]); }
   return P.into(g);
 }
+
+// 논: 낮은 논두렁으로 나눈 칸마다 물이 고인 흙과 줄지어 선 벼 포기(멀리서 보는 들판). w×d, ripe면 누렇게 익은 벼
+export function paddy(g, p = {}) {
+  const P = parts(), w = p.w || 12, d = p.d || 8, cells = Math.max(1, Math.round(w / 6));
+  const cw = w / cells, rice = p.ripe ? 0xc8a84a : 0x7a9a3a;
+  P.box(w, 0.05, d, 0x6a6a4a, 'earth', [0, 0.03, 0]);
+  for (let i = 0; i <= cells; i++) P.box(0.35, 0.22, d, 0x8a7a52, 'earth', [-w / 2 + i * cw, 0.11, 0]);
+  for (const s of [-1, 1]) P.box(w, 0.22, 0.35, 0x8a7a52, 'earth', [0, 0.11, s * d / 2]);
+  for (let c = 0; c < cells; c++) for (let row = 0; row < Math.floor(d / 0.8) - 1; row++) P.box(cw - 0.8, 0.35, 0.18, rice, 'grain', [-w / 2 + (c + 0.5) * cw, 0.2, -d / 2 + 0.8 + row * 0.8]);
+  return P.into(g);
+}

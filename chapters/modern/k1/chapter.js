@@ -7,7 +7,7 @@ const xy = (list, pts) => list.map((it, i) => ({ ...it, ...pts[i] }));
 const PALACE = { // 고쳐 짓는 경복궁 앞(왼쪽)과 다른 때의 일(오른쪽)
   origin: [400, 0], ground: 'earth', groundColor: 0x9a8a6a, bounds: { x0: -20, x1: 20, z0: -14, z1: 14 },
   props: [
-    { type: 'hanok', x: -11, z: -12, tile: true, scale: 1.4 }, { type: 'rice', x: -15, z: -6, n: 6 },
+    { type: 'hanok', x: -11, z: -12, tile: true, scale: 1.4 }, { type: 'rice', x: -15, z: -6, n: 6 }, { type: 'woodpile', x: -6, z: -8 }, { type: 'tree', x: -18, z: 4, kind: 'pine' },
     { type: 'western', x: 11, z: -12, w: 7, d: 4, h: 4, color: 0x8c8577 }, { type: 'steamship', x: 16, z: -22, ry: Math.PI / 2, solid: false },
     { type: 'water', x: 20, z: -30, w: 60, d: 20 },
   ],
@@ -17,7 +17,8 @@ const COAST = { // 강화도 해안: 갯벌 길, 망루, 포대, 연무당. 먼�
   props: [
     { type: 'water', x: 0, z: -40, w: 160, d: 40 }, { type: 'steamship', x: -10, z: -34, ry: Math.PI / 2, solid: false },
     { type: 'pavilion', x: -14, z: 7 }, { type: 'wall', x: 9, z: -6, w: 8, color: 0x8c8577 }, { type: 'rice', x: 13, z: -3, n: 3 },
-    { type: 'hanok', x: 10, z: 18, tile: true }, { type: 'tree', x: -16, z: 18 },
+    { type: 'hanok', x: 10, z: 18, tile: true }, { type: 'tree', x: -16, z: 18, kind: 'pine' }, { type: 'tree', x: 17, z: 8, kind: 'pine' },
+    { type: 'boat', x: 8, z: -22, ry: 0.4 }, { type: 'boat', x: 13, z: -24, ry: -0.2, color: 0x6b4a32 },
   ],
 };
 const YEONMU = { // 강화도 연무당: 조약을 맺은 곳
@@ -35,16 +36,19 @@ export default makeKitChapter({
   order: ['elder', 'scholar', 'official'],
   spot: [0, 2],
   layout: {
-    ground: 'grass', groundColor: 0x6a8a52, bounds: { x0: -15, x1: 15, z0: -9, z1: 11 }, start: [0, 8],
-    roads: [{ x: 0, z: 2, w: 4, d: 22 }, { x: 0, z: -3, w: 30, d: 4 }],
+    // 강화도 바닷가 마을(1870년대): 북쪽은 바다와 갯벌 포구, 가운데 돌 축대 위의 관아, 양옆 초가와 소나무, 뒤로 높은 언덕
+    ground: 'grass', groundColor: 0x6a8a52, bounds: { x0: -15, x1: 15, z0: -9, z1: 11 }, start: [0, 8], hill: 1.5,
+    roads: [{ x: 0, z: 2, w: 4, d: 22 }, { x: 0, z: -3, w: 30, d: 4 }, { x: -12, z: -11, w: 3, d: 6, color: 0x8a7a5a }],
     props: [
       { type: 'water', x: 0, z: -45, w: 260, d: 60 },
       { type: 'steamship', x: 14, z: -32, ry: 0.3, solid: false },
+      { type: 'pier', x: -12, z: -16, w: 3, d: 6, solid: false }, { type: 'boat', x: -15, z: -18, ry: 0.2 }, { type: 'boat', x: -9, z: -19, ry: -0.3, color: 0x6b4a32 },
       { type: 'wall', x: -9, z: -11, w: 12, h: 2.4, solid: false }, { type: 'wall', x: 9, z: -11, w: 12, h: 2.4, solid: false },
-      { type: 'hanok', x: -3, z: -7, tile: true, scale: 1.3 },
+      { type: 'terrace', x: -3, z: -7.6, w: 8.6, d: 5.6, h: 0.9 }, { type: 'hanok', x: -3, z: -8, y: 0.9, tile: true, scale: 1.3 },
       { type: 'flagpole', x: 3, z: -6, color: 0xd9a441 },
-      { type: 'hanok', x: -11, z: 4 }, { type: 'hanok', x: 11, z: 3 }, { type: 'hanok', x: -11, z: -3 }, { type: 'hanok', x: 12, z: 9 },
-      { type: 'tree', x: 7, z: 7 }, { type: 'tree', x: -7, z: 9 },
+      { type: 'hanok', x: -11, z: 4 }, { type: 'hanok', x: 11, z: 3, ry: -0.2 }, { type: 'hanok', x: -11, z: -3, ry: 0.15 }, { type: 'hanok', x: 12, z: 9, ry: -0.4 },
+      { type: 'straw', x: 14.5, z: -2 }, { type: 'cart', x: 8, z: -6.8, ry: 1.2 },
+      { type: 'tree', x: 8.5, z: 10.5, kind: 'pine' }, { type: 'tree', x: -14.5, z: 10, kind: 'pine' }, { type: 'tree', x: 14, z: -8, kind: 'pine' },
     ],
     npcs: [
       { id: 'elder', look: 'commoner', x: -6, z: 5, ry: Math.PI * 0.8 },

@@ -164,6 +164,8 @@ export const BUILD = {
   bridge(g, p) { BLD.bridge(g, p); return 0; },
   // 물가에 매어 둔 나룻배
   boat(g, p) { BLD.boat(g, p); return 0; },
+  // 논(들판): 논두렁과 벼 포기. ripe면 누렇게 익은 벼. 밟고 지나갈 수 있다
+  paddy(g, p) { BLD.paddy(g, p); return 0; },
   // 축대와 계단: 위에 놓을 부품은 y를 h만큼 준다
   terrace(g, p) { BLD.terrace(g, p); return { rect: [p.w || 8, p.d || 6] }; },
   // 책상과 책 (학교·연구실)
@@ -254,7 +256,7 @@ function dressHouse(world, L, p, layout) {
 
 // 자연 꾸미기: 바깥 언덕에는 소나무·덤불·바위, 마을 가장자리에는 풀포기(길·건물·안내판·인물 자리는 비운다).
 // 같은 배치표면 늘 같은 자리. 모두 인스턴스로 한 종류당 한두 번에 그린다.
-function addNature(world, layout, field, kind, color) {
+export function addNature(world, layout, field, kind, color, parent = world.level) {
   const b = layout.bounds, cx = (b.x0 + b.x1) / 2, cz = (b.z0 + b.z1) / 2;
   const wide = { x0: cx - 75, x1: cx + 75, z0: cz - 75, z1: cz + 75 };
   const onHill = (x, z) => field.heightAt(x, z) > 0.7;
@@ -262,9 +264,9 @@ function addNature(world, layout, field, kind, color) {
   const snowy = hsl.l > 0.7;
   const seed = Math.round(Math.abs(b.x0 * 31 + b.z1 * 17)) + 5;
   const hasPines = (layout.scatter || []).some(s => s.kind === 'pine');
-  scatter(world, { kind: 'pine', count: hasPines ? 35 : 70, area: wide, keep: onHill, ground: field.heightAt, seed, scale: [1.1, 1.9] });
-  scatter(world, { kind: 'bush', count: 30, area: wide, keep: onHill, ground: field.heightAt, seed: seed + 1, scale: [0.9, 1.6], color: snowy ? 0xdfe6ea : null });
-  scatter(world, { kind: 'rock', count: 24, area: wide, keep: onHill, ground: field.heightAt, seed: seed + 2, scale: [0.8, 2.2] });
+  scatter(world, { parent, kind: 'pine', count: hasPines ? 35 : 70, area: wide, keep: onHill, ground: field.heightAt, seed, scale: [1.1, 1.9] });
+  scatter(world, { parent, kind: 'bush', count: 30, area: wide, keep: onHill, ground: field.heightAt, seed: seed + 1, scale: [0.9, 1.6], color: snowy ? 0xdfe6ea : null });
+  scatter(world, { parent, kind: 'rock', count: 24, area: wide, keep: onHill, ground: field.heightAt, seed: seed + 2, scale: [0.8, 2.2] });
   if (kind === 'stone' || snowy) return; // 포장한 길과 눈밭에는 풀포기를 두지 않는다
   const busy = [
     ...(layout.signs || []).map(s => ({ x: s.x, z: s.z, r: 1.8 })), ...(layout.npcs || []).map(n => ({ x: n.x, z: n.z, r: 1.5 })),
@@ -273,8 +275,8 @@ function addNature(world, layout, field, kind, color) {
   ];
   const onRoad = (x, z) => (layout.roads || []).some(r => Math.abs(x - r.x) < r.w / 2 + 0.6 && Math.abs(z - r.z) < r.d / 2 + 0.6);
   const f = field.flat;
-  scatter(world, { kind: 'grass', count: 90, area: { x0: f.x0, x1: f.x1, z0: f.z0, z1: f.z1 }, avoid: busy, keep: (x, z) => !onRoad(x, z), seed: seed + 3, scale: [0.7, 1.2], color: new THREE.Color(color).multiplyScalar(1.25).getHex() });
-  if (hsl.h > 0.17 && hsl.h < 0.45 && hsl.s > 0.2) scatter(world, { kind: 'flower', count: 25, area: { x0: f.x0, x1: f.x1, z0: f.z0, z1: f.z1 }, avoid: busy, keep: (x, z) => !onRoad(x, z), seed: seed + 4 });
+  scatter(world, { parent, kind: 'grass', count: 90, area: { x0: f.x0, x1: f.x1, z0: f.z0, z1: f.z1 }, avoid: busy, keep: (x, z) => !onRoad(x, z), seed: seed + 3, scale: [0.7, 1.2], color: new THREE.Color(color).multiplyScalar(1.25).getHex() });
+  if (hsl.h > 0.17 && hsl.h < 0.45 && hsl.s > 0.2) scatter(world, { parent, kind: 'flower', count: 25, area: { x0: f.x0, x1: f.x1, z0: f.z0, z1: f.z1 }, avoid: busy, keep: (x, z) => !onRoad(x, z), seed: seed + 4 });
 }
 
 export function buildTown(world, layout) {

@@ -11,8 +11,8 @@ export default {
     { who: 'narr', text: '한성 거리의 모습과 사람들의 생활도 크게 달라졌어요.', src: ['S51'] },
   ],
   start: [
-    { who: 'guide', text: '1900년 무렵 한성 거리야. 땡땡 소리를 내며 무언가 달려와!' },
-    { who: 'guide', text: '느낌표가 있는 사람에게 차례로 말을 걸어 봐.' },
+    { who: 'guide', text: '1900년 무렵 한성 큰길이야. 땡땡! 종을 울리며 길 한가운데로 무언가 달려와. 길가에는 처음 보는 물건을 파는 가게도 있네.' },
+    { who: 'guide', text: '거리가 왜 이렇게 바뀌었을까? 양복을 차려입은 신사에게 먼저 물어보자.' },
   ],
   goals: ['양복 입은 신사에게 말을 걸어 보자', '전차 탄 아주머니의 이야기를 들어 보자', '학교 앞 학생을 만나자', '근대 문물을 알아보자', '배운 내용을 확인해 보자'],
   minigameTitle: '근대 문물',
@@ -22,19 +22,19 @@ export default {
         { who: 'gentleman', text: '한성과 인천 사이에 전신을 놓은 뒤, 일본과 중국까지 이어지는 통신망이 생겼소.', src: ['S51'] },
         { who: 'gentleman', text: '전화기도 들여와서 소식을 빠르게 주고받을 수 있지요.', src: ['S51'] },
       ],
-      later: [{ who: 'gentleman', text: '나는 양복과 구두를 즐겨 입는다오.' }],
+      later: [{ who: 'gentleman', text: '내 옷차림이 신기하오? 양복과 구두라오. 저 아주머니는 전차를 타 보셨다던데.' }],
     },
     woman: {
-      tooEarly: [{ who: 'woman', text: '저기 양복 입은 신사분부터 만나 보렴.' }],
+      tooEarly: [{ who: 'woman', text: '어머, 전차 구경 왔니? 저기 양복 입은 신사분 이야기부터 들어 보렴.' }],
       first: [
         { who: 'woman', text: '1899년부터 서대문에서 청량리까지 전차가 다니기 시작했단다.', src: ['S51'] },
         { who: 'woman', text: '전차를 다니게 하려고 길을 넓히고 전봇대도 세웠지.', src: ['S51'] },
         { who: 'woman', text: '전등과 가로등이 생겨서 밤에도 다닐 수 있게 되었어.', src: ['S51'] },
       ],
-      later: [{ who: 'woman', text: '전차는 요금이 비싼 특별석도 있단다.' }],
+      later: [{ who: 'woman', text: '전차 가운데에는 요금이 비싼 특별석도 있단다. 학교 앞 학생도 만나 보렴.', src: ['S51'] }],
     },
     student: {
-      tooEarly: [{ who: 'student', text: '거리 구경부터 하고 오세요.' }],
+      tooEarly: [{ who: 'student', text: '전차랑 가게 구경부터 실컷 하고 오세요. 그다음에 학교 이야기를 해 드릴게요.' }],
       first: [
         { who: 'student', text: '여러 학교가 세워져서 저는 근대식 교육을 받아요.', src: ['S51'] },
         { who: 'student', text: '신문이 나와서 나라 안팎의 소식도 알 수 있어요.', src: ['S51'] },
@@ -67,7 +67,7 @@ export default {
     tram: {
       type: 'drive', src: ['S51'], title: '전차를 몰아 서대문에서 청량리까지 가요', vehicle: 'tram', counter: '지난 정류장', seconds: 110, speed: 1.3,
       howto: '선로를 따라 전차를 몰아요. 정류장(빛나는 곳)에서는 손님이 다 타고 내릴 때까지 멈춰 기다리고(남은 초가 화면 위 가운데에 보여요), 동대문 문길로 지나가요. 길을 건너는 수레를 조심해요.',
-      intro: [{ who: 'woman', text: '1899년부터 서대문에서 청량리까지 전차가 다니기 시작했단다. 운전 한번 해 보련?' }],
+      intro: [{ who: 'woman', text: '1899년부터 서대문에서 청량리까지 전차가 다니기 시작했단다. 운전 한번 해 보련?', src: ['S51'] }],
       route: [
         { label: '서대문', say: '1899년, 서대문에서 청량리까지 전차가 다니기 시작했어요.' },
         { label: '종로', hold: 3, holdLabel: '손님이 타고 내리는 중', alight: 2, board: 1, holdSay: '종로 정류장! 손님이 타고 내려요.', talk: [{ who: 'woman', text: '전차를 다니게 하려고 길을 넓히고 전봇대도 세웠지.' }] },

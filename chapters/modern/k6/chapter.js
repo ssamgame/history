@@ -34,16 +34,18 @@ export default makeKitChapter({
   order: ['student', 'uibyeong', 'ahnchangho'],
   spot: [0, 4],
   layout: {
-    ground: 'grass', groundColor: 0x6f8a56, bounds: { x0: -16, x1: 16, z0: -8, z1: 11 }, start: [0, 9],
-    roads: [{ x: 0, z: 3, w: 36, d: 5, color: 0x9a8a72 }, { x: 0, z: 7, w: 4, d: 8 }],
+    // 1905~1909년: 왼쪽은 솔숲 산자락의 의병 진지(천막·장작), 오른쪽은 한성의 학교와 신문사 — 두 갈래 노력을 한 마당에서 본다. 뒤로 높은 산
+    ground: 'grass', groundColor: 0x6f8a56, bounds: { x0: -16, x1: 16, z0: -8, z1: 11 }, start: [0, 9], hill: 1.8,
+    roads: [{ x: 0, z: 3, w: 36, d: 5, color: 0x9a8a72 }, { x: 0, z: 7, w: 4, d: 8 }, { x: 10, z: -4.5, w: 12, d: 4, kind: 'stone', color: 0xa59c8a }],
     props: [
-      { type: 'western', x: 9, z: -8, w: 9, d: 5, h: 5, color: 0x8a4a3a },
+      { type: 'western', x: 9, z: -8, w: 9, d: 5, h: 5, color: 0x8a4a3a, tower: true },
       { type: 'desk', x: 6, z: -3.5 }, { type: 'desk', x: 11, z: -3.5 },
-      { type: 'western', x: -2, z: -9, w: 6, d: 4, h: 4, color: 0x9a7a5a },
-      { type: 'tent', x: -13, z: -5, color: 0xc8c0a8 }, { type: 'tent', x: -9, z: -7, color: 0xc8c0a8 },
+      { type: 'shop', x: -1, z: -9, w: 5, style: 'modern', sign: '신문사', awning: 0x3a3a44, seed: 3 },
+      { type: 'tent', x: -13, z: -5, color: 0xc8c0a8 }, { type: 'tent', x: -9, z: -7, color: 0xc8c0a8 }, { type: 'woodpile', x: -15.5, z: -1 },
       { type: 'crowd', x: -13, z: 0, n: 6, cols: 3, looks: ['uibyeong', 'peasant', 'uibyeong'], face: Math.PI / 2 },
-      { type: 'hanok', x: -12, z: 9 }, { type: 'hanok', x: 12, z: 9, tile: true },
-      { type: 'tree', x: -5, z: 10.5 }, { type: 'tree', x: 6, z: 10.5 },
+      { type: 'tree', x: -17, z: -8, kind: 'pine' }, { type: 'tree', x: -6, z: -9.5, kind: 'pine' }, { type: 'tree', x: -17.5, z: 6, kind: 'pine' },
+      { type: 'hanok', x: -12, z: 9.5, ry: 0.2 }, { type: 'hanok', x: 12, z: 9.5, tile: true, ry: -0.2 },
+      { type: 'tree', x: 17, z: 0 }, { type: 'lamp', x: 4, z: -1.5 },
     ],
     npcs: [
       { id: 'student', look: 'student', x: 4, z: 7, ry: Math.PI * 0.8 },

@@ -23,14 +23,18 @@ export default makeKitChapter({
   order: ['merchant', 'clerk', 'kimokgyun'],
   spot: [0, 1],
   layout: {
-    ground: 'earth', groundColor: 0x8f7a5c, bounds: { x0: -15, x1: 15, z0: -7, z1: 11 }, start: [0, 9],
+    // 1884년 한성 종로 근처: 돌을 깐 큰길 양쪽에 기와·초가 가게와 노점, 가운데 우정총국, 멀리 도성 안 기와지붕들과 북쪽 산
+    ground: 'earth', groundColor: 0x8f7a5c, bounds: { x0: -15, x1: 15, z0: -7, z1: 11 }, start: [0, 9], hill: 1.3,
+    skyline: { style: 'hanok', color: 0x4a4e4c, arc: [Math.PI * 0.55, Math.PI * 1.45] },
     roads: [{ x: 0, z: 2, w: 34, d: 5, kind: 'stone', color: 0xa59c8a }, { x: 0, z: 6, w: 4, d: 12 }],
     props: [
       { type: 'hanok', x: 0, z: -6, tile: true, scale: 1.6, name: 'post' },
       { type: 'flagpole', x: 4, z: -4.5, color: 0xd9a441 },
-      { type: 'hanok', x: -11, z: -5, tile: true }, { type: 'hanok', x: 11, z: -5, tile: true },
-      { type: 'hanok', x: -12, z: 8 }, { type: 'hanok', x: 12, z: 8 },
-      { type: 'rice', x: -9, z: 6, n: 6 }, { type: 'tree', x: 8, z: 10 },
+      { type: 'wall', x: -6.5, z: -8.4, w: 5, h: 2.2, solid: false }, { type: 'wall', x: 6.5, z: -8.4, w: 5, h: 2.2, solid: false },
+      { type: 'shop', x: -11.5, z: -4.6, w: 5, sign: '포목점', awning: 0x8a2f24 }, { type: 'shop', x: 11.5, z: -4.6, w: 5, sign: '지물포', awning: 0x6b5a3a, seed: 3 },
+      { type: 'shop', x: -12, z: 8.5, w: 5, ry: Math.PI, thatch: true, seed: 2 }, { type: 'shop', x: 12, z: 8.5, w: 5, ry: Math.PI, thatch: true, seed: 5 },
+      { type: 'stall', x: -11, z: 4.6, ry: Math.PI, color: 0xd8cdb0 }, { type: 'stall', x: 13.5, z: 4.6, ry: Math.PI, color: 0x8a6a48, seed: 4 },
+      { type: 'rice', x: -8.5, z: 7.5, n: 6 }, { type: 'tree', x: 15.5, z: 11.5 }, { type: 'lamp', x: -2.5, z: -0.6 },
     ],
     npcs: [
       { id: 'merchant', look: 'commoner', x: -7, z: 4.5, ry: Math.PI * 0.8 },

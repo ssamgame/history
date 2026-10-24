@@ -23,7 +23,9 @@ export default makeKitChapter({
   order: ['citizen', 'seojaepil', 'gojong'],
   spot: [0, 3],
   layout: {
-    ground: 'earth', groundColor: 0x9a8a6a, bounds: { x0: -16, x1: 16, z0: -9, z1: 11 }, start: [0, 9],
+    // 1896~1897년 한성 서대문 밖 큰길: 돌 독립문, 만민 공동회 연단과 모인 사람들, 길가의 가게와 노점, 뒤로 높은 바위산, 멀리 도성의 지붕들
+    ground: 'earth', groundColor: 0x9a8a6a, bounds: { x0: -16, x1: 16, z0: -9, z1: 11 }, start: [0, 9], hill: 1.6,
+    skyline: { style: 'hanok', color: 0x4a4e4c, arc: [Math.PI * 0.6, Math.PI * 1.1] },
     roads: [{ x: 0, z: 2, w: 36, d: 5, color: 0x9a8a72 }, { x: 0, z: 5, w: 4, d: 12 }],
     props: [
       { type: 'arch', x: 0, z: -7, label: '독립문' },
@@ -31,8 +33,10 @@ export default makeKitChapter({
       { type: 'crowd', x: -10, z: -0.5, n: 10, cols: 5, looks: ['commoner', 'gentleman', 'student', 'woman', 'scholar'], face: Math.PI },
       { type: 'hanok', x: 11, z: -6, tile: true, scale: 1.5 },
       { type: 'flagpole', x: 7.5, z: -0.6, scale: 1.3 }, { type: 'flagpole', x: -14, z: -6 }, // 태극기가 집에 가리지 않게 길가 앞쪽에
-      { type: 'western', x: 13, z: 9, w: 6, d: 4, h: 5 },
-      { type: 'hanok', x: -13, z: 9 }, { type: 'hanok', x: -6, z: 10.5 },
+      { type: 'western', x: 13, z: 9.5, w: 6, d: 4, h: 5, ry: Math.PI },
+      { type: 'shop', x: -13, z: 9.5, w: 5, ry: Math.PI, sign: '책방', seed: 2 }, { type: 'shop', x: -19, z: 6, w: 4.5, ry: Math.PI / 2, thatch: true, seed: 5 },
+      { type: 'stall', x: 17.5, z: 4, ry: -Math.PI / 2, color: 0xd8cdb0, seed: 3 },
+      { type: 'tree', x: -16.5, z: -8.5, kind: 'pine' }, { type: 'tree', x: 16.5, z: -9, kind: 'pine' },
     ],
     npcs: [
       { id: 'citizen', look: 'commoner', x: 5, z: 7, ry: Math.PI * 0.8 },

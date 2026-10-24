@@ -81,7 +81,7 @@ import { BUILD as KIT_BUILD } from '../chapters/kit/town.js';
 import * as THREE_G from 'three';
 test('graphics: 시대별 새 부품(가게·석고문 집·시멘트 건물·막사·노점·다리·배·축대·나무 종류)은 재질별로 합쳐 몇 번에 그린다', () => {
   const cases = [['shop', {}], ['shop', { style: 'modern', sign: '양화점' }], ['lanehouse', { n: 3 }], ['concrete', { floors: 3, sign: '다방' }], ['barracks', {}], ['stall', {}],
-    ['bridge', {}], ['bridge', { style: 'wood' }], ['boat', {}], ['terrace', {}], ...['pine', 'willow', 'bare', 'poplar'].map(kind => ['tree', { kind }])];
+    ['bridge', {}], ['bridge', { style: 'wood' }], ['boat', {}], ['terrace', {}], ['paddy', {}], ...['pine', 'willow', 'bare', 'poplar'].map(kind => ['tree', { kind }])];
   for (const [type, p] of cases) {
     const g = new THREE_G.Group();
     KIT_BUILD[type](g, { x: 0, z: 0, ...p });

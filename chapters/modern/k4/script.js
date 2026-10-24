@@ -11,8 +11,8 @@ export default {
     { who: 'narr', text: '그러자 일본은 경복궁에 침입해 명성 황후를 시해했어요(을미사변). 고종은 러시아 공사관으로 몸을 피했어요.', src: ['S51', 'S54'] },
   ],
   start: [
-    { who: 'guide', text: '여기는 한성의 거리야. 사람들이 모여 나라 이야기를 하고 있어.' },
-    { who: 'guide', text: '느낌표가 있는 사람에게 차례로 말을 걸어 봐.' },
+    { who: 'guide', text: '한성 서대문 밖 큰길이야. 새로 세운 돌문 앞에서 사람들이 모여 나라 이야기로 시끌시끌해.' },
+    { who: 'guide', text: '왜 이렇게 사람들이 모였을까? 길가의 시민에게 먼저 물어보자.' },
   ],
   goals: ['한성 시민에게 말을 걸어 보자', '독립문 앞의 서재필을 찾아가자', '고종 황제를 만나자', '자주독립을 위한 일을 해 보자', '배운 내용을 확인해 보자'],
   minigameTitle: '자주독립을 외치다',
@@ -22,18 +22,18 @@ export default {
         { who: 'citizen', text: '임금께서 러시아 공사관에 머무신다니 나라 꼴이 말이 아니에요.', src: ['S51'] },
         { who: 'citizen', text: '그래도 요즘엔 신문으로 나라 안팎의 소식을 알 수 있어요.', src: ['S51'] },
       ],
-      later: [{ who: 'citizen', text: '독립문 앞에 서재필 선생이 계세요.' }],
+      later: [{ who: 'citizen', text: '저 돌문 앞에 서재필 선생이 계세요. 신문을 만든 분이니 궁금한 걸 여쭤보세요.' }],
     },
     seojaepil: {
-      tooEarly: [{ who: 'seojaepil', text: '거리의 시민들 이야기부터 들어 보세요.' }],
+      tooEarly: [{ who: 'seojaepil', text: '거리의 시민들이 요즘 어떤 이야기를 하는지 먼저 들어 보고 오세요.' }],
       first: [
         { who: 'seojaepil', text: '나는 정부의 지원을 받아 독립신문을 펴냈습니다. 나라 안팎의 소식을 알리고 자주독립을 강조하지요.', src: ['S51', 'S53'] },
         { who: 'seojaepil', text: '관리, 지식인과 함께 독립 협회를 만들고 이 독립문을 세웠습니다.', src: ['S51', 'S52'] },
       ],
-      later: [{ who: 'seojaepil', text: '만민 공동회에서는 누구나 생각을 말할 수 있어요.' }],
+      later: [{ who: 'seojaepil', text: '저 연단 보이지요? 신분과 상관없이 누구나 올라가 생각을 말할 수 있답니다.' }],
     },
     gojong: {
-      tooEarly: [{ who: 'gojong', text: '서재필에게 먼저 다녀오너라.' }],
+      tooEarly: [{ who: 'gojong', text: '백성들이 무엇을 바라는지 서재필에게 먼저 듣고 오너라.' }],
       first: [
         { who: 'gojong', text: '나는 러시아 공사관에 머문 지 1년 만에 경운궁으로 돌아왔다.', src: ['S51', 'S54'] },
         { who: 'gojong', text: '환구단에서 황제로 즉위하고, 나라 이름을 대한 제국으로 바꾸었다.', src: ['S51', 'S54'] },

@@ -28,15 +28,19 @@ export default makeKitChapter({
   order: ['gentleman', 'woman', 'student'],
   spot: [0, 5],
   layout: {
-    ground: 'earth', groundColor: 0x9a8a6a, bounds: { x0: -16, x1: 16, z0: -6, z1: 11 }, start: [0, 9],
+    // 1900년 무렵 한성 큰길: 가운데 전찻길과 전봇대, 길가의 가게와 가로등, 뒤로 뾰족탑 서양식 건물, 멀리 도성의 기와지붕
+    ground: 'earth', groundColor: 0x9a8a6a, bounds: { x0: -16, x1: 16, z0: -6, z1: 11 }, start: [0, 9], hill: 1.3,
+    skyline: { style: 'hanok', color: 0x4a4e4c, arc: [Math.PI * 0.6, Math.PI * 1.4] },
     roads: [{ x: 0, z: 0, w: 60, d: 6, color: 0x9a8a72 }, { x: 0, z: 6, w: 4, d: 10 }],
     props: [
       { type: 'tram', x: 0, z: 0, ry: Math.PI / 2, track: 60, solid: false, name: 'tram' },
       { type: 'poles', x: -15, z: -3.6, n: 6, gap: 6 },
       { type: 'western', x: -9, z: -9, w: 8, d: 6, h: 6, tower: true, color: 0x8a4a3a },
       { type: 'western', x: 10, z: -9, w: 9, d: 5, h: 5, color: 0x9a6a4a },
-      { type: 'hanok', x: -13, z: 8, tile: true }, { type: 'hanok', x: 13, z: 8, tile: true }, { type: 'hanok', x: -6, z: 10.5 },
-      { type: 'desk', x: 6, z: -5 }, { type: 'tree', x: 6, z: 10.5 },
+      { type: 'shop', x: -13, z: 8.5, w: 5, ry: Math.PI, sign: '양화점', seed: 1, awning: 0x2f6b5e }, { type: 'shop', x: 13, z: 8.5, w: 5, ry: Math.PI, sign: '잡화점', seed: 4, awning: 0x8a2f24 },
+      { type: 'stall', x: -17.5, z: 3.5, ry: Math.PI / 2, seed: 5 },
+      { type: 'lamp', x: -8, z: 3.4 }, { type: 'lamp', x: 8, z: 3.4 }, { type: 'lamp', x: 0, z: -3.4 },
+      { type: 'desk', x: 6, z: -5 }, { type: 'tree', x: 17, z: 11 },
     ],
     npcs: [
       { id: 'gentleman', look: 'gentleman', x: -5, z: 5, ry: Math.PI * 0.8 },

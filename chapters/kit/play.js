@@ -21,7 +21,7 @@
 // arena: 마을과 떨어진 곳(origin)에 미니게임 무대를 따로 세운다. { origin: [x, z], ground, groundColor, bounds, props, roads }
 //        좌표는 모두 무대 기준. arena가 없으면 장 마을에서 한다.
 import * as THREE from 'three';
-import { BUILD, addFootprint, taegukgiTexture } from './town.js';
+import { BUILD, addFootprint, taegukgiTexture, addNature } from './town.js';
 import { bakeStatic } from './buildings.js';
 import { terrainField, terrainMesh } from './terrain.js';
 import { mat, makePerson } from '../../core/people.js';
@@ -79,6 +79,8 @@ export function buildArena(world, arena) {
       if (kind === 'stone') { const f = field.flat, pave = new THREE.Mesh(box(f.x1 - f.x0, 0.04, f.z1 - f.z0), mat(color, 'stone')); pave.position.set((f.x0 + f.x1) / 2, 0.02, (f.z0 + f.z1) / 2); pave.receiveShadow = true; g.add(pave); }
       const ground = terrainMesh(field, { color: kind === 'stone' ? 0x7d7158 : color, kind: kind === 'stone' ? 'earth' : kind, roads: arena.roads || [], size: 160, seg: 64 });
       ground.position.y = 0.01; g.add(ground);
+      // 마을처럼 언덕에는 소나무·덤불·바위, 걷는 곳 가장자리에는 풀포기(지도·바다 무대와 nature: false는 빼고). 무대를 치우면 함께 치운다.
+      if (!arena.map && arena.nature !== false) addNature(world, { bounds: arena.bounds, props: arena.props || [], roads: arena.roads || [], start: arena.from }, field, kind, color, g);
     }
     if (arena.map) g.add(mapFloor(arena.map));
     for (const r of arena.roads || []) { const m = new THREE.Mesh(box(r.w, 0.05, r.d), mat(r.color || 0x8f7556, r.kind || 'earth')); m.position.set(r.x, r.y ?? 0.04, r.z); m.rotation.y = r.ry || 0; m.receiveShadow = true; g.add(m); }

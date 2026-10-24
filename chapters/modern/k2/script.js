@@ -11,8 +11,8 @@ export default {
     { who: 'narr', text: '이 무렵 조선은 청의 간섭을 받고 있었어요.', src: ['S51'] },
   ],
   start: [
-    { who: 'guide', text: '1884년 한성이야. 오늘 밤 새로 생긴 관청에서 축하 잔치가 열린대.' },
-    { who: 'guide', text: '느낌표가 있는 사람에게 차례로 말을 걸어 봐.' },
+    { who: 'guide', text: '1884년 겨울, 한성의 큰길이야. 가게마다 사람들이 북적이고, 가운데 새로 지은 관청에서는 오늘 밤 축하 잔치가 열린대.' },
+    { who: 'guide', text: '잔치 소식은 시장 사람들이 제일 빨리 알지. 길가의 상인부터 말을 걸어 보자.' },
   ],
   goals: ['한성 상인에게 말을 걸어 보자', '우정총국 관리를 찾아가자', '김옥균의 이야기를 들어 보자', '갑신정변을 살펴보자', '배운 내용을 확인해 보자'],
   minigameTitle: '갑신정변',
@@ -22,18 +22,18 @@ export default {
         { who: 'merchant', text: '나라에서 개화 정책을 편다지만 크게 달라진 게 없어요.', src: ['S51'] },
         { who: 'merchant', text: '게다가 청나라가 우리 일에 이래라저래라 간섭을 한다니까요.', src: ['S51'] },
       ],
-      later: [{ who: 'merchant', text: '오늘 밤 우정총국에서 잔치가 열린대요.' }],
+      later: [{ who: 'merchant', text: '높은 분들이 잔치에 모인다니 오늘은 일찍 가게 문을 닫아야겠어요. 관청 앞 관리에게 물어보세요.' }],
     },
     clerk: {
-      tooEarly: [{ who: 'clerk', text: '시장 쪽 상인에게 먼저 가 보게.' }],
+      tooEarly: [{ who: 'clerk', text: '잔치 준비로 정신이 없네. 무슨 일인지 궁금하면 시장 쪽 상인에게 먼저 들어 보게.' }],
       first: [
         { who: 'clerk', text: '이곳 우정총국은 우리나라 최초로 우편 업무를 맡은 관청이라네.', src: ['S51'] },
         { who: 'clerk', text: '오늘 밤 우정총국이 생긴 것을 축하하는 잔치가 열리지.', src: ['S51'] },
       ],
-      later: [{ who: 'clerk', text: '잔치 준비로 바쁘다네.' }],
+      later: [{ who: 'clerk', text: '등불을 더 걸어야 하는데 손이 모자라는군. 저기 서 있는 젊은 관리도 오늘 잔치에 온다네.' }],
     },
     kimokgyun: {
-      tooEarly: [{ who: 'kimokgyun', text: '우정총국에 먼저 들러 보게.' }],
+      tooEarly: [{ who: 'kimokgyun', text: '오늘 밤 우정총국에서 무슨 일이 열리는지부터 알아보고 오게.' }],
       first: [
         { who: 'kimokgyun', text: '청에 의지하는 세력을 몰아내고 새로운 조선을 만들어야 하오.', src: ['S51'] },
         { who: 'kimokgyun', text: '우리 개화 세력은 오늘 잔치를 틈타 정변을 일으킬 것이오.', src: ['S51'] },

@@ -77,15 +77,19 @@ export default makeKitChapter({
   order: ['peasant', 'jeonbongjun', 'farmer'],
   spot: [0, 3],
   layout: {
-    ground: 'grass', groundColor: 0x8a9a52, bounds: { x0: -17, x1: 17, z0: -10, z1: 12 }, start: [0, 10],
+    // 1894년 전라도 고부: 넓은 들판(논)이 둘러싼 낮은 마을, 북쪽 축대 위에 담을 두른 관아, 마을 어귀의 버드나무와 볏가리
+    ground: 'grass', groundColor: 0x8a9a52, bounds: { x0: -17, x1: 17, z0: -10, z1: 12 }, start: [0, 10], hill: 0.55,
     roads: [{ x: 0, z: 1, w: 4, d: 24 }, { x: 0, z: -2, w: 36, d: 3.5 }],
     props: [
-      { type: 'hanok', x: 0, z: -9, tile: true, scale: 1.5 },
+      { type: 'terrace', x: 0, z: -9.6, w: 9.4, d: 6, h: 0.8, steps: false }, { type: 'hanok', x: 0, z: -9.8, y: 0.8, tile: true, scale: 1.5 },
       { type: 'wall', x: -7, z: -6, w: 8 }, { type: 'wall', x: 7, z: -6, w: 8 },
-      { type: 'hanok', x: -13, z: 7 }, { type: 'hanok', x: 13, z: 7 }, { type: 'hanok', x: -14, z: -6 }, { type: 'hanok', x: 14, z: -6 }, { type: 'hanok', x: -5, z: 11.5 },
+      { type: 'hanok', x: -13, z: 7, ry: 0.3 }, { type: 'hanok', x: 13, z: 7, ry: -0.3 }, { type: 'hanok', x: -14, z: -6 }, { type: 'hanok', x: 14, z: -6 }, { type: 'hanok', x: -5, z: 11.5 },
       { type: 'flagpole', x: -3, z: 6, color: 0xf2efe6 }, { type: 'flagpole', x: 4, z: 6, color: 0xb8452f },
       { type: 'crowd', x: 9, z: 2, n: 6, cols: 3, looks: ['peasant', 'uibyeong', 'peasant'], face: -Math.PI / 2 },
-      { type: 'rice', x: -10, z: 2, n: 6 }, { type: 'tree', x: 10, z: 11 },
+      { type: 'rice', x: -10, z: 2, n: 6 }, { type: 'straw', x: -15.5, z: 2.5 }, { type: 'straw', x: 16, z: 1 },
+      { type: 'tree', x: 10, z: 11, kind: 'willow' }, { type: 'tree', x: -16, z: 11, kind: 'willow' },
+      { type: 'paddy', x: -21, z: 0, w: 7, d: 20, ripe: true }, { type: 'paddy', x: 21, z: 0, w: 7, d: 20, ripe: true },
+      { type: 'paddy', x: -21, z: 14, w: 7, d: 6, ripe: true }, { type: 'paddy', x: 21, z: 14, w: 7, d: 6, ripe: true },
     ],
     npcs: [
       { id: 'peasant', look: 'peasant', x: -6, z: 7, ry: Math.PI * 0.8 },
