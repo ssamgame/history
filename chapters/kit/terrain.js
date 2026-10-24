@@ -3,7 +3,7 @@
 // 멀리에는 안개에 흐려지는 산줄기를 둘러 원근감을 준다. 모두 무대 기준 좌표(local).
 import * as THREE from 'three';
 import { groundMaterial } from '../../core/textures.js';
-import { merge } from './buildings.js';
+import { merge, hanok, tree } from './buildings.js';
 
 function hash(x, z) { const s = Math.sin(x * 127.1 + z * 311.7) * 43758.5453; return s - Math.floor(s); }
 function noise(x, z) {
@@ -132,4 +132,26 @@ export function backdropMountains(L, { center = [0, 0], radius = 120, color = 0x
   const m = mountainRing(field, { center, color, radius, seed });
   if (m) L.add(m);
   return m;
+}
+
+// 손으로 만든 장면의 걷는 곳(bounds) 바깥에 그 장소다운 집과 나무를 둘러 세운다(걷기·놀이 자리는 건드리지 않는다).
+// 높이는 장면에 깔린 땅을 위에서 비추어(레이) 찾는다. houses: 'thatch'(초가) | 'tile'(기와집) | null, trees: kind 목록, snow: 눈 덮인 지붕·잎
+// 앞(+z, 카메라 쪽)은 비우고 뒤(-z)와 양옆에만 둔다.
+export function surroundings(world, { bounds, houses = null, trees = ['pine'], count = 10, gap = 6, snow = false, seed = 7, back = true }) {
+  const L = world.level, ray = new THREE.Raycaster(), down = new THREE.Vector3(0, -1, 0);
+  const grounds = []; L.traverse(o => { if (o.isMesh && o.geometry.attributes.position.count > 1000) grounds.push(o); });
+  const heightAt = (x, z) => { ray.set(new THREE.Vector3(x, 80, z), down); const hit = ray.intersectObjects(grounds, false)[0]; return hit ? hit.point.y : 0; };
+  let s = seed; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  const spots = [];
+  if (back) for (let i = 0; i < count; i++) { // 뒤쪽 줄
+    spots.push([bounds.x0 - 4 + (bounds.x1 - bounds.x0 + 8) * (i + rnd() * 0.5) / count, bounds.z0 - gap - rnd() * 8]);
+  }
+  for (let i = 0; i < Math.ceil(count / 2); i++) for (const side of [-1, 1]) { // 양옆
+    spots.push([side < 0 ? bounds.x0 - gap - rnd() * 6 : bounds.x1 + gap + rnd() * 6, bounds.z0 + (bounds.z1 - bounds.z0) * (i / Math.ceil(count / 2)) * 0.8]);
+  }
+  spots.forEach(([x, z], i) => {
+    const g = new THREE.Group(); g.position.set(x, heightAt(x, z) - 0.05, z); g.rotation.y = (rnd() - 0.5) * 0.6; L.add(g);
+    if (houses && i % 3 === 0) hanok(g, { tile: houses === 'tile', roofColor: snow && houses !== 'tile' ? 0xe6e8ec : undefined });
+    else tree(g, { kind: trees[i % trees.length], x, z, color: snow ? 0x5a6e5a : undefined });
+  });
 }

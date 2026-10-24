@@ -1,5 +1,6 @@
 // 조선편 3장 장면: 여름날 한양. 남쪽 길가의 앙부일구(해시계), 동쪽 보루각의 자격루(물시계), 북서쪽 서운관 마당의 측우기와 관천대.
 import * as THREE from 'three';
+import { surroundings } from '../../kit/terrain.js';
 import { curvedHipRoof } from '../../kit/buildings.js';
 import { sceneGround } from '../../kit/terrain.js';
 import { mat } from '../../../core/people.js';
@@ -88,6 +89,7 @@ export function buildJ3Scene(world) {
     }
   });
 
+  surroundings(world, { bounds: world.bounds, houses: 'tile', trees: ['pine', 'tree'], count: 10, seed: 13 }); // 걷는 곳 바깥에 그 장소다운 집·나무(깊이감)
   return {
     start: [0, 9], dial, gauge, clock,
     setRain(on) { rain.points.visible = on; },

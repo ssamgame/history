@@ -1,7 +1,7 @@
 // 조선편 5장 장면: 눈 덮인 남한산성. 산 위의 둥근 성벽(여장과 서문), 북쪽 행궁, 동쪽 창고, 성벽 안쪽의 화톳불 여섯,
 // 성 밖 아래 벌판에 멀리 보이는 청나라 진영.
 import * as THREE from 'three';
-import { backdropMountains } from '../../kit/terrain.js';
+import { backdropMountains, surroundings } from '../../kit/terrain.js';
 import { makeFire } from '../../../core/fire.js';
 import { curvedHipRoof } from '../../kit/buildings.js';
 import { groundMaterial } from '../../../core/textures.js';
@@ -122,6 +122,7 @@ export function buildJ5Scene(world) {
   });
 
   backdropMountains(world.level, { color: 0xc8ccd0, radius: 130 }); // 먼 산줄기(깊이감)
+  surroundings(world, { bounds: world.bounds, trees: ['pine', 'bare'], count: 10, snow: true, gap: 8, seed: 17 }); // 걷는 곳 바깥에 그 장소다운 집·나무(깊이감)
   return {
     start: [0, 7], fires,
     resetFires() { fires.forEach(f => setFire(f, false)); },

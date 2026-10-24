@@ -1,6 +1,7 @@
 // 조선편 6장 장면: 가을의 수원 화성 공사장. 북쪽에 쌓는 중인 성벽(빈자리 셋)과 서쪽 성문, 성벽 위를 가로지르는 거중기,
 // 돌 더미와 수레, 정조가 머무는 차일.
 import * as THREE from 'three';
+import { surroundings } from '../../kit/terrain.js';
 import { curvedHipRoof } from '../../kit/buildings.js';
 import { sceneGround } from '../../kit/terrain.js';
 import { mat, makePerson } from '../../../core/people.js';
@@ -103,6 +104,7 @@ export function buildJ6Scene(world) {
   const slideTo = x => { const x0 = trolley.position.x; return anim(Math.max(0.4, Math.abs(x - x0) / 12), t => { trolley.position.x = x0 + (x - x0) * ease(t); }); };
   const liftTo = h => { const h0 = lower.userData.h ?? 1; return anim(0.9, t => { const v = h0 + (h - h0) * ease(t); lower.userData.h = v; setLift(v); }); };
 
+  surroundings(world, { bounds: world.bounds, houses: 'thatch', trees: ['pine', 'tree'], count: 10, gap: 8, seed: 19 }); // 걷는 곳 바깥에 그 장소다운 집·나무(깊이감)
   return {
     start: [0, 9], fillers, gapGlow, trolley, stone, setLift,
     // 돌을 옆으로 옮김: 0 = 왼쪽 끝, 1 = 오른쪽 끝

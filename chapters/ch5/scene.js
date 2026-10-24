@@ -1,6 +1,6 @@
 // 5장 장면: 아침 산사의 경판 작업장 — 바닷물 통, 솥, 그늘 말림 선반, 판각대, 옻칠 작업대, 경판 더미.
 import * as THREE from 'three';
-import { backdropMountains } from '../kit/terrain.js';
+import { backdropMountains, surroundings } from '../kit/terrain.js';
 import { curvedHipRoof } from '../kit/buildings.js';
 import { groundMaterial } from '../../core/textures.js';
 import { mat } from '../../core/people.js';
@@ -125,5 +125,6 @@ export function buildCh5Scene(world) {
 
   world.onUpdate((dt, t) => { for (const f of stations) { const s = 0.8 + Math.sin(t * 12) * 0.15; f.scale.set(s, s + 0.2, s); } });
   backdropMountains(world.level, { color: 0x4f6a3e, radius: 130 }); // 먼 산줄기(깊이감)
+  surroundings(world, { bounds: world.bounds, trees: ['pine', 'pine', 'tree'], count: 12, seed: 5 }); // 걷는 곳 바깥에 그 장소다운 집·나무(깊이감)
   return { library, start: [0, 9] };
 }
