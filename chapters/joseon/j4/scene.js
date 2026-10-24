@@ -7,6 +7,7 @@ import { scatter } from '../../../core/props.js';
 import { LOOKS } from '../../../content/characters.js';
 import { addSigns } from '../common.js';
 import { panokseon, geobukseon, japaneseShip } from '../ships.js';
+import { hanok, pier, boat, jars } from '../../kit/buildings.js';
 
 export const STRAIT_Z = -78;       // 견내량 입구
 // 적 배가 기다리는 곳: 견내량 안쪽 깊이(미끼 배가 돌아설 때 넉넉히 떨어져 있게)
@@ -45,20 +46,16 @@ export function buildJ4Scene(world) {
     const t = new THREE.Mesh(g, groundMaterial('grass')); t.receiveShadow = true; L.add(t);
   }
   // 부두(나무 다리)와 배들
-  mk(new THREE.BoxGeometry(3, 0.3, 9), 0x8a6a45, 6, 0.05, 1.5);
-  for (let i = 0; i < 4; i++) mk(new THREE.CylinderGeometry(0.15, 0.15, 1.6, 6), 0x5a3f2a, 6 + (i % 2 ? 1.3 : -1.3), -0.4, -1.5 + Math.floor(i / 2) * 4);
+  const put = (fn, x, y, z, ry = 0, p = {}) => { const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = ry; L.add(g); fn(g, p); return g; };
+  put(pier, 6, -0.5, 1.5, Math.PI / 2, { w: 9, d: 3 }); // 기둥 위 나무 부두
   const turtle = geobukseon(); turtle.position.set(10.5, -0.2, 0); L.add(turtle);
   for (const [x, z] of [[-4, -1], [-12, 0], [1, -3]]) { const s = panokseon(); s.position.set(x, -0.2, z); s.rotation.y = x * 0.02; L.add(s); }
   // 포구 마을: 지휘소, 초가, 그물 말리기
-  const cmd = new THREE.Group(); cmd.position.set(-10, 0, 11); L.add(cmd);
-  mk(new THREE.BoxGeometry(5, 2.4, 3.6), 0xe6dcc3, 0, 1.2, 0, cmd);
-  const r = mk(new THREE.ConeGeometry(Math.SQRT2 / 2, 1, 4), 0x3d4846, 0, 3.2, 0, cmd); r.geometry.rotateY(Math.PI / 4); r.scale.set(7, 1.6, 5.4);
+  put(hanok, -10, 0, 11, Math.PI, { tile: true }).scale.setScalar(1.15); // 지휘소(기와집)
   world.addCollider({ x: -10, z: 11, r: 2.8 });
-  for (const [x, z] of [[16, 12.5], [-19, 6]]) {
-    mk(new THREE.BoxGeometry(4, 2.2, 3.4), 0xe6dcc3, x, 1.1, z);
-    const roof = mk(new THREE.SphereGeometry(2.6, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), 0xc8a476, x, 2.1, z); roof.scale.set(1, 0.55, 0.85);
-    world.addCollider({ x, z, r: 2.3 });
-  }
+  for (const [x, z, ry] of [[16, 12.5, Math.PI + 0.3], [-19, 6, Math.PI / 2]]) { put(hanok, x, 0, z, ry, {}); world.addCollider({ x, z, r: 2.3 }); } // 포구 초가
+  put(jars, -6.5, 0, 13.5, Math.PI, { n: 5 });
+  for (const [x, z, ry] of [[-20, 1.5, 0.6], [20, 2.5, -0.4]]) put(boat, x, -0.75, z, ry, { len: 4.2 }); // 물가에 끌어 올린 고깃배
   for (const x of [-15, -13]) mk(new THREE.CylinderGeometry(0.06, 0.06, 1.8, 5), 0x5a3f2a, x, 0.9, 7.2); // 그물 말리기(이순신 앞을 가리지 않게 서쪽으로)
   const net = mk(new THREE.PlaneGeometry(2, 1.2), 0x6b6152, -14, 1.2, 7.2); net.material = net.material.clone(); net.material.side = THREE.DoubleSide;
   scatter(world, { kind: 'grass', count: 70, area: { x0: -30, x1: 30, z0: 8.5, z1: 20 }, avoid: [{ x: -10, z: 11, r: 4 }, { x: 16, z: 12.5, r: 3 }, { x: -19, z: 6, r: 3 }, { x: -14, z: 7.2, r: 2 }, { x: -2.2, z: 5.3, r: 1.5 }], seed: 81, color: 0x7a9450 });
