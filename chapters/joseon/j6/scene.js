@@ -2,7 +2,7 @@
 // 돌 더미와 수레, 정조가 머무는 차일.
 import * as THREE from 'three';
 import { surroundings } from '../../kit/terrain.js';
-import { curvedHipRoof } from '../../kit/buildings.js';
+import { curvedHipRoof, cart as cartModel, woodpile, jars } from '../../kit/buildings.js';
 import { sceneGround } from '../../kit/terrain.js';
 import { mat, makePerson } from '../../../core/people.js';
 import { scatter } from '../../../core/props.js';
@@ -70,11 +70,16 @@ export function buildJ6Scene(world) {
   // 돌 더미, 수레, 정조의 차일
   for (const [x, z] of [[8, 2], [10, 3.5], [9, 0.5], [-9, 3], [-10.5, 1.5]]) mk(new THREE.BoxGeometry(1.8, 1, 1.4), 0xc9c2b4, x, 0.5, z).rotation.y = x;
   world.addCollider({ x: 9, z: 2, r: 2 }); world.addCollider({ x: -10, z: 2.3, r: 1.6 });
-  const cart = new THREE.Group(); cart.position.set(4, 0, 5); L.add(cart);
-  mk(new THREE.BoxGeometry(1.6, 0.3, 2.6), 0x7a5a3c, 0, 0.8, 0, cart);
-  for (const dx of [-0.95, 0.95]) { const w = mk(new THREE.CylinderGeometry(0.6, 0.6, 0.15, 12), 0x5e432c, dx, 0.6, 0, cart); w.rotation.z = Math.PI / 2; }
-  mk(new THREE.BoxGeometry(1.4, 0.8, 1.2), 0xc9c2b4, 0, 1.35, 0, cart);
+  const cart = new THREE.Group(); cart.position.set(4, 0, 5); cart.rotation.y = 0.4; L.add(cart);
+  cartModel(cart); mk(new THREE.BoxGeometry(1.2, 0.7, 1.4), 0xc9c2b4, 0, 1.3, -0.2, cart); // 돌을 실은 수레
   world.addCollider({ x: 4, z: 5, r: 1.4 });
+  // 공사장 살림: 목재·장작 더미, 일꾼이 마실 물 항아리, 성벽 위 공사 깃발
+  const put = (fn, x, z, ry = 0, p = {}, r = 0) => { const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = ry; L.add(g); fn(g, p); if (r) world.addCollider({ x, z, r }); return g; };
+  put(woodpile, -13.5, 5, 0.3, {}, 0.8); put(woodpile, 13.5, -3.5, -0.4, {}, 0.8); put(jars, 15, 6.5, -Math.PI / 2, { n: 3 }, 0.9);
+  for (const [x, c] of [[-14, 0xd9a441], [14, 0xa8392b]]) {
+    mk(new THREE.CylinderGeometry(0.07, 0.07, 3.4, 5), 0x5a3f2a, x, WALL_H + 1.7, WALL_Z);
+    const f = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.6).translate(0.6, 0, 0), new THREE.MeshLambertMaterial({ color: c, side: THREE.DoubleSide })); f.position.set(x, WALL_H + 2.6, WALL_Z); L.add(f);
+  }
   const tent = new THREE.Group(); tent.position.set(-10, 0, -3); L.add(tent);
   for (const [dx, dz] of [[-2, -1.6], [2, -1.6], [-2, 1.6], [2, 1.6]]) mk(new THREE.CylinderGeometry(0.08, 0.08, 3, 6), 0x5a3f2a, dx, 1.5, dz, tent);
   const cloth = mk(new THREE.BoxGeometry(4.8, 0.08, 4), 0xe6dcc3, 0, 3, 0, tent); cloth.rotation.z = 0.04;

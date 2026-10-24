@@ -78,7 +78,7 @@ export function buildJ1Scene(world) {
   // 젖은 짐: 거적을 덮은 쌀가마(군량)와 창걸이
   const put = (fn, x, z, ry = 0, p = {}) => { const g = new THREE.Group(); g.position.set(x, groundH(x, z), z); g.rotation.y = ry; L.add(g); fn(g, p); return g; };
   for (const [x, z] of [[-11, 1.5], [-4, -9.5]]) { put(BUILD.rice, x, z, x, { n: 6 }); mk(new THREE.BoxGeometry(2.6, 0.08, 2.6), 0x8a7a52, x, groundH(x, z) + 1.25, z).rotation.set(0.08, x, 0.05); world.addCollider({ x, z, r: 1.3 }); }
-  put(spearRack, -3, 5.5, 0.4); world.addCollider({ x: -3, z: 5.5, r: 0.9 });
+  put(spearRack, -17.5, 5, Math.PI / 2); world.addCollider({ x: -17.5, z: 5, r: 0.9 });
   // 섬 가장자리의 버드나무와 남쪽 물가에 매어 둔 나룻배(회군하는 동쪽 길은 비운다)
   for (const [x, z] of [[-23, 2], [-21, -9], [23, -2], [22, 8], [-19, 13.5], [-8, 14.5], [17, 13.5], [-12, -13.5], [16, -13]]) { const g = put(tree, x, z, rand() * 3, { kind: 'willow', x, z }); g.position.y = Math.max(-0.3, g.position.y); }
   for (const [x, z, ry] of [[-14, 17.5, 0.5], [-5, 18, -0.2], [18, 17.5, 0.3]]) { const g = new THREE.Group(); g.position.set(x, -0.75, z); g.rotation.y = ry; L.add(g); boat(g, { len: 4.4 }); }
