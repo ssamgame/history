@@ -11,8 +11,8 @@ export default {
     { who: 'narr', text: '중국군의 공격을 막아 내지 못한 국군과 유엔군은 남쪽으로 물러났고, 1951년 1월 4일 서울을 다시 빼앗겼어요(1·4 후퇴).', src: ['S51'] },
   ],
   start: [
-    { who: 'guide', text: '눈 내리는 겨울, 피란길이야. 많은 사람이 짐을 지고 남쪽으로 가고 있어.' },
-    { who: 'guide', text: '느낌표가 있는 사람에게 차례로 말을 걸어 봐.' },
+    { who: 'guide', text: '눈 내리는 1951년 겨울, 피란길이야. 사람들이 짐 보따리를 이고 지고 남쪽으로 걸어가고 있어.' },
+    { who: 'guide', text: '추운 겨울에 왜 집을 떠났을까? 길을 지키는 국군 병사에게 먼저 물어보자.' },
   ],
   goals: ['국군 병사에게 말을 걸어 보자', '피란민 어머니를 돕자', '유엔군 병사의 이야기를 들어 보자', '전쟁이 멈추기까지를 따라가자', '배운 내용을 확인해 보자'],
   minigameTitle: '1·4 후퇴와 정전 협정',
@@ -22,18 +22,18 @@ export default {
         { who: 'soldier', text: '압록강 가까이까지 갔는데, 중국군이 내려와서 다시 물러나야 했어.', src: ['S51'] },
         { who: 'soldier', text: '피란민들을 안전하게 도와줘!' },
       ],
-      later: [{ who: 'soldier', text: '힘을 내자.' }],
+      later: [{ who: 'soldier', text: '추워도 힘을 내자. 저 아주머니가 아이를 잃어버렸대. 도와드려.' }],
     },
     mother: {
-      tooEarly: [{ who: 'mother', text: '병사님 말씀부터 들어 보렴.' }],
+      tooEarly: [{ who: 'mother', text: '지금 무슨 일이 벌어지는지 병사님 말씀부터 들어 보렴.' }],
       first: [
         { who: 'mother', text: '추운 겨울에 아이들을 데리고 집을 떠나왔단다.', src: ['S51'] },
         { who: 'mother', text: '짐이 무거워서 걷기가 힘들구나. 다른 가족들도 좀 도와주렴.' },
       ],
-      later: [{ who: 'mother', text: '고맙다, 정말 고마워.' }],
+      later: [{ who: 'mother', text: '고맙다, 정말 고마워. 네 덕분에 아이들이랑 같이 갈 수 있겠구나.' }],
     },
     unSoldier: {
-      tooEarly: [{ who: 'unSoldier', text: '피란민을 먼저 도와줘.' }],
+      tooEarly: [{ who: 'unSoldier', text: '지금은 피란민을 돕는 게 먼저야. 그다음에 이야기하자.' }],
       first: [
         { who: 'unSoldier', text: '우리는 다시 서울을 되찾았지만, 38도선 근처에서 싸움이 오래 이어지고 있어.', src: ['S51'] },
         { who: 'unSoldier', text: '한편에서는 전쟁을 멈추려고 회담을 하고 있어.', src: ['S51'] },

@@ -12,8 +12,8 @@ export default {
     { who: 'narr', text: '1945년 12월 모스크바 3국 외상 회의에서 한반도에 임시 정부를 세우고, 최대 5년 동안 신탁 통치를 하기로 정했어요. 이를 두고 사람들 사이에 갈등이 일어났어요.', src: ['S51'] },
   ],
   start: [
-    { who: 'guide', text: '우리 손으로 새 나라를 세우려는 때야. 사람들의 생각을 들어 보자.' },
-    { who: 'guide', text: '느낌표가 있는 사람에게 차례로 말을 걸어 봐.' },
+    { who: 'guide', text: '광복 뒤 서울이야. 큰 관청 앞 광장에 사람들이 모여, 새 나라를 어떻게 세울지 이야기하고 있어.' },
+    { who: 'guide', text: '생각이 다 같지는 않은가 봐. 광장의 시민에게 요즘 분위기를 먼저 물어보자.' },
   ],
   goals: ['서울 시민에게 말을 걸어 보자', '이승만의 생각을 들어 보자', '김구의 생각을 들어 보자', '정부가 세워지는 과정을 따라가자', '배운 내용을 확인해 보자'],
   minigameTitle: '대한민국 정부 수립',
@@ -23,18 +23,18 @@ export default {
         { who: 'citizen', text: '미국과 소련이 두 차례 회의를 열었지만 합의하지 못해서, 한반도 문제를 국제 연합(UN)에 넘겼대요.', src: ['S51'] },
         { who: 'citizen', text: '국제 연합은 남북한 총선거로 통일 정부를 세우기로 했지만, 소련이 막았대요.', src: ['S51'] },
       ],
-      later: [{ who: 'citizen', text: '사람마다 생각이 달라요.' }],
+      later: [{ who: 'citizen', text: '사람마다 생각이 달라서 날마다 토론이 벌어져요. 저쪽 이승만 박사 이야기도 들어 보세요.' }],
     },
     syngmanrhee: {
-      tooEarly: [{ who: 'syngmanrhee', text: '시민들의 이야기를 먼저 들어 보시오.' }],
+      tooEarly: [{ who: 'syngmanrhee', text: '시민들이 무엇을 걱정하는지 먼저 들어 보시오.' }],
       first: [
         { who: 'syngmanrhee', text: '통일 정부를 기다려도 잘되지 않으니, 남쪽만이라도 임시 정부 같은 것을 만들어야 하오.', src: ['S51'] },
         { who: 'syngmanrhee', text: '그리고 소련이 38도선 북쪽에서 물러나도록 세계에 알려야 하오.', src: ['S51'] },
       ],
-      later: [{ who: 'syngmanrhee', text: '나라를 세우는 일이 급하오.' }],
+      later: [{ who: 'syngmanrhee', text: '나는 정부를 세우는 일이 무엇보다 급하다고 보오. 김구 선생은 생각이 다르니 그 말도 들어 보시오.' }],
     },
     kimgu: {
-      tooEarly: [{ who: 'kimgu', text: '이승만 박사의 생각도 들어 보게.' }],
+      tooEarly: [{ who: 'kimgu', text: '이승만 박사의 생각을 먼저 들어 보게. 그래야 내 생각과 견주어 볼 수 있지.' }],
       first: [
         { who: 'kimgu', text: '다른 나라의 간섭을 받지 않고 독립된 통일 정부를 세워야 하오.', src: ['S51'] },
         { who: 'kimgu', text: '통일 정부가 가망 없다고 단독 정부를 세울 수는 없소.', src: ['S51'] },

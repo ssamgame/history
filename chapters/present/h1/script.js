@@ -11,8 +11,8 @@ export default {
     { who: 'narr', text: '1945년 8월 15일, 일본이 연합국에 항복하면서 우리나라는 마침내 광복을 맞이했어요.', src: ['S51'] },
   ],
   start: [
-    { who: 'guide', text: '1945년 8월 15일, 서울 거리야. 여기저기서 만세 소리가 들려!' },
-    { who: 'guide', text: '느낌표가 있는 사람에게 차례로 말을 걸어 봐.' },
+    { who: 'guide', text: '1945년 8월 15일, 서울 큰길이야. 숨겨 두었던 태극기를 꺼내 든 사람들로 길이 가득 찼어!' },
+    { who: 'guide', text: '오늘 무슨 일이 있었길래 이렇게 기뻐할까? 가까이 있는 시민에게 물어보자.' },
   ],
   goals: ['서울 시민에게 말을 걸어 보자', '할머니의 이야기를 들어 보자', '김구를 만나자', '광복의 기쁨을 나누자', '배운 내용을 확인해 보자'],
   minigameTitle: '8·15 광복',
@@ -22,18 +22,18 @@ export default {
         { who: 'citizen', text: '광복은 연합국의 승리로 얻은 것이기도 하지만, 우리 민족이 끊임없이 독립운동을 벌인 결과이기도 해요.', src: ['S51'] },
         { who: 'citizen', text: '이 기쁜 소식을 집집마다 전해 주세요!' },
       ],
-      later: [{ who: 'citizen', text: '대한 독립 만세!' }],
+      later: [{ who: 'citizen', text: '대한 독립 만세! 이 태극기를 장롱 깊숙이 숨겨 두었는데 오늘에야 꺼냈어요. 저 할머니께도 인사드려 보세요.' }],
     },
     grandma: {
-      tooEarly: [{ who: 'grandma', text: '저기 시민분 이야기부터 들어 보렴.' }],
+      tooEarly: [{ who: 'grandma', text: '오늘이 무슨 날인지 저기 시민분께 먼저 들어 보렴.' }],
       first: [
         { who: 'grandma', text: '이제 일제가 강제로 바꾸게 한 일본식 이름 대신 우리 성과 이름을 되찾을 수 있단다.', src: ['S51'] },
         { who: 'grandma', text: '우리말과 우리글을 마음껏 쓰고, 학교에서는 한글 교과서로 우리 역사를 배울 거야.', src: ['S51'] },
       ],
-      later: [{ who: 'grandma', text: '강제로 문을 닫았던 신문들도 다시 나온단다.' }],
+      later: [{ who: 'grandma', text: '이제 우리말 신문도 마음껏 읽을 수 있겠구나. 저 앞에 김구 선생도 오셨단다.' }],
     },
     kimgu: {
-      tooEarly: [{ who: 'kimgu', text: '시민들의 이야기를 먼저 들어 보게.' }],
+      tooEarly: [{ who: 'kimgu', text: '오늘 시민들이 무엇을 느끼는지 먼저 들어 보게.' }],
       first: [
         { who: 'kimgu', text: '광복 소식에 다른 나라에 머물던 동포들이 고국으로 돌아오고 있소.', src: ['S51'] },
         { who: 'kimgu', text: '미국에서 독립운동을 한 이승만, 중국에서 임시 정부를 이끈 나 김구 등도 돌아왔소.', src: ['S51'] },
@@ -60,7 +60,7 @@ export default {
         { label: '서당', talk: [{ who: 'grandma', text: '아이들이 우리말과 우리글을 마음껏 배우겠구나.' }] },
         { label: '장터', talk: [{ who: 'citizen', text: '장터 사람들도 모두 뛰어나와 만세를 부르고 있어요!' }] },
         { label: '마을 광장', needPickups: true, needSay: '아직 모으지 못한 태극기가 있어요. 화살표를 따라가 봐요.',
-          talk: [{ who: 'kimgu', text: '이 기쁨은 우리 민족이 끊임없이 독립운동을 벌인 결과이기도 하오.' }, { who: 'citizen', text: '대한 독립 만세!' }] },
+          talk: [{ who: 'kimgu', text: '이 기쁨은 우리 민족이 끊임없이 독립운동을 벌인 결과이기도 하오.' }, { who: 'citizen', text: '대한 독립 만세! 이 태극기를 장롱 깊숙이 숨겨 두었는데 오늘에야 꺼냈어요. 저 할머니께도 인사드려 보세요.' }] },
       ],
       pickups: [{ label: '태극기' }, { label: '태극기' }, { label: '태극기' }, { label: '태극기' }],
       fail: '빛나는 곳을 따라 가요. 화살표가 길을 알려 줘요.',

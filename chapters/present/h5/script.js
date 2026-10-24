@@ -11,8 +11,8 @@ export default {
     { who: 'narr', text: '도시를 중심으로 복구가 이루어지면서 서울을 비롯한 대도시에 사람들이 몰렸어요.', src: ['S51'] },
   ],
   start: [
-    { who: 'guide', text: '여기는 부산의 피란민 마을이야. 다닥다닥 판잣집이 모여 있어.' },
-    { who: 'guide', text: '느낌표가 있는 사람에게 차례로 말을 걸어 봐.' },
+    { who: 'guide', text: '부산의 피란민 마을이야. 바다가 보이는 비탈에 축대를 쌓고 판잣집을 층층이 지었어.' },
+    { who: 'guide', text: '이 많은 사람들은 어디서 왔을까? 함지박을 인 아주머니에게 먼저 말을 걸어 보자.' },
   ],
   goals: ['행상 아주머니에게 말을 걸어 보자', '밀면집 할머니를 만나자', '학생의 이야기를 들어 보자', '이웃을 도와 함께 일어서자', '배운 내용을 확인해 보자'],
   minigameTitle: '다시 일어서다',
@@ -22,18 +22,18 @@ export default {
         { who: 'mother', text: '도시로 몰려든 사람들은 판잣집 같은 어려운 환경에서 살았지요.', src: ['S51'] },
         { who: 'mother', text: '전쟁으로 많은 남성이 죽거나 다쳐서, 여성들이 공장에 다니거나 행상을 하며 가족의 생계를 책임지는 경우가 많아졌어요.', src: ['S51'] },
       ],
-      later: [{ who: 'mother', text: '오늘도 열심히 팔아야지요.' }],
+      later: [{ who: 'mother', text: '오늘도 열심히 팔아야 아이들 밥을 먹이지요. 국숫집 할머니도 만나 보세요.' }],
     },
     grandma: {
-      tooEarly: [{ who: 'grandma', text: '저기 아주머니부터 만나 보렴.' }],
+      tooEarly: [{ who: 'grandma', text: '저기 아주머니가 이 마을 사정을 잘 안단다. 먼저 만나 보렴.' }],
       first: [
         { who: 'grandma', text: '38도선 북쪽에서 피란 온 사람들은 고향 음식 냉면을 그리워했단다.', src: ['S51'] },
         { who: 'grandma', text: '메밀을 구하기 어려워서 구호물품으로 받은 밀가루로 냉면을 만들었지. 이것이 부산 밀면의 시작이란다.', src: ['S51'] },
       ],
-      later: [{ who: 'grandma', text: '밀면 한 그릇 먹고 가렴.' }],
+      later: [{ who: 'grandma', text: '밀면 한 그릇 먹고 가렴. 운동장에서 공부하는 학생들도 보고 오고.' }],
     },
     student: {
-      tooEarly: [{ who: 'student', text: '마을 어른들 이야기를 먼저 들어 봐.' }],
+      tooEarly: [{ who: 'student', text: '우리 마을 어른들이 어떻게 사시는지 먼저 들어 봐.' }],
       first: [
         { who: 'student', text: '교실이 부서져서 운동장에서 수업을 받아요.', src: ['S51'] },
         { who: 'student', text: '그래도 사람들은 서로를 적으로 여기는 교육을 강화하기도 했어요. 남과 북은 오랫동안 긴장했지요.', src: ['S51'] },

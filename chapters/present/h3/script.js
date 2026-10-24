@@ -11,8 +11,8 @@ export default {
     { who: 'narr', text: '국군은 3일 만에 서울을 빼앗기고 낙동강까지 물러났어요.', src: ['S57'] },
   ],
   start: [
-    { who: 'guide', text: '여기는 1950년 여름, 낙동강 가의 국군 진영이야. 마지막 방어선을 지키고 있어.' },
-    { who: 'guide', text: '느낌표가 있는 사람에게 차례로 말을 걸어 봐.' },
+    { who: 'guide', text: '1950년 여름, 낙동강 가의 국군 진영이야. 강둑에는 모래주머니가 쌓여 있고 모두 긴장한 얼굴이야.' },
+    { who: 'guide', text: '왜 여기까지 밀려왔을까? 모래주머니 옆의 국군 병사에게 먼저 물어보자.' },
   ],
   goals: ['국군 병사에게 말을 걸어 보자', '유엔군 병사를 만나자', '국군 지휘관을 찾아가자', '전쟁의 흐름을 따라가자', '배운 내용을 확인해 보자'],
   minigameTitle: '6·25 전쟁',
@@ -22,17 +22,17 @@ export default {
         { who: 'soldier', text: '병력과 장비가 모자라 여기 낙동강까지 밀려왔어.', src: ['S57'] },
         { who: 'soldier', text: '낙동강은 우리가 꼭 지켜야 할 마지막 방어선이야.', src: ['S57'] },
       ],
-      later: [{ who: 'soldier', text: '유엔군도 함께 싸우고 있어.' }],
+      later: [{ who: 'soldier', text: '우리만 싸우는 게 아니야. 저기 유엔군 병사도 먼 나라에서 왔대. 이야기를 들어 봐.' }],
     },
     unSoldier: {
-      tooEarly: [{ who: 'unSoldier', text: '국군 병사와 먼저 이야기해 봐.' }],
+      tooEarly: [{ who: 'unSoldier', text: '여기 상황은 국군 병사가 더 잘 알아. 먼저 이야기해 봐.' }],
       first: [
         { who: 'unSoldier', text: '국제 연합은 북한의 남침을 침략으로 보았어. 미국을 비롯한 16개 나라가 유엔군을 보냈지.', src: ['S57'] },
       ],
-      later: [{ who: 'unSoldier', text: '지휘관님이 큰 작전을 준비하고 계셔.' }],
+      later: [{ who: 'unSoldier', text: '지휘관님이 지도를 펴 놓고 큰 작전을 짜고 계셔. 가 봐.' }],
     },
     officer: {
-      tooEarly: [{ who: 'officer', text: '유엔군 병사의 이야기도 들어 보게.' }],
+      tooEarly: [{ who: 'officer', text: '작전 이야기 전에, 유엔군 병사에게 어떤 나라들이 왔는지 들어 보게.' }],
       first: [
         { who: 'officer', text: '바다로 돌아가 인천에 상륙하는 작전을 펼칠 것이다.', src: ['S57'] },
         { who: 'officer', text: '그러면 서울을 되찾을 수 있을 것이다.', src: ['S57'] },

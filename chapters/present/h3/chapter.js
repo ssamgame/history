@@ -35,15 +35,18 @@ export default makeKitChapter({
   order: ['soldier', 'unSoldier', 'officer'],
   spot: [0, 3],
   layout: {
-    ground: 'grass', groundColor: 0x6a7a4c, bounds: { x0: -16, x1: 16, z0: -8, z1: 11 }, start: [0, 9],
+    // 1950년 여름 낙동강 가: 북쪽으로 흐르는 넓은 강과 강둑의 버드나무, 모래주머니를 쌓은 진지, 천막과 트럭, 둘레의 높은 산
+    ground: 'grass', groundColor: 0x6a7a4c, bounds: { x0: -16, x1: 16, z0: -8, z1: 11 }, start: [0, 9], hill: 1.7,
     roads: [{ x: 0, z: 2, w: 4, d: 20, color: 0x7a6a50 }],
     props: [
       { type: 'water', x: 0, z: -24, w: 260, d: 14, color: 0x5a7a7a },
-      { type: 'rice', x: -8, z: -9, n: 9, solid: false }, { type: 'rice', x: 8, z: -9, n: 9, solid: false },
+      { type: 'rice', x: -8, z: -9, n: 9, solid: false }, { type: 'rice', x: 8, z: -9, n: 9, solid: false }, { type: 'rice', x: -14, z: -9, n: 6, solid: false }, { type: 'rice', x: 14, z: -9, n: 6, solid: false },
       { type: 'tent', x: -12, z: 7, color: 0x6b6a4a }, { type: 'tent', x: 12, z: 7, color: 0x6b6a4a }, { type: 'tent', x: -12, z: 1, color: 0x6b6a4a },
       { type: 'truck', x: 11, z: -1, ry: 0.3 },
       { type: 'flagpole', x: -3, z: -5 }, { type: 'flagpole', x: 3, z: -5, color: 0x5b92e5 },
       { type: 'crowd', x: -6, z: -6, n: 4, cols: 4, looks: ['rokSoldier', 'unSoldier'], face: Math.PI },
+      { type: 'tree', x: -18, z: -11, kind: 'willow' }, { type: 'tree', x: 18, z: -11.5, kind: 'willow' }, { type: 'tree', x: 4, z: -13, kind: 'willow' },
+      { type: 'woodpile', x: 15.5, z: 3 }, { type: 'tree', x: -18, z: 4, kind: 'pine' },
     ],
     npcs: [
       { id: 'soldier', look: 'rokSoldier', x: -4, z: 6, ry: Math.PI * 0.8 },

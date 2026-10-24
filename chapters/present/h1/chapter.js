@@ -30,14 +30,18 @@ export default makeKitChapter({
   order: ['citizen', 'grandma', 'kimgu'],
   spot: [0, 3],
   layout: {
-    ground: 'earth', groundColor: 0x9a8a6a, bounds: { x0: -16, x1: 16, z0: -6, z1: 11 }, start: [0, 9],
+    // 1945년 8월 15일 서울 큰길: 태극기를 든 사람들, 벽돌·시멘트 건물과 2층 상점, 가로수와 가로등, 멀리 도시의 건물들과 북쪽 산
+    ground: 'earth', groundColor: 0x9a8a6a, bounds: { x0: -16, x1: 16, z0: -6, z1: 11 }, start: [0, 9], hill: 1.3,
+    skyline: { style: 'brick', color: 0x4e4a46, arc: [Math.PI * 0.55, Math.PI * 1.45] },
     roads: [{ x: 0, z: 1, w: 40, d: 6, color: 0x8a8070 }],
     props: [
       { type: 'crowd', x: -9, z: -4, n: 15, cols: 5, flags: 0.7, looks: ['citizen', 'woman', 'student', 'gentleman', 'schoolgirl', 'grandma'], face: 0.2 },
       { type: 'crowd', x: 9, z: -4, n: 15, cols: 5, flags: 0.7, looks: ['commoner', 'student', 'woman', 'citizen', 'peasant'], face: -0.2 },
       { type: 'western', x: 0, z: -11, w: 10, d: 5, h: 6, color: 0x9a7a5a },
-      { type: 'western', x: -13, z: 9, w: 6, d: 4, h: 4, color: 0x8a4a3a }, { type: 'hanok', x: 13, z: 9, tile: true }, { type: 'hanok', x: -5, z: 10.5 },
+      { type: 'concrete', x: -13, z: -11, floors: 2, w: 7, color: 0xc8c0b0, awning: 0x5a5e62 }, { type: 'shop', x: 13, z: -10.5, w: 6, style: 'modern', awning: 0x2f6b5e, seed: 3 },
+      { type: 'shop', x: -19, z: 6, w: 5, style: 'modern', ry: Math.PI / 2, awning: 0x8a2f24, seed: 1 }, { type: 'hanok', x: 18, z: 8, tile: true, ry: -Math.PI / 2 },
       { type: 'flagpole', x: 4, z: 6 }, { type: 'flagpole', x: -4, z: -6 },
+      { type: 'tree', x: -16.5, z: -1.5, kind: 'poplar' }, { type: 'tree', x: 16.5, z: -1.5, kind: 'poplar' }, { type: 'lamp', x: -7, z: 4.2 }, { type: 'lamp', x: 12, z: 4.2 },
     ],
     npcs: [
       { id: 'citizen', look: 'citizen', x: -3, z: 6, ry: Math.PI * 0.8 },

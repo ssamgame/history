@@ -25,7 +25,8 @@ export default makeKitChapter({
   order: ['soldier', 'mother', 'unSoldier'],
   spot: [0, 3],
   layout: {
-    ground: 'earth', groundColor: 0xe6e8ec, bounds: { x0: -16, x1: 16, z0: -8, z1: 11 }, start: [0, 9],
+    // 1951년 겨울 피란길: 눈 덮인 산 사이로 난 길, 짐을 진 피란민 행렬, 잎이 다 진 겨울나무와 눈 쌓인 소나무, 길가 판잣집과 장작
+    ground: 'earth', groundColor: 0xe6e8ec, bounds: { x0: -16, x1: 16, z0: -8, z1: 11 }, start: [0, 9], hill: 1.8,
     roads: [{ x: 0, z: 1, w: 5, d: 30, color: 0xb8b4aa }],
     weather: 'snow',
     props: [
@@ -33,7 +34,9 @@ export default makeKitChapter({
       { type: 'crowd', x: 9, z: -5, n: 8, cols: 2, looks: ['commoner', 'woman', 'citizen', 'grandma'], face: Math.PI * 1.05 },
       { type: 'truck', x: -12, z: 6, ry: 0.4 },
       { type: 'fence', x: 0, z: -11, w: 30, solid: false },
-      { type: 'shack', x: 13, z: 8 }, { type: 'tree', x: 13, z: 0, color: 0x6a7a6a },
+      { type: 'shack', x: 13, z: 8 }, { type: 'woodpile', x: 15.5, z: 5.5 },
+      { type: 'tree', x: 13, z: 0, kind: 'bare' }, { type: 'tree', x: -15, z: -2, kind: 'bare' }, { type: 'tree', x: 16, z: -8, kind: 'bare' }, { type: 'tree', x: -17, z: 9, kind: 'bare' },
+      { type: 'tree', x: -16, z: -10, kind: 'pine', color: 0x4a6a4a },
     ],
     npcs: [
       { id: 'soldier', look: 'rokSoldier', x: -4, z: 6, ry: Math.PI * 0.8 },

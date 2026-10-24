@@ -28,14 +28,17 @@ export default makeKitChapter({
   order: ['citizen', 'syngmanrhee', 'kimgu'],
   spot: [0, 3],
   layout: {
-    ground: 'stone', groundColor: 0xb0a890, bounds: { x0: -16, x1: 16, z0: -6, z1: 11 }, start: [0, 9],
+    // 1945~1948년 서울: 둥근 지붕의 큰 관청 앞 돌 광장, 투표를 알리는 책상과 사람들, 양옆 시멘트 건물과 가로수, 멀리 도시
+    ground: 'stone', groundColor: 0xb0a890, bounds: { x0: -16, x1: 16, z0: -6, z1: 11 }, start: [0, 9], hill: 1.4,
+    skyline: { style: 'brick', color: 0x4e4a46, arc: [Math.PI * 0.6, Math.PI * 1.4] },
     props: [
       { type: 'western', x: 0, z: -12, w: 14, d: 6, h: 7, dome: true, color: 0xc8c0b0 },
       { type: 'flagpole', x: -4, z: -6.5 }, { type: 'flagpole', x: 4, z: -6.5 },
       { type: 'desk', x: -11, z: -2 }, { type: 'desk', x: -8, z: -2 },
       { type: 'crowd', x: -10, z: 2, n: 8, cols: 2, looks: ['citizen', 'woman', 'grandma', 'gentleman'], face: Math.PI },
-      { type: 'hanok', x: 13, z: 9, tile: true }, { type: 'western', x: -13, z: 10, w: 6, d: 3.5, h: 4, color: 0x8a4a3a },
-      { type: 'tree', x: 13, z: 1 },
+      { type: 'concrete', x: -14, z: -11, floors: 2, w: 6, color: 0xbab2a2, shop: false }, { type: 'concrete', x: 14, z: -11, floors: 3, w: 6, color: 0xc8c2b4, awning: 0x5a5e62 },
+      { type: 'hanok', x: 18, z: 7, tile: true, ry: -Math.PI / 2 }, { type: 'shop', x: -19, z: 7, w: 5, style: 'modern', ry: Math.PI / 2, awning: 0x2f6b5e, seed: 2 },
+      { type: 'tree', x: 13, z: 1, kind: 'poplar' }, { type: 'tree', x: -16, z: -4, kind: 'poplar' },
     ],
     npcs: [
       { id: 'citizen', look: 'citizen', x: -2, z: 6, ry: Math.PI * 0.8 },
