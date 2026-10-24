@@ -276,7 +276,7 @@ export function createHud(root, { touch }) {
       box.hidden = false; menuBtn.hidden = false; joyZone.hidden = talkBtn.hidden = !touch; },
     hide() { box.hidden = true; menuBtn.hidden = true; prompt.hidden = true; joyZone.hidden = talkBtn.hidden = true; notice.hidden = true; found.hidden = true; bigTimer.hidden = true; bigWait.hidden = true; },
     // 잠깐 뜨는 알림(새 장소 발견 등): 화면 위 가운데, 누르지 않아도 사라진다
-    notice(text) { notice.textContent = text; notice.hidden = false; clearTimeout(noticeTimer); noticeTimer = setTimeout(() => { notice.hidden = true; }, 2800); },
+    notice(text) { notice.textContent = text; notice.hidden = false; if (!box.hidden) notice.style.top = `${Math.round(box.getBoundingClientRect().bottom + 8)}px`; /* 목표 상자 바로 아래 */ clearTimeout(noticeTimer); noticeTimer = setTimeout(() => { notice.hidden = true; }, 2800); },
     // 탐험 진행: 읽은 안내판 수 등 (null이면 숨김)
     setFound(text) { found.hidden = text == null; if (text != null) found.textContent = text; },
     // step: [지금, 전체] — 이 장의 목표 가운데 몇 번째인지(미션 진행)

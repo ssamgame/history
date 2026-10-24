@@ -151,3 +151,20 @@ test('hud: remaining time shows big in the middle of the top', () => {
     hud.setTimer(null); ok(big.hidden);
   } finally { ui.remove(); }
 });
+
+test('hud: 새 장소 알림과 가운데 큰 남은 시간은 왼쪽 위 목표 상자와 겹치지 않는다', () => {
+  const ui = document.createElement('div'); document.body.appendChild(ui);
+  try {
+    const hud = createHud(ui, { touch: false });
+    hud.show({ no: 2, years: '1010', event: '거란 2차 침입' }, { name: '흥화진을 지키는 병사' });
+    hud.setGoal('성안의 병사에게 말을 걸어 보자, 그리고 아주 긴 목표 글이 붙어도 괜찮은지 본다', [1, 6]);
+    hud.setFound('살펴본 안내판 0 / 2');
+    hud.setTimer(42); hud.notice('새 장소 발견: 흥화진');
+    const box = ui.querySelector('.hud').getBoundingClientRect();
+    const hit = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+    for (const sel of ['.hud-notice', '.hud-bigtimer']) {
+      const r = ui.querySelector(sel).getBoundingClientRect();
+      ok(r.width > 0 && !hit(box, r), `${sel} ${JSON.stringify(r)} vs hud ${JSON.stringify(box)}`);
+    }
+  } finally { ui.remove(); }
+});
