@@ -2,7 +2,9 @@
 import { makeSign } from '../../core/signs.js';
 import * as THREE from 'three';
 import { backdropMountains } from '../kit/terrain.js';
-import { hanok } from '../kit/buildings.js';
+import { hanok, woodpile, jars, straw } from '../kit/buildings.js';
+import { BUILD } from '../kit/town.js';
+import { makeFire } from '../../core/fire.js';
 import { groundMaterial } from '../../core/textures.js';
 import { mat, makePerson } from '../../core/people.js';
 import { scatter } from '../../core/props.js';
@@ -49,8 +51,9 @@ export function buildCh2Scene(world) {
   // 성벽 위에 쌓인 눈
   mk(new THREE.BoxGeometry(HALF * 2 + 3.4, 0.14, 1.7), 0xf2f5f7, 0, WALL_H + 0.07, -HALF - 0.8, L, false);
   for (const sx of [-1, 1]) mk(new THREE.BoxGeometry(1.7, 0.14, HALF * 2 + 3.4), 0xf2f5f7, sx * (HALF + 0.8), WALL_H + 0.07, 0, L, false);
-  // 성가퀴 (북쪽 성벽 위)
+  // 성가퀴: 북쪽 성벽은 바깥쪽에(방어 장면), 동·서 성벽에도(남쪽은 카메라가 넘겨다보는 쪽이라 비운다)
   for (let x = -HALF; x <= HALF; x += 1.8) mk(new THREE.BoxGeometry(0.9, 0.8, 0.5), 0x8c877e, x, WALL_H + 0.4, -HALF - 1.4);
+  for (const sx of [-1, 1]) for (let z = -HALF + 1; z <= HALF; z += 1.8) mk(new THREE.BoxGeometry(0.5, 0.8, 0.9), 0x8c877e, sx * (HALF + 1.4), WALL_H + 0.4, z);
   // 성벽 계단
   for (let i = 0; i < 6; i++) mk(new THREE.BoxGeometry(3, 0.7 * (i + 1), 0.8), 0x8c877e, 0, 0.35 * (i + 1), -HALF + 0.4 + (5 - i) * 0.8);
   // 성안 초가와 창고
@@ -60,7 +63,17 @@ export function buildCh2Scene(world) {
     world.addCollider({ x, z, r: 2.4 });
   };
   hut(-7, 3, 0.2); hut(7, -2, -0.3); hut(-6, -5, 0); hut(8, 7, 0.4);
-  for (const [x, z] of [[3, 3], [3.8, 3.6], [-2, 8]]) { mk(new THREE.BoxGeometry(1, 1, 1), 0x8a6a45, x, 0.5, z); world.addCollider({ x, z, r: 0.7 }); }
+  // 겨울 살림과 군량: 장작더미·쌀가마(예전 상자 자리), 장독대, 짚더미, 우물
+  const put = (fn, x, z, ry = 0, p = {}, r = 0.8) => { const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = ry; L.add(g); fn(g, p); world.addCollider({ x, z, r }); return g; };
+  put(woodpile, 3.4, 3.3, 0.3); put(BUILD.rice, -2, 8.2, 0, { n: 6 }, 1.2);
+  put(jars, -9.6, 0.6, Math.PI / 2, { n: 5 }, 1.0); put(straw, 9.8, -6.5, 0, {}, 1.0); put(BUILD.well, -1.5, -2.6, 0, {}, 0.9);
+  // 성문에서 성벽 계단까지 사람들이 밟아 다진 눈길
+  { const m = new THREE.Mesh(new THREE.PlaneGeometry(3, 17).rotateX(-Math.PI / 2), mat(0xc4c4c0, 'earth')); m.position.set(0, 0.03, 2.5); m.receiveShadow = true; L.add(m); }
+  // 병사들이 몸을 녹이는 화톳불
+  for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; mk(new THREE.DodecahedronGeometry(0.24, 0), 0x77736a, 5 + Math.cos(a) * 0.7, 0.12, 0.5 + Math.sin(a) * 0.7); }
+  const fire = makeFire({ size: 0.6, detail: world.quality.particles }); fire.group.position.set(5, 0.38, 0.5); fire.setLit(true); L.add(fire.group);
+  world.addCollider({ x: 5, z: 0.5, r: 1.0 });
+  world.onUpdate((dt, t) => fire.update(dt, t));
   for (const [x, z, c] of [[-10, -10, 0xb8452f], [10, -10, 0xd9a441]]) {
     mk(new THREE.CylinderGeometry(0.07, 0.07, 5, 5), 0x5a3f2a, x, WALL_H + 2.5, z);
     const f = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 1.9).translate(0.65, 0, 0), new THREE.MeshLambertMaterial({ color: c, side: THREE.DoubleSide }));
