@@ -4,6 +4,8 @@ import * as THREE from 'three';
 import { mat, makePerson } from '../../core/people.js';
 import { scatter } from '../../core/props.js';
 import { LOOKS } from '../../content/characters.js';
+import { tent, pier, hanok, tree } from '../kit/buildings.js';
+import { BUILD } from '../kit/town.js';
 
 const PORT_Z = 70, JINDO = [-10, 4], JEJU = [6, -74];
 
@@ -40,8 +42,12 @@ export function buildCh6Scene(world) {
 
   // 강화도 포구: 땅과 부두
   mk(new THREE.BoxGeometry(60, 1, 28), 0x6f8a5a, 0, -0.5, PORT_Z + 13);
-  mk(new THREE.BoxGeometry(6, 0.3, 10), 0x8a6a45, 0, -0.05, PORT_Z - 4);
-  for (const [x, z] of [[-12, 80], [12, 79], [-6, 84], [8, 85]]) { const t = mk(new THREE.ConeGeometry(2.2, 2.6, 4), 0xd8d0bc, x, 1.3, z); t.rotation.y = 0.6; world.addCollider({ x, z, r: 1.8 }); }
+  const put = (fn, x, y, z, ry = 0, p = {}) => { const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = ry; L.add(g); fn(g, p); return g; };
+  put(pier, 0, -0.5, PORT_Z - 4, 0, { w: 6, d: 10 }); // 기둥 위 나무 부두
+  for (const [x, z] of [[-12, 80], [12, 79], [-6, 84], [8, 85]]) { put(tent, x, 0, z, 0.3 * Math.sign(x), { color: 0xd8d0bc }).scale.setScalar(0.75); world.addCollider({ x, z, r: 1.8 }); }
+  // 포구 뒤 마을: 초가와 소나무(걷는 곳 바깥)
+  for (const [x, z, ry] of [[-20, 90, 0.4], [-10, 91, 0.1], [11, 90.5, -0.2], [21, 89, -0.5]]) put(hanok, x, 0, z, ry + Math.PI, {});
+  for (const [x, z] of [[-26, 84], [-15, 94], [0, 93], [16, 94], [27, 83]]) put(tree, x, 0, z, 0, { kind: 'pine', x, z });
   for (let i = 0; i < 5; i++) { const p = makePerson(LOOKS.sambyeolcho); p.position.set(-10 + i * 5, 0, 76 + (i % 2) * 2); p.rotation.y = Math.PI; L.add(p); }
 
   // 진도: 섬과 용장성 성벽
@@ -50,6 +56,7 @@ export function buildCh6Scene(world) {
   mk(new THREE.ConeGeometry(9, 7, 10), 0x5a7a4a, JX, 1.5, JZ, jindo).scale.set(1.2, 1, 1);
   for (let i = 0; i < 14; i++) { const a = (i / 14) * Math.PI * 2; const s = mk(new THREE.BoxGeometry(2.2, 1.6, 0.8), 0x8c8577, JX + Math.cos(a) * 4.5, 3.6, JZ + Math.sin(a) * 4.5, jindo); s.rotation.y = -a + Math.PI / 2; }
   world.addCollider({ x: JX, z: JZ, r: 9 });
+  { const g = new THREE.Group(); g.position.set(JX, 4.4, JZ); g.scale.setScalar(0.55); jindo.add(g); hanok(g, { tile: true }); } // 용장성 안의 궁궐
   // 진도 나루: 섬에서 도착 지점 쪽으로 뻗은 나무 부두. 김통정이 이 위에 서서 배를 맞는다(바다 위에 떠 있지 않게).
   const docks = [mk(new THREE.BoxGeometry(12, 0.3, 3.2), 0x8a6a45, JINDO[0] - 4, -0.05, JINDO[1] - 3, jindo)];
   for (const dx of [-9, -5, -1]) mk(new THREE.CylinderGeometry(0.18, 0.18, 1.4, 6), 0x5a3f2a, JINDO[0] + dx, -0.5, JINDO[1] - 1.4, jindo);
@@ -78,7 +85,7 @@ export function buildCh6Scene(world) {
       mk(new THREE.CylinderGeometry(0.34, 0.3, 0.75, 9), 0x7a4e32, x, 0.48, z);
       mk(new THREE.CylinderGeometry(0.35, 0.35, 0.06, 9), 0x3a2c20, x, 0.66, z);
     }
-    mk(new THREE.BoxGeometry(0.8, 0.6, 0.8), 0x8a6a45, 1.6, 0.4, PORT_Z - 6);
+    put(BUILD.rice, 1.6, 0, PORT_Z - 6, 0.2, { n: 3 }); // 배에 실을 쌀가마
   }
 
   // 바위 (부딪히면 돌아가야 한다) — 출발점과 도착점을 잇는 곧은 길 위에는 두지 않는다
