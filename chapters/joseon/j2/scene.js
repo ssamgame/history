@@ -1,6 +1,6 @@
 // 조선편 2장 장면: 봄날의 궁궐. 박석 마당, 북쪽의 큰 전각(돌 기단·붉은 기둥·기와지붕), 동쪽의 집현전, 남쪽 궁궐 문과 담장.
 import * as THREE from 'three';
-import { curvedHipRoof } from '../../kit/buildings.js';
+import { curvedHipRoof, wall } from '../../kit/buildings.js';
 import { sceneGround } from '../../kit/terrain.js';
 import { mat } from '../../../core/people.js';
 import { scatter } from '../../../core/props.js';
@@ -48,13 +48,27 @@ export function buildJ2Scene(world) {
     world.addCollider({ x: 9.4, z, r: 0.8 });
   }
   // 서쪽 행각(긴 건물)
-  mk(new THREE.BoxGeometry(4, 2.6, 22), 0xe6dcc3, -16, 1.3, 2);
-  hipRoof(6, 24, 1.6, 0x3d4846, -16, 2.6, 2);
+  mk(new THREE.BoxGeometry(4, 0.5, 23), 0xb3ada2, -16, 0.25, 2); // 기단
+  mk(new THREE.BoxGeometry(3, 2.4, 22), 0xe6dcc3, -16.4, 1.7, 2);
+  for (let z = -8.5; z <= 12.6; z += 2.1) { // 마당 쪽 붉은 기둥과 창살 창
+    mk(new THREE.CylinderGeometry(0.15, 0.15, 2.5, 8), 0xa8392b, -14.3, 1.75, z);
+    if (z < 12.5) mk(new THREE.BoxGeometry(0.08, 1.1, 1.4), 0x8a6a48, -14.92, 1.8, z + 1.05);
+  }
+  mk(new THREE.BoxGeometry(0.3, 0.3, 22), 0x2f6b5e, -14.3, 3.0, 2);
+  hipRoof(6, 24, 1.6, 0x3d4846, -16, 3.0, 2);
   // 남쪽 담장과 궁궐 문
-  for (const sx of [-1, 1]) mk(new THREE.BoxGeometry(14, 2.4, 1), 0x8c8577, sx * 10, 1.2, 19);
+  for (const sx of [-1, 1]) { const g = new THREE.Group(); g.position.set(sx * 10, 0, 19); L.add(g); wall(g, { w: 14, h: 2.4, color: 0x9a8c7a }); } // 기와를 얹은 궁궐 담
   mk(new THREE.BoxGeometry(6, 3.4, 1.6), 0xa8392b, 0, 1.7, 19);
   mk(new THREE.BoxGeometry(2.6, 2.8, 1.8), 0x3a2c20, 0, 1.4, 19);
   hipRoof(9, 4, 1.8, 0x3d4846, 0, 3.4, 19);
+  // 근정전 앞 드므(불을 끌 물을 담아 둔 넓은 그릇) 둘
+  for (const [x, z] of [[-9.5, -8.4], [10.5, -8.6]]) {
+    mk(new THREE.BoxGeometry(1.3, 0.35, 1.3), 0xb3ab99, x, 0.18, z);
+    const pot = new THREE.Mesh(new THREE.LatheGeometry([[0, 0], [0.55, 0.02], [0.7, 0.3], [0.72, 0.62], [0.78, 0.66], [0, 0.66]].map(([a, b]) => new THREE.Vector2(a, b)), 14), mat(0x5a4a32, 'grain'));
+    pot.position.set(x, 0.35, z); pot.castShadow = true; L.add(pot);
+    mk(new THREE.CylinderGeometry(0.66, 0.66, 0.03, 14), 0x3f5a6a, x, 0.99, z, L, false);
+    world.addCollider({ x, z, r: 0.9 });
+  }
   // 마당 가운데 길 양쪽의 품계석
   for (let i = 0; i < 6; i++) for (const sx of [-1, 1]) {
     mk(new THREE.BoxGeometry(0.4, 0.7, 0.3), 0xb3ab99, sx * 2.4, 0.35, -5 + i * 2.2);
