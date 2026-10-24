@@ -98,7 +98,7 @@ export function makeKitChapter(def) {
   let scene = null;
   const restoreEnd = ctx => { for (const p of def.parts) if (p.after) p.after(ctx, scene); };
   return {
-    id: def.id, mood: def.mood, player: def.player, script, quizzes: script.quizzes,
+    id: def.id, mood: def.mood, player: def.player, script, quizzes: script.quizzes, parts: def.parts, // parts: 개발용 무대 보기(tools/arena-gallery.html)
     buildScene(world) {
       const built = buildTown(world, def.layout);
       scene = { ...built, start: def.layout.start };

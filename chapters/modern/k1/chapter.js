@@ -4,7 +4,7 @@ import script from './script.js';
 
 // 미니게임 무대(마을에서 떨어진 x 400)
 const xy = (list, pts) => list.map((it, i) => ({ ...it, ...pts[i] }));
-const PALACE = { // 고쳐 짓는 경복궁 앞(왼쪽)과 다른 때의 일(오른쪽)
+const PALACE = { edge: { style: 'tile', seed: 462 }, // 고쳐 짓는 경복궁 앞(왼쪽)과 다른 때의 일(오른쪽)
   origin: [400, 0], ground: 'earth', groundColor: 0x9a8a6a, bounds: { x0: -20, x1: 20, z0: -14, z1: 14 },
   props: [
     { type: 'hanok', x: -11, z: -12, tile: true, scale: 1.4 }, { type: 'rice', x: -15, z: -6, n: 6 }, { type: 'woodpile', x: -6, z: -8 }, { type: 'tree', x: -18, z: 4, kind: 'pine' },
@@ -12,7 +12,7 @@ const PALACE = { // 고쳐 짓는 경복궁 앞(왼쪽)과 다른 때의 일(오
     { type: 'water', x: 20, z: -30, w: 60, d: 20 },
   ],
 };
-const COAST = { // 강화도 해안: 갯벌 길, 망루, 포대, 연무당. 먼바다에 군함
+const COAST = { edge: { style: 'thatch', seed: 515 }, // 강화도 해안: 갯벌 길, 망루, 포대, 연무당. 먼바다에 군함
   origin: [400, 0], ground: 'earth', groundColor: 0x8a7a5a, bounds: { x0: -20, x1: 20, z0: -14, z1: 24 },
   props: [
     { type: 'water', x: 0, z: -40, w: 160, d: 40 }, { type: 'steamship', x: -10, z: -34, ry: Math.PI / 2, solid: false },
@@ -21,7 +21,7 @@ const COAST = { // 강화도 해안: 갯벌 길, 망루, 포대, 연무당. 먼�
     { type: 'boat', x: 8, z: -22, ry: 0.4 }, { type: 'boat', x: 13, z: -24, ry: -0.2, color: 0x6b4a32 },
   ],
 };
-const YEONMU = { // 강화도 연무당: 조약을 맺은 곳
+const YEONMU = { edge: { style: 'tile', seed: 47 }, // 강화도 연무당: 조약을 맺은 곳
   origin: [400, 0], ground: 'earth', groundColor: 0x8a7a5a, bounds: { x0: -18, x1: 18, z0: -12, z1: 14 },
   props: [
     { type: 'pavilion', x: 0, z: -11 }, { type: 'desk', x: 0, z: -6 },

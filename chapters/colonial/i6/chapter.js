@@ -4,7 +4,7 @@ import script from './script.js';
 
 // 미니게임 무대(마을에서 떨어진 x 400)
 const xy = (list, pts) => list.map((it, i) => ({ ...it, ...pts[i] }));
-const FIELD = { // 훈련장: 통나무가 굴러다니는 길과 깃발 언덕
+const FIELD = { edge: { style: 'camp', seed: 216 }, // 훈련장: 통나무가 굴러다니는 길과 깃발 언덕
   origin: [400, 0], ground: 'earth', groundColor: 0x8a7a5a, bounds: { x0: -20, x1: 20, z0: -26, z1: 26 },
   props: [
     { type: 'tent', x: -14, z: 20, color: 0x6b6a4a }, { type: 'tent', x: 14, z: 20, color: 0x6b6a4a },
@@ -12,7 +12,7 @@ const FIELD = { // 훈련장: 통나무가 굴러다니는 길과 깃발 언덕
     { type: 'crowd', x: 13, z: 10, n: 6, cols: 3, looks: ['gwangbokgun'], face: -Math.PI / 2 },
   ],
 };
-const FLAGS = {
+const FLAGS = { edge: { style: 'camp', seed: 787 },
   origin: [400, 0], ground: 'stone', groundColor: 0xa09888, bounds: { x0: -18, x1: 18, z0: -12, z1: 14 },
   props: [
     { type: 'flagpole', x: -11, z: -9 }, { type: 'crowd', x: -14, z: -8, n: 2, cols: 2, looks: ['gentleman', 'kimgu'] },

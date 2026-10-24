@@ -13,7 +13,7 @@ const HIGHWAY = {
   origin: [400, 0], ground: 'earth', groundColor: 0x7a8a6a, bounds: { x0: -50, x1: 50, z0: -66, z1: 66 }, map: BIG,
   roads: CITIES.slice(1).map((c, i) => road(CITIES[i], c)),
 };
-const SPLIT = {
+const SPLIT = { edge: { style: 'city', seed: 633 },
   origin: [400, 0], ground: 'stone', groundColor: 0xa8a49a, bounds: { x0: -22, x1: 22, z0: -16, z1: 16 },
   props: [
     { type: 'crowd', x: -14, z: -12, n: 8, cols: 4, flags: 0.6, looks: ['student', 'citizen', 'woman', 'schoolgirl'], face: 0 },

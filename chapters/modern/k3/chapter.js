@@ -12,7 +12,7 @@ import { PIC } from '../pictures.js';
 const xy = (list, pts) => list.map((it, i) => ({ ...it, ...pts[i] }));
 // 들판 사이 마을 길: 마을마다 초가와 살림살이를 두어 어디가 어느 마을인지 한눈에 보이게
 const paddy = (x, z, w, d) => [{ x, z, w, d, color: 0x7a9a4a, kind: 'grass' }, { x, z: z - d / 2 - 0.3, w, d: 0.5, color: 0x8f7556 }]; // 논과 둑
-const FARMS = {
+const FARMS = { edge: { style: 'thatch', seed: 187 },
   origin: [400, 0], ground: 'grass', groundColor: 0x7a8a4c, bounds: { x0: -24, x1: 24, z0: -26, z1: 26 },
   roads: [{ x: 0, z: 0, w: 5, d: 52, color: 0x8f7556 }, ...paddy(14, 20, 12, 7), ...paddy(-16, 2, 12, 8), ...paddy(15, -12, 12, 7)],
   props: [

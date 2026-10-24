@@ -119,3 +119,27 @@ test('people: 서 있는 사람은 고개를 천천히 돌리고, 일하는 사�
   for (let i = 0; i < 40; i++) { AW(w, false, 1 / 30); seen.add(arm.rotation.x.toFixed(2)); }
   ok(seen.size > 5, '일하는 팔이 움직인다');
 });
+
+import { buildArena } from '../chapters/kit/play.js';
+test('arena: 무대 둘레(edge)에 시대다운 건물·나무를 세우되, 걷는 곳 밖에 두고 부딪힘 없이 몇 번에 그린다', () => {
+  const world = testWorld();
+  const arena = { origin: [400, 0], ground: 'stone', bounds: { x0: -15, x1: 15, z0: -10, z1: 12 }, props: [], edge: { style: 'modern' } };
+  const cols = world.colliders.length;
+  const a = buildArena(world, arena);
+  eq(world.colliders.length, cols, '둘레 건물은 부딪힘이 없다');
+  const edge = a.group.children.find(c => c.isGroup && c.children.length && c.children.every(m => m.isMesh) && !c.userData.p);
+  let n = 0, inside = 0;
+  for (const m of edge?.children || []) { n++; m.geometry.computeBoundingBox(); }
+  const pos = []; edge?.children.forEach(m => { const p = m.geometry.attributes.position; for (let i = 0; i < p.count; i += 7) { const x = p.getX(i), z = p.getZ(i); if (x > -14 && x < 14 && z > -9 && z < 11) inside++; } });
+  ok(edge && n > 0 && n <= 40, `둘레는 재질별로 합쳐 ${n}번`);
+  eq(inside, 0, '걷는 곳 안에는 아무것도 없다');
+  a.dispose();
+});
+
+test('arena: 근대~현대편 지도·바다 무대가 아닌 무대는 모두 둘레(edge)가 있다', async () => {
+  const { MODERN, COLONIAL, PRESENT } = await import('../chapters/index.js');
+  for (const meta of [...MODERN, ...COLONIAL, ...PRESENT]) {
+    const ch = (await meta.load()).default;
+    for (const p of ch.parts.filter(q => q.arena && !q.arena.map && !q.arena.sea && q.arena.nature !== false)) ok(p.arena.edge, `${meta.id} ${p.type}`);
+  }
+});

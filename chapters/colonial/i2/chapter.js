@@ -5,7 +5,7 @@ import { PIC } from '../../modern/pictures.js';
 
 // 미니게임 무대(마을에서 떨어진 x 400)
 const xy = (list, pts) => list.map((it, i) => ({ ...it, ...pts[i] }));
-const JONGNO = { // 탑골 공원 문에서 종로 거리, 시장, 큰길로
+const JONGNO = { edge: { style: 'modern', seed: 352 }, // 탑골 공원 문에서 종로 거리, 시장, 큰길로
   origin: [400, 0], ground: 'stone', groundColor: 0xa09a8c, bounds: { x0: -24, x1: 24, z0: -28, z1: 28 },
   roads: [{ x: 0, z: 0, w: 7, d: 56, color: 0x8a8070 }, { x: 0, z: -14, w: 40, d: 6, color: 0x8a8070 }],
   props: [

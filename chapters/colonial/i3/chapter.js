@@ -4,14 +4,14 @@ import script from './script.js';
 
 // 미니게임 무대(마을에서 떨어진 x 400)
 const xy = (list, pts) => list.map((it, i) => ({ ...it, ...pts[i] }));
-const ALLEY = { // 상하이 골목: 담과 가게 사이로 몰래
+const ALLEY = { edge: { style: 'shanghai', seed: 546 }, // 상하이 골목: 담과 가게 사이로 몰래
   origin: [400, 0], ground: 'stone', groundColor: 0x8c8577, bounds: { x0: -18, x1: 18, z0: -22, z1: 20 },
   props: [
     { type: 'wall', x: -9, z: 8, w: 8 }, { type: 'wall', x: 9, z: -4, w: 8 }, { type: 'rice', x: -10, z: -8, n: 6 },
     { type: 'western', x: -15, z: -18, w: 6, d: 5, h: 5, color: 0x8a4a3a }, { type: 'western', x: 15, z: 16, w: 6, d: 5, h: 5, color: 0x9a948a },
   ],
 };
-const OFFICE = { // 청사 안의 세 부서 책상
+const OFFICE = { edge: { style: 'shanghai', seed: 852 }, // 청사 안의 세 부서 책상
   origin: [400, 0], ground: 'stone', groundColor: 0x8a6a4a, bounds: { x0: -18, x1: 18, z0: -12, z1: 14 },
   props: [
     { type: 'desk', x: -12, z: -9 }, { type: 'desk', x: 0, z: -10 }, { type: 'desk', x: 12, z: -9 },

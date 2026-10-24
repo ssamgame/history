@@ -5,7 +5,7 @@ import { PIC } from '../pictures.js';
 
 // 미니게임 무대(마을에서 떨어진 x 400): 1890년대 한성. 궁궐·러시아 공사관·신문사·환구단·종로가 흩어져 있다.
 const xy = (list, pts) => list.map((it, i) => ({ ...it, ...pts[i] }));
-const HANSEONG = {
+const HANSEONG = { edge: { style: 'street', seed: 79 },
   origin: [400, 0], ground: 'earth', groundColor: 0x9a8a6a, bounds: { x0: -24, x1: 24, z0: -22, z1: 22 },
   roads: [{ x: 0, z: 0, w: 46, d: 5, color: 0x8a8070 }, { x: 0, z: 0, w: 5, d: 44, color: 0x8a8070 }],
   props: [

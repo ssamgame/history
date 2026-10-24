@@ -129,5 +129,6 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/test.ps1 > /tmp/full.t
   - 인물(v59~v60): 사람마다 키 조금씩 다름, 서 있을 때 고개 돌리기, 일하는 동작(망치질·나르기·쓸기, 배치표 `work`), 무리는 엇갈려 선다
   - 조명(v60): 분위기 6가지 추가(봄·여름·한낮·이른 봄·숲·흐린 날)를 장마다 맞춤
   - 역사책(v61): 쪽마다 게임 부품으로 꾸민 둥근 디오라마를 한 번 찍어 그림으로 보여 준다(`chapters/kit/diorama.js`, 설계 `chapters/modern/dioramas.js` 44쪽, 개발용 `tools/diorama-gallery.html?only=a,b`). 그림 위에 '재현 그림' 표. 찍기 실패하면 예전 평면 그림.
-- 남은 일: 무대(미니게임 42곳)별 재설계, 실제 갤럭시 탭에서 프레임 재기
+  - 무대(v62): 근대~현대 미니게임 무대 둘레에 시대다운 건물·나무 줄(`arena.edge.style`, chapters/kit/play.js EDGE). 개발용 `tools/arena-gallery.html?ch=k1&i=0&view=top|play`
+- 남은 일: 무대 안 놀이 자리 꾸미기, 실제 갤럭시 탭에서 프레임 재기
 - 원인·결과 잇기 놀이(link)는 만들다가 선생님 지시로 멈추고 되돌렸다(설계: 원인 사람 말 듣고 들고 가서 결과 원에 놓기, 근대~현대 먼저, 틀리면 해설 듣고 다시)

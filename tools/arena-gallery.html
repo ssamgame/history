@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>arena gallery</title>
+<link rel="stylesheet" href="../styles.css">
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+<style>#bar { position: fixed; z-index: 99; left: 4px; bottom: 4px; font: 12px sans-serif; color: #fff; background: #0008; padding: 2px 6px; }</style>
+</head>
+<body>
+<div id="stage"></div>
+<div id="bar"></div>
+<script type="module">
+  // 개발용: 근대~현대편 장의 미니게임 무대만 세워 본다. ?ch=k1&i=0 (i: 무대가 있는 부분 차례), &view=top|play
+  import { createWorld } from '../core/world.js';
+  import { buildArena } from '../chapters/kit/play.js';
+  import { MODERN, COLONIAL, PRESENT } from '../chapters/index.js';
+  const q = new URLSearchParams(location.search);
+  const meta = [...MODERN, ...COLONIAL, ...PRESENT].find(m => m.id === (q.get('ch') || 'k1'));
+  const chapter = (await meta.load()).default;
+  const parts = chapter.parts.filter(p => p.arena);
+  const part = parts[+(q.get('i') || 0)];
+  const world = createWorld(document.getElementById('stage'), { quality: q.get('q') || 'medium' });
+  world.setMood(chapter.mood || 'morning');
+  const arena = buildArena(world, part.arena);
+  const [ox, oz] = part.arena.origin, b = part.arena.bounds;
+  const from = part.from || [0, (b.z1 || 10) - 2];
+  world.player.position.set(from[0] + ox, 0, from[1] + oz); world.player.rotation.y = Math.PI;
+  if (q.get('view') === 'play') { world.camMode = 'follow'; world.snapCamera(); }
+  else { const cx = (b.x0 + b.x1) / 2 + ox, cz = (b.z0 + b.z1) / 2 + oz, span = Math.max(b.x1 - b.x0, b.z1 - b.z0); world.setFixedCamera([cx, span * 0.75, cz + span * 0.85], [cx, 0, cz - 2]); }
+  window.__world = world;
+  let last = performance.now();
+  (function frame(now) { const dt = Math.min(0.05, (now - last) / 1000); last = now; world.step(dt, { x: 0, z: 0 }); world.render(); requestAnimationFrame(frame); })(last);
+  world.render(); world.renderer.info.autoReset = false; world.renderer.info.reset(); world.render();
+  document.getElementById('bar').textContent = `${meta.id} ${parts.length}개 중 ${+(q.get('i') || 0) + 1} · ${part.type} · calls ${world.renderer.info.render.calls} tris ${world.renderer.info.render.triangles}`;
+  document.title = `done ${parts.length}`;
+</script>
+</body>
+</html>

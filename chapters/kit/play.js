@@ -61,6 +61,48 @@ function toast(ctx, text, kind = '') {
 }
 function clearToast(ctx) { const t = ctx.ui.querySelector('.play-toast'); if (t) t.remove(); }
 
+// 무대 둘레(걷는 곳 밖 뒤·양옆)에 그 시대·장소다운 건물과 나무를 줄지어 세운다. 걷는 곳은 건드리지 않고 부딪힘도 없다.
+// edge: { style, back?: false(뒤가 물일 때), sides?: false, seed? }. 한 덩어리로 합쳐 그리기 수를 늘리지 않는다.
+const EDGE = {
+  thatch: [['hanok', {}], ['tree', { kind: 'pine' }], ['hanok', { seed: 3 }], ['straw', {}], ['hanok', { seed: 5 }], ['jars', {}]],
+  tile: [['hanok', { tile: true }], ['tree', { kind: 'pine' }], ['hanok', { tile: true, seed: 2 }], ['hanok', {}], ['tree', {}]],
+  street: [['shop', { awning: 0x8a2f24 }], ['shop', { thatch: true, seed: 3 }], ['hanok', { tile: true }], ['shop', { seed: 5, awning: 0x2f5a6b }], ['tree', { kind: 'willow' }]],
+  modern: [['shop', { style: 'modern', awning: 0x2f6b5e }], ['western', { w: 7, d: 5, h: 5, color: 0x8a4a3a }], ['shop', { awning: 0x8a2f24 }], ['tree', { kind: 'poplar' }], ['shop', { style: 'modern', seed: 4, awning: 0x6b4a2f }], ['hanok', { tile: true }]],
+  brick: [['western', { w: 8, d: 5, h: 6, color: 0x8a4a3a }], ['tree', {}], ['western', { w: 7, d: 5, h: 5, color: 0xb8ab90 }], ['western', { w: 6, d: 5, h: 7, color: 0x7d5a48 }], ['tree', { kind: 'poplar' }]],
+  shanghai: [['lanehouse', { n: 3 }], ['shop', { style: 'modern', awning: 0x8a2f24 }], ['lanehouse', { n: 2, seed: 4 }], ['tree', {}]],
+  city: [['concrete', { floors: 3 }], ['concrete', { floors: 2, color: 0xd6cfc0, w: 6 }], ['tree', { kind: 'poplar' }], ['concrete', { floors: 4, w: 6 }], ['shop', { style: 'modern' }]],
+  camp: [['tent', {}], ['tree', { kind: 'pine' }], ['woodpile', {}], ['tent', {}], ['tree', { kind: 'pine' }], ['barracks', {}]],
+  forest: [['tree', { kind: 'pine' }], ['tree', { kind: 'pine', scale: 1.3 }], ['tree', {}], ['tree', { kind: 'pine', scale: 0.9 }]],
+  snow: [['tree', { kind: 'bare' }], ['hanok', { roofColor: 0xe6e8ec }], ['tree', { kind: 'pine', color: 0x5a6e5a }], ['tree', { kind: 'bare' }], ['woodpile', {}]],
+  shanty: [['shack', {}], ['shack', { seed: 2 }], ['tree', { kind: 'bare' }], ['shack', { seed: 3 }], ['jars', {}]],
+};
+const EDGE_W = { hanok: 8, shop: 7, western: 9, lanehouse: 11, concrete: 8, barracks: 10, tent: 6, shack: 5, tree: 5, straw: 3.5, jars: 3.5, woodpile: 3.5 };
+function arenaEdge(arena) {
+  const e = arena.edge, list = EDGE[e.style] || EDGE.forest, b = arena.bounds, g = new THREE.Group();
+  let s = e.seed || 11; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  const blocked = (x, z) => (arena.props || []).some(p => p.type === 'water' ? Math.abs(x - p.x) < p.w / 2 + 3 && Math.abs(z - p.z) < p.d / 2 + 3
+    : Math.hypot(x - p.x, z - p.z) < 4.5);
+  let k = 0;
+  let out = 0; // 숲·진영은 한 줄 더 바깥에
+  const line = (x0, z0, dx, dz, len, ry) => { // (x0,z0)에서 (dx,dz) 쪽으로 len만큼 늘어선다. 건물 앞은 걷는 곳을 본다
+    for (let t = 0; t < len;) {
+      const [type, o] = list[k++ % list.length], w = EDGE_W[type] || 6, off = (rnd() - 0.5) * (type === 'tree' ? 5 : 2); // 줄에서 조금씩 들쭉날쭉
+      const x = x0 + dx * (t + w / 2) - dz * off, z = z0 + dz * (t + w / 2) + dx * off;
+      t += w + rnd() * 1.5;
+      if (blocked(x, z)) continue;
+      const pg = new THREE.Group(); pg.position.set(x, 0, z); pg.rotation.y = ry + (type === 'tree' ? rnd() * 6 : 0); if (o.scale) pg.scale.setScalar(o.scale);
+      BUILD[type](pg, { ...o, seed: o.seed ?? k }); g.add(pg);
+    }
+  };
+  const back = b.z0 - 6, sx0 = b.x0 - 6, sx1 = b.x1 + 6;
+  if (e.back !== false) line(sx0 - 2, back, 1, 0, sx1 - sx0 + 4, 0);
+  const sides = () => { if (e.sides !== false) { line(sx0 - out, back + 6, 0, 1, b.z1 - b.z0 - 4, Math.PI / 2); line(sx1 + out, back + 6, 0, 1, b.z1 - b.z0 - 4, -Math.PI / 2); } };
+  sides();
+  if (e.style === 'forest' || e.style === 'camp') { out = 6; if (e.back !== false) line(sx0 - 8, back - 6, 1, 0, sx1 - sx0 + 16, 0); sides(); }
+  bakeStatic(g);
+  return g;
+}
+
 // 미니게임 무대: 마을에서 멀리 떨어진 곳에 땅·물·건물을 세우고, 끝나면 모두 치운다.
 export function buildArena(world, arena) {
   const [ox, oz] = arena ? arena.origin : [0, 0];
@@ -75,7 +117,7 @@ export function buildArena(world, arena) {
       const ground = new THREE.Mesh(gg, new THREE.MeshPhongMaterial({ color: arena.sea === true ? 0x3f7d9a : arena.sea, shininess: 70 }));
       ground.position.y = 0.01; ground.receiveShadow = true; g.add(ground);
     } else { // 걷는 곳은 평평하게, 바깥은 언덕(마을 땅과 같은 방식)
-      const field = terrainField({ bounds: arena.bounds, props: arena.props || [], margin: 4, hill: arena.hill ?? 0.8 });
+      const field = terrainField({ bounds: arena.bounds, props: arena.props || [], margin: arena.edge ? 13 : 4, hill: arena.hill ?? 0.8 }); // 둘레 건물(edge)이 서는 곳까지 평평하게
       if (kind === 'stone') { const f = field.flat, pave = new THREE.Mesh(box(f.x1 - f.x0, 0.04, f.z1 - f.z0), mat(color, 'stone')); pave.position.set((f.x0 + f.x1) / 2, 0.02, (f.z0 + f.z1) / 2); pave.receiveShadow = true; g.add(pave); }
       const ground = terrainMesh(field, { color: kind === 'stone' ? 0x7d7158 : color, kind: kind === 'stone' ? 'earth' : kind, roads: arena.roads || [], size: 160, seg: 64 });
       ground.position.y = 0.01; g.add(ground);
@@ -91,6 +133,7 @@ export function buildArena(world, arena) {
       if (p.type === 'water') pg.position.y = 0.32; // 무대 땅 위로 물이 보이게
       if (r && p.solid !== false) addFootprint(world, { ...p, ...at(p.x, p.z) }, r); // 긴 건물·기차는 작은 원을 줄지어
     }
+    if (arena.edge) g.add(arenaEdge(arena));
     for (const c of arena.colliders || []) world.addCollider({ ...at(c.x, c.z), r: c.r });
     const b = arena.bounds; world.bounds = { x0: b.x0 + ox, x1: b.x1 + ox, z0: b.z0 + oz, z1: b.z1 + oz };
   }

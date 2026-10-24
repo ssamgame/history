@@ -4,7 +4,7 @@ import script from './script.js';
 
 // 미니게임 무대(마을에서 떨어진 x 400)
 const xy = (list, pts) => list.map((it, i) => ({ ...it, ...pts[i] }));
-const STREETS = { // 경성 골목: 서점, 학교 담장, 조선어 학회. 경찰이 순찰한다
+const STREETS = { edge: { style: 'modern', seed: 801 }, // 경성 골목: 서점, 학교 담장, 조선어 학회. 경찰이 순찰한다
   origin: [400, 0], ground: 'stone', groundColor: 0x9a948a, bounds: { x0: -20, x1: 20, z0: -22, z1: 20 },
   roads: [{ x: 0, z: 0, w: 5, d: 42, color: 0x8a8070 }],
   props: [
@@ -13,7 +13,7 @@ const STREETS = { // 경성 골목: 서점, 학교 담장, 조선어 학회. 경
     { type: 'western', x: 0, z: -21, w: 8, d: 4, h: 4, color: 0x8a5a4a },
   ],
 };
-const PEOPLE = { // 세 사람(모임)이 기다리는 마당
+const PEOPLE = { edge: { style: 'tile', seed: 653 }, // 세 사람(모임)이 기다리는 마당
   origin: [400, 0], ground: 'stone', groundColor: 0xa09a8c, bounds: { x0: -18, x1: 18, z0: -12, z1: 14 },
   props: [
     { type: 'crowd', x: -12, z: -8.5, n: 1, looks: ['scholarModern'] },
@@ -21,7 +21,7 @@ const PEOPLE = { // 세 사람(모임)이 기다리는 마당
     { type: 'crowd', x: 12, z: -8.5, n: 1, looks: ['ahnchangho'] },
   ],
 };
-const TOWN3 = { // 상점·학교·학회
+const TOWN3 = { edge: { style: 'modern', seed: 428 }, // 상점·학교·학회
   origin: [400, 0], ground: 'stone', groundColor: 0xa8a49a, bounds: { x0: -22, x1: 22, z0: -14, z1: 14 },
   props: [
     { type: 'hanok', x: -14, z: -12, tile: true }, { type: 'rice', x: -10, z: -8, n: 6 },

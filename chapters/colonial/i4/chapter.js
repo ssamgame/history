@@ -5,19 +5,19 @@ import script from './script.js';
 // 미니게임 무대(마을에서 떨어진 x 400)
 const xy = (list, pts) => list.map((it, i) => ({ ...it, ...pts[i] }));
 const pines = pts => pts.map(([x, z]) => ({ type: 'tree', x, z, color: 0x34503a }));
-const FOREST = {
+const FOREST = { edge: { style: 'forest', seed: 836 },
   origin: [400, 0], ground: 'grass', groundColor: 0x4f6a3e, bounds: { x0: -24, x1: 24, z0: -26, z1: 26 },
   props: [
     { type: 'tent', x: -12, z: 13, color: 0x6b6a4a }, { type: 'tent', x: 13, z: 3, color: 0x6b6a4a }, { type: 'tent', x: -12, z: -9, color: 0x6b6a4a },
     ...pines([[-20, 20], [20, 20], [-4, 22], [6, 12], [-20, 2], [20, -10], [-3, -14], [10, -20], [-18, -20], [3, 2]]),
   ],
 };
-const VALLEY = { // 청산리 골짜기: 양쪽 산비탈의 숲, 가운데 골짜기 길
+const VALLEY = { edge: { style: 'forest', seed: 543 }, // 청산리 골짜기: 양쪽 산비탈의 숲, 가운데 골짜기 길
   origin: [400, 0], ground: 'grass', groundColor: 0x55703f, bounds: { x0: -30, x1: 30, z0: -30, z1: 30 },
   roads: [{ x: 0, z: 0, w: 6, d: 70, color: 0x7a6a50 }],
   props: [...pines([[-9, -20], [-11, -10], [-9, 0], [-12, 8], [-9, 16], [9, -20], [11, -10], [9, 0], [12, 8], [9, 16], [-16, -4], [16, 4], [-16, 12], [16, -14]])],
 };
-const GENERALS = {
+const GENERALS = { edge: { style: 'camp', seed: 652 },
   origin: [400, 0], ground: 'grass', groundColor: 0x5f7a4c, bounds: { x0: -18, x1: 18, z0: -12, z1: 14 },
   props: [
     { type: 'tent', x: 0, z: -11, color: 0x6b6a4a },

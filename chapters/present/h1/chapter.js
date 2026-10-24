@@ -4,7 +4,7 @@ import script from './script.js';
 
 // 미니게임 무대(마을에서 떨어진 x 400)
 const xy = (list, pts) => list.map((it, i) => ({ ...it, ...pts[i] }));
-const VILLAGE = {
+const VILLAGE = { edge: { style: 'thatch', seed: 448 },
   origin: [400, 0], ground: 'earth', groundColor: 0x9a8a6a, bounds: { x0: -24, x1: 24, z0: -26, z1: 28 },
   roads: [{ x: 0, z: 2, w: 6, d: 52, color: 0x8a8070 }, { x: 0, z: -18, w: 30, d: 8, color: 0x8a8070 }],
   props: [
@@ -15,7 +15,7 @@ const VILLAGE = {
     { type: 'tree', x: -16, z: -6 }, { type: 'tree', x: 16, z: 18 },
   ],
 };
-const SQUARE = {
+const SQUARE = { edge: { style: 'city', seed: 587 },
   origin: [400, 0], ground: 'stone', groundColor: 0xb0a890, bounds: { x0: -20, x1: 20, z0: -18, z1: 18 },
   props: [
     { type: 'western', x: -10, z: -14, w: 9, d: 5, h: 5, color: 0xb8a070 }, { type: 'flagpole', x: -10, z: -10.5 },

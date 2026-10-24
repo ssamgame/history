@@ -4,7 +4,7 @@ import script from './script.js';
 
 // 미니게임 무대(마을에서 떨어진 x 400): 겨울밤의 우정총국 거리와 개혁안을 붙인 마당
 const xy = (list, pts) => list.map((it, i) => ({ ...it, ...pts[i] }));
-const NIGHT = {
+const NIGHT = { edge: { style: 'street', seed: 709 },
   origin: [400, 0], ground: 'stone', groundColor: 0x6a6660, bounds: { x0: -20, x1: 20, z0: -18, z1: 18 },
   roads: [{ x: 0, z: 0, w: 6, d: 36, color: 0x5a5650 }],
   props: [
@@ -12,7 +12,7 @@ const NIGHT = {
     { type: 'hanok', x: -12, z: -12, tile: true, scale: 1.4 }, { type: 'tent', x: 12, z: -12, color: 0x6b6a4a }, { type: 'crowd', x: 15, z: -8, n: 3, cols: 3, looks: ['gendarme'], face: -Math.PI / 2 },
   ],
 };
-const YARD = {
+const YARD = { edge: { style: 'tile', seed: 134 },
   origin: [400, 0], ground: 'earth', groundColor: 0x8a7a62, bounds: { x0: -18, x1: 18, z0: -12, z1: 14 },
   props: [{ type: 'hanok', x: 0, z: -12, tile: true, scale: 1.5 }, { type: 'wall', x: -14, z: -2, w: 2 }, { type: 'wall', x: 14, z: -2, w: 2 }],
 };

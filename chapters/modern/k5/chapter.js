@@ -5,14 +5,14 @@ import { PIC } from '../pictures.js';
 
 // 미니게임 무대(마을에서 떨어진 x 400)
 const xy = (list, pts) => list.map((it, i) => ({ ...it, ...pts[i] }));
-const LAMPS = { // 가로등·선로·전신주·전화가 놓인 거리
+const LAMPS = { edge: { style: 'modern', seed: 529 }, // 가로등·선로·전신주·전화가 놓인 거리
   origin: [400, 0], ground: 'stone', groundColor: 0x9a948a, bounds: { x0: -20, x1: 20, z0: -14, z1: 14 },
   props: [
     { type: 'flagpole', x: -15, z: -10, color: 0xf2e6b0 }, { type: 'tram', x: -5, z: -9, ry: Math.PI / 2, track: 10 },
     { type: 'poles', x: 3, z: -12, n: 2, gap: 4 }, { type: 'desk', x: 15, z: -10 },
   ],
 };
-const LINE = { // 서대문(남쪽)에서 청량리(북쪽)로 뻗은 선로
+const LINE = { edge: { style: 'modern', seed: 896 }, // 서대문(남쪽)에서 청량리(북쪽)로 뻗은 선로
   origin: [400, 0], ground: 'stone', groundColor: 0x9a948a, bounds: { x0: -8, x1: 8, z0: -40, z1: 40 },
   roads: [{ x: 0, z: 0, w: 1.6, d: 80, color: 0x6b6862, y: 0.05 }],
   props: [
