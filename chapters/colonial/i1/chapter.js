@@ -45,7 +45,7 @@ export default makeKitChapter({
     npcs: [
       { id: 'farmer', look: 'peasant', x: -8, z: 6, ry: Math.PI * 0.8 },
       { id: 'teacher', look: 'scholarModern', x: 3, z: 6.5, ry: Math.PI },
-      { id: 'porter', look: 'commoner', x: -6, z: -2.5, ry: 0 },
+      { id: 'porter', look: 'commoner', x: -6, z: -2.5, ry: 0, work: 'carry' },
     ],
     signs: [{ id: 'signGov', title: '조선 총독부', x: 8, z: 5 }, { id: 'signRail', title: '철도', x: 4, z: -1 }, { id: 'signForce', title: '강제 동원', x: -12, z: -1 }],
   },

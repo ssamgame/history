@@ -1,7 +1,7 @@
 // 장면 부품 상자: 근대·일제 강점기·현대편 장들이 '배치표(layout)'만 써서 장면을 만든다.
 // layout = { ground, area, bounds, start, props: [{ type, x, z, ry, ... }], npcs: [{ id, look, x, z, ry }], signs: [{ id, title, x, z }], scatter: [...] }
 import * as THREE from 'three';
-import { mat, makePerson } from '../../core/people.js';
+import { mat, makePerson, setWork } from '../../core/people.js';
 import { scatter } from '../../core/props.js';
 import { makeSign } from '../../core/signs.js';
 import { LOOKS } from '../../content/characters.js';
@@ -83,8 +83,11 @@ export const BUILD = {
     for (let i = 0; i < n; i++) {
       const lk = LOOKS[looks[i % looks.length]] || LOOKS.commoner;
       const person = makePerson(lk);
-      person.position.set((i % cols - (cols - 1) / 2) * 1.3 + ((i * 37) % 5) * 0.08, 0, Math.floor(i / cols) * 1.4);
-      person.rotation.y = (p.face || 0) + ((i * 13) % 7 - 3) * 0.05;
+      // 바둑판처럼 줄 서지 않게: 줄마다 반 칸씩 엇갈리고, 저마다 조금씩 비켜 서서 서로 다른 쪽을 본다
+      const j = n2 => { const v = Math.sin((i + 1) * n2 * 12.9898 + (p.x || 0) * 3.1) * 43758.5453; return v - Math.floor(v) - 0.5; };
+      const row = Math.floor(i / cols);
+      person.position.set((i % cols - (cols - 1) / 2) * 1.3 + (row % 2) * 0.6 + j(1) * 0.55, 0, row * 1.35 + j(2) * 0.5);
+      person.rotation.y = (p.face || 0) + j(3) * 0.7;
       if (p.flags && (i * 7) % 10 < p.flags * 10) { const f = flagMesh(0.6, 0.4); f.position.set(0.5, 2.6, 0); person.add(f); add(person, new THREE.CylinderGeometry(0.02, 0.02, 1.2, 4), 0x5a3f2a, 0.5, 2.3, 0); }
       g.add(person);
     }
@@ -310,7 +313,7 @@ export function buildTown(world, layout) {
   }
   for (const s of layout.scatter || []) scatter(world, { ground: field.heightAt, ...s });
   if (layout.nature !== false) addNature(world, layout, field, kind, color);
-  for (const n of layout.npcs || []) world.addNpc(n.id, typeof n.look === 'string' ? LOOKS[n.look] : n.look, n.x, n.z, n.ry || 0);
+  for (const n of layout.npcs || []) { world.addNpc(n.id, typeof n.look === 'string' ? LOOKS[n.look] : n.look, n.x, n.z, n.ry || 0); if (n.work) setWork(world.npcs.get(n.id).mesh, n.work); } // work: 일하는 동작
   for (const s of layout.signs || []) world.addSpot(s.id, makeSign(s.title), s.x, s.z, 0);
   const weather = layout.weather ? createWeather(world, layout.weather, { count: 700 }) : null;
   // 깃발이 바람에 흔들린다

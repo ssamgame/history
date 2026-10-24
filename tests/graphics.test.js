@@ -106,3 +106,16 @@ test('bake: 움직이지 않는 장면 조각은 재질별로 합치고, 장면�
     eq(reds, 3, '스무 개가 하나로 + 둘');
   } finally { w.dispose(); }
 });
+
+import { animateWalk as AW, setWork } from '../core/people.js';
+test('people: 서 있는 사람은 고개를 천천히 돌리고, 일하는 사람은 팔을 움직이며, 키가 조금씩 다르다', () => {
+  const a = makePerson(LOOKS.commoner), b = makePerson(LOOKS.commoner);
+  ok(Math.abs(a.scale.y - b.scale.y) > 0.001 || Math.abs(a.scale.y - 1) > 0.001, `키 ${a.scale.y} ${b.scale.y}`);
+  const head = a.getObjectByName('headGroup'), h0 = head.rotation.y;
+  for (let i = 0; i < 60; i++) AW(a, false, 1 / 30);
+  ok(Math.abs(head.rotation.y - h0) > 0.01, '고개를 돌린다');
+  const w = makePerson(LOOKS.worker); setWork(w, 'hammer');
+  const arm = w.userData.arms[1], seen = new Set();
+  for (let i = 0; i < 40; i++) { AW(w, false, 1 / 30); seen.add(arm.rotation.x.toFixed(2)); }
+  ok(seen.size > 5, '일하는 팔이 움직인다');
+});

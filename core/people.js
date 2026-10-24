@@ -96,6 +96,7 @@ export function animateWalkers(dt, root) {
 }
 
 // gear: 'spear'(창) · 'sword'(허리에 찬 칼) · 'bow'(등에 멘 활) · 없음. track: false면 걷기 자동 움직임에서 뺀다(플레이어)
+let personCount = 0;
 export function makePerson({ robe, hat, trim = 0x2b241c, face = {}, gear = null, outfit = null, hairColor = null }, { track = true } = {}) {
   const g = new THREE.Group();
   const legs = [], arms = [];
@@ -197,7 +198,11 @@ export function makePerson({ robe, hat, trim = 0x2b241c, face = {}, gear = null,
     const b = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.035, 4, 12, Math.PI), mat(0x5a3f2a, 'wood', 'object'));
     b.name = 'bow'; b.position.set(0, 1.45, -0.42); b.rotation.set(0, 0, Math.PI / 2 + 0.3); b.castShadow = true; g.add(b);
   }
-  g.userData = { legs, arms, walk: 0 };
+  // 사람마다 조금씩 다른 키(복제한 듯 보이지 않게)와 저마다 다른 숨쉬기·두리번거리기 박자
+  personCount += 1;
+  const k = Math.sin(personCount * 12.9898) * 43758.5453, rnd = k - Math.floor(k);
+  if (track) g.scale.setScalar(0.95 + rnd * 0.1);
+  g.userData = { legs, arms, walk: 0, head: hg, ph: rnd * 20 };
   if (track) walkers.add(g);
   return g;
 }
@@ -207,11 +212,23 @@ export function animateWalk(person, moving, dt) {
   const u = person.userData;
   if (!u.legs) return;
   if (moving) u.walk += dt * 11;
+  u.t = (u.t || 0) + dt;
   const k = moving ? Math.sin(u.walk) * 0.8 : 0;
   const ease = (o, v) => { o.rotation.x += (v - o.rotation.x) * 0.3; };
   ease(u.legs[0], k); ease(u.legs[1], -k);
-  ease(u.arms[0], -k * 0.7); ease(u.arms[1], k * 0.7);
+  if (!moving && u.work) { // 일하는 동작: 망치질(오른팔을 들었다 내리기), 나르기(두 팔을 앞으로 모아 들기), 쓸기(두 팔을 함께 흔들기)
+    const w = u.t * (u.work === 'hammer' ? 5 : 2.2) + u.ph;
+    if (u.work === 'hammer') { ease(u.arms[1], -1.6 + Math.max(0, Math.sin(w)) * 1.4); ease(u.arms[0], -0.3); }
+    else if (u.work === 'carry') { ease(u.arms[0], -1.1); ease(u.arms[1], -1.1); }
+    else { const s = Math.sin(w) * 0.45; ease(u.arms[0], -0.6 + s); ease(u.arms[1], -0.6 + s); }
+  } else { ease(u.arms[0], -k * 0.7); ease(u.arms[1], k * 0.7); }
+  if (u.head) { // 서 있을 때는 천천히 두리번거리고(걸을 때는 앞을 본다)
+    const look = moving ? 0 : Math.sin(u.t * 0.45 + u.ph) * 0.35 * Math.max(0, Math.sin(u.t * 0.21 + u.ph * 2));
+    u.head.rotation.y += (look - u.head.rotation.y) * Math.min(1, dt * 3);
+  }
 }
+// 일하는 사람으로 정한다: 'hammer'(망치질) 'carry'(짐 들기) 'sweep'(쓸기·노 젓기). 장면 굳히기(core/bake.js)에서 빠져 계속 움직인다.
+export function setWork(person, kind) { person.userData.work = kind; return person; }
 
 export function markerSprite(text = '!', bg = '#d9a441') {
   const cv = document.createElement('canvas'); cv.width = cv.height = 64;

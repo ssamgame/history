@@ -4,7 +4,7 @@ import { backdropMountains, surroundings } from '../kit/terrain.js';
 import { curvedHipRoof, hanok } from '../kit/buildings.js';
 import { makeFire } from '../../core/fire.js';
 import { groundMaterial } from '../../core/textures.js';
-import { mat } from '../../core/people.js';
+import { mat, setWork } from '../../core/people.js';
 import { scatter } from '../../core/props.js';
 import { LOOKS } from '../../content/characters.js';
 
@@ -135,6 +135,8 @@ export function buildCh5Scene(world) {
   world.addNpc('artisan3', LOOKS.artisan, 3, -3.3, Math.PI);
   world.addNpc('artisan4', LOOKS.artisan, 9, 0.3, Math.PI);
   world.addNpc('monk', LOOKS.monk, 0, 3, Math.PI);
+  // 장인마다 하는 일: 솥 젓기, 판자 나르기, 글자 새기기(망치질), 옻칠
+  [['artisan1', 'sweep'], ['artisan2', 'carry'], ['artisan3', 'hammer'], ['artisan4', 'sweep']].forEach(([id, w]) => setWork(world.npcs.get(id).mesh, w));
 
   world.onUpdate((dt, t) => { for (const f of stations) f.update(dt, t); });
   backdropMountains(world.level, { color: 0x4f6a3e, radius: 130 }); // 먼 산줄기(깊이감)

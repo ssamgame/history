@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { surroundings } from '../../kit/terrain.js';
 import { curvedHipRoof, cart as cartModel, woodpile, jars } from '../../kit/buildings.js';
 import { sceneGround } from '../../kit/terrain.js';
-import { mat, makePerson } from '../../../core/people.js';
+import { mat, makePerson, setWork } from '../../../core/people.js';
 import { scatter } from '../../../core/props.js';
 import { LOOKS } from '../../../content/characters.js';
 import { hwaseongGate } from '../landmarks.js';
@@ -85,7 +85,7 @@ export function buildJ6Scene(world) {
   const cloth = mk(new THREE.BoxGeometry(4.8, 0.08, 4), 0xe6dcc3, 0, 3, 0, tent); cloth.rotation.z = 0.04;
   mk(new THREE.BoxGeometry(2.2, 0.2, 1.6), 0xa8392b, 0, 0.1, 0, tent, false); // 깔개
   // 일하는 사람들(배경)
-  for (const [x, z, ry] of [[7, -2, Math.PI], [11, 0, -Math.PI / 2], [-6, 6, 0.5], [13, 6, Math.PI * 0.8]]) { const p = makePerson(LOOKS.worker); p.position.set(x, 0, z); p.rotation.y = ry; L.add(p); }
+  for (const [x, z, ry, w] of [[7, -2, Math.PI, 'hammer'], [11, 0, -Math.PI / 2, 'carry'], [-6, 6, 0.5, 'hammer'], [13, 6, Math.PI * 0.8, 'carry']]) { const p = makePerson(LOOKS.worker); p.position.set(x, 0, z); p.rotation.y = ry; setWork(p, w); L.add(p); } // 돌을 다듬고(망치질) 나르는 일꾼
   scatter(world, { kind: 'pine', count: 40, area: { x0: -80, x1: 80, z0: -60, z1: -16 }, seed: 101, ground: hillH, scale: [1.1, 1.7], color: 0x4f6b3a });
   scatter(world, { kind: 'bush', count: 20, area: { x0: -30, x1: 30, z0: 13, z1: 30 }, seed: 102, color: 0xb0743a });
   scatter(world, { kind: 'grass', count: 60, area: { x0: -18, x1: 18, z0: 9, z1: 14 }, seed: 103, color: 0xa89a5a });

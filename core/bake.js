@@ -42,6 +42,7 @@ export function bakeLevel(world, scene, { steps = 3 } = {}) {
   };
   visit(scene, 0);
   // 2) 사람·안내판
+  L.traverse(o => { if (o.userData.work) keep.add(o); }); // 일하는 동작을 하는 사람은 계속 움직인다
   const npcMeshes = new Set([...world.npcs.values()].map(n => n.mesh));
   for (const m of npcMeshes) keep.add(m);
   // 3) 잠깐 돌려 보아 움직이거나 바뀐 것

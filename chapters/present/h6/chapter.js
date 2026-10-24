@@ -46,7 +46,7 @@ export default makeKitChapter({
     ],
     npcs: [
       { id: 'student', look: 'student', x: -3, z: 6, ry: Math.PI * 0.8 },
-      { id: 'builder', look: 'builder', x: 7, z: 5.5, ry: -Math.PI * 0.6 },
+      { id: 'builder', look: 'builder', x: 7, z: 5.5, ry: -Math.PI * 0.6, work: 'hammer' },
       { id: 'citizen', look: 'citizen', x: 1, z: -3, ry: 0 },
     ],
     signs: [{ id: 'signOlympic', title: '88 서울 올림픽', x: 11, z: -3 }, { id: 'signRoad', title: '경부고속도로', x: -8, z: 5 }],

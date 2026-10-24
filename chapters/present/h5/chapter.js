@@ -38,7 +38,7 @@ export default makeKitChapter({
       { type: 'crowd', x: -3, z: -5, n: 6, cols: 3, looks: ['student', 'schoolgirl'], face: Math.PI },
     ],
     npcs: [
-      { id: 'mother', look: 'woman', x: -4, z: 5.5, ry: Math.PI * 0.8 },
+      { id: 'mother', look: 'woman', x: -4, z: 5.5, ry: Math.PI * 0.8, work: 'carry' },
       { id: 'grandma', look: 'grandma', x: 7, z: 5, ry: -Math.PI * 0.6 },
       { id: 'student', look: 'student', x: 1, z: -2, ry: 0 },
     ],
