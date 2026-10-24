@@ -1,7 +1,7 @@
 // 조선편 3장 장면: 여름날 한양. 남쪽 길가의 앙부일구(해시계), 동쪽 보루각의 자격루(물시계), 북서쪽 서운관 마당의 측우기와 관천대.
 import * as THREE from 'three';
 import { surroundings } from '../../kit/terrain.js';
-import { curvedHipRoof } from '../../kit/buildings.js';
+import { curvedHipRoof, hanok, tree, jars } from '../../kit/buildings.js';
 import { sceneGround } from '../../kit/terrain.js';
 import { mat } from '../../../core/people.js';
 import { scatter } from '../../../core/props.js';
@@ -49,16 +49,13 @@ export function buildJ3Scene(world) {
   for (let i = 0; i < 4; i++) { const h = 0.6 * (i + 1); mk(new THREE.BoxGeometry(0.9, h, 0.6), 0xa59c8a, -10.1, h / 2, -7.3 - i * 0.6); } // 오르는 돌계단
   world.addCollider({ x: -12, z: -10, r: 2 });
 
-  // 길가 초가와 담, 나무
-  for (const [x, z] of [[-12, 14.5], [-4, 15], [16, 9], [16, 3]]) {
-    mk(new THREE.BoxGeometry(4, 2.2, 3.4), 0xe6dcc3, x, 1.1, z);
-    const roof = mk(new THREE.SphereGeometry(2.6, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), 0xc8a476, x, 2.1, z); roof.scale.set(1, 0.55, 0.85);
-  }
+  // 길가 초가와 나무(한양 길가 마을)
+  for (const [x, z, ry] of [[-12, 14.5, Math.PI], [-4, 15, Math.PI], [16, 9, -Math.PI / 2], [16, 3, -Math.PI / 2]]) { const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = ry; L.add(g); hanok(g, {}); }
   for (const [x, z] of [[-12, 9], [9, 10], [12, -14]]) {
-    mk(new THREE.CylinderGeometry(0.2, 0.3, 2, 6), 0x6b4a32, x, 1, z);
-    const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(1.5, 0), mat(0x4f7344, 'grain')); crown.position.set(x, 2.8, z); crown.castShadow = true; L.add(crown);
+    const g = new THREE.Group(); g.position.set(x, 0, z); L.add(g); tree(g, { x, z, color: 0x4f7344 });
     world.addCollider({ x, z, r: 0.5 });
   }
+  { const g = new THREE.Group(); g.position.set(-15.5, 0, 13); g.rotation.y = 0.4; L.add(g); jars(g, { n: 5 }); } // 길가 집의 장독대
   scatter(world, { kind: 'pine', count: 40, area: { x0: -60, x1: 60, z0: -50, z1: -18 }, seed: 71, ground: hillH, scale: [1.1, 1.7] });
   scatter(world, { kind: 'grass', count: 80, area: { x0: -15, x1: 15, z0: 0, z1: 12 }, avoid: [{ x: -8, z: 5, r: 2 }, { x: 0, z: 6, r: 3 }, { x: 0, z: 5, r: 2.6 }, { x: -12, z: 9, r: 1.2 }, { x: 9, z: 10, r: 1.2 }], seed: 72, color: 0x7a9450 });
 
