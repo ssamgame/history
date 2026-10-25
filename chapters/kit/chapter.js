@@ -35,6 +35,17 @@ const HOWTO = {
   doc: '문서에 적힌 것을 읽고 \'다 읽었어요\'를 눌러요.',
 };
 
+// 역사책 그림 이름(같은 이름은 한 번만 찍는다)
+const bookKey = (part, page) => `${part.title}|${page.title}`;
+// 역사책 앞의 안내 대사를 읽는 동안 첫 쪽 그림을 미리 찍어 둔다(처음 찍을 때는 그림 도구를 준비하느라 무겁다).
+// 대사 글자가 다 나온 뒤(1.2초쯤) 찍고, 돌려준 함수를 부르면(책이 먼저 열리면) 그만둔다. draw(spec, key)는 renderDiorama
+export function bookWarmup(part, draw = renderDiorama, delay = 400, onTime = null) {
+  const page = part.pages?.[0], spec = page && (page.scene || DIORAMA[page.pic]);
+  if (!spec) return () => {};
+  const h = setTimeout(() => { const t0 = performance.now(); draw(spec, bookKey(part, page)); onTime?.(performance.now() - t0); }, delay);
+  return () => clearTimeout(h);
+}
+
 // 장면 속 빛나는 고리들을 차례로 찾아가기. seconds 안에 다 가면 성공(쉬우면 시간 1.5배).
 function collect(ctx, scene, part, easy) {
   const { world, hud, audio } = ctx;
@@ -84,7 +95,7 @@ function runPart(ctx, scene, part, easy) {
     case 'order': return orderCards(ctx, { title: part.title, cards: part.cards, hint: typeof part.fail === 'string' ? part.fail : undefined, easy });
     case 'gauge': return timingBar(ctx, { title: part.title, prompt: part.prompt, label: part.label, zone: part.zone, seconds: part.seconds, easy });
     case 'collect': return collect(ctx, scene, part, easy);
-    case 'book': return readBook(ctx, { title: part.title, pages: part.pages.map(p => ({ ...p, scene: p.scene || DIORAMA[p.pic] })), render: p => renderDiorama(p.scene, `${part.title}|${p.title}`) });
+    case 'book': return readBook(ctx, { title: part.title, pages: part.pages.map(p => ({ ...p, scene: p.scene || DIORAMA[p.pic] })), render: p => renderDiorama(p.scene, bookKey(part, p)), onTiming: (label, ms, note) => ctx.world?.perf?.time(label, ms, `${part.title} ${note}`) });
     case 'scene': return part.play(ctx, scene).then(() => true); // 짧은 장면(관아를 차지하는 모습 등)
     case 'doc': return showDocument(ctx, { title: part.title, heading: part.heading, intro: part.docIntro, items: part.items, src: part.src });
     case 'drive': case 'stops': case 'deliver': case 'find': case 'ambush': case 'sneak': return PLAY[part.type](ctx, part, easy);
@@ -125,8 +136,11 @@ export function makeKitChapter(def) {
       const results = [];
       const q = typeof location !== 'undefined' ? new URLSearchParams(location.search) : null;
       const from = q && q.get('debug') ? +(q.get('part') || 0) : 0; // 개발용: ?debug=h3-minigame&part=1 이면 그 부분부터
-      for (const part of def.parts.slice(from)) {
+      for (const [k, part] of def.parts.slice(from).entries()) {
+        world.perf?.segment(`${def.id} 미니게임 ${from + k + 1}: ${part.title || part.type}`); // 개발용 성능 측정(?perf=1)
+        const warm = part.type === 'book' && part.intro ? bookWarmup(part, renderDiorama, 1200, ms => world.perf?.time('역사책 첫 그림(안내 대사 동안 미리)', ms, part.title)) : null;
         if (part.intro) { await sayAll(dialogue, part.intro); dialogue.close(); }
+        warm?.();
         if (part.before) part.before(ctx, scene);
         if (['book', 'doc', 'scene'].includes(part.type)) await runPart(ctx, scene, part, false); // 읽기·장면은 첫 시도 점수에 넣지 않는다
         else results.push(await tryPart(ctx, easy => runPart(ctx, scene, part, easy), part.fail));

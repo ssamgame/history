@@ -10,6 +10,7 @@ import { runChapter } from './flow.js';
 import { createMusic } from './music.js';
 import { showTitle, askName, showCourses, showMap, showIntroCard, showChapterResult, showSessionCard, showMenu, showMessage, createHud, showNotebook } from './screens.js';
 import { createNotebook } from './notebook.js';
+import { perfEnabled, createPerfStats, createPerfPanel } from './perf.js';
 import { ALL_CHAPTERS, COURSES, courseById, courseOfChapter, isSessionDone } from '../chapters/index.js';
 import { LOOKS } from '../content/characters.js';
 import { ROLES, roleLook } from '../content/roles.js';
@@ -43,8 +44,16 @@ function boot() {
   }
   addEventListener('resize', () => world.resize());
   hud.attachCamera(world.camera);
-  const quality = createQualityController({ initial, onChange: lv => world.setQuality(lv) });
+  // 개발자용 성능 측정(?perf=1일 때만, 학생 화면에는 없다): world.perf로 장면·무대·역사책 시간을 기록한다
+  const perf = perfEnabled() ? createPerfStats() : null;
+  const quality = createQualityController({ initial, onChange: lv => { world.setQuality(lv); perf?.setQuality(lv); } });
   if (savedQuality) quality.set(savedQuality);
+  world.remeasure = () => quality.restart(); // 미니게임 무대처럼 새 장면이 열리면 다시 잰다(chapters/kit/play.js)
+  let perfPanel = null;
+  if (perf) {
+    world.perf = perf; perf.setQuality(quality.level); perf.segment('첫 화면');
+    perfPanel = createPerfPanel(ui, perf, { world, onQuality: lv => quality.set(lv), getQuality: () => quality.level }); // 측정판의 화질 단추는 저장하지 않는다
+  }
 
   const input = createInput({ target: window, joyZone: hud.joyZone, actionButton: hud.talkBtn });
   input.enabled = false;
@@ -95,7 +104,8 @@ function boot() {
     wasTalking = talking;
     hud.setTouchVisible(inChapter && !talking);
     world.step(dt, talking ? { x: 0, z: 0 } : input.move());
-    world.render();
+    if (perf) { const r0 = performance.now(); world.render(); perf.frame(raw * 1000, performance.now() - r0, world.renderer.info.render); perfPanel.tick(now); }
+    else world.render();
     requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);

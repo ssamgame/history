@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>성능 측정</title>
+<link rel="stylesheet" href="../styles.css">
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+<style>
+  #stage { position: fixed; inset: 0; }
+  #panel { position: fixed; left: 8px; top: 8px; right: 8px; z-index: 50; font: 14px/1.4 sans-serif; color: #fff; pointer-events: none; }
+  #panel > * { pointer-events: auto; }
+  #status { display: inline-block; background: rgba(20,24,22,.8); padding: 6px 10px; border-radius: 6px; }
+  #controls { margin-top: 6px; display: flex; gap: 6px; flex-wrap: wrap; }
+  #controls button { padding: 10px 14px; font-size: 16px; border-radius: 6px; border: 0; background: #b8452f; color: #fff; }
+  #controls button.sub { background: #34392f; }
+  #result { margin: 6px 0 0; max-height: 60vh; overflow: auto; background: rgba(20,24,22,.92); padding: 8px; border-radius: 6px; font: 12px/1.35 ui-monospace, monospace; white-space: pre-wrap; user-select: text; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<div id="panel">
+  <div id="status">우선 장면 넷을 화질 세 가지로 재요(약 3분). '측정 시작'을 누르고 기다려 주세요. 재는 동안 화면을 만지지 마세요.</div>
+  <div id="controls"><button id="start" type="button">측정 시작</button><button id="copy" class="sub" type="button" hidden>복사</button><button id="save" class="sub" type="button" hidden>파일로 저장</button></div>
+  <pre id="result" hidden></pre>
+</div>
+<script type="module">
+  // 개발자용 성능 측정 페이지: 학생용 게임과 같은 코드(장면 짓기·굳히기·무대·역사책 그림)로 우선 장면을 차례로 띄우고,
+  // 학생처럼 길을 따라 걸으며 진입 직후 3초와 안정 7초의 FPS를 화질마다 잰다. 결과는 복사하거나 파일로 저장한다.
+  // ?fast=1 짧게(자동 테스트용), ?auto=1 바로 시작, ?q=medium,low 화질 순서
+  import { createWorld } from '../core/world.js';
+  import { bakeLevel } from '../core/bake.js';
+  import { createPerfStats, deviceInfo } from '../core/perf.js';
+  import { buildArena } from '../chapters/kit/play.js';
+  import { readBook } from '../core/minigame.js';
+  import { renderDiorama } from '../chapters/kit/diorama.js';
+  import { DIORAMA } from '../chapters/modern/dioramas.js';
+  import { PIC } from '../chapters/modern/pictures.js';
+  import { MODERN, PRESENT } from '../chapters/index.js';
+
+  const q = new URLSearchParams(location.search);
+  const fast = q.get('fast') === '1';
+  const ENTRY = fast ? 0.3 : 3, STABLE = fast ? 0.5 : 7;
+  const QUALITIES = (q.get('q') || 'medium,low,high').split(',');
+  const $ = id => document.getElementById(id);
+  const status = t => { $('status').textContent = t; };
+  const world = createWorld($('stage'), { quality: QUALITIES[0] });
+  addEventListener('resize', () => world.resize());
+  const stats = createPerfStats();
+  const load = async id => (await [...MODERN, ...PRESENT].find(m => m.id === id).load()).default;
+
+  // 프레임마다: 걷기(앞의 길 지점으로) → 그리기 → 재기
+  let walk = null, last = performance.now();
+  const loop = now => {
+    const raw = now - last; last = now;
+    let mv = { x: 0, z: 0 };
+    if (walk && walk.pts.length) {
+      const p = world.player.position, t = walk.pts[walk.k % walk.pts.length], dx = t.x - p.x, dz = t.z - p.z, d = Math.hypot(dx, dz);
+      if (d < 1.5) walk.k++; else mv = { x: dx / d, z: dz / d };
+    }
+    world.step(Math.min(raw / 1000, 0.1), mv);
+    const r0 = performance.now(); world.render(); stats.frame(raw, performance.now() - r0, world.renderer.info.render);
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+  const wait = s => new Promise(r => setTimeout(r, s * 1000));
+  // 장면 하나를 화질마다: 화질 바꾸기 → 진입 직후 → 안정
+  async function measure(name, pts) {
+    for (const lv of QUALITIES) {
+      world.setQuality(lv); stats.setQuality(lv, false); world.applyDecor?.();
+      walk = { pts, k: 0 }; if (pts[0]) { world.player.position.set(pts[0].x, 0, pts[0].z); world.snapCamera(); }
+      stats.segment(name);
+      status(`${name} · 화질 ${lv} 재는 중…`);
+      await wait(ENTRY + STABLE);
+      let n = 0; world.scene.traverse(o => { if (o.visible && (o.isMesh || o.isSprite || o.isPoints)) n++; }); stats.setObjects(n);
+    }
+    walk = null;
+  }
+  // 학생 게임처럼: 장 마을을 짓고 굳힌다(flow.js와 같은 순서)
+  async function village(id) {
+    const mod = await load(id);
+    world.clearLevel(); world.setMood(mod.mood); world.camMode = 'follow';
+    const t0 = performance.now(), built = mod.buildScene(world), t1 = performance.now();
+    bakeLevel(world, built); world.applyDecor?.();
+    stats.time('장면 짓기', t1 - t0, id); stats.time('장면 굳히기', performance.now() - t1, id);
+    return mod;
+  }
+  async function arenaOf(id, index, name) {
+    const mod = await village(id);
+    const part = mod.parts.filter(p => p.arena)[index];
+    const a = buildArena(world, part.arena);
+    const pts = [part.from, ...(part.route || part.bins || part.items || [])].filter(Boolean).map(p => Array.isArray(p) ? a.at(p[0], p[1]) : a.at(p.x, p.z));
+    await measure(name, pts);
+    a.dispose();
+  }
+  async function book() {
+    const mod = await load('k5');
+    const part = Object.values(mod.script.parts).find(p => p.type === 'book');
+    const ui = document.createElement('div'); document.body.append(ui);
+    stats.setQuality('-', false); stats.segment('역사책 첫 쪽 (근대 5장 근대 문물, 미리 찍기 없이)');
+    status('역사책 첫 쪽 재는 중…');
+    const opened = performance.now();
+    const done = readBook({ ui }, {
+      title: part.title, pages: part.pages.map(p => ({ ...p, figure: PIC[p.pic], scene: DIORAMA[p.pic] })),
+      render: p => renderDiorama(p.scene, `bench|${p.title}`), onTiming: (label, ms, note) => stats.time(label, ms, note),
+    });
+    for (let i = 0; i < 400 && !ui.querySelector('img.book-diorama'); i++) await wait(0.02);
+    stats.time('역사책을 펴고 첫 그림이 뜰 때까지', performance.now() - opened);
+    await wait(fast ? 0.8 : 2); // 읽는 동안 다음 쪽을 미리 찍는다
+    const t = performance.now(); ui.querySelector('.book-next').click();
+    for (let i = 0; i < 100 && (ui.querySelector('.book-wait') || ui.querySelector('.page').textContent.startsWith('1')); i++) await wait(0.02);
+    stats.time('다음 쪽으로 넘겨 그림이 뜰 때까지(넘기는 움직임 0.2초 포함)', performance.now() - t);
+    while (ui.querySelector('.book-next')) { ui.querySelector('.book-next').click(); await wait(0.25); }
+    await done; ui.remove();
+  }
+
+  async function run() {
+    $('start').hidden = true;
+    try {
+      await village('k3'); world.player.position.set(0, 0, 8); await measure('근대 3장 동학 마을(탐험)', [{ x: 0, z: 8 }, { x: -6, z: 2 }, { x: 6, z: -2 }, { x: 0, z: 8 }]);
+      await arenaOf('k3', 0, '근대 3장 동학 마을(무대: 농민군 모으기)');
+      await arenaOf('k5', 1, '근대 5장 전차 길(무대)');
+      await arenaOf('h5', 0, '현대 5장 피란민 마을(무대)');
+      await book();
+      status('다 쟀어요. 결과를 복사하거나 파일로 저장해 주세요.');
+    } catch (e) { status(`측정 중 문제가 생겼어요: ${e.message}`); stats.time(`오류: ${e.message}`, 0); }
+    const text = stats.text(deviceInfo(world.renderer));
+    $('result').textContent = text; $('result').hidden = false; $('copy').hidden = false; $('save').hidden = false;
+    document.title = 'done';
+  }
+  $('start').addEventListener('click', run);
+  $('copy').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText($('result').textContent); status('복사했어요'); }
+    catch { const r = document.createRange(); r.selectNodeContents($('result')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); status('글을 길게 눌러 복사해 주세요'); }
+  });
+  $('save').addEventListener('click', () => {
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([$('result').textContent], { type: 'text/plain;charset=utf-8' }));
+    a.download = '성능측정.txt'; document.body.append(a); a.click(); a.remove();
+  });
+  if (q.get('auto') === '1') run();
+</script>
+</body>
+</html>

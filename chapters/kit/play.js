@@ -110,6 +110,7 @@ export const CENTER_SCALE = 1.25; // 무대 가운데 소품은 멀리서도 알
 
 // 미니게임 무대: 마을에서 멀리 떨어진 곳에 땅·물·건물을 세우고, 끝나면 모두 치운다.
 export function buildArena(world, arena) {
+  const t0 = performance.now();
   const [ox, oz] = arena ? arena.origin : [0, 0];
   const g = new THREE.Group(); g.position.set(ox, 0, oz);
   const at = (x, z) => ({ x: x + ox, z: z + oz });
@@ -143,6 +144,8 @@ export function buildArena(world, arena) {
     if (arena.edge) { g.add(arenaEdge(arena)); world.applyDecor?.(g); }
     for (const c of arena.colliders || []) world.addCollider({ ...at(c.x, c.z), r: c.r });
     const b = arena.bounds; world.bounds = { x0: b.x0 + ox, x1: b.x1 + ox, z0: b.z0 + oz, z1: b.z1 + oz };
+    world.perf?.time('무대 짓기', performance.now() - t0); // 개발용 성능 측정(?perf=1)
+    world.remeasure?.(); // 무대는 마을보다 무거울 수 있으니 화질 자동 조절이 다시 잰다(직접 고른 화질은 그대로)
   }
   return {
     group: g, at,

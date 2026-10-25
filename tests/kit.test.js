@@ -109,6 +109,7 @@ test('kit: 역사책은 그림이 찍히면 사진과 헷갈리지 않게 \'재�
   const ui = document.createElement('div'); document.body.append(ui);
   const pages = [{ title: '가', lines: [{ text: '글' }], scene: {}, figure: '<svg></svg>' }, { title: '나', lines: [{ text: '글' }], figure: '<svg id="f"></svg>' }];
   const done = readBook({ ui }, { title: '책', pages, render: () => 'data:image/png;base64,AA==' });
+  for (let i = 0; i < 50 && !ui.querySelector('img.book-diorama'); i++) await new Promise(r => setTimeout(r, 20)); // 글을 먼저 보이고 그림은 곧바로 이어서
   ok(ui.querySelector('img.book-diorama'), '그림');
   eq(ui.querySelector('.book-badge')?.textContent, '재현 그림');
   ui.querySelector('.book-next').click(); await new Promise(r => setTimeout(r, 260));

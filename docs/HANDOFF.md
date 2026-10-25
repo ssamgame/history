@@ -131,5 +131,6 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/test.ps1 > /tmp/full.t
   - 역사책(v61): 쪽마다 게임 부품으로 꾸민 둥근 디오라마를 한 번 찍어 그림으로 보여 준다(`chapters/kit/diorama.js`, 설계 `chapters/modern/dioramas.js` 44쪽, 개발용 `tools/diorama-gallery.html?only=a,b`). 그림 위에 '재현 그림' 표. 찍기 실패하면 예전 평면 그림.
   - 무대(v62): 근대~현대 미니게임 무대 둘레에 시대다운 건물·나무 줄(`arena.edge.style`, chapters/kit/play.js EDGE). 개발용 `tools/arena-gallery.html?ch=k1&i=0&view=top|play`
   - v63: 무대 가운데 역사 소품(`arena.center`, 새 부품 banner·cargo·cannon·sandbags·ballot·papers·toolRack·noticeBoard·firepit·rifles·buckets), 역사책 그림 크게(개발용 `tools/book-preview.html?ch=k5&page=2`), 화질 '낮음'에서 먼 장식만 숨기기(`userData.minQuality` + `world.applyDecor`)
-- 남은 일: 실제 갤럭시 탭에서 프레임 재기
+  - v64(작업 브랜치, 배포는 선생님 확인 뒤): 성능 측정 `?perf=1` 측정판과 `tools/perf-bench.html`, 역사책 첫 그림을 안내 대사 동안 미리 찍기·글 먼저 보이기·다음 쪽 미리 찍기, 미니게임 무대가 열리면 화질 자동 조절 다시 재기(`world.remeasure`)
+- 남은 일: 실제 갤럭시 탭에서 `tools/perf-bench.html` 결과 받기 → 그 숫자로 병목 고치기
 - 원인·결과 잇기 놀이(link)는 만들다가 선생님 지시로 멈추고 되돌렸다(설계: 원인 사람 말 듣고 들고 가서 결과 원에 놓기, 근대~현대 먼저, 틀리면 해설 듣고 다시)

@@ -26,23 +26,26 @@ export async function runChapter(meta, chapter, ctx, save, { resumeStage = 'intr
       checkpoint('intro');
       await ctx.screens.showIntroCard(meta, chapter.script.intro);
     }
+    const perf = ctx.world?.perf, t1 = performance.now(); // perf: 개발용 성능 측정(?perf=1)일 때만 있다
     const built = chapter.buildScene(ctx.world, ctx);
+    const t2 = performance.now();
     if (chapter.bake !== false && ctx.world?.level && ctx.world.npcs) bakeLevel(ctx.world, built); // 움직이지 않는 조각을 재질별로 합쳐 태블릿에서 가볍게
     ctx.world?.applyDecor?.(); // 화질에 따라 먼 장식 켜고 끄기
+    if (perf) { perf.time('장면 짓기', t2 - t1, meta.id); perf.time('장면 굳히기', performance.now() - t2, meta.id); }
     if (from > 0) chapter.enterStage?.(ctx, STAGES[from]);
 
     if (from <= 1) {
-      checkpoint('explore');
+      checkpoint('explore'); perf?.segment(`${meta.id} 탐험`);
       await chapter.explore(ctx);
     }
     if (from <= 2) {
-      checkpoint('minigame');
+      checkpoint('minigame'); perf?.segment(`${meta.id} 미니게임`);
       level('battle');
       const mg = await chapter.minigame(ctx);
       Object.assign(result, { firstTryCorrect: mg.firstTryCorrect, firstTryTotal: mg.firstTryTotal, easyModeUsed: mg.easyModeUsed });
     }
 
-    level('calm');
+    level('calm'); perf?.segment(`${meta.id} 퀴즈`);
     checkpoint('quiz', { firstTryCorrect: result.firstTryCorrect, firstTryTotal: result.firstTryTotal, easyModeUsed: result.easyModeUsed });
     // 배운 내용 확인: 일어난 차례(year)대로 묻고, 문제마다 관련된 장면을 뒤에 비춘다. 틀리면 해설을 듣고 다시 고른다.
     const quizzes = [...chapter.quizzes].sort((a, b) => (a.year ?? 0) - (b.year ?? 0));

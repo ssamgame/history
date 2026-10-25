@@ -510,7 +510,9 @@ export function fitFigures(ctx, { title, figures, circles, easy = false, hint = 
 // 역사책 넘기기: 한 쪽마다 왼쪽에 그림, 오른쪽에 제목·해·해설(출처). '다음'을 누르면 책장이 넘어간다. 마지막 쪽에서 '다 읽었어요'.
 // pages: [{ title, year?, figure(SVG 글), lines: [{ who: 'narr', text, src }] }]. 읽은 해설은 역사 수첩에 적는다. 늘 true로 끝난다.
 // render(page): 그 쪽의 재현 그림(데이터 주소)을 돌려주면 평면 그림 대신 보여 주고 '재현 그림'이라고 적는다(없거나 실패하면 page.figure).
-export function readBook(ctx, { title, pages, render = null }) {
+// render(page) → 그림 주소(재현 그림). 그림 찍기는 무거울 수 있어서 글을 먼저 보여 주고 곧바로 이어 그리며,
+// 읽는 동안 다음 쪽 그림을 미리 찍어 둔다(넘길 때 멈칫하지 않게). onTiming(이름, ms): 개발용 성능 측정
+export function readBook(ctx, { title, pages, render = null, onTiming = null }) {
   return new Promise(resolve => {
     const screen = el('section', 'screen order book');
     const card = el('div', 'card wide');
@@ -523,12 +525,24 @@ export function readBook(ctx, { title, pages, render = null }) {
     const nav = el('div', 'book-nav'); nav.append(prev, page, next);
     card.append(el('div', 'eyebrow', '역사책 읽기'), el('h2', null, title), spread, nav);
     screen.append(card); ctx.ui.append(screen);
-    let i = 0;
-    const show = () => {
-      const p = pages[i];
-      const url = render && p.scene ? render(p) : null;
+    let i = 0, shown = 0, closed = false;
+    const ready = new Map(); // 쪽 번호 → 찍어 둔 그림 주소(null이면 못 찍음)
+    const draw = k => {
+      if (ready.has(k)) return ready.get(k);
+      const t0 = performance.now(), url = render(pages[k]);
+      onTiming?.(ready.size === 0 ? '역사책 첫 그림' : '역사책 그림', performance.now() - t0, `${k + 1}쪽`);
+      ready.set(k, url); return url;
+    };
+    const putPic = k => {
+      const p = pages[k], url = render && p.scene ? draw(k) : null;
       if (url) { const img = el('img', 'book-diorama'); img.src = url; img.alt = `${p.title} 재현 그림`; pic.replaceChildren(img, el('span', 'book-badge', '재현 그림')); }
       else pic.innerHTML = p.figure || '';
+    };
+    const ahead = k => { if (render && pages[k + 1]?.scene && !ready.has(k + 1)) setTimeout(() => { if (!closed) draw(k + 1); }, 900); }; // 지금 쪽 그림이 뜨고 넘기는 움직임이 끝난 뒤, 읽는 동안 다음 쪽
+    const show = () => {
+      const p = pages[i], k = i, token = ++shown;
+      if (!render || !p.scene || ready.has(k)) { putPic(k); ahead(k); }
+      else { pic.replaceChildren(el('span', 'book-wait', '그림을 펼치는 중…')); setTimeout(() => { if (!closed && token === shown) { putPic(k); ahead(k); } }, 30); } // 글이 먼저 화면에 뜨게
       text.replaceChildren(el('h3', null, p.title), ...(p.year ? [el('div', 'book-year', p.year)] : []),
         ...p.lines.map(l => { const q = el('p', null, l.text); if (l.src) q.append(' ', el('span', 'book-src', `[${l.src.join('·')}]`)); return q; }));
       for (const l of p.lines) ctx.notebook?.record(l);
@@ -538,7 +552,7 @@ export function readBook(ctx, { title, pages, render = null }) {
     };
     const turn = d => { spread.classList.remove('turn'); void spread.offsetWidth; spread.classList.add('turn'); setTimeout(() => { i += d; show(); }, 200); };
     prev.addEventListener('click', () => { if (i > 0) turn(-1); });
-    next.addEventListener('click', () => { if (i < pages.length - 1) turn(1); else { screen.remove(); resolve(true); } });
+    next.addEventListener('click', () => { if (i < pages.length - 1) turn(1); else { closed = true; screen.remove(); resolve(true); } });
     show();
   });
 }

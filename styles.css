@@ -366,6 +366,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .book-pic { position: relative; }
 .book-diorama { width: 100%; height: auto; max-height: min(420px, calc(100vh - 210px)); max-height: min(420px, calc(100dvh - 210px)); object-fit: contain; border-radius: 3px; box-shadow: 0 1px 3px rgba(43,36,28,.35); }
 .book-badge { position: absolute; left: 14px; top: 12px; padding: 2px 8px; border-radius: 10px; background: rgba(43,36,28,.78); color: #f6efe0; font-size: 13px; letter-spacing: .02em; } /* 실제 사진·사료가 아님을 밝힌다 */
+.book-wait { width: 100%; aspect-ratio: 3 / 2; max-height: min(420px, calc(100dvh - 210px)); display: grid; place-items: center; color: var(--muted); font-size: 15px; background: #efe6cf; border-radius: 3px; }
 .book-text { padding: 14px 16px; display: grid; align-content: start; gap: 8px; overflow-y: auto; min-height: 0; } /* 글이 길면 글 칸만 내려 읽는다(버튼은 늘 보인다) */
 .book-text h3 { margin: 0; font-family: var(--font-display); font-size: 21px; color: var(--dan-red); word-break: keep-all; }
 .book-year { font-size: 14px; color: var(--muted); }
@@ -386,3 +387,12 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .doc-paper h3 { margin: 0 0 10px; font-family: var(--font-display); text-align: center; font-size: 22px; }
 .doc-paper ol { margin: 0; padding-left: 24px; line-height: 1.7; font-size: 18px; }
 .doc-paper li small { display: block; color: var(--muted); font-size: 14px; }
+
+/* 개발자용 성능 측정판(?perf=1일 때만 생긴다): 오른쪽 가장자리에 작게, 게임 단추를 가리지 않게 */
+.perf-panel { position: fixed; right: 6px; top: 64px; z-index: 90; max-width: min(560px, calc(100vw - 12px)); font: 12px/1.35 ui-monospace, monospace; }
+.perf-head { display: block; margin-left: auto; padding: 4px 8px; border: 0; border-radius: 6px; background: rgba(20,24,22,.78); color: #d8f5c8; font: inherit; cursor: pointer; }
+.perf-body { margin-top: 4px; padding: 6px; border-radius: 6px; background: rgba(20,24,22,.9); color: #f2efe6; max-height: calc(100vh - 140px); overflow: auto; }
+.perf-row { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-bottom: 4px; }
+.perf-btn { padding: 6px 10px; border: 1px solid #6b6a60; border-radius: 4px; background: #34392f; color: #fff; font: inherit; }
+.perf-msg { color: #d8f5c8; margin-left: 4px; }
+.perf-text { margin: 0; white-space: pre-wrap; word-break: break-all; user-select: text; }

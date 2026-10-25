@@ -22,7 +22,9 @@
   const part = q.get('p') ? script.parts[q.get('p')] : Object.values(script.parts).find(p => p.type === 'book');
   const ui = document.getElementById('ui');
   readBook({ ui }, { title: part.title, pages: part.pages.map(p => ({ ...p, figure: PIC[p.pic], scene: DIORAMA[p.pic] })), render: p => renderDiorama(p.scene, `${part.title}|${p.title}`) });
-  for (let i = 0; i < +(q.get('page') || 0); i++) { ui.querySelector('.book-next').click(); await new Promise(r => setTimeout(r, 300)); }
+  const settle = async () => { for (let k = 0; k < 100 && ui.querySelector('.book-wait'); k++) await new Promise(r => setTimeout(r, 30)); }; // 그림이 다 뜰 때까지
+  await settle();
+  for (let i = 0; i < +(q.get('page') || 0); i++) { ui.querySelector('.book-next').click(); await new Promise(r => setTimeout(r, 300)); await settle(); }
   document.title = 'done';
 </script>
 </body>
