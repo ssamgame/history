@@ -5,7 +5,7 @@ import { PIC } from '../../modern/pictures.js';
 
 // 미니게임 무대(마을에서 떨어진 x 400)
 const xy = (list, pts) => list.map((it, i) => ({ ...it, ...pts[i] }));
-const POLL = { edge: { style: 'city', seed: 291 }, // 투표소: 줄 서는 곳, 명부 책상, 가림막 기표소, 투표함
+const POLL = { edge: { style: 'city', seed: 291 }, center: [{ type: 'ballot', x: 5, z: -12 }, { type: 'noticeBoard', x: 12, z: 8, ry: -0.5 }, { type: 'papers', x: -12, z: -4, kind: 'news', n: 2 }, { type: 'noticeBoard', x: 7, z: 8, ry: -0.5 }], // 투표소: 줄 서는 곳, 명부 책상, 가림막 기표소, 투표함
   origin: [400, 0], ground: 'stone', groundColor: 0xa8a49a, bounds: { x0: -16, x1: 16, z0: -16, z1: 16 },
   props: [
     { type: 'western', x: 0, z: -18, w: 20, d: 4, h: 6, color: 0xb8b0a0, solid: false }, { type: 'flagpole', x: -12, z: 12 },
@@ -13,7 +13,7 @@ const POLL = { edge: { style: 'city', seed: 291 }, // 투표소: 줄 서는 곳,
     { type: 'desk', x: -6, z: -2 }, { type: 'wall', x: 8, z: -6, w: 4, h: 2.2 }, { type: 'desk', x: -1, z: -12 },
   ],
 };
-const YARD = { edge: { style: 'city', seed: 909 },
+const YARD = { edge: { style: 'city', seed: 909 }, center: [{ type: 'papers', x: -14, z: 6, kind: 'news', n: 3 }, { type: 'papers', x: 14, z: 6, kind: 'book', n: 2 }, { type: 'noticeBoard', x: 0, z: -12 }, { type: 'papers', x: -7, z: 7, kind: 'news', n: 3 }, { type: 'papers', x: 7, z: 7, kind: 'book', n: 2 }],
   origin: [400, 0], ground: 'stone', groundColor: 0xb0a890, bounds: { x0: -18, x1: 18, z0: -16, z1: 16 },
   props: [
     { type: 'western', x: 0, z: -15, w: 14, d: 5, h: 6, dome: true, color: 0xc8c0b0 },

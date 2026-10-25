@@ -242,7 +242,13 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
       if (sun.shadow.mapSize.x !== ms) { sun.shadow.mapSize.set(ms, ms); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
       if (world.mood) sky.material.uniforms.cloudAmt.value = q.particles > 0.3 ? (world.mood.clouds ?? 0.5) : 0;
       scene.traverse(o => { if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(mm => { mm.needsUpdate = true; }); });
+      world.applyDecor();
       world.resize();
+    },
+    // 멀리 있는 덜 중요한 장식(userData.minQuality: 'medium'|'high')은 화질이 그보다 낮으면 숨긴다. 걷는 곳·사람·가운데 소품은 표시가 없어 늘 보인다
+    applyDecor(root = scene) {
+      const rank = { low: 0, medium: 1, high: 2 }, lv = rank[world.qualityLevel] ?? 1;
+      root.traverse(o => { if (o.userData.minQuality) o.visible = lv >= rank[o.userData.minQuality]; });
     },
     resize() {
       const w = container.clientWidth || window.innerWidth, h = container.clientHeight || window.innerHeight;

@@ -175,6 +175,18 @@ export const BUILD = {
   paddy(g, p) { BLD.paddy(g, p); return 0; },
   // 축대와 계단: 위에 놓을 부품은 y를 h만큼 준다
   terrace(g, p) { BLD.terrace(g, p); return { rect: [p.w || 8, p.d || 6] }; },
+  // 무대 가운데 역사 소품: 깃발·짐·화포·모래주머니·투표함·종이 묶음·연장 걸이·게시판·모닥불 자리·소총·물통
+  banner(g, p) { BLD.banner(g, p); return 0.3; },
+  cargo(g, p) { BLD.cargo(g, p); return 1.1; },
+  cannon(g) { BLD.cannon(g); return 0.9; },
+  sandbags(g, p) { BLD.sandbags(g, p); return { rect: [p.w || 4, 0.6] }; },
+  ballot(g) { BLD.ballot(g); return 0.9; },
+  papers(g, p) { BLD.papers(g, p); return 0.8; },
+  toolRack(g, p) { BLD.toolRack(g, p); return 1.1; },
+  noticeBoard(g, p) { BLD.noticeBoard(g, p); return 1.0; },
+  firepit(g) { BLD.firepit(g); return 0.7; },
+  rifles(g) { BLD.rifles(g); return 0.4; },
+  buckets(g) { BLD.buckets(g); return 0.6; },
   // 책상과 책 (학교·연구실)
   desk(g) {
     add(g, box(1.6, 0.75, 0.9), 0x7a5a3c, 0, 0.38, 0, 'wood');

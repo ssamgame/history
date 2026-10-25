@@ -8,7 +8,7 @@ import { mapSpot } from '../../kit/play.js';
 const xy = (list, pts) => list.map((it, i) => ({ ...it, ...pts[i] }));
 const M = mapSpot({ x: 0, z: 0, w: 48 });
 const MAP = { origin: [400, 0], ground: 'earth', groundColor: 0xd8dade, bounds: { x0: -28, x1: 28, z0: -36, z1: 36 }, map: { x: 0, z: 0, w: 48 } };
-const SNOWROAD = { edge: { style: 'snow', seed: 166 }, // 눈 덮인 피란길: 얼어붙은 강, 고갯길, 쉼터(천막)
+const SNOWROAD = { edge: { style: 'snow', seed: 166 }, center: [{ type: 'cargo', x: -8, z: 16, kind: 'sack', n: 3 }, { type: 'cart', x: 9, z: 0, ry: 0.3, load: true }, { type: 'firepit', x: -10, z: -6 }, { type: 'cargo', x: -7, z: 22, kind: 'sack', n: 3 }, { type: 'cart', x: 7, z: 22, ry: 0.3, load: true }, { type: 'firepit', x: -9, z: 15 }, { type: 'cargo', x: 9, z: 15, kind: 'sack', n: 3 }], // 눈 덮인 피란길: 얼어붙은 강, 고갯길, 쉼터(천막)
   origin: [400, 0], ground: 'earth', groundColor: 0xe6e8ec, bounds: { x0: -22, x1: 22, z0: -30, z1: 30 },
   roads: [{ x: 0, z: 0, w: 5, d: 60, color: 0xb8b4aa }],
   props: [

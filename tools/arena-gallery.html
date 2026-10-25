@@ -20,7 +20,8 @@
   const meta = [...MODERN, ...COLONIAL, ...PRESENT].find(m => m.id === (q.get('ch') || 'k1'));
   const chapter = (await meta.load()).default;
   const parts = chapter.parts.filter(p => p.arena);
-  const part = parts[+(q.get('i') || 0)];
+  const part0 = parts[+(q.get('i') || 0)];
+  const part = q.get('bare') ? { ...part0, arena: { ...part0.arena, edge: null, center: null } } : part0; // bare=1: 둘레·가운데 소품 없이(전후 비교용)
   const world = createWorld(document.getElementById('stage'), { quality: q.get('q') || 'medium' });
   world.setMood(chapter.mood || 'morning');
   const arena = buildArena(world, part.arena);

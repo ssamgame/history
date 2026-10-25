@@ -6,7 +6,7 @@ import { mapSpot } from '../../kit/play.js';
 // 미니게임 무대는 마을에서 떨어진 곳(x 400)에 따로 세운다.
 const xy = (list, pts) => list.map((it, i) => ({ ...it, ...pts[i] }));
 const M = mapSpot({ x: 0, z: 0, w: 48 });
-const RIVER = { edge: { style: 'forest', seed: 364 },
+const RIVER = { edge: { style: 'forest', seed: 364 }, center: [{ type: 'sandbags', x: -14, z: 6, w: 4 }, { type: 'sandbags', x: 14, z: 6, w: 4 }, { type: 'cargo', x: -20, z: 10, kind: 'crate', n: 3 }],
   origin: [400, 0], ground: 'grass', groundColor: 0x6a7a4c, bounds: { x0: -30, x1: 30, z0: -30, z1: 30 },
   props: [
     { type: 'water', x: 0, z: -5, w: 140, d: 9, color: 0x5a7a7a },

@@ -25,12 +25,12 @@ export const DIORAMA = {
   newspaper: { base: 'stone', props: [{ type: 'shop', x: 0, z: -4, w: 6, style: 'modern', sign: '독립신문', awning: 0x2f6b5e }, { type: 'desk', x: -2, z: 0.5 }], people: [['seojaepil', 1, 0.5, Math.PI * 0.9]],
     crowd: [crowd(-6, 3, 4, ['commoner', 'student'], { face: Math.PI / 2, cols: 2 })], cam: FAR, at: [0, 1.5, -1] },
   hwangudan: { base: 'stone', props: [{ type: 'terrace', x: 0, z: -2, w: 8, d: 8, h: 0.6, steps: false }, { type: 'terrace', x: 0, z: -2, w: 5.6, d: 5.6, h: 1.2, steps: false }, { type: 'terrace', x: 0, z: -2, w: 3.2, d: 3.2, h: 1.8, steps: false }, { type: 'flagpole', x: 6, z: -1 }],
-    people: [['gojong', 0, -2, Math.PI, { scale: 1.1 }]], cam: FAR, at: [0, 2, -1] },
+    people: [['gojong', 0, -2, Math.PI, { scale: 1.1 }]], crowd: [crowd(-6, 3, 4, ['joseonOfficial'], { face: Math.PI * 0.85, cols: 2 }), crowd(6, 3, 4, ['joseonOfficial'], { face: -Math.PI * 0.85, cols: 2 })], cam: FAR, at: [0, 2, -1] },
   forum: { base: 'stone', props: [{ type: 'stage', x: 0, z: -4 }, { type: 'arch', x: -8, z: -6, label: '독립문', scale: 0.6 }],
     crowd: [crowd(0, 2, 14, ['commoner', 'gentleman', 'student', 'woman', 'scholar'], { face: Math.PI })], people: [['scholarModern', 0, -4, 0]], cam: FAR, at: AT },
   // ── 근대 5장 근대 문물 ──
-  telegraph: { base: 'earth', props: [{ type: 'poles', x: -9, z: -2, n: 4, gap: 6 }, { type: 'hanok', x: 4, z: -6, tile: true }, { type: 'desk', x: 3, z: 0 }], people: [['gentleman', 3, 1.2, Math.PI]], cam: FAR, at: AT },
-  telephone: { base: 'stone', props: [{ type: 'western', x: 0, z: -4, w: 7, d: 4, h: 4, color: 0x8a4a3a }, { type: 'desk', x: -1.5, z: 0.5 }], people: [['gentleman', -1.5, 1.6, Math.PI]], cam: FAR, at: [0, 1.5, -1] },
+  telegraph: { base: 'earth', props: [{ type: 'poles', x: -9, z: -2, n: 4, gap: 6 }, { type: 'hanok', x: 4, z: -6, tile: true }, { type: 'desk', x: 3, z: 0 }, { type: 'papers', x: 6, z: 0.5, kind: 'news', n: 2 }], people: [['gentleman', 3, 1.2, Math.PI], ['commoner', -1, 2, Math.PI * 0.7], ['scholar', -2.5, 1, Math.PI * 0.6]], cam: FAR, at: AT },
+  telephone: { base: 'stone', props: [{ type: 'western', x: 0, z: -4, w: 7, d: 4, h: 4, color: 0x8a4a3a }, { type: 'desk', x: -1.5, z: 0.5 }, { type: 'poles', x: -9, z: -2, n: 3, gap: 7 }], people: [['gentleman', -1.5, 1.6, Math.PI], ['woman', 2.5, 1.5, -Math.PI * 0.8]], cam: FAR, at: [0, 1.5, -1] },
   tram: { base: 'earth', props: [{ type: 'tram', x: 0, z: -1, ry: Math.PI / 2, track: 24 }, { type: 'poles', x: -11, z: -3.4, n: 4, gap: 7 }, { type: 'hanok', x: -6, z: -7, tile: true }, { type: 'western', x: 6, z: -7, w: 6, d: 4, h: 4 }],
     people: [['woman', 3, 3, Math.PI], ['gentleman', -3, 3.4, Math.PI]], cam: FAR, at: AT },
   lamp: { base: 'stone', sky: 'night', props: [{ type: 'lamp', x: -4, z: 0 }, { type: 'lamp', x: 4, z: 0 }, { type: 'western', x: 0, z: -5, w: 7, d: 4, h: 5, color: 0x6a3a2a }], people: [['gentleman', -2, 2, Math.PI], ['woman', 2, 2.4, Math.PI]], cam: FAR, at: AT },
@@ -42,7 +42,7 @@ export const DIORAMA = {
   tojisa: { base: 'grass', props: [{ type: 'paddy', x: 0, z: -3, w: 16, d: 8 }, { type: 'hanok', x: -8, z: 4, ry: 0.4 }], people: [['gendarme', 2, 2, Math.PI], ['peasant', 5, 3.4, -Math.PI / 2], ['peasant', 6.5, 4, -Math.PI / 2]], cam: FAR, at: AT },
   railway: { base: 'earth', water: [{ from: 6 }], props: [{ type: 'train', x: -3, z: -1, ry: Math.PI / 2, cars: 2, track: 18 }, { type: 'pier', x: 7.5, z: -1, w: 3, d: 8 }], cam: FAR, at: AT },
   sanmi: { base: 'sand', water: [{ from: 3 }], props: [{ type: 'rice', x: -5, z: -2, n: 9 }, { type: 'rice', x: -2, z: 1, n: 6 }, { type: 'boat', x: 7, z: 0, len: 6 }, { type: 'pier', x: 1.5, z: 0, w: 3, d: 6 }],
-    people: [['commoner', -1, -2, Math.PI / 2, { work: 'carry' }]], cam: FAR, at: AT },
+    people: [['commoner', -1, -2, Math.PI / 2, { work: 'carry' }], ['peasant', -4, 2, Math.PI / 2, { work: 'carry' }], ['peasant', 1, -4, Math.PI / 2, { work: 'carry' }]], cam: FAR, at: AT },
   classroom: { base: 'stone', props: [{ type: 'western', x: 0, z: -5, w: 10, d: 4, h: 4, color: 0x9a7a5a }, { type: 'desk', x: -3, z: 0 }, { type: 'desk', x: 0, z: 0 }, { type: 'desk', x: 3, z: 0 }],
     people: [['gendarme', 5, -1, -Math.PI / 2]], crowd: [crowd(0, 1.6, 6, ['student', 'schoolgirl'], { face: Math.PI, cols: 3 })], cam: FAR, at: AT },
   // ── 일제 강점기 2장 3·1 운동 ──
@@ -63,7 +63,7 @@ export const DIORAMA = {
   // ── 현대 5장 전쟁 뒤의 생활 ──
   shanty: { base: 'earth', props: [{ type: 'terrace', x: -2, z: -5, w: 12, d: 4, h: 1.2, steps: false }, { type: 'shack', x: -5, z: -5, y: 1.2 }, { type: 'shack', x: 0, z: -5, y: 1.2 }, { type: 'shack', x: 6, z: 0 }, { type: 'shack', x: -6, z: 1 }], people: [['grandma', 1, 2, Math.PI]], cam: FAR, at: AT },
   peddler: { base: 'earth', props: [{ type: 'stall', x: -3, z: -2, color: 0xd8cdb0 }, { type: 'concrete', x: 5, z: -5, floors: 2, w: 6 }], people: [['woman', 0, 1.4, Math.PI, { work: 'carry' }], ['woman', -3, 0.4, Math.PI]], cam: FAR, at: AT },
-  milmyeon: { base: 'earth', props: [{ type: 'shack', x: 0, z: -4 }, { type: 'desk', x: 0, z: 0.5 }, { type: 'jars', x: 4, z: -1 }], people: [['grandma', 0, -0.8, 0, { work: 'sweep' }], ['kid', -2, 1.8, Math.PI]], cam: FAR, at: [0, 1, -1] },
+  milmyeon: { base: 'earth', props: [{ type: 'shack', x: 0, z: -4 }, { type: 'desk', x: 0, z: 0.5 }, { type: 'jars', x: 4, z: -1 }, { type: 'cargo', x: -4, z: -1, kind: 'sack', n: 4 }], people: [['grandma', 0, -0.8, 0, { work: 'sweep' }], ['kid', -2, 1.8, Math.PI], ['citizen', 2.5, 2, Math.PI * 0.9]], cam: FAR, at: [0, 1, -1] },
   outdoor: { base: 'earth', props: [{ type: 'western', x: 0, z: -6, w: 9, d: 4, h: 3, color: 0x9a8a7a, flat: true }, { type: 'desk', x: 0, z: -1.5 }], people: [['scholarModern', 0, -2.6, 0]], crowd: [crowd(0, 1.5, 10, ['student', 'schoolgirl'], { face: Math.PI })], cam: FAR, at: AT },
   reunion: { base: 'stone', props: [{ type: 'concrete', x: 0, z: -5, floors: 3, w: 9, shop: false }, { type: 'desk', x: -3, z: 0 }, { type: 'desk', x: 3, z: 0 }], crowd: [crowd(0, 2, 12, ['grandma', 'citizen', 'woman', 'gentleman'], { face: Math.PI })], cam: FAR, at: AT },
   // ── 현대 6장 민주화와 경제 성장 ──

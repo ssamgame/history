@@ -28,6 +28,7 @@ export async function runChapter(meta, chapter, ctx, save, { resumeStage = 'intr
     }
     const built = chapter.buildScene(ctx.world, ctx);
     if (chapter.bake !== false && ctx.world?.level && ctx.world.npcs) bakeLevel(ctx.world, built); // 움직이지 않는 조각을 재질별로 합쳐 태블릿에서 가볍게
+    ctx.world?.applyDecor?.(); // 화질에 따라 먼 장식 켜고 끄기
     if (from > 0) chapter.enterStage?.(ctx, STAGES[from]);
 
     if (from <= 1) {

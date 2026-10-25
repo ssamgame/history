@@ -12,7 +12,7 @@ import { PIC } from '../pictures.js';
 const xy = (list, pts) => list.map((it, i) => ({ ...it, ...pts[i] }));
 // 들판 사이 마을 길: 마을마다 초가와 살림살이를 두어 어디가 어느 마을인지 한눈에 보이게
 const paddy = (x, z, w, d) => [{ x, z, w, d, color: 0x7a9a4a, kind: 'grass' }, { x, z: z - d / 2 - 0.3, w, d: 0.5, color: 0x8f7556 }]; // 논과 둑
-const FARMS = { edge: { style: 'thatch', seed: 187 },
+const FARMS = { edge: { style: 'thatch', seed: 187 }, center: [{ type: 'banner', x: -10, z: -15, text: '보국안민' }, { type: 'banner', x: 7, z: -14, text: '제폭구민' }, { type: 'toolRack', x: -9, z: 8, ry: 0.3 }, { type: 'cargo', x: 11, z: -10, kind: 'sack', n: 4 }, { type: 'banner', x: 7, z: 18, text: '제폭구민' }, { type: 'toolRack', x: -9, z: 11, ry: 0.3 }, { type: 'cargo', x: 9, z: 11, kind: 'sack', n: 4 }],
   origin: [400, 0], ground: 'grass', groundColor: 0x7a8a4c, bounds: { x0: -24, x1: 24, z0: -26, z1: 26 },
   roads: [{ x: 0, z: 0, w: 5, d: 52, color: 0x8f7556 }, ...paddy(14, 20, 12, 7), ...paddy(-16, 2, 12, 8), ...paddy(15, -12, 12, 7)],
   props: [

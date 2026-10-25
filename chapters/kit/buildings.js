@@ -739,3 +739,115 @@ export function archeryTarget(g) {
   P.cyl(0.18, 0.18, 0.29, 12, 0xb8452f, 'cloth', [0, 1.4, 0], [Math.PI / 2, 0, 0]);
   return P.into(g);
 }
+
+// ── 무대 가운데 역사 소품(2026-10-25): 사건의 맥락을 보여 주는 작은 물건들. 모두 재질별로 합쳐 한 물건에 그리기 두세 번 ──
+// 세로 깃발(농민군·의병 등): 장대에 천을 매달고 글씨(text, 없으면 무늬 없는 천)
+export function banner(g, p = {}) {
+  const P = parts(), h = p.h || 4.2;
+  P.cyl(0.05, 0.06, h, 6, 0x6b4a32, 'wood', [0, h / 2, 0]);
+  P.box(1.1, 0.05, 0.05, 0x6b4a32, 'wood', [0.5, h - 0.15, 0]);
+  P.into(g);
+  const cloth = p.text ? signMaterial(p.text, { vertical: true, bg: p.bg || '#e8dcc0', fg: p.fg || '#2b241c' })
+    : new THREE.MeshLambertMaterial({ color: p.color ?? 0xe8dcc0, side: THREE.DoubleSide });
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 2.2), cloth); m.position.set(0.5, h - 1.3, 0.03); m.castShadow = true; g.add(m);
+  const back = m.clone(); back.rotation.y = Math.PI; back.position.z = -0.03; g.add(back);
+  return g;
+}
+// 짐: kind 'cloth'(옷감 두루마리 묶음) 'crate'(나무 궤짝) 'sack'(곡식 자루) 'barrel'(통). n개를 쌓는다
+export function cargo(g, p = {}) {
+  const P = parts(), n = p.n || 4, kind = p.kind || 'crate';
+  for (let i = 0; i < n; i++) {
+    const x = (i % 3 - 1) * 0.85, y = Math.floor(i / 3), z = (i % 2) * 0.15;
+    if (kind === 'crate') { P.box(0.8, 0.6, 0.6, i % 2 ? 0x9a7a52 : 0x8a6a48, 'wood', [x, 0.3 + y * 0.6, z]); P.box(0.82, 0.06, 0.62, 0x5e4330, 'wood', [x, 0.45 + y * 0.6, z]); }
+    else if (kind === 'cloth') { P.cyl(0.18, 0.18, 0.9, 10, [0xe8e2d2, 0xd8d0bc, 0xc8b8a0][i % 3], 'cloth', [x * 0.5, 0.18 + y * 0.36, z], [0, 0, Math.PI / 2]); }
+    else if (kind === 'sack') { P.add(new THREE.SphereGeometry(0.38, 8, 6).scale(1, 0.75, 0.8), 0xc9b48a, 'cloth', [x * 0.9, 0.28 + y * 0.45, z], [0, 0, 0], { smooth: true }); }
+    else { P.cyl(0.3, 0.3, 0.8, 10, 0x7a5a3c, 'wood', [x * 0.8, 0.4 + y * 0.8, z]); P.cyl(0.31, 0.31, 0.06, 10, 0x3a3a3a, 'grain', [x * 0.8, 0.6 + y * 0.8, z]); }
+  }
+  return P.into(g);
+}
+// 조선 화포: 나무 포가 위의 청동 포신(해안 포대)
+export function cannon(g) {
+  const P = parts();
+  P.box(0.9, 0.35, 1.6, 0x6b4a32, 'wood', [0, 0.35, 0]);
+  for (const s of [-1, 1]) for (const z of [-0.5, 0.5]) P.cyl(0.25, 0.25, 0.12, 10, 0x5e4330, 'wood', [s * 0.5, 0.25, z], [0, 0, Math.PI / 2]);
+  P.cyl(0.16, 0.22, 1.8, 10, 0x6b5a3a, 'grain', [0, 0.72, 0.2], [Math.PI / 2 - 0.08, 0, 0]);
+  for (const z of [-0.4, 0.2, 0.8]) P.cyl(0.24, 0.24, 0.07, 10, 0x5a4a2e, 'grain', [0, 0.72 + z * 0.08, 0.2 + z], [Math.PI / 2 - 0.08, 0, 0]);
+  return P.into(g);
+}
+// 모래주머니 진지: 너비 w로 두 줄 쌓은 자루
+export function sandbags(g, p = {}) {
+  const P = parts(), w = p.w || 4;
+  for (let row = 0; row < 3; row++) for (let x = -w / 2 + 0.35 + (row % 2) * 0.3; x < w / 2 - 0.3; x += 0.62) P.add(new THREE.BoxGeometry(0.6, 0.28, 0.42), row % 2 ? 0xb8a47a : 0xa8946a, 'cloth', [x, 0.15 + row * 0.27, 0]);
+  return P.into(g);
+}
+// 투표함과 탁자(선거)
+export function ballot(g) {
+  const P = parts();
+  P.box(1.8, 0.08, 0.9, 0x7a5a3c, 'wood', [0, 0.78, 0]);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) P.box(0.07, 0.78, 0.07, 0x5e4330, 'wood', [sx * 0.8, 0.39, sz * 0.38]);
+  P.box(0.6, 0.55, 0.45, 0x8a6a48, 'wood', [0.3, 1.1, 0]);
+  P.box(0.3, 0.02, 0.05, 0x2b241c, 'wood', [0.3, 1.38, 0]);
+  P.box(0.5, 0.03, 0.35, 0xe8e2d2, 'cloth', [-0.5, 0.83, 0]);
+  return P.into(g);
+}
+// 종이 묶음: kind 'news'(새끼줄로 묶은 신문) 'book'(쌓은 책·원고)
+export function papers(g, p = {}) {
+  const P = parts(), n = p.n || 3, book = p.kind === 'book';
+  for (let i = 0; i < n; i++) {
+    const x = (i - (n - 1) / 2) * 0.75;
+    for (let k = 0; k < (book ? 4 : 2); k++) P.box(book ? 0.45 : 0.6, book ? 0.1 : 0.22, book ? 0.32 : 0.42, book ? [0x8a2f24, 0x2f4a6b, 0x5a4a2e, 0xd8c9a0][(i + k) % 4] : 0xe8e2d2, 'cloth', [x, 0.05 + k * (book ? 0.1 : 0.22) + (book ? 0 : 0.06), (k % 2) * 0.03]);
+    if (!book) P.box(0.04, 0.48, 0.44, 0x8a6a48, 'grain', [x, 0.28, 0]);
+  }
+  P.box(n * 0.75 + 0.2, 0.08, 0.6, 0x7a5a3c, 'wood', [0, 0.02, 0]);
+  return P.into(g);
+}
+// 연장 걸이: kind 'farm'(괭이·쇠스랑·낫·죽창을 기대 세움)
+export function toolRack(g, p = {}) {
+  const P = parts();
+  P.box(2.2, 0.08, 0.08, 0x5e4330, 'wood', [0, 1.3, -0.2]);
+  for (const s of [-1, 1]) P.cyl(0.06, 0.07, 1.4, 6, 0x5e4330, 'wood', [s * 1.05, 0.7, -0.2]);
+  const tools = p.kind === 'spear' ? ['bamboo', 'bamboo', 'bamboo', 'bamboo', 'bamboo'] : ['hoe', 'bamboo', 'sickle', 'bamboo', 'rake'];
+  tools.forEach((t, i) => {
+    const x = -0.8 + i * 0.4;
+    P.cyl(0.03, 0.03, t === 'bamboo' ? 2.4 : 1.6, 5, t === 'bamboo' ? 0x9aa058 : 0x7a5a3c, 'wood', [x, t === 'bamboo' ? 1.15 : 0.8, 0], [-0.15, 0, 0]);
+    if (t === 'hoe') P.box(0.3, 0.05, 0.22, 0x5a5a5a, 'grain', [x, 1.6, -0.2]);
+    if (t === 'rake') for (let k = 0; k < 3; k++) P.box(0.03, 0.22, 0.03, 0x5a5a5a, 'grain', [x - 0.08 + k * 0.08, 1.52, -0.18]);
+    if (t === 'sickle') P.add(new THREE.TorusGeometry(0.15, 0.02, 4, 8, Math.PI), 0x6a6a6a, 'grain', [x, 1.58, -0.12]);
+    if (t === 'bamboo') P.add(new THREE.ConeGeometry(0.035, 0.25, 4), 0xb8b070, 'wood', [x, 2.45, -0.18], [-0.15, 0, 0]); // 끝을 비스듬히 깎은 죽창
+  });
+  return P.into(g);
+}
+// 방(벽보) 붙은 나무 게시판: 종이 몇 장
+export function noticeBoard(g, p = {}) {
+  const P = parts();
+  for (const s of [-1, 1]) P.cyl(0.07, 0.08, 2.2, 6, 0x5e4330, 'wood', [s * 0.9, 1.1, 0]);
+  P.box(2.0, 1.1, 0.08, 0x8a6a48, 'wood', [0, 1.45, 0]);
+  P.box(2.2, 0.12, 0.3, 0x5e4330, 'wood', [0, 2.06, 0]);
+  for (let i = 0; i < (p.n || 3); i++) P.box(0.45, 0.6, 0.02, 0xe8e2d2, 'cloth', [-0.6 + i * 0.6, 1.42 + (i % 2) * 0.08, 0.05]);
+  return P.into(g);
+}
+// 모닥불 자리: 돌을 둥글게 두르고 장작과 붉은 숯(불길은 그리지 않아 가볍다)
+export function firepit(g) {
+  const P = parts();
+  for (let i = 0; i < 9; i++) { const a = i / 9 * Math.PI * 2; P.add(new THREE.DodecahedronGeometry(0.2, 0), 0x7d7668, 'stone', [Math.cos(a) * 0.6, 0.12, Math.sin(a) * 0.6]); }
+  for (let i = 0; i < 4; i++) P.cyl(0.07, 0.07, 0.8, 6, 0x4a3424, 'wood', [0, 0.2, 0], [Math.PI / 2 - 0.5, i * Math.PI / 2, 0]);
+  P.add(new THREE.SphereGeometry(0.28, 8, 5).scale(1, 0.4, 1), 0xd8642a, 'grain', [0, 0.1, 0], [0, 0, 0], { shadow: false });
+  return P.into(g);
+}
+// 세워 둔 소총 세 자루(독립군·광복군 진지). 개머리판과 총신만 단순하게
+export function rifles(g) {
+  const P = parts();
+  for (let i = 0; i < 3; i++) {
+    const a = i / 3 * Math.PI * 2;
+    P.cyl(0.025, 0.03, 1.2, 5, 0x3a3a3a, 'grain', [Math.cos(a) * 0.22, 0.75, Math.sin(a) * 0.22], [Math.sin(a) * 0.2, 0, -Math.cos(a) * 0.2]);
+    P.box(0.07, 0.35, 0.12, 0x6b4a32, 'wood', [Math.cos(a) * 0.35, 0.17, Math.sin(a) * 0.35], [Math.sin(a) * 0.2, 0, -Math.cos(a) * 0.2]);
+  }
+  return P.into(g);
+}
+// 물동이·물지게(피란민 마을): 나무 물통 둘과 지게 막대
+export function buckets(g) {
+  const P = parts();
+  for (const s of [-1, 1]) { P.cyl(0.26, 0.22, 0.45, 10, 0x8a6a48, 'wood', [s * 0.55, 0.23, 0]); P.cyl(0.27, 0.27, 0.04, 10, 0x4a4a4a, 'grain', [s * 0.55, 0.36, 0]); }
+  P.cyl(0.03, 0.03, 1.6, 5, 0x6b4a32, 'wood', [0, 0.5, 0.35], [0, 0, Math.PI / 2]);
+  return P.into(g);
+}

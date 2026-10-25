@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>book preview</title>
+<link rel="stylesheet" href="../styles.css">
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+</head>
+<body>
+<div id="ui"></div>
+<script type="module">
+  // 개발용: 근대~현대편 역사책 한 권을 장면 없이 띄워 본다. ?ch=k5&p=goods(부분 이름, 없으면 첫 책)&page=2
+  import { readBook } from '../core/minigame.js';
+  import { renderDiorama } from '../chapters/kit/diorama.js';
+  import { DIORAMA } from '../chapters/modern/dioramas.js';
+  import { PIC } from '../chapters/modern/pictures.js';
+  import { MODERN, COLONIAL, PRESENT } from '../chapters/index.js';
+  const q = new URLSearchParams(location.search);
+  const meta = [...MODERN, ...COLONIAL, ...PRESENT].find(m => m.id === (q.get('ch') || 'k5'));
+  const { script } = (await meta.load()).default;
+  const part = q.get('p') ? script.parts[q.get('p')] : Object.values(script.parts).find(p => p.type === 'book');
+  const ui = document.getElementById('ui');
+  readBook({ ui }, { title: part.title, pages: part.pages.map(p => ({ ...p, figure: PIC[p.pic], scene: DIORAMA[p.pic] })), render: p => renderDiorama(p.scene, `${part.title}|${p.title}`) });
+  for (let i = 0; i < +(q.get('page') || 0); i++) { ui.querySelector('.book-next').click(); await new Promise(r => setTimeout(r, 300)); }
+  document.title = 'done';
+</script>
+</body>
+</html>

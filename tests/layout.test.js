@@ -112,3 +112,26 @@ for (const meta of [...MODERN, ...COLONIAL, ...PRESENT]) {
     }
   }, { timeout: 120000 });
 }
+
+// 역사책: 재현 그림을 크게 보여 주되, 설명문·쪽 번호·이전/다음 버튼이 화면 안에 있고 서로 겹치지 않는다(탭 가로·세로, 휴대폰 가로·세로)
+test('layout: 역사책 그림은 크고, 글·쪽 번호·버튼은 잘리거나 겹치지 않는다', async () => {
+  for (const [w, h, minPic] of [[1000, 560, 300], [1280, 800, 330], [800, 1280, 330], [740, 360, 150], [844, 390, 170], [390, 844, 160], [360, 640, 140]]) {
+    const frame = document.createElement('iframe');
+    frame.src = '../tools/book-preview.html?ch=k5&page=2'; frame.style.cssText = `width:${w}px;height:${h}px;position:fixed;left:-3000px;top:0;border:0`;
+    document.body.appendChild(frame);
+    try {
+      await new Promise(r => frame.addEventListener('load', r));
+      const d = frame.contentDocument;
+      for (let i = 0; i < 300 && d.title !== 'done'; i++) await sleep(30);
+      await sleep(100);
+      const R = s => d.querySelector(s)?.getBoundingClientRect();
+      const img = R('.book-diorama'), text = R('.book-text'), nav = R('.book-nav'), page = R('.page');
+      ok(img && d.querySelector('.book-badge')?.textContent === '재현 그림', `${w}x${h}: 재현 그림과 표`);
+      ok(img.width >= minPic, `${w}x${h}: 그림 너비 ${Math.round(img.width)}px`);
+      ok(img.bottom <= nav.top + 1 && text.bottom <= nav.top + 1, `${w}x${h}: 그림·글이 버튼 줄과 겹친다`);
+      for (const b of [...d.querySelectorAll('.book-nav button')].map(e => e.getBoundingClientRect()).concat([page]))
+        ok(b.top >= -1 && b.bottom <= h + 1 && b.left >= -1 && b.right <= w + 1 && b.height <= 60, `${w}x${h}: 버튼·쪽 번호가 화면 밖이거나 두 줄 (${Math.round(b.left)},${Math.round(b.top)}..${Math.round(b.right)},${Math.round(b.bottom)})`);
+      ok(text.width >= 140 && text.height >= 60, `${w}x${h}: 글 칸이 너무 작다 ${Math.round(text.width)}x${Math.round(text.height)}`);
+    } finally { frame.remove(); }
+  }
+}, { timeout: 120000 });

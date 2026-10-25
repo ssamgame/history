@@ -5,14 +5,14 @@ import { PIC } from '../../modern/pictures.js';
 
 // 미니게임 무대(마을에서 떨어진 x 400)
 const xy = (list, pts) => list.map((it, i) => ({ ...it, ...pts[i] }));
-const GATES = { edge: { style: 'modern', seed: 111 }, // 시대의 문 세 개가 선 경성 거리
+const GATES = { edge: { style: 'modern', seed: 111 }, center: [{ type: 'noticeBoard', x: -18, z: 4, ry: 0.5 }, { type: 'cargo', x: -17, z: 9, kind: 'sack', n: 5 }, { type: 'papers', x: 18, z: 4, kind: 'news', n: 3 }], // 시대의 문 세 개가 선 경성 거리
   origin: [400, 0], ground: 'stone', groundColor: 0x9a948a, bounds: { x0: -22, x1: 22, z0: -16, z1: 16 },
   props: [
     { type: 'arch', x: -13, z: -12 }, { type: 'arch', x: 0, z: -13 }, { type: 'arch', x: 13, z: -12 },
     { type: 'poles', x: -20, z: 8, n: 7, gap: 6.5 },
   ],
 };
-const ALLEY = { edge: { style: 'street', seed: 139 }, // 마을 골목: 헌병이 순찰하고, 쌀가마·짐 더미 뒤에 숨을 수 있다. 끝에 서당
+const ALLEY = { edge: { style: 'street', seed: 139 }, center: [{ type: 'jars', x: -15, z: 3 }, { type: 'straw', x: 14, z: 10 }, { type: 'papers', x: -14, z: -10, kind: 'book', n: 2 }], // 마을 골목: 헌병이 순찰하고, 쌀가마·짐 더미 뒤에 숨을 수 있다. 끝에 서당
   origin: [400, 0], ground: 'earth', groundColor: 0x8a7a62, bounds: { x0: -18, x1: 18, z0: -24, z1: 20 },
   props: [
     { type: 'hanok', x: -13, z: 12, tile: true }, { type: 'hanok', x: 13, z: 2 }, { type: 'wall', x: -8, z: -2, w: 8 },

@@ -151,6 +151,7 @@ export function surroundings(world, { bounds, houses = null, trees = ['pine'], c
   }
   spots.forEach(([x, z], i) => {
     const g = new THREE.Group(); g.position.set(x, heightAt(x, z) - 0.05, z); g.rotation.y = (rnd() - 0.5) * 0.6; L.add(g);
+    if (i % 3 === 2) g.userData.minQuality = 'medium'; // 화질 '낮음'이면 셋 중 하나는 숨긴다(world.applyDecor)
     if (houses && i % 3 === 0) hanok(g, { tile: houses === 'tile', roofColor: snow && houses !== 'tile' ? 0xe6e8ec : undefined });
     else tree(g, { kind: trees[i % trees.length], x, z, color: snow ? 0x5a6e5a : undefined });
   });

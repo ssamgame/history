@@ -77,8 +77,9 @@ const EDGE = {
   shanty: [['shack', {}], ['shack', { seed: 2 }], ['tree', { kind: 'bare' }], ['shack', { seed: 3 }], ['jars', {}]],
 };
 const EDGE_W = { hanok: 8, shop: 7, western: 9, lanehouse: 11, concrete: 8, barracks: 10, tent: 6, shack: 5, tree: 5, straw: 3.5, jars: 3.5, woodpile: 3.5 };
+// 화질 '낮음'에서는 둘레의 하나 걸러 하나와 바깥 둘째 줄(extra)을 숨긴다(world.setQuality가 minQuality를 보고 켜고 끈다)
 function arenaEdge(arena) {
-  const e = arena.edge, list = EDGE[e.style] || EDGE.forest, b = arena.bounds, g = new THREE.Group();
+  const e = arena.edge, list = EDGE[e.style] || EDGE.forest, b = arena.bounds, main = new THREE.Group(), extra = new THREE.Group();
   let s = e.seed || 11; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
   const blocked = (x, z) => (arena.props || []).some(p => p.type === 'water' ? Math.abs(x - p.x) < p.w / 2 + 3 && Math.abs(z - p.z) < p.d / 2 + 3
     : Math.hypot(x - p.x, z - p.z) < 4.5);
@@ -91,7 +92,7 @@ function arenaEdge(arena) {
       t += w + rnd() * 1.5;
       if (blocked(x, z)) continue;
       const pg = new THREE.Group(); pg.position.set(x, 0, z); pg.rotation.y = ry + (type === 'tree' ? rnd() * 6 : 0); if (o.scale) pg.scale.setScalar(o.scale);
-      BUILD[type](pg, { ...o, seed: o.seed ?? k }); g.add(pg);
+      BUILD[type](pg, { ...o, seed: o.seed ?? k }); (out || k % 2 ? extra : main).add(pg);
     }
   };
   const back = b.z0 - 6, sx0 = b.x0 - 6, sx1 = b.x1 + 6;
@@ -99,9 +100,13 @@ function arenaEdge(arena) {
   const sides = () => { if (e.sides !== false) { line(sx0 - out, back + 6, 0, 1, b.z1 - b.z0 - 4, Math.PI / 2); line(sx1 + out, back + 6, 0, 1, b.z1 - b.z0 - 4, -Math.PI / 2); } };
   sides();
   if (e.style === 'forest' || e.style === 'camp') { out = 6; if (e.back !== false) line(sx0 - 8, back - 6, 1, 0, sx1 - sx0 + 16, 0); sides(); }
-  bakeStatic(g);
+  const g = new THREE.Group(); g.add(bakeStatic(main), bakeStatic(extra));
+  g.traverse(o => { if (o.isMesh) o.castShadow = false; }); // 걷는 곳 밖 먼 장식은 그림자를 드리우지 않아도 티가 안 난다(그림자 그리기 횟수 절약)
+  extra.userData.minQuality = 'medium'; g.userData.edge = true;
   return g;
 }
+
+export const CENTER_SCALE = 1.25; // 무대 가운데 소품은 멀리서도 알아보게 조금 크게
 
 // 미니게임 무대: 마을에서 멀리 떨어진 곳에 땅·물·건물을 세우고, 끝나면 모두 치운다.
 export function buildArena(world, arena) {
@@ -117,23 +122,25 @@ export function buildArena(world, arena) {
       const ground = new THREE.Mesh(gg, new THREE.MeshPhongMaterial({ color: arena.sea === true ? 0x3f7d9a : arena.sea, shininess: 70 }));
       ground.position.y = 0.01; ground.receiveShadow = true; g.add(ground);
     } else { // 걷는 곳은 평평하게, 바깥은 언덕(마을 땅과 같은 방식)
-      const field = terrainField({ bounds: arena.bounds, props: arena.props || [], margin: arena.edge ? 13 : 4, hill: arena.hill ?? 0.8 }); // 둘레 건물(edge)이 서는 곳까지 평평하게
+      const field = terrainField({ bounds: arena.bounds, props: [...(arena.props || []), ...(arena.center || [])], margin: arena.edge ? 13 : 4, hill: arena.hill ?? 0.8 }); // 둘레 건물(edge)이 서는 곳까지 평평하게
       if (kind === 'stone') { const f = field.flat, pave = new THREE.Mesh(box(f.x1 - f.x0, 0.04, f.z1 - f.z0), mat(color, 'stone')); pave.position.set((f.x0 + f.x1) / 2, 0.02, (f.z0 + f.z1) / 2); pave.receiveShadow = true; g.add(pave); }
       const ground = terrainMesh(field, { color: kind === 'stone' ? 0x7d7158 : color, kind: kind === 'stone' ? 'earth' : kind, roads: arena.roads || [], size: 160, seg: 64 });
       ground.position.y = 0.01; g.add(ground);
       // 마을처럼 언덕에는 소나무·덤불·바위, 걷는 곳 가장자리에는 풀포기(지도·바다 무대와 nature: false는 빼고). 무대를 치우면 함께 치운다.
-      if (!arena.map && arena.nature !== false) addNature(world, { bounds: arena.bounds, props: arena.props || [], roads: arena.roads || [], start: arena.from }, field, kind, color, g);
+      if (!arena.map && arena.nature !== false) addNature(world, { bounds: arena.bounds, props: [...(arena.props || []), ...(arena.center || [])], roads: arena.roads || [], start: arena.from }, field, kind, color, g);
     }
     if (arena.map) g.add(mapFloor(arena.map));
     for (const r of arena.roads || []) { const m = new THREE.Mesh(box(r.w, 0.05, r.d), mat(r.color || 0x8f7556, r.kind || 'earth')); m.position.set(r.x, r.y ?? 0.04, r.z); m.rotation.y = r.ry || 0; m.receiveShadow = true; g.add(m); }
-    for (const p of arena.props || []) {
-      const pg = new THREE.Group(); pg.position.set(p.x, p.y || 0, p.z); pg.rotation.y = p.ry || 0; if (p.scale) pg.scale.setScalar(p.scale); g.add(pg);
+    const cg = new THREE.Group(); // 가운데 소품은 움직이지 않으니 다 놓은 뒤 재질별로 한 덩어리로 합친다
+    for (const p of [...(arena.props || []), ...(arena.center || []).map(c => ({ scale: CENTER_SCALE, ...c, center: true }))]) { // center: 무대 가운데 역사 소품(배치표에서 따로 적어 길·목표를 피했는지 검사한다)
+      const pg = new THREE.Group(); pg.position.set(p.x, p.y || 0, p.z); pg.rotation.y = p.ry || 0; if (p.scale) pg.scale.setScalar(p.scale); (p.center ? cg : g).add(pg);
       const r = BUILD[p.type](pg, p);
       if (p.type === 'crowd') bakeStatic(pg, m => m.material.map === taegukgiTexture()); // 서 있는 무리는 한 덩어리로
       if (p.type === 'water') pg.position.y = 0.32; // 무대 땅 위로 물이 보이게
       if (r && p.solid !== false) addFootprint(world, { ...p, ...at(p.x, p.z) }, r); // 긴 건물·기차는 작은 원을 줄지어
     }
-    if (arena.edge) g.add(arenaEdge(arena));
+    if (cg.children.length) g.add(bakeStatic(cg));
+    if (arena.edge) { g.add(arenaEdge(arena)); world.applyDecor?.(g); }
     for (const c of arena.colliders || []) world.addCollider({ ...at(c.x, c.z), r: c.r });
     const b = arena.bounds; world.bounds = { x0: b.x0 + ox, x1: b.x1 + ox, z0: b.z0 + oz, z1: b.z1 + oz };
   }

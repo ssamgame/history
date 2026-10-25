@@ -5,7 +5,7 @@ import { PIC } from '../../modern/pictures.js';
 
 // 미니게임 무대(마을에서 떨어진 x 400): 판잣집이 늘어선 비탈 마을, 장터, 운동장 교실, 밀면 가게
 const xy = (list, pts) => list.map((it, i) => ({ ...it, ...pts[i] }));
-const SHANTY = { edge: { style: 'shanty', seed: 632 },
+const SHANTY = { edge: { style: 'shanty', seed: 632 }, center: [{ type: 'buckets', x: -6, z: -2 }, { type: 'jars', x: 10, z: 2 }, { type: 'cargo', x: -12, z: 2, kind: 'sack', n: 4 }, { type: 'buckets', x: -7, z: 14 }],
   origin: [400, 0], ground: 'earth', groundColor: 0x8a7a62, bounds: { x0: -24, x1: 24, z0: -20, z1: 22 },
   roads: [{ x: 0, z: 2, w: 44, d: 5, color: 0x7a6a56 }],
   props: [
