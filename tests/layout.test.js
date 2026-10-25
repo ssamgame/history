@@ -135,3 +135,30 @@ test('layout: 역사책 그림은 크고, 글·쪽 번호·버튼은 잘리거�
     } finally { frame.remove(); }
   }
 }, { timeout: 120000 });
+
+// 탐험 화면 위 정보(HUD): 세로 화면에서도 목표가 한 글자씩 세로로 쌓이지 않고, 메뉴·남은 시간·알림·대화창과 겹치지 않는다
+test('layout: 목표 상자·남은 시간·알림·대화창이 세로·가로 모든 화면에서 겹치거나 한 글자씩 꺾이지 않는다', async () => {
+  for (const [w, h] of [[320, 568], [360, 640], [390, 844], [412, 915], [800, 1280], [740, 360], [844, 390], [1000, 560], [1280, 800], [1920, 1080]]) for (const play of [false, true]) {
+    const frame = document.createElement('iframe');
+    frame.src = `./fit.html?kind=hud${play ? '&toast=1' : ''}`; frame.style.cssText = `width:${w}px;height:${h}px;position:fixed;left:-3000px;top:0;border:0`;
+    document.body.appendChild(frame);
+    try {
+      await new Promise(r => frame.addEventListener('load', r));
+      const d = frame.contentDocument;
+      for (let i = 0; i < 100 && !d.querySelector('.dlg-text')?.textContent; i++) await sleep(20);
+      await sleep(80);
+      const R = s => { const e = d.querySelector(s); return e && !e.hidden ? e.getBoundingClientRect() : null; };
+      const hud = R('.hud'), goal = R('.goal-text'), menu = R('.menubtn'), big = R('.hud-bigtimer'), wait = R('.hud-bigwait'), note = R('.hud-notice'), dlg = R('.dlg'), dtext = d.querySelector('.dlg-text'), toastR = R('.play-toast');
+      const tag = `${w}x${h}${play ? ' 미니게임' : ' 탐험'}`;
+      ok(goal.width >= 150, `${tag}: 목표 글 칸이 좁다 ${Math.round(goal.width)}px`);
+      ok(goal.height <= 4 * 23, `${tag}: 목표가 너무 여러 줄 ${Math.round(goal.height)}px`);
+      for (const [name, r] of [['메뉴', menu], ['남은 시간', big], ['기다리기', wait], play ? ['놀이 알림', toastR] : ['새 장소 알림', note]]) ok(r && !overlap(hud, r), `${tag}: 목표 상자가 ${name}와 겹친다`);
+      if (play) ok(!overlap(toastR, big) && !overlap(toastR, menu) && !overlap(toastR, wait), `${tag}: 놀이 알림이 남은 시간·메뉴·기다리기와 겹친다`);
+      ok(!overlap(big, menu) && !overlap(wait, menu) && !overlap(big, wait), `${tag}: 남은 시간·기다리기·메뉴가 서로 겹친다`);
+      for (const [name, r] of [['목표 상자', hud], play ? ['놀이 알림', toastR] : ['새 장소 알림', note], ['대화창', dlg], ['남은 시간', big], ['메뉴', menu]]) ok(r.left >= -1 && r.right <= w + 1 && r.top >= -1 && r.bottom <= h + 1, `${tag}: ${name}가 화면 밖`);
+      ok(!overlap(hud, dlg), `${tag}: 목표 상자와 대화창이 겹친다`);
+      ok(dtext.scrollHeight <= dtext.clientHeight + 2, `${tag}: 대화 글이 잘린다`);
+      const name = R('.dlg-name'); ok(name.right <= dlg.right + 1, `${tag}: 긴 이름이 대화창 밖으로`);
+    } finally { frame.remove(); }
+  }
+}, { timeout: 120000 });

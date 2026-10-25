@@ -216,7 +216,7 @@ export function showMenu(root, { muted, music = null, quality, storageOk = true,
 // 역사 수첩: 이 장에서 알게 된 것. 살펴본 곳·만난 사람·사건 해설·확인 문제로 나누고, 문장마다 출처 번호를 단다.
 const NB_SECTIONS = [
   ['place', '살펴본 곳', null],
-  ['person', '만난 사람', '사람들의 말은 역사 기록을 바탕으로 쉽게 꾸민 대사예요. 「기록에 남은 말」만 실제로 남은 말이에요.'],
+  ['person', '만난 사람', null],
   ['event', '사건 해설', null],
   ['quiz', '확인 문제', null],
 ];

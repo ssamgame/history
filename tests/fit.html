@@ -25,6 +25,21 @@
   else if (kind === 'j4wing') { const [c, s] = await J('j4'); placeOnBoard({ ui }, { title: s.wing.title, ...c.WING_BOARD }); }
   else if (kind === 'j5sort') { const [, s] = await J('j5'); sortCards({ ui }, { title: s.sort.title, bins: s.sort.bins, cards: s.sort.cards }); }
   else if (kind === 'j6pulley') { const [c, s] = await J('j6'); chooseCards({ ui }, { title: s.pulley.title, prompt: s.pulley.prompt, figure: c.pulleySVG(), cards: s.pulley.cards }); }
+  // 탐험 화면 위 정보(HUD)와 대화창을 가장 긴 글로 한꺼번에 띄운다(세로·가로 화면 배치 검사)
+  else if (kind === 'hud') {
+    const { createHud } = await import('../core/screens.js');
+    const { createDialogue } = await import('../core/dialogue.js');
+    const hud = createHud(ui, { touch: true });
+    hud.show({ no: 3, years: '1894', event: '농민들이 일어서다' }, { name: '고부의 젊은 농민' });
+    hud.setGoal('행상 아주머니에게 말을 걸어 피란민 마을 소식을 들어 보자', [2, 6]);
+    hud.setFound('살펴본 안내판 1 / 3'); hud.setCounter('모은 대원 2 / 5');
+    hud.setTimer(42); hud.setWait('손님이 내리는 중 3초');
+    // 새 장소 알림은 탐험 중, 놀이 알림은 미니게임 중에 뜬다(둘이 한꺼번에 뜨지 않는다)
+    if (!new URLSearchParams(location.search).get('toast')) hud.notice('새 장소 발견: 우리말 큰사전 원고를 모으던 조선어 학회');
+    else { const { toast } = await import('../chapters/kit/play.js'); toast({ ui }, '농민이 함께해요! 마을 사람 다섯 명이 농민군에 모였어요', 'good'); }
+    const d = createDialogue(ui, { a: { name: '대한민국 임시 정부 국무령 김구', look: { robe: 0x2b2b2b } } }, { typeMs: 0 });
+    d.say({ who: 'a', text: '우리는 나라를 되찾을 때까지 결코 포기하지 않을 것이오. 상하이의 작은 골목에서도 독립의 꿈은 자라고 있다네. 자, 이 편지를 들고 헌병의 눈을 피해 골목 끝 청사까지 조심히 가 주게나.' });
+  }
   else if (kind === 'title') {
     const { showTitle } = await import('../core/screens.js');
     const { COURSES } = await import('../chapters/index.js');

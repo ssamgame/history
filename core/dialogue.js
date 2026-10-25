@@ -17,13 +17,13 @@ export function createDialogue(root, speakers, { typeMs = 26, reduceMotion = fal
 
   let advanceFn = null, pickFn = null, timer = null, openedAt = 0;
 
-  // 사람의 말에는 작은 표시: 기록에 남은 말(quote)인지, 기록을 바탕으로 쉽게 꾸민 말인지
+  // 실제 기록에 남은 말(대사에 quote: true)에만 '기록에 남은 말' 표시를 단다. 보통 대사에는 아무 표시도 없다
   function show(who, line = null) {
     const s = all[who] || NARR;
     $('.dlg-name').textContent = s.name;
     const tag = $('.dlg-tag');
-    tag.hidden = !s.look;
-    tag.textContent = line && line.quote ? '기록에 남은 말' : '꾸민 대사';
+    tag.hidden = !(s.look && line && line.quote);
+    tag.textContent = '기록에 남은 말';
     const pic = $('.dlg-portrait');
     if (s.look) {            // 사람: 만화풍 얼굴 그림
       pic.textContent = '';

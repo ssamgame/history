@@ -43,16 +43,17 @@ test('save: notes survive reload and reset clears them', () => {
   s.reset(); eq(s.notes('j1'), []);
 });
 
-test('dialogue: people lines are tagged as made-up speech, recorded quotes and narration are not', async () => {
+test('dialogue: 사람 대사에 제작용 표시(꾸민 대사)를 붙이지 않고, 실제 기록에 남은 말(quote)만 표시한다', async () => {
   const ui = document.createElement('div'); document.body.appendChild(ui);
   const said = [];
   const d = createDialogue(ui, SPEAKERS, { typeMs: 0, onSay: l => said.push(l.text) });
   try {
     const tag = () => ui.querySelector('.dlg-tag');
-    let p = d.say({ who: 'yiseonggye', text: '가' }); eq(tag().textContent, '꾸민 대사'); ok(!tag().hidden); d.advance(); await p;
-    p = d.say({ who: 'yiseonggye', text: '나', quote: true }); eq(tag().textContent, '기록에 남은 말'); d.advance(); await p;
+    let p = d.say({ who: 'yiseonggye', text: '가' }); ok(tag().hidden, '보통 사람 대사에는 표시 없음'); ok(!ui.textContent.includes('꾸민'), ui.textContent); d.advance(); await p;
+    p = d.say({ who: 'yiseonggye', text: '나', quote: true }); eq(tag().textContent, '기록에 남은 말'); ok(!tag().hidden); d.advance(); await p;
+    p = d.say({ who: 'yiseonggye', text: '라' }); ok(tag().hidden, '다음 보통 대사에서는 다시 숨김'); d.advance(); await p;
     p = d.say({ who: 'narr', text: '다' }); ok(tag().hidden, 'narration has no tag'); d.advance(); await p;
-    eq(said, ['가', '나', '다']);
+    eq(said, ['가', '나', '라', '다']);
   } finally { d.dispose(); ui.remove(); }
 });
 
@@ -82,7 +83,7 @@ test('roam: reading a sign files its facts under the sign title, and a nearby si
   } finally { s.done(); }
 });
 
-test('notebook screen: lists sections, sources and the made-up speech note; closes', async () => {
+test('notebook screen: 칸·출처를 보이고 제작용 설명(꾸민 대사)은 없다; 닫힌다', async () => {
   const ui = document.createElement('div'); document.body.appendChild(ui);
   try {
     const p = showNotebook(ui, { no: 1, title: '위화도 회군과 조선 건국' }, [
@@ -92,7 +93,7 @@ test('notebook screen: lists sections, sources and the made-up speech note; clos
     ]);
     const t = ui.textContent;
     ok(t.includes('살펴본 곳') && t.includes('만난 사람') && t.includes('확인 문제'), t);
-    ok(t.includes('꾸민'), 'explains made-up speech');
+    ok(!t.includes('꾸민'), '제작용 설명 없음');
     ok(ui.querySelector('.nb-src'), 'source shown');
     ui.querySelector('.screen.notebook button.primary').click();
     await p;

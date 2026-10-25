@@ -272,8 +272,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
   .sort-bin { min-height: 52px; font-size: 16px; }
 }
 /* 상황 놀이 알림: 화면 위쪽 가운데에 잠깐 뜬다 */
-.play-toast { position: fixed; z-index: 13; left: 50%; top: calc(118px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); max-width: min(560px, 90vw); padding: 10px 18px; border-radius: 6px; background: rgba(27,31,29,.88); color: var(--hanji); border: 2px solid var(--gold); font-size: 18px; line-height: 1.45; text-align: center; word-break: keep-all; pointer-events: none; }
+.play-toast { position: fixed; z-index: 13; left: 0; right: 0; margin: 0 auto; width: fit-content; top: calc(118px + env(safe-area-inset-top, 0px)); max-width: min(560px, calc(100vw - 32px)); box-sizing: border-box; /* 가운데 정렬(left 50%로 하면 좁은 화면에서 폭이 반으로 줄어 길게 늘어진다) */ padding: 10px 18px; border-radius: 6px; background: rgba(27,31,29,.88); color: var(--hanji); border: 2px solid var(--gold); font-size: 18px; line-height: 1.45; text-align: center; word-break: keep-all; pointer-events: none; }
 .play-toast.good { border-color: #6fae8f; }
+.dlg:not([hidden]) ~ .play-toast { display: none; } /* 대화창이 열려 있으면 놀이 알림은 잠깐 숨는다(대화가 더 중요) */
 .play-toast.bad { border-color: var(--dan-red); }
 /* 저작권 표시: 첫 화면 맨 밑 */
 .copyright { margin: 2px 0 0; font-size: 13px; color: #a89f8c; letter-spacing: .02em; text-align: center; }
@@ -351,7 +352,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .hud-bigtimer { position: fixed; z-index: 12; left: 50%; top: calc(10px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); min-width: 96px; padding: 4px 18px; border-radius: 30px; background: rgba(27,31,29,.78); color: var(--gold); border: 2px solid var(--gold); font-family: var(--font-display); font-size: 34px; font-weight: 700; text-align: center; font-variant-numeric: tabular-nums; pointer-events: none; }
 .hud-bigtimer.low { color: #ff9a8a; border-color: #d0533f; }
 .hud-bigtimer[hidden] { display: none; }
-.hud-bigwait { position: fixed; z-index: 12; left: 50%; top: calc(66px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); padding: 4px 16px; border-radius: 22px; background: rgba(47,107,94,.9); color: #fff; font-family: var(--font-display); font-size: 24px; font-weight: 700; white-space: nowrap; pointer-events: none; font-variant-numeric: tabular-nums; }
+.hud-bigwait { position: fixed; z-index: 12; left: 50%; top: calc(66px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); max-width: 150px; box-sizing: border-box; padding: 4px 14px; border-radius: 16px; background: rgba(47,107,94,.9); color: #fff; font-family: var(--font-display); font-size: 20px; line-height: 1.25; font-weight: 700; text-align: center; word-break: keep-all; pointer-events: none; font-variant-numeric: tabular-nums; } /* 너비 150px 안: 왼쪽 목표 상자(가운데에서 80px 떨어짐)와 겹치지 않게 */
 .hud-bigwait[hidden] { display: none; }
 
 /* 역사책(페이지 넘기기) */
@@ -396,3 +397,22 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .perf-btn { padding: 6px 10px; border: 1px solid #6b6a60; border-radius: 4px; background: #34392f; color: #fff; font: inherit; }
 .perf-msg { color: #d8f5c8; margin-left: 4px; }
 .perf-text { margin: 0; white-space: pre-wrap; word-break: break-all; user-select: text; }
+
+/* 좁은 화면(세로로 든 휴대폰·작은 탭): 목표 상자를 메뉴 단추 아래로 내려 화면 너비만큼 쓰고(한 글자씩 세로로 꺾이지 않게),
+   큰 남은 시간은 위 가운데(목표 상자 위), 기다리기 표시는 화면 아래쪽 가운데로 옮긴다 */
+@media (max-width: 640px) {
+  .hud { top: calc(68px + env(safe-area-inset-top, 0px)); max-width: none; right: max(16px, env(safe-area-inset-right, 0px)); }
+  .hud-goal { align-items: flex-start; }
+  .goal-text { flex: 1 1 auto; min-width: 0; word-break: keep-all; overflow-wrap: anywhere; }
+  .hud-bigtimer { font-size: 28px; padding: 2px 14px; min-width: 80px; }
+  .hud-bigwait { top: auto; bottom: calc(150px + env(safe-area-inset-bottom, 0px)); max-width: none; }
+  /* 대화창: 얼굴을 작게 하고 글은 얼굴 아래로 화면 너비만큼(글 칸이 좁아 길게 늘어지지 않게) */
+  .dlg { padding: 12px 14px 10px; gap: 4px 10px; }
+  .dlg-portrait { grid-row: span 1; width: 40px; height: 40px; font-size: 18px; }
+  .dlg-text, .dlg-next { grid-column: 1 / -1; }
+  .dlg-text { font-size: 17px; line-height: 1.5; min-height: 0; }
+}
+/* 좁거나 낮은 화면에서 대화하는 동안은 목표 상자를 목표 한 줄로 줄인다(대화창과 겹치지 않게) */
+@media (max-width: 640px), (max-height: 520px) {
+  .hud:has(~ .dlg:not([hidden])) :is(.hud-chapter, .hud-role, .hud-found, .hud-row) { display: none; }
+}

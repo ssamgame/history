@@ -52,11 +52,13 @@ export function labelSprite(text, { color = '#231c14', bg = 'rgba(239,227,198,0.
   return s;
 }
 
-// 화면 위쪽에 잠깐 뜨는 알림(대화창을 열지 않아 흐름이 끊기지 않는다)
-function toast(ctx, text, kind = '') {
+// 화면 위쪽에 잠깐 뜨는 알림(대화창을 열지 않아 흐름이 끊기지 않는다). 목표 상자가 길어져도 그 아래에 뜬다
+export function toast(ctx, text, kind = '') {
   let t = ctx.ui.querySelector('.play-toast');
   if (!t) { t = document.createElement('div'); t.className = 'play-toast'; ctx.ui.append(t); }
   t.textContent = text; t.className = `play-toast ${kind}`; t.hidden = false;
+  const below = ['.hud:not([hidden])', '.hud-notice:not([hidden])'].map(q => ctx.ui.querySelector(q)?.getBoundingClientRect()).filter(r => r && r.height);
+  t.style.top = below.length ? `${Math.max(118, ...below.map(r => Math.round(r.bottom + 8)))}px` : ''; // 목표 상자·새 장소 알림 아래
   clearTimeout(t._h); t._h = setTimeout(() => { t.hidden = true; }, 2600);
 }
 function clearToast(ctx) { const t = ctx.ui.querySelector('.play-toast'); if (t) t.remove(); }
