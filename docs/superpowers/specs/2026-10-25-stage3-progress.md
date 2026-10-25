@@ -10,7 +10,7 @@
 - 디자인: `chapters/modern/dioramas.js`·`pictures.js`, `chapters/kit/*.js`, `core/world.js`, `content/characters.js`, 장마다 `chapter.js`·`scene.js`, `tests/stage3-gfx.test.js`.
 
 ## 상태 (팀원이 끝낼 때마다 고침)
-- [ ] 검토: 사실 항목 판정
+- [x] 검토: 사실 항목 판정 (47건: 진행 30, 고쳐서 17, 1bb215b)
 - [ ] 개발: 대사(사실 아닌 것)
 - [ ] 개발: 대사·역사책 글(사실, 검토 뒤)
 - [ ] 개발: 성능 측정 테스트 시간 초과 원인
