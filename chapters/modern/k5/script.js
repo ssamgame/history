@@ -70,7 +70,7 @@ export default {
       intro: [{ who: 'woman', text: '1899년부터 서대문에서 청량리까지 전차가 다니기 시작했단다. 운전 한번 해 보련?', src: ['S51'] }],
       route: [
         { label: '서대문', say: '1899년, 서대문에서 청량리까지 전차가 다니기 시작했어요.' },
-        { label: '종로', hold: 3, holdLabel: '손님이 타고 내리는 중', alight: 2, board: 1, holdSay: '종로 정류장! 손님이 타고 내려요.', talk: [{ who: 'woman', text: '전차를 다니게 하려고 길을 넓히고 전봇대도 세웠지.' }] },
+        { label: '종로', hold: 3, holdLabel: '손님이 타고 내리는 중', alight: 2, board: 1, holdSay: '종로 정류장! 손님이 타고 내려요.', talk: [{ who: 'woman', text: '이 넓은 길 좀 봐. 전차가 다니게 하려고 길을 넓히고 전봇대를 세운 거야.' }] },
         { label: '동대문', hold: 3, holdLabel: '손님이 타고 내리는 중', alight: 1, board: 2, holdSay: '동대문 정류장! 손님이 타고 내려요.', talk: [{ who: 'woman', text: '가운데에는 요금이 비싼 특별석도 있단다.' }] },
         { label: '청량리', talk: [{ who: 'woman', text: '청량리에 닿았구나! 걸어서 반나절 걸리던 길을 금세 왔어.' }] },
       ],

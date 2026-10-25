@@ -35,7 +35,7 @@ export default {
         { who: 'uibyeong', text: '해산된 군인들도 함께해 의병 운동이 더 조직적이 되었지.', src: ['S51'] },
         { who: 'uibyeong', text: '연합 부대를 만들어 한성의 일본군을 치는 서울 진공 작전도 펼쳤다네(1908년).', src: ['S51'] },
       ],
-      later: [{ who: 'uibyeong', text: '우리는 만주와 연해주로 가서도 계속 싸울 것이네.' }],
+      later: [{ who: 'uibyeong', text: '산길이 험해도 마을 사람들이 숨겨 주고 밥을 나눠 주어 버틸 수 있었네. 저 위의 안창호 선생도 만나 보게.' }],
     },
     ahnchangho: {
       tooEarly: [{ who: 'ahnchangho', text: '무기를 든 의병들은 무엇을 지키려 하는지, 그 이야기부터 듣고 오게.' }],
@@ -88,7 +88,7 @@ export default {
     envoys: {
       type: 'drive', src: ['S51'], title: '헤이그 만국 평화 회의장 앞: 특사 세 사람을 차례로 만나요', counter: '지난 이정표', showAll: true,
       howto: '길 위에 차례대로 선 이정표를 따라 걸어가요. 이정표에 닿으면 그곳 사람이 이야기를 들려줘요.',
-      intro: [{ who: 'student', text: '고종 황제께서는 을사늑약이 부당하다는 것을 알리려고 헤이그 국제회의에 특사 세 명을 보내셨대요.', src: ['S51'] }],
+      intro: [{ who: 'student', text: '헤이그로 간 특사 세 분을 이정표를 따라 차례로 만나 봐요. 어떤 마음으로 먼 길을 갔을까요?', src: ['S51'] }],
       route: [
         { label: '1 이준', look: 'scholarModern', post: true, talk: [{ who: 'yijun', text: '을사늑약은 황제께서 허락하신 것이 아니오. 이 사실을 세계에 알리러 왔소.' }] },
         { label: '2 이상설', look: 'gentleman', post: true, talk: [{ who: 'yisangseol', text: '황제 폐하의 뜻을 받들어 먼 길을 왔소.' }] },

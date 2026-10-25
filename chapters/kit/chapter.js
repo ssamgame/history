@@ -109,7 +109,7 @@ export function makeKitChapter(def) {
   let scene = null;
   const restoreEnd = ctx => { for (const p of def.parts) if (p.after) p.after(ctx, scene); };
   return {
-    id: def.id, mood: def.mood, player: def.player, script, quizzes: script.quizzes, parts: def.parts, // parts: 개발용 무대 보기(tools/arena-gallery.html)
+    id: def.id, mood: def.mood, player: def.player, script, quizzes: script.quizzes, parts: def.parts, order: def.order, layout: def.layout, // parts·order·layout: 개발용 무대 보기와 진행 검사(tests/quest.test.js)
     buildScene(world) {
       const built = buildTown(world, def.layout);
       scene = { ...built, start: def.layout.start };

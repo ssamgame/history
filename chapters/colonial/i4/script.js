@@ -22,7 +22,7 @@ export default {
         { who: 'soldier', text: '봉오동에서 진 일본군이 더 많은 군대를 이끌고 다시 쳐들어온대.', src: ['S51'] },
         { who: 'soldier', text: '홍범도 장군님이 진영 위쪽에 계셔.' },
       ],
-      later: [{ who: 'soldier', text: '이 골짜기는 길이 좁고 숲이 깊어. 홍범도 장군님께 가 보세요. 길 건너에 계세요.' }],
+      later: [{ who: 'soldier', text: '이 골짜기는 길이 좁고 숲이 깊어. 홍범도 장군님은 길 건너 진영 위쪽에 계셔. 얼른 가 봐.' }],
     },
     hongbeomdo: {
       tooEarly: [{ who: 'hongbeomdo', text: '진영의 대원들이 어떤 각오로 여기 왔는지 먼저 들어 보게.' }],
@@ -56,7 +56,7 @@ export default {
       ],
       route: [
         { label: '첫째 진지', talk: [{ who: 'soldier', text: '장군님, 저희도 함께 싸우겠습니다!' }] },
-        { label: '둘째 진지', talk: [{ who: 'hongbeomdo', text: '봉오동에서 우리는 일본군을 크게 무찔렀네. 이번에는 김좌진 장군의 부대와 힘을 합치세.' }] },
+        { label: '둘째 진지', talk: [{ who: 'hongbeomdo', text: '잘 왔네. 우리 부대도 김좌진 장군의 부대와 함께 청산리로 가겠네.' }] },
         { label: '셋째 진지', say: '흩어졌던 부대가 다시 모였어요.' },
         { label: '청산리 골짜기 입구', needPickups: true, needSay: '아직 숲에 남은 대원이 있어요! 화살표를 따라가 봐요.',
           talk: [{ who: 'kimjwajin', text: '모두 골짜기 양쪽 산에 숨어 기다려라. 적이 깊이 들어오면 공격한다!' }] },
@@ -82,7 +82,7 @@ export default {
       howto: '길 위에 차례대로 선 이정표를 따라 걸어가요. 이정표에 닿으면 그곳 사람이 이야기를 들려줘요.',
       intro: [{ who: 'soldier', text: '승리를 이끈 장군님들께 인사드리러 가요. 이정표를 따라가요.' }],
       route: [
-        { label: '1 홍범도', look: 'hongbeomdo', post: true, talk: [{ who: 'hongbeomdo', text: '봉오동에서 우리는 일본군을 공격해 크게 무찔렀네.', src: ['S51'] }, { who: 'hongbeomdo', text: '나라를 되찾는 날까지 싸움은 계속되네.' }] },
+        { label: '1 홍범도', look: 'hongbeomdo', post: true, talk: [{ who: 'hongbeomdo', text: '봉오동에 이어 청산리에서도 일본군을 물리쳤네.', src: ['S51'] }, { who: 'hongbeomdo', text: '나라를 되찾는 날까지 싸움은 계속되네.' }] },
         { label: '2 김좌진', look: 'kimjwajin', post: true, talk: [{ who: 'kimjwajin', text: '청산리 골짜기의 지형을 이용해 일본군과 맞섰다.', src: ['S51'] }, { who: 'kimjwajin', text: '모두가 힘을 합친 덕분이다.' }] },
         { label: '3 독립군 진영', look: 'independenceArmy', post: true, talk: [{ who: 'soldier', text: '두 장군님의 부대가 힘을 합쳐 크게 이겼어요!' }] },
       ],

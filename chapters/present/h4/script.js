@@ -73,7 +73,7 @@ export default {
       howto: '바닥 지도 위에 차례대로 선 이정표를 따라 걸어가요. 이정표에 닿으면 그곳 사람이 무슨 일이 있었는지 들려줘요.',
       intro: [{ who: 'unSoldier', text: '전쟁이 어떻게 흘러갔는지 지도 위 이정표를 따라 걸으며 짚어 보자.' }],
       route: [
-        { label: '1 북쪽 국경까지', look: 'rokSoldier', post: true, talk: [{ who: 'soldier', text: '압록강 가까이까지 갔는데, 중국군이 내려와서 다시 물러나야 했어.', src: ['S51'] }] },
+        { label: '1 북쪽 국경까지', look: 'rokSoldier', post: true, talk: [{ who: 'soldier', text: '여기 압록강 앞까지 올라갔었지. 그런데 중국군이 내려와서 다시 물러났어.', src: ['S51'] }] },
         { label: '2 중국군이 내려옴', look: 'unSoldier', post: true, talk: [{ who: 'unSoldier', text: '중국군이 북한을 도우려고 군대를 보냈지.', src: ['S51'] }] },
         { label: '3 1·4 후퇴', look: 'woman', post: true, talk: [{ who: 'mother', text: '1951년 1월 4일, 서울을 다시 빼앗기고 피란길에 올랐어요.', src: ['S51'] }] },
         { label: '4 서울을 다시 되찾음', look: 'rokSoldier', post: true, talk: [{ who: 'unSoldier', text: '우리는 다시 서울을 되찾았지만, 38도선 근처에서 싸움이 오래 이어졌어.', src: ['S51'] }] },

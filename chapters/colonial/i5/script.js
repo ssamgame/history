@@ -51,7 +51,7 @@ export default {
       type: 'drive', src: ['S51'], title: '경찰을 피해 「우리말 큰사전」 원고를 모아 학회로 가져가요', counter: '지난 곳', pickupCounter: '모은 원고', seconds: 150,
       howto: '마을 곳곳에 숨겨 둔 원고를 모두 모아 조선어 학회로 가져가요. 순찰하는 경찰과 부딪히면 앞 지점에서 다시 가요.',
       intro: [
-        { who: 'linguist', text: '우리 조선어 학회는 우리말을 연구하고 널리 알려 민족 문화를 지키려 한단다.' },
+        { who: 'linguist', text: '경찰이 우리가 사전 만드는 일을 눈여겨보고 있단다.' },
         { who: 'linguist', text: '「우리말 큰사전」 원고를 여러 집에 나누어 숨겨 두었지. 경찰 눈을 피해 모아 와 주렴.' },
       ],
       route: [

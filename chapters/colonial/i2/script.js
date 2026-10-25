@@ -54,12 +54,12 @@ export default {
       type: 'drive', src: ['S51'], title: '숨겨 둔 태극기를 모아 학생들에게 나눠 줘요', counter: '나눠 준 곳', pickupCounter: '모은 태극기', seconds: 120,
       howto: '골목에 숨겨 둔 태극기를 모아, 빛나는 곳의 학생들에게 차례로 나눠 줘요.',
       intro: [
-        { who: 'student', text: '오늘 탑골 공원에서 독립 선언서를 읽고 만세 시위를 할 거예요.' },
+        { who: 'student', text: '곧 탑골 공원에서 선언서를 읽어요. 그 전에 꼭 해야 할 일이 있어요.' },
         { who: 'student', text: '태극기를 골목 여기저기에 숨겨 두었어요. 모아서 친구들에게 나눠 주세요!' },
       ],
       route: [
         { label: '학생들', needPickups: true, needSay: '먼저 숨겨 둔 태극기를 모두 모아요.', talk: [{ who: 'student', text: '고마워요! 품속에 숨겨 두었다가 신호가 오면 꺼낼게요.' }] },
-        { label: '시민들', talk: [{ who: 'leader', text: '우리 민족 대표들은 같은 시각 태화관에 모여 독립을 선언하오.' }] },
+        { label: '시민들', talk: [{ who: 'leader', text: '곧 선언서를 읽을 시각이오. 학생들도 조심히 움직이시오.' }] },
       ],
       pickups: [{ label: '태극기' }, { label: '태극기' }, { label: '태극기' }, { label: '태극기' }],
       fail: '화살표를 따라 태극기를 모아 나눠 줘요.',
@@ -73,7 +73,7 @@ export default {
           talk: [{ who: 'student', text: '대한 독립 만세! 우리나라는 독립한 나라이고, 우리가 이 나라의 주인이다!' }] },
         { label: '종로 거리', talk: [{ who: 'student', text: '학생과 시민, 상인이 모두 함께 만세를 불러요!' }] },
         { label: '시장', say: '장날에 모인 사람들도 만세를 외쳤어요.' },
-        { label: '큰길', talk: [{ who: 'yugwansun', text: '저는 고향 천안으로 내려가 만세 시위를 이끌 거예요.' }, { who: 'student', text: '만세 시위가 전국으로, 나라 밖으로도 퍼져 나가요!' }] },
+        { label: '큰길', talk: [{ who: 'yugwansun', text: '오늘 들은 만세 소리를 고향 천안 사람들에게도 꼭 전할 거예요.' }, { who: 'student', text: '만세 시위가 전국으로, 나라 밖으로도 퍼져 나가요!' }] },
       ],
       bump: '헌병이 길을 막았어요! 앞 지점에서 다른 길로 가요.',
       fail: '빛나는 곳을 따라 가요. 헌병이 지나간 뒤에 움직여요.',

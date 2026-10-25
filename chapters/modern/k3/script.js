@@ -52,8 +52,8 @@ export default {
       type: 'drive', title: '마을을 돌며 농민군을 모아요', counter: '지난 마을', pickupCounter: '모은 농민', seconds: 150,
       howto: '빛나는 마을 어귀를 차례로 지나가요. 들판에서 일하는 농민을 찾으면 뒤따라와요. 모두 모아 고부 관아 앞으로 가요.',
       intro: [
-        { who: 'jeonbongjun', text: '나는 동학의 지도자 전봉준이오. 군수의 횡포를 더는 참을 수 없소.' },
-        { who: 'jeonbongjun', text: '마을을 돌며 함께할 농민들을 모아 주게.' },
+        { who: 'jeonbongjun', text: '다시 왔구려. 고부 관아로 가기 전에 할 일이 있소.' },
+        { who: 'jeonbongjun', text: '마을을 돌며 뜻을 함께할 농민들을 모아 주시오.' },
       ],
       route: [
         { label: '윗마을', talk: [{ who: 'peasant', text: '세금이 자꾸 늘어서 먹고살기가 너무 힘들어요. 저도 함께 가겠어요!' }] },
