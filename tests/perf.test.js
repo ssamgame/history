@@ -109,3 +109,31 @@ test('perf: 미니게임 무대가 열리면 화질 자동 조절이 다시 잰�
   eq(n, 1, '무대를 지으면 다시 재기'); a.dispose();
   buildArena(world, null).dispose(); eq(n, 1, '무대 없는 놀이는 그대로');
 });
+
+test('perf: 몇 분 하면서 1분마다 평균 FPS·멈칫·메모리를 남긴다(발열·장시간 저하 보기). 브라우저가 안 알려 주는 메모리는 "알 수 없음"', () => {
+  let t = 0; const s = createPerfStats({ now: () => t });
+  s.segment('k3 무대');
+  for (let i = 0; i < 3000; i++) { t += 20; s.frame(20, 2); } // 1분: 50fps
+  s.sampleMemory({ geometries: 120, textures: 30, heapMB: null });
+  for (let i = 0; i < 2000; i++) { t += 30; s.frame(30, 2); } // 둘째 분: 33fps(뜨거워져 느려진 것처럼)
+  s.sampleMemory({ geometries: 125, textures: 30, heapMB: 88.4 });
+  const m = s.minutes();
+  eq(m.length, 2);
+  ok(Math.abs(m[0].fps - 50) < 1 && Math.abs(m[1].fps - 33.3) < 1, `${m[0].fps} ${m[1].fps}`);
+  eq(m[1].geometries, 125);
+  const txt = s.text({});
+  ok(txt.includes('1분마다') && txt.includes('88') && txt.includes('알 수 없음'), txt);
+});
+
+test('perf: 측정 페이지의 오래 하기(?long=분)가 무대를 걸으며 1분마다 기록을 남긴다', async () => {
+  const frame = document.createElement('iframe');
+  frame.src = '../tools/perf-bench.html?long=0.05&auto=1'; frame.style.cssText = 'width:1000px;height:560px;position:fixed;left:-3000px;top:0;border:0';
+  document.body.appendChild(frame);
+  try {
+    await new Promise(r => frame.addEventListener('load', r));
+    const d = frame.contentDocument;
+    for (let i = 0; i < 1000 && d.title !== 'done'; i++) await sleep(40);
+    const txt = d.querySelector('#result').textContent;
+    ok(txt.includes('오래 하기') && txt.includes('1분마다'), txt.slice(0, 400));
+  } finally { frame.remove(); }
+}, { timeout: 90000 });

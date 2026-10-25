@@ -27,10 +27,11 @@
 <script type="module">
   // 개발자용 성능 측정 페이지: 학생용 게임과 같은 코드(장면 짓기·굳히기·무대·역사책 그림)로 우선 장면을 차례로 띄우고,
   // 학생처럼 길을 따라 걸으며 진입 직후 3초와 안정 7초의 FPS를 화질마다 잰다. 결과는 복사하거나 파일로 저장한다.
-  // ?fast=1 짧게(자동 테스트용), ?auto=1 바로 시작, ?q=medium,low 화질 순서
+  // ?fast=1 짧게(자동 테스트용), ?auto=1 바로 시작, ?q=medium,low 화질 순서,
+  // ?long=5 오래 하기: 근대 3장 무대를 보통 화질로 5분 걸으며 1분마다 FPS·메모리(발열·장시간 저하 보기)
   import { createWorld } from '../core/world.js';
   import { bakeLevel } from '../core/bake.js';
-  import { createPerfStats, deviceInfo } from '../core/perf.js';
+  import { createPerfStats, deviceInfo, memorySample } from '../core/perf.js';
   import { buildArena } from '../chapters/kit/play.js';
   import { readBook } from '../core/minigame.js';
   import { renderDiorama } from '../chapters/kit/diorama.js';
@@ -50,7 +51,7 @@
   const load = async id => (await [...MODERN, ...PRESENT].find(m => m.id === id).load()).default;
 
   // 프레임마다: 걷기(앞의 길 지점으로) → 그리기 → 재기
-  let walk = null, last = performance.now();
+  let walk = null, last = performance.now(), lastMem = 0;
   const loop = now => {
     const raw = now - last; last = now;
     let mv = { x: 0, z: 0 };
@@ -60,6 +61,7 @@
     }
     world.step(Math.min(raw / 1000, 0.1), mv);
     const r0 = performance.now(); world.render(); stats.frame(raw, performance.now() - r0, world.renderer.info.render);
+    if (now - lastMem > 2000) { lastMem = now; stats.sampleMemory(memorySample(world.renderer)); }
     requestAnimationFrame(loop);
   };
   requestAnimationFrame(loop);
@@ -114,8 +116,20 @@
     await done; ui.remove();
   }
 
+  const LONG = +(q.get('long') || 0);
+  if (LONG) $('status').textContent = `오래 하기: 근대 3장 무대를 보통 화질로 ${LONG}분 동안 걸어요. '측정 시작'을 누르고 화면을 만지지 마세요. 끝난 뒤 기기 뒷면이 뜨거운지도 손으로 느껴 봐 주세요.`;
+  async function longRun() {
+    const mod = await village('k3'), part = mod.parts.filter(p => p.arena)[0], a = buildArena(world, part.arena);
+    const pts = [part.from, ...part.route].map(p => Array.isArray(p) ? a.at(p[0], p[1]) : a.at(p.x, p.z));
+    world.setQuality(QUALITIES[0]); stats.setQuality(QUALITIES[0], false); world.applyDecor?.();
+    world.player.position.set(pts[0].x, 0, pts[0].z); world.snapCamera(); walk = { pts, k: 0 };
+    stats.segment(`오래 하기 ${LONG}분 (근대 3장 무대)`);
+    for (let s = 0; s < LONG * 60; s += 5) { status(`오래 하기 ${Math.floor(s / 60)}분 ${s % 60}초 / ${LONG}분 — 화면을 만지지 마세요`); await wait(5); }
+    walk = null; a.dispose();
+  }
   async function run() {
     $('start').hidden = true;
+    if (LONG) { try { await longRun(); status('다 쟀어요. 결과를 복사하거나 파일로 저장해 주세요.'); } catch (e) { status(`측정 중 문제가 생겼어요: ${e.message}`); } return finish(); }
     try {
       await village('k3'); world.player.position.set(0, 0, 8); await measure('근대 3장 동학 마을(탐험)', [{ x: 0, z: 8 }, { x: -6, z: 2 }, { x: 6, z: -2 }, { x: 0, z: 8 }]);
       await arenaOf('k3', 0, '근대 3장 동학 마을(무대: 농민군 모으기)');
@@ -124,6 +138,9 @@
       await book();
       status('다 쟀어요. 결과를 복사하거나 파일로 저장해 주세요.');
     } catch (e) { status(`측정 중 문제가 생겼어요: ${e.message}`); stats.time(`오류: ${e.message}`, 0); }
+    finish();
+  }
+  function finish() {
     const text = stats.text(deviceInfo(world.renderer));
     $('result').textContent = text; $('result').hidden = false; $('copy').hidden = false; $('save').hidden = false;
     document.title = 'done';

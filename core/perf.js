@@ -20,6 +20,8 @@ export function createPerfStats({ now = () => performance.now() } = {}) {
   const segments = [];
   const times = []; // { label, ms, note }
   let seg = null, totalLong = 0, totalSlow = 0, quality = null, skipNext = false;
+  const t0 = now(), minutes = []; let lastMinute = null; // 1분마다: 오래 하면 느려지는지(발열·메모리) 보기
+  const minute = t => { const i = Math.max(0, Math.floor((t - t0) / 60000)); while (minutes.length <= i) minutes.push({ n: 0, ms: 0, long: 0, geometries: null, textures: null, heapMB: null }); return minutes[i]; };
   // 탭을 숨겼다 돌아온 첫 프레임만 뺀다(그동안은 그리지 않았으니). 화면이 보이는데 길게 멈춘 프레임은 그대로 센다
   if (typeof document !== 'undefined') document.addEventListener('visibilitychange', () => { skipNext = true; });
   const stats = {
@@ -30,6 +32,7 @@ export function createPerfStats({ now = () => performance.now() } = {}) {
       const t = now();
       frames.push([t, dtMs, renderMs]);
       while (frames.length && t - frames[0][0] > 5000) frames.shift();
+      const mm = minute(t - dtMs); lastMinute = mm; mm.n++; mm.ms += dtMs; if (dtMs > LONG_MS) mm.long++;
       if (dtMs > LONG_MS) totalLong++;
       if (dtMs > SLOW_MS) totalSlow++;
       if (seg) {
@@ -57,6 +60,9 @@ export function createPerfStats({ now = () => performance.now() } = {}) {
       const fps = d => (d.length ? 1000 / avg(d.map(f => f[1])) : null);
       return { fps: fps(recent), fps5: fps(five), render5: avg(five.filter(f => f[2] != null).map(f => f[2])), long: totalLong, slow: totalSlow, longIn5: five.filter(f => f[1] > LONG_MS).length };
     },
+    // 도형·텍스처 수(renderer.info.memory)와 JS 메모리(크롬만 알려 줌, 없으면 null). 그래픽 카드 메모리는 브라우저가 알려 주지 않는다
+    sampleMemory({ geometries = null, textures = null, heapMB = null } = {}) { Object.assign(lastMinute || minute(now()), { geometries, textures, heapMB }); }, // 마지막 프레임이 든 분에
+    minutes: () => minutes.map((m, i) => ({ ...m, i })).filter(m => m.n).map(m => ({ minute: m.i + 1, fps: 1000 / (m.ms / m.n), long: m.long, geometries: m.geometries, textures: m.textures, heapMB: m.heapMB })),
     segments: () => segments.slice(), times: () => times.slice(),
     // 붙여 넣기 좋은 글(표). device: 기기 정보(있는 것만)
     text(device = {}) {
@@ -69,11 +75,22 @@ export function createPerfStats({ now = () => performance.now() } = {}) {
         const f = p => (p.n ? 1000 / (p.ms / p.n) : null), r = p => (p.rn ? p.render / p.rn : null);
         lines.push(`${s.label} | ${s.quality ?? '-'} | ${fmt(f(s.entry), 0)} | ${s.stable.n ? fmt(f(s.stable), 0) : '아직 안정 구간 없음'} | ${fmt(r(s.stable), 2)} | ${s.entry.long}/${s.stable.long} | ${fmt(s.worst, 0)} | ${s.calls ?? '측정 안 됨'} | ${s.tris ?? '측정 안 됨'} | ${s.objects ?? '측정 안 됨'}`);
       }
+      const mins = stats.minutes();
+      if (mins.length) {
+        lines.push('', '1분마다 (오래 할수록 FPS가 떨어지면 발열·메모리를 의심)', '분 | 평균 FPS | 멈칫 | 도형 수 | 텍스처 수 | JS 메모리 MB(크롬 추정)');
+        for (const m of mins) lines.push(`${m.minute} | ${fmt(m.fps, 0)} | ${m.long} | ${m.geometries ?? '알 수 없음'} | ${m.textures ?? '알 수 없음'} | ${m.heapMB == null ? '알 수 없음' : m.heapMB.toFixed(0)}`);
+      }
       if (times.length) { lines.push('', '걸린 시간'); for (const t of times) lines.push(`${t.label}: ${t.ms.toFixed(0)}ms${t.note ? ` (${t.note})` : ''}`); }
       return lines.join('\n');
     },
   };
   return stats;
+}
+
+// 메모리 표본: renderer.info.memory(도형·텍스처 수)와 performance.memory(크롬의 JS 메모리, 다른 브라우저는 없음)
+export function memorySample(renderer) {
+  const m = renderer?.info?.memory, heap = typeof performance !== 'undefined' && performance.memory ? performance.memory.usedJSHeapSize / 1048576 : null;
+  return { geometries: m ? m.geometries : null, textures: m ? m.textures : null, heapMB: heap };
 }
 
 // 기기 정보: 브라우저가 알려 주는 것만
@@ -127,7 +144,7 @@ export function createPerfPanel(ui, stats, { world = null, onQuality = null, get
     // 매 프레임 불러도 가볍게: 글자는 0.5초마다, 물체 수는 2초마다
     tick(t = performance.now()) {
       if (t - lastText > 500) { lastText = t; refresh(); }
-      if (world?.scene && t - lastCount > 2000) { lastCount = t; let n = 0; world.scene.traverse(o => { if (o.visible && (o.isMesh || o.isSprite || o.isPoints)) n++; }); stats.setObjects(n); }
+      if (world?.scene && t - lastCount > 2000) { lastCount = t; let n = 0; world.scene.traverse(o => { if (o.visible && (o.isMesh || o.isSprite || o.isPoints)) n++; }); stats.setObjects(n); stats.sampleMemory(memorySample(world.renderer)); }
     },
     refresh,
     dispose() { box.remove(); },
