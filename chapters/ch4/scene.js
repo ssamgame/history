@@ -7,9 +7,24 @@ import { mat, makePerson } from '../../core/people.js';
 import { scatter } from '../../core/props.js';
 import { LOOKS } from '../../content/characters.js';
 
-const JEOGO_X = -78, PALACE_X = 0, GANGHWA_X = 160, CHEOIN_X = 320, CHUNGJU_X = 480;
+const JEOGO_X = -78, PALACE_X = 0, GANGHWA_X = 160, MAP_X = 240, CHEOIN_X = 320, CHUNGJU_X = 480;
 const CHEOIN_R = 12;     // 처인성 토성 반지름
 const SPAWN_R = 34;      // 몽골군이 나타나는 거리
+// 당겨 쏘기 갈래(성 가운데에서 본 각도): 0 왼쪽 · 1 가운데(북쪽) · 2 오른쪽 — 남쪽에서 내려다보는 카메라 기준
+export const CHEOIN_LANES = [Math.PI * 1.5 - 0.62, Math.PI * 1.5, Math.PI * 1.5 + 0.62];
+
+// 글씨 그림(지도판 이름표·연도)
+function labelSprite(text, { size = 46, color = '#2a1e14', bg = 'rgba(242,234,217,.92)', w = 3.6 } = {}) {
+  const cv = document.createElement('canvas'), c = cv.getContext('2d');
+  c.font = `800 ${size}px sans-serif`;
+  cv.width = Math.ceil(c.measureText(text).width) + 40; cv.height = size + 30;
+  c.fillStyle = bg; c.fillRect(0, 0, cv.width, cv.height);
+  c.font = `800 ${size}px sans-serif`; c.fillStyle = color; c.textBaseline = 'middle'; c.textAlign = 'center'; c.fillText(text, cv.width / 2, cv.height / 2 + 2);
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace;
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, depthTest: false, fog: false }));
+  sp.scale.set(w, w * cv.height / cv.width, 1); sp.renderOrder = 5;
+  return sp;
+}
 
 function seeded(s) { return () => (s = (s * 16807) % 2147483647) / 2147483647; }
 
@@ -134,7 +149,53 @@ export function buildCh4Scene(world) {
   }
   const ganghwaCam = { pos: [GANGHWA_X + 6, 7, 12], target: [GANGHWA_X, 2, -30] };
 
-  // 3) 처인성: 낮은 흙성(둥글게), 남쪽 성문, 성 안 백성과 승병, 북쪽 들판
+  // 2-1) 도읍 연출 지도판(놀이 아님): 바다 위 고려 땅과 강화도 섬, 개경·서경·강화도 표시. 몽골 기병 화살표 셋이 북쪽에서 내려와
+  //      땅으로 이어진 두 곳에는 닿고, 강화도 앞에서는 바다에 막혀 멈춘다(S10: 쉽게 건너오지 못함). 거리·속도 숫자는 보이지 않는다
+  const mapBoard = new THREE.Group(); mapBoard.name = 'capitalMap'; mapBoard.position.set(MAP_X, 0, 0); mapBoard.visible = false; L.add(mapBoard);
+  const capitalMap = { group: mapBoard };
+  {
+    const flat = (geo, color, y) => { const m = new THREE.Mesh(geo.rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ color })); m.position.y = y; mapBoard.add(m); return m; };
+    flat(new THREE.PlaneGeometry(30, 22), 0x4f7c96, 0.6);
+    const land = new THREE.Shape([[-7, 9], [6, 9], [8, 4], [7, -2], [5, -8], [1, -9], [-2, -7], [-3, -4.5], [-2.6, -2.5], [-4.5, 0], [-5, 3], [-8, 6]].map(([x, y]) => new THREE.Vector2(x, y)));
+    flat(new THREE.ShapeGeometry(land), 0x7d9a5a, 0.65);
+    const island = flat(new THREE.CircleGeometry(0.95, 16), 0x7d9a5a, 0.65); island.position.set(-4.6, 0.65, 3.4);
+    // 땅 테두리(가장자리 띠)와 북쪽 산줄기 표시
+    for (const [x, z] of [[-3, -6], [0, -7], [3, -6.5], [1, -4], [4, -3]]) { const m = new THREE.Mesh(new THREE.ConeGeometry(0.8, 0.9, 4), mat(0x6a8550)); m.position.set(x, 1.05, z); mapBoard.add(m); }
+    const P = { gaegyeong: [-1.5, 2], seogyeong: [-3.5, -3], ganghwa: [-4.6, 3.4] };
+    capitalMap.places = P;
+    for (const [id, [x, z]] of Object.entries(P)) {
+      const pin = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.5, 10), mat(id === 'ganghwa' ? 0xd9a441 : 0xb8452f)); pin.position.set(x, 0.9, z); mapBoard.add(pin);
+      const lb = labelSprite({ gaegyeong: '개경 (지금 도읍)', seogyeong: '서경 (평양)', ganghwa: '강화도' }[id], { w: id === 'gaegyeong' ? 4.4 : 3.2 });
+      lb.position.set(x + (id === 'gaegyeong' ? 2.6 : id === 'ganghwa' ? -0.6 : 1.4), 2.2, z + (id === 'ganghwa' ? 1.6 : 0)); lb.name = `label-${id}`; mapBoard.add(lb);
+    }
+    const year = labelSprite('1232년', { size: 60, color: '#fff6c8', bg: 'rgba(43,36,28,.88)', w: 4 }); year.position.set(4.5, 3.2, -6); year.name = 'yearCaption'; mapBoard.add(year);
+    // 몽골 기병 화살표 셋(북쪽 → 서경 · 개경 · 강화도 앞 바닷가)
+    const shape = new THREE.Shape([[0, 0.9], [0.7, 0], [0.25, 0], [0.25, -1.4], [-0.25, -1.4], [-0.25, 0], [-0.7, 0]].map(([x, y]) => new THREE.Vector2(x, y)));
+    const arrowMat = new THREE.MeshBasicMaterial({ color: 0x3a3f4a });
+    const route = (from, to) => ({ from, to, mesh: (() => { const m = new THREE.Mesh(new THREE.ShapeGeometry(shape).rotateX(-Math.PI / 2), arrowMat); m.position.set(from[0], 0.8, from[1]); m.rotation.y = Math.atan2(-(to[0] - from[0]), -(to[1] - from[1])); m.scale.setScalar(1.4); mapBoard.add(m); return m; })() });
+    capitalMap.routes = [route([-3.5, -9.5], [P.seogyeong[0], P.seogyeong[1] - 0.6]), route([0, -9.5], [P.gaegyeong[0], P.gaegyeong[1] - 0.6]), route([-1.8, -9.5], [-3.1, 3.1])];
+    // 강화도 앞 물결 줄(멈춤 표시)과 ✕
+    const stop = new THREE.Group(); stop.visible = false; mapBoard.add(stop);
+    for (let i = 0; i < 3; i++) { const w = new THREE.Mesh(new THREE.TorusGeometry(0.9 + i * 0.35, 0.05, 4, 16, Math.PI * 0.7).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xf2f6f8 })); w.position.set(-3.8, 0.72, 3.3); w.rotation.y = Math.PI * 0.85; stop.add(w); }
+    const xMark = labelSprite('✕', { size: 64, color: '#b8452f', bg: 'rgba(242,234,217,.0)', w: 1.4 }); xMark.position.set(-3.6, 1.8, 3.1); stop.add(xMark);
+    capitalMap.stop = stop;
+    capitalMap.cam = { pos: [MAP_X + 1, 22, 13], target: [MAP_X - 0.5, 0, 0.5] };
+  }
+  // 도읍 연출 한 번(약 4초): 화살표가 내려와 두 곳에 닿고, 강화도 앞은 바다에 막혀 멈춘다
+  capitalMap.play = () => new Promise(resolve => {
+    mapBoard.visible = true; capitalMap.stop.visible = false;
+    for (const r of capitalMap.routes) r.mesh.position.set(r.from[0], 0.8, r.from[1]);
+    let t = 0;
+    const off = world.onUpdate(dt => {
+      t += dt;
+      const k = Math.min(1, t / 2.4), e = k * (2 - k);
+      capitalMap.routes.forEach(r => r.mesh.position.set(r.from[0] + (r.to[0] - r.from[0]) * e, 0.8, r.from[1] + (r.to[1] - r.from[1]) * e));
+      if (k >= 1) { capitalMap.stop.visible = true; const r = capitalMap.routes[2]; r.mesh.position.x = r.to[0] + Math.sin(t * 18) * 0.06 * Math.max(0, 1 - (t - 2.4)); }
+      if (t >= 4) { off(); resolve(); }
+    });
+  });
+
+  // 3) 처인성: 낮은 흙성(둥글게), 남쪽 성문, 성 안 백성과 승려, 북쪽 들판
   const cheoin = new THREE.Group(); L.add(cheoin);
   {
     const segs = 40;
@@ -162,10 +223,11 @@ export function buildCh4Scene(world) {
   const mongols = [];
   for (let i = 0; i < 8; i++) {
     const g = new THREE.Group(); g.visible = false; g.scale.setScalar(1.6); L.add(g); // 멀리서도 보이게 크게
-    g.rotation.order = 'YXZ'; // 화살을 맞으면 rotation.x로 뒤로 쓰러진다
+    g.rotation.order = 'YXZ'; // 화살을 맞으면 rotation.x로 잠깐 뒤로 젖혀졌다가 물러난다
     const p = makePerson(LOOKS.mongol); g.add(p);
     mk(new THREE.CylinderGeometry(0.05, 0.05, 3.4, 4), 0x3a2c20, 0.6, 1.7, 0, g);
     const f = mk(new THREE.PlaneGeometry(0.9, 0.7), 0x2a3550, 1.05, 3.1, 0, g); f.material = new THREE.MeshLambertMaterial({ color: 0x2a3550, side: THREE.DoubleSide });
+    const sh = mk(new THREE.CylinderGeometry(0.5, 0.5, 0.1, 10), 0x6b4a2e, -0.42, 1.35, 0.38, g); sh.rotation.x = Math.PI / 2; // 둥근 방패(화살을 막고 주춤한다)
     const top = new THREE.Object3D(); top.position.set(0, 3.6, 0); g.add(top);
     const a = Math.PI + 0.55 + (i / 7) * (Math.PI - 1.1); // 성 앞쪽(북쪽, -z) 부채꼴
     mongols.push({ group: g, top, angle: a });
@@ -185,6 +247,11 @@ export function buildCh4Scene(world) {
     g.rotation.y = out;
     archers.push({ group: g, angle: a, baseY: ARCHER_Y, rest: out });
   }
+  // 몽골 장수 쪽 깃발 무리(김윤후 컷에서 북쪽으로 물러간다. 장수가 쓰러지는 그림은 그리지 않는다)
+  const commanderFlag = new THREE.Group(); commanderFlag.visible = false; commanderFlag.position.set(CHEOIN_X + 4, 0, -36); L.add(commanderFlag);
+  mk(new THREE.CylinderGeometry(0.12, 0.12, 9, 5), 0x3a2c20, 0, 4.5, 0, commanderFlag);
+  { const fl = mk(new THREE.PlaneGeometry(3, 2.2), 0x2a3550, 1.55, 7.6, 0, commanderFlag); fl.material = new THREE.MeshLambertMaterial({ color: 0x2a3550, side: THREE.DoubleSide }); }
+  for (let i = 0; i < 4; i++) { const p = makePerson(LOOKS.mongol); p.position.set(-3 + i * 2, 0, 1.5); p.rotation.y = Math.PI; commanderFlag.add(p); }
   // 날아가는 화살 (돌려 쓴다)
   const arrows = [];
   // 멀리서 보는 카메라에서도 보이게: 크게 만들고, 빛을 받지 않는 밝은 색과 뒤로 끌리는 빛줄기(꼬리)를 단다
@@ -206,8 +273,9 @@ export function buildCh4Scene(world) {
   scatter(world, { kind: 'rock', count: 12, area: { x0: CHEOIN_X - 40, x1: CHEOIN_X + 40, z0: -40, z1: 30 }, avoid: [{ x: CHEOIN_X, z: 0, r: CHEOIN_R + 2 }], seed: 57, scale: [0.5, 1.2] });
   const cheoinFit = {
     target: [CHEOIN_X, 1, -12], dir: [0, 16, 15],
-    points: [[CHEOIN_X - CHEOIN_R, 0, CHEOIN_R], [CHEOIN_X + CHEOIN_R, 0, CHEOIN_R],
-      ...mongols.map(m => [CHEOIN_X + Math.cos(m.angle) * SPAWN_R, 3.6 * 1.6, Math.sin(m.angle) * SPAWN_R])],
+    // 당겨 쏘기: 세 갈래에서 몽골군이 나타나는 곳과 성 북쪽 반, 아래 활 단추 자리만큼 성 남쪽 땅
+    points: [[CHEOIN_X - CHEOIN_R, 0, 0], [CHEOIN_X + CHEOIN_R, 0, 0], [CHEOIN_X, 0, CHEOIN_R * 0.7],
+      ...CHEOIN_LANES.map(a => [CHEOIN_X + Math.cos(a) * SPAWN_R, 3.6 * 1.6, Math.sin(a) * SPAWN_R])],
   };
 
   // 4) 충주성 마당: 성벽, 관노 문서 더미, 불
@@ -248,6 +316,12 @@ export function buildCh4Scene(world) {
     const sp = new THREE.Mesh(new THREE.SphereGeometry(0.05, 4, 3), new THREE.MeshBasicMaterial({ color: 0xffb24a })); sp.userData = { ph: i * 0.37, x: (i % 5 - 2) * 0.2, z: ((i * 3) % 5 - 2) * 0.15 };
     fireG.add(sp); sparks.push(sp);
   }
+  // 연기: 회색 구름이 천천히 피어오른다
+  const smoke = [];
+  for (let i = 0; i < 6; i++) {
+    const m = new THREE.Mesh(new THREE.SphereGeometry(0.5, 7, 5), new THREE.MeshLambertMaterial({ color: 0x8a8580, transparent: true, opacity: 0, depthWrite: false }));
+    m.userData = { ph: i / 6, x: (i % 3 - 1) * 0.3, z: ((i * 2) % 3 - 1) * 0.25 }; fireG.add(m); smoke.push(m);
+  }
   let fireLevel = 0; // 0 꺼짐 ~ 1 활활
   const burnState = { t: -1 };
   // 문서를 불태운다(약 4초): 불이 붙은 종이가 갈색 → 검게 그을리며 오그라들고 재가 되어 사라진다
@@ -279,8 +353,9 @@ export function buildCh4Scene(world) {
       if (bt > 6.4) { documents.visible = false; }
       if (bt > 7.4 && burnState.resolve) { const r = burnState.resolve; burnState.resolve = null; burnState.t = -1; fireLevel = 0.45; r(); }
     }
-    if (fireG.visible) {
-      flames.forEach(f => { const s = (0.7 + Math.sin(t * 13 + f.userData.ph) * 0.2) * (0.3 + fireLevel); f.scale.set(s, s * (1.2 + Math.sin(t * 9 + f.userData.ph) * 0.25), s); f.position.y = 0.6 * s; });
+    if (fireG.visible) { // 불꽃은 작게(0.55배), 연기·재 위주
+      flames.forEach(f => { const s = (0.7 + Math.sin(t * 13 + f.userData.ph) * 0.2) * (0.3 + fireLevel) * 0.55; f.scale.set(s, s * (1.2 + Math.sin(t * 9 + f.userData.ph) * 0.25), s); f.position.y = 0.6 * s; });
+      smoke.forEach(m => { const k = ((t * 0.25 + m.userData.ph) % 1); m.position.set(m.userData.x + k * 0.6, 0.6 + k * 4.5, m.userData.z); m.scale.setScalar(0.4 + k * 1.6); m.material.opacity = 0.5 * Math.sin(Math.PI * k) * Math.min(1, fireLevel + 0.3); });
       sparks.forEach(sp => { const k = ((t * 0.7 + sp.userData.ph) % 1); sp.visible = fireLevel > 0.2; sp.position.set(sp.userData.x * (1 + k), 0.4 + k * 3.2 * fireLevel, sp.userData.z * (1 + k)); sp.scale.setScalar(1 - k); });
     }
   });
@@ -290,7 +365,11 @@ export function buildCh4Scene(world) {
       palace: { start: [PALACE_X, 8], bounds: { x0: PALACE_X - 13, x1: PALACE_X + 13, z0: -6, z1: 14 } },
       jeogo: jeogo,
       ganghwa: { cam: ganghwaCam },
-      cheoin: { center: [CHEOIN_X, 0], radius: CHEOIN_R, spawnR: SPAWN_R, fit: cheoinFit },
+      capitalMap,
+      cheoin: { center: [CHEOIN_X, 0], radius: CHEOIN_R, spawnR: SPAWN_R, fit: cheoinFit, lanes: CHEOIN_LANES,
+        bow: [CHEOIN_X, 1.3, -(CHEOIN_R - 1.1)], commanderFlag,
+        // 김윤후 컷: 성 안 북쪽, 백성·승려 사이에 선 한 사람(높은 단·지휘봉 없음)
+        kimyunhu: [CHEOIN_X + 1, -7.6, 0], yunhuCam: { pos: [CHEOIN_X + 1.6, 3.4, 0.5], target: [CHEOIN_X + 1, 2, -9] } },
       chungju: { cam: chungjuCam, burnCam, kimyunhu: [CHUNGJU_X + 1.8, -2.2, Math.PI * 0.85] },
     },
     mongols, archers, arrows, documents, flames, fire: fireG, burnDocuments, burnt, jeogo,

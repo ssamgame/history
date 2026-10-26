@@ -58,12 +58,9 @@ test('goryeo4: 압록강 가에서 저고여가 쓰러지는 장면이 있고, �
   } finally { s.done(); }
 });
 
-test('goryeo4: 왜 강화도냐는 물음에 상황에 맞는 말로 답하고, 천도로 도읍을 쉽게 함락시킬 수 없었다고 말한다', () => {
-  const right = ch4Script.capital.reason.options.find(o => o.correct);
-  eq(right.text, '몽골군을 상대로 바다와 물에서 싸우면 고려가 유리할 것입니다.');
-  ok(ch4Script.capital.reason.options.every(o => /니다\.$/.test(o.text)), '세 답 모두 관리에게 하는 말');
+test('goryeo4: 천도로 도읍을 쉽게 함락시킬 수 없었다고 말한다(도읍 연출 자막)', () => {
   const done = ch4Script.capital.done.map(l => l.text).join(' ');
-  ok(done.includes('1232') && done.includes('함락'), done);
+  ok(done.includes('1232') && done.includes('쉽게') && done.includes('함락'), done);
 });
 
 test('goryeo4: 처인성 화살은 멀리서도 보이게 크고 빛나는 꼬리가 있다', () => {

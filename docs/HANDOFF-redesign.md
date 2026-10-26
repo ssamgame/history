@@ -10,7 +10,7 @@
 2. 이 파일 → `CLAUDE.md` → `docs/agent-guidelines.md` 차례로 읽는다.
 3. 팀원(서브 에이전트) 이름은 새 계정에서 이어지지 않는다. 같은 역할·모델로 새로 띄운다: 기획 sonnet, 개발 opus, 검토 opus. 띄울 때 이 파일과 해당 장 명세를 읽게 한다.
 4. 예전 계정의 예약 작업 '고려~현대 다시 만들기 이어하기'(`trig_01PxpghU97PNf3g9vxXDMURP`)는 **꺼 두었다**(옛 세션으로만 들어감). 새 계정에서 자동 이어하기가 필요하면 새로 만든다.
-5. 첫 작업은 아래 '바로 이어 할 일' 2번(5장, 폴더 `chapters/ch4`).
+5. 첫 작업은 아래 '바로 이어 할 일' 2번(6장, 폴더 `chapters/ch5`, `ch6-spec.md`).
 
 ### 선생님 규칙 (꼭)
 - 한국어, 쉬운 말. 보고 형식: 수정 내용 / 파일 / 전후 차이 / 테스트 / 결과 / 남은 문제 / 다음 우선순위.
@@ -36,9 +36,17 @@
 - 테스트: ch7 14 · layout 30 · faces 13 · content 8 · ch3 18 모두 통과. 그리기 횟수(화질 보통, 1000×560): 첫 장면 44 · 탐험 118 · 1무리 138 · 3무리 200 · 성 9개 174 · 퀴즈 91.
 - 아직 `chapters/index.js`에 등록하지 않음(5·6장 구성 변경 때). 사진은 스크래치패드에만(편 끝 보고 때 다시 찍는다).
 
+### 고려 5장(장 id ch4, 몽골·처인성) — 끝남 (2026-10-26 밤, 새 계정)
+- 새 부품 `chapters/kit/pullshot.js`(활 단추를 끌어 당겼다 놓기, 키보드 ← → · 스페이스, 점선을 넘게 당기면 들판 끝까지 날아가 조준선 옆 반경 안 가장 가까운 적이 맞음, 맞은 적은 주춤하고 물러남, 3명 닿으면 실패, 쉬운 모드 반경 3·힘 40%·속도 0.8배·조준 보조).
+- `chapters/ch4/*` 다시 짬: 저고여 컷 → 관리 1줄 → 도읍 연출(지도판, 강화도 앞 바다에서 화살표가 멈춤, 자막은 `capital.done`) → 당겨 쏘기 3무리 → 김윤후 컷(백성·승려 사이, 몽골 깃발이 물러감) → 충주성(불꽃 0.55배 + 연기) → 퀴즈 → 도장 '처인'. 꼭 듣는 대사 7줄, 화자 '승려', 김윤후 말 "함께 이 성을 지켜 봅시다.", Q2 "…맞선 승려는?".
+- 명세와 다른 점(개발 판단): ① 충주성 셋째 줄을 둘째 줄과 합침(문장 내용 같음, 7줄 맞추려고). ② 맞음 판정은 '떨어진 곳 둘레'가 아니라 '조준선 옆'(점선 넘으면 사거리 끝까지) — 힘 60%로 먼 적에 닿지 않는 문제 때문. ③ `capital.done`은 대화 줄 대신 연출 자막.
+- 테스트: 새 `tests/ch4-pullshot.test.js`(목록에 넣음), `tests/ch4.test.js`·`goryeo-feedback.test.js` 고침(고르기 테스트 삭제, `CHAPTERS.find(id)`), `tests/bot.js` 활 당기기, `tests/fit.html` kind=pullshot. ch4 18 · goryeo4 5 · layout 31 · faces 13 · content 8 · ch2 23 · ch3 18 · ch7 14 통과.
+- 그리기 횟수: 지도 47 · 1무리 121 · 3무리 144 · 김윤후 106 · 충주성 72.
+- 다듬을 거리: 처인성 화면에서 몽골군이 아직 작게 보임(카메라 더 당길지 선생님 보고 때).
+
 ### 바로 이어 할 일 (차례)
 1. ~~ch7 마무리~~ 끝.
-2. 개발: 5장(`ch5-spec.md`, 폴더 `chapters/ch4`, 처인성 당겨 쏘기 `pullshot`) → 6장(`ch6-spec.md`, 폴더 `chapters/ch5`, 경판 공방 `conveyor`+노 젓기 `rhythm`, 획 따라 그리기는 선택) → 장 구성 변경(`ch6-spec.md` 5절: index.js 순서 1 ch1 / 2 ch2 / 3 ch3 / 4 ch7 / 5 ch4 / 6 ch5, ch6 목록에서 뺌, 결과 카드, 옛 ch6 기록). 공용 파일(`set.js`·`tests/bot.js`·`tests/index.html`·`tests/fit.html`)을 건드리므로 개발은 한 명이 차례로.
+2. ~~5장~~ 끝 → 개발: 6장(`ch6-spec.md`, 폴더 `chapters/ch5`, 경판 공방 `conveyor`+노 젓기 `rhythm`, 획 따라 그리기는 선택) → 장 구성 변경(`ch6-spec.md` 5절: index.js 순서 1 ch1 / 2 ch2 / 3 ch3 / 4 ch7 / 5 ch4 / 6 ch5, ch6 목록에서 뺌, 결과 카드, 옛 ch6 기록). 공용 파일(`set.js`·`tests/bot.js`·`tests/index.html`·`tests/fit.html`)을 건드리므로 개발은 한 명이 차례로.
 3. 고려 끝 → 선생님께 한 번에 보고(사진) → 조선 → 근대 → 일제 → 현대. 조선~현대는 **놀이 교체 + 역사책 없애기만**(건물·장면 그대로). 새 놀이 지도는 `2026-10-26-minigame-map.md` 3절, 유지할 놀이 5개(j1 듣고 고르기·터 짓기, k5 전차, k6 매복, i1 몰래 지나가기). 역사책 쓰는 장 15곳: k1~k6, i1·i2·i3·i5·i6, h2·h4·h5·h6. 편마다 명세(기획) → 개발. 편 두 개를 개발 둘이 동시에 해도 됨(파일 안 겹치게).
 4. 모두 끝 → 선생님 확인 → 검토 팀원 역사 검토(1장 Q2, ch1 "싸우지 않고 말로", S71·S72 원문, 명세들의 '검토 필요' 6곳) → 메인 전체 테스트 → `core/precache.js` 판 올림(v66~) + `tests/sw.test.js` + 새 파일 PRECACHE(`chapters/kit/ops.js`·`rally.js`·`damflow.js`·`signal.js`·`switch.js`, `core/figures.js`·`core/hud-ops.js`, `chapters/goryeo/set.js`, 5·6장 새 부품, ch7 폴더) → 승인 뒤 main 병합·배포 → https://ssamgame.github.io/history/core/precache.js 에서 새 판 확인.
 

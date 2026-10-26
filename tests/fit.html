@@ -98,6 +98,22 @@
     const gauge = opsGauge(ctx, { value: 0.3, ...s.switch.gauge });
     switchLanes(ctx, { lanes: s.switch.lanes, people: s.switch.waves[2].people, rule: s.switch.rule, hints: s.switch.hints, name: p => p.name });
   }
+  // 처인성 당겨 쏘기(chapters/kit/pullshot.js, 고려 새 5장 ch4): 활 단추 · 힘 막대 · 위 가운데 지킴 게이지
+  else if (kind === 'pullshot') {
+    const THREE = await import('three');
+    const { opsGauge } = await import('../chapters/kit/ops.js');
+    const { pullshot } = await import('../chapters/kit/pullshot.js');
+    const s = (await import('../chapters/ch4/script.js')).default;
+    const updates = new Set(); (function loop() { for (const f of updates) f(1 / 60); requestAnimationFrame(loop); })();
+    const { createHud } = await import('../core/screens.js');
+    const hud = createHud(ui, { touch: true });
+    hud.show({ no: 5, years: '1231~1253', event: '몽골 침입' }, { name: '처인성 지킴이' });
+    hud.setGoal(s.goals[2], [3, 5]);
+    const ctx = { ui, hud, testHooks: {}, onAction: () => () => {}, world: { level: new THREE.Group(), onUpdate: f => { updates.add(f); return () => updates.delete(f); } } };
+    const gauge = opsGauge(ctx, { value: 0.5, ...s.cheoin.gauge });
+    pullshot(ctx, { field: { center: [0, 0], wallR: 12, spawnR: 34, bow: [0, 1.3, -11] }, lanes: [4.1, 4.71, 5.33], wave: { ...s.cheoin.waves[2], gap: 1000 }, enemies: [], gauge, texts: s.cheoin.texts });
+    ui.querySelector('.pull-hint').hidden = false; ui.querySelector('.pull-hint').textContent = s.cheoin.texts.miss;
+  }
   // 근대~현대편 카드형 미니게임: kind=kit:h3:0 (장 id: 부분 번호), &fill=1 이면 자리 놓기를 마지막 하나만 남기고 채운다
   else if (kind.startsWith('kit:')) {
     const [, id, n] = kind.split(':');

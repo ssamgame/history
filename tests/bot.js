@@ -156,6 +156,18 @@ export function touchBot(s, { answers, wrongFirst = new Set(), noTaps = () => fa
       if (right && wrongFirst.has(right.dataset.text) && !wrongUsed.has(key)) { wrongUsed.add(key); pick = rallyOrbs.find(o => o !== right); }
       if (pick) tap(pick);
     }
+    // 처인성 당겨 쏘기(chapters/kit/pullshot.js): 활 단추를 눌러 놀이가 알려 준 적 쪽(aim)의 반대로 끝까지 끌었다가, 충분히 당기면 놓는다
+    const ph = !dialogue.isOpen() && !noTaps() && ctx.testHooks.pullshot, pad = ph && ui.querySelector('.pull-pad');
+    if (pad) {
+      const r = pad.getBoundingClientRect(), px = r.left + r.width / 2, py = r.top + r.height / 2;
+      const at = (el, type, x, y) => el.dispatchEvent(new PointerEvent(type, { pointerId: 7, bubbles: true, clientX: x, clientY: y }));
+      const x = px - Math.sin(ph.aim) * 140, y = py + Math.cos(ph.aim) * 140;
+      if (ph.ready) {
+        const top = document.elementFromPoint(px, py);
+        if (!top || !(top === pad || pad.contains(top))) { const m = `"pull pad" is covered by ${top ? (top.className || top.tagName) : 'nothing'}`; if (!covered.includes(m)) covered.push(m); }
+        at(pad, 'pointerdown', px, py);
+      } else if (ph.pulling) { at(window, 'pointermove', x, y); if (ph.held >= ph.minPull + 0.1) at(window, 'pointerup', x, y); }
+    }
     // 별무반 갈림길(chapters/kit/switch.js): 놀이가 알려 준 맞는 길 단추를 누른다
     const lh = !dialogue.isOpen() && !noTaps() && ctx.testHooks.lanes;
     if (lh && lh.ready) { const lb = ui.querySelector(`.switch-lane[data-lane="${lh.answer}"]:not([disabled])`); if (lb) tap(lb); }
