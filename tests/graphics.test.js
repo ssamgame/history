@@ -112,8 +112,10 @@ test('people: 서 있는 사람은 고개를 천천히 돌리고, 일하는 사�
   const a = makePerson(LOOKS.commoner), b = makePerson(LOOKS.commoner);
   ok(Math.abs(a.scale.y - b.scale.y) > 0.001 || Math.abs(a.scale.y - 1) > 0.001, `키 ${a.scale.y} ${b.scale.y}`);
   const head = a.getObjectByName('headGroup'), h0 = head.rotation.y;
-  for (let i = 0; i < 60; i++) AW(a, false, 1 / 30);
-  ok(Math.abs(head.rotation.y - h0) > 0.01, '고개를 돌린다');
+  // 고개는 쉬었다 돌렸다 한다(느린 물결 한 바퀴 약 30초, 사람마다 때가 다름) → 한 바퀴 안에 한 번은 돈다
+  let turned = 0;
+  for (let i = 0; i < 30 * 30; i++) { AW(a, false, 1 / 30); turned = Math.max(turned, Math.abs(head.rotation.y - h0)); }
+  ok(turned > 0.01, '고개를 돌린다');
   const w = makePerson(LOOKS.worker); setWork(w, 'hammer');
   const arm = w.userData.arms[1], seen = new Set();
   for (let i = 0; i < 40; i++) { AW(w, false, 1 / 30); seen.add(arm.rotation.x.toFixed(2)); }
