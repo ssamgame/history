@@ -15,13 +15,14 @@
 | 2장 흥화진 | b0c8010·e3c65ec | 아쉬운 점 1~4 고침(카메라 낮춤, 거란 병사 밝은 옷, 호위 들판 꾸밈, 도장 뒤 어둡게, 말풍선이 목표 상자 피함) + 기획 결정(1·2파 간격 줄임, '쉬는 중' 표시) |
 | 1장 서희 | 59c0e92 | 놀이 「말 받아치기」(`chapters/kit/rally.js`) 2판, 강동 6주 연출, 퀴즈 Q2 새 문제(S19, 검토 필요) |
 | 명세 | dac7c49·82b8503·c0b73f1·51dc0c0 | 3장·ch7·5장(ch4 폴더)·6장(ch5 폴더, 장 구성 변경 5절 포함) |
+| 3장 강감찬 | 0867368 | 둑 수위(`damflow.js`)·귀주 신호(`signal.js`), 쇠가죽은 탐험으로, 1장 6주 → `castleMarker` 성채 6개, sources.md 재생성(content 테스트 출처 수 72). 그리기 탐험 122·둑 262·귀주 373. 남은 것: 둑 뒤 물웅덩이가 작게 보임 |
 | 출처 | 8ae5e2d | S71 별무반·S72 윤관 여진 정벌(검색으로 여러 자료 일치 확인, 원문은 이 환경에서 못 엶 → 게임 완성 뒤 검토). ch7 명세 끝 '확인 결과' 절 |
 
 **진행 중**
-- 개발 담당(`developer`, opus): 3장(`ch3-spec.md`, 새 부품 `chapters/kit/damflow.js`·`signal.js`, 1장 6주 기둥 → `castleMarker`) 작업 중 → 끝나면 ch7(`ch7-spec.md`, `chapters/kit/switch.js`, S71·S72 문장 바로 사용). 미커밋 파일은 개발이 마치고 커밋한다(메인이 커밋 X). 3장 뒤 `content/sources.md`를 `node tools/gen-sources.cjs`로 다시 만들어 함께 커밋하라고 일러 둠.
+- 개발 담당(`developer`, opus): ch7(`ch7-spec.md`, `chapters/kit/switch.js`, S71·S72 문장 바로 사용, 장 목록 등록 X) 작업 중. 미커밋 파일은 개발이 마치고 커밋한다(메인이 커밋 X).
 
 **다음 차례**
-1. 개발: 3장 → ch7 → 5장(`ch5-spec.md`) → 6장(`ch6-spec.md`) → 장 구성 변경(6장 명세 5절: index.js 순서, 결과 카드, 옛 ch6 기록 처리). 같은 파일(`set.js`·`tests/bot.js`·`tests/index.html`)을 건드리므로 개발은 한 명이 차례로.
+1. 개발: ch7 → 5장(`ch5-spec.md`) → 6장(`ch6-spec.md`) → 장 구성 변경(6장 명세 5절: index.js 순서, 결과 카드, 옛 ch6 기록 처리). 같은 파일(`set.js`·`tests/bot.js`·`tests/index.html`)을 건드리므로 개발은 한 명이 차례로.
 2. 고려 끝 → 선생님께 한 번에 보고(사진) → 조선 → 근대 → 일제 → 현대(놀이 교체 + 역사책 없애기, 역사책 쓰는 장 15곳: k1~k6, i1·i2·i3·i5·i6, h2·h4·h5·h6). 편 두 개씩 개발 둘이 나눠 동시에 해도 됨(파일 안 겹치게).
 3. 모두 끝 → 선생님 확인 → 검토 팀원 역사 검토(1장 Q2, "싸우지 않고 말로", S71·S72 원문 등) → 메인 전체 테스트 → precache 판 올림 + 새 파일 PRECACHE(`ops.js`·`figures.js`·`hud-ops.js`·`goryeo/set.js`·`rally.js`·`damflow.js`·`signal.js`·`switch.js` 등) → 승인 뒤 배포.
 
