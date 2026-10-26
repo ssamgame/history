@@ -74,6 +74,8 @@
 5. 테스트 브라우저에서 FPS 5~14(소프트웨어 렌더링). 실제 탭 측정 필요.
 **개발 팀원이 남긴 것**: 새 파일 4개(`ops.js`·`figures.js`·`hud-ops.js`·`goryeo/set.js`)를 배포 때 `core/precache.js` PRECACHE에 넣기 / 쉬운 모드에선 큰 사다리도 병사 하나 / 도장은 퀴즈 뒤 결과 카드 앞.
 
+**2026-10-26 밤 (b0c8010)**: 선생님이 "바로 시작"하셔서 ㉠으로 아쉬운 점 1~4를 고침(카메라 낮춤·거란 병사 밝은 옷, 호위 들판 소나무·수레·짚더미·울타리, 도장 뒤 어둡게, 말풍선이 목표 상자 피함 + 테스트). 2장 관련 테스트(ch2·ch2-pilot·goryeo-style·layout) 모두 통과. 놀이 규칙 질문(2번)은 아직 답 없음. 확인 주소는 커밋 번호만 b0c8010으로 바꿔 드림.
+
 ## 4. 앞으로 할 일 (차례)
 1. 선생님 답 → 2장 다듬기(위 1~5) → 선생님 확인 → 전체 테스트 → precache 판 올림(v66, `tests/sw.test.js`도) + 새 파일 PRECACHE → main 병합·push → https://ssamgame.github.io/history/core/precache.js 에 새 판 확인.
 2. 고려 나머지: 1장(말 받아치기) → 3·4장(3 둑 물 높이·귀주 신호, 4 윤관 별무반 편성 = 새 장 `ch7`) → 5·6장(처인성 당겨 쏘기, 경판 공방+삼별초). 장 구성 변경(`chapters/index.js`의 `no`, 결과 카드 SESSIONS[1] 6줄, ch6 빼기)은 5·6장 때. 테스트 `courses.test.js`·`screens.test.js`·`ch6.test.js` 등 맞추기.
