@@ -26,10 +26,11 @@ export const MAKING_PICTURES = [
     ${plank(10, 10, 62, 50)}
     ${[0, 1, 2, 3, 4].map(i => `<g fill="#5a3a22">${[0, 1, 2, 3].map(j => `<rect x="${18 + i * 10}" y="${17 + j * 10}" width="6" height="6" rx="1"/>`).join('')}</g>`).join('')}
     <rect x="70" y="30" width="24" height="6" rx="3" fill="#6b4a32" transform="rotate(-35 82 33)"/><path d="M66 48 L72 40 L75 43 Z" fill="#b8bcc2"/>`),
-  // 5. 마구리: 판의 네 모서리를 감싼 구리판
+  // 5. 마구리: 판 양 끝에 덧대어 뒤틀리지 않게 하는 나무(각목). 네 귀퉁이의 작은 구리 장식은 덧붙임
   wrap(`<rect width="100" height="70" fill="#f3e9d6"/>
-    ${plank(14, 12, 72, 46, '#b07a42')}
-    ${[[14, 12], [76, 12], [14, 48], [76, 48]].map(([x, y]) => `<rect x="${x}" y="${y}" width="10" height="10" fill="#c46a2c" stroke="#7a3a14" stroke-width="1.5"/><circle cx="${x + 5}" cy="${y + 5}" r="1.6" fill="#7a3a14"/>`).join('')}
+    ${plank(20, 14, 60, 42, '#b07a42')}
+    ${[8, 80].map(x => `<rect x="${x}" y="9" width="12" height="52" rx="1.5" fill="#7a4e2a" stroke="#4a2e16" stroke-width="1.5"/>`).join('')}
+    ${[[8, 9], [86, 9], [8, 55], [86, 55]].map(([x, y]) => `<rect x="${x}" y="${y}" width="6" height="6" fill="#c46a2c" stroke="#7a3a14" stroke-width="1"/>`).join('')}
     <g fill="#6b4422">${[0, 1, 2, 3].map(i => `<rect x="${30 + i * 11}" y="26" width="6" height="18" rx="1"/>`).join('')}</g>`),
   // 6. 옻칠하기: 붓으로 검게 반짝이는 칠을 입힌다
   wrap(`<rect width="100" height="70" fill="#f3e9d6"/>

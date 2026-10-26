@@ -10,7 +10,7 @@ export const MOODS = {
     skyTop: 0x4a5a86, skyHorizon: 0xf2b072, skyBottom: 0x8a7a62,
     fog: [0xe7b48c, 45, 150],
     sun: { color: 0xffcf9a, intensity: 1.7, dir: [-34, 22, -20] },
-    hemi: [0xffd9b8, 0x3e4a3a, 0.5],
+    hemi: [0xffd9b8, 0x4e5a48, 0.7], // 2026-10-25: 담판 장면 얼굴이 그늘지지 않게 조금 밝게
     particles: 'embers',
   },
   // 겨울 해 질 녘: 노을 하늘은 두고 하늘빛·해를 밝혀 흙 마을이 갈색으로 뭉치지 않게 (근대 2장 1884년 12월 갑신정변)
@@ -22,8 +22,8 @@ export const MOODS = {
     particles: null, clouds: 0.35,
   },
   snow: {
-    skyTop: 0x8494a8, skyHorizon: 0xcdd6e0, skyBottom: 0x9aa3a8,
-    fog: [0xd5dbe0, 30, 120],
+    skyTop: 0x8494a8, skyHorizon: 0xc4cdd8, skyBottom: 0x9aa3a8,
+    fog: [0xc6ced8, 30, 120],
     sun: { color: 0xe8eef5, intensity: 0.8, dir: [20, 30, 10] },
     hemi: [0xeef3f8, 0x7a8088, 0.75], // 2026-10-25: 흰 눈·성벽·하늘이 한 덩어리로 보이지 않게 조금 낮춤
     particles: 'snow',
@@ -38,8 +38,8 @@ export const MOODS = {
   overcast: {
     skyTop: 0x6f7a86, skyHorizon: 0xb9c0c4, skyBottom: 0x7a7f78,
     fog: [0xaeb5b8, 35, 130],
-    sun: { color: 0xeceeec, intensity: 1.35, dir: [15, 30, 20] },
-    hemi: [0xe4e8ea, 0x747a6a, 1.15], // 2026-10-25: 다섯 장이 54~69로 어두워 밝힘
+    sun: { color: 0xeceeec, intensity: 1.25, dir: [15, 30, 20] },
+    hemi: [0xe4e8ea, 0x747a6a, 1.08], // 2026-10-25: 다섯 장이 54~69로 어두워 밝힘
     particles: null,
   },
   morning: {

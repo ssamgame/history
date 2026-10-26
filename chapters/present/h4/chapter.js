@@ -9,7 +9,7 @@ const xy = (list, pts) => list.map((it, i) => ({ ...it, ...pts[i] }));
 const M = mapSpot({ x: 0, z: 0, w: 48 });
 const MAP = { origin: [400, 0], ground: 'earth', groundColor: 0xd8dade, bounds: { x0: -28, x1: 28, z0: -36, z1: 36 }, map: { x: 0, z: 0, w: 48 } };
 const SNOWROAD = { edge: { style: 'snow', seed: 166 }, center: [{ type: 'cargo', x: -8, z: 16, kind: 'sack', n: 3 }, { type: 'cart', x: 9, z: 0, ry: 0.3, load: true }, { type: 'firepit', x: -10, z: -6 }, { type: 'cargo', x: -7, z: 22, kind: 'sack', n: 3 }, { type: 'cart', x: 7, z: 22, ry: 0.3, load: true }, { type: 'firepit', x: -9, z: 15 }, { type: 'cargo', x: 9, z: 15, kind: 'sack', n: 3 }], // 눈 덮인 피란길: 얼어붙은 강, 고갯길, 쉼터(천막)
-  origin: [400, 0], ground: 'earth', groundColor: 0xe6e8ec, bounds: { x0: -22, x1: 22, z0: -30, z1: 30 },
+  origin: [400, 0], ground: 'earth', groundColor: 0xcdd3da, bounds: { x0: -22, x1: 22, z0: -30, z1: 30 },
   roads: [{ x: 0, z: 0, w: 5, d: 60, color: 0xb8b4aa }],
   props: [
     { type: 'water', x: 0, z: 8, w: 120, d: 6, color: 0xc8dce6 }, { type: 'shack', x: -12, z: 22 }, { type: 'shack', x: 12, z: 24 },
@@ -26,7 +26,7 @@ export default makeKitChapter({
   spot: [0, 3],
   layout: {
     // 1951년 겨울 피란길: 눈 덮인 산 사이로 난 길, 짐을 진 피란민 행렬, 잎이 다 진 겨울나무와 눈 쌓인 소나무, 길가 판잣집과 장작
-    ground: 'earth', groundColor: 0xe6e8ec, bounds: { x0: -16, x1: 16, z0: -8, z1: 11 }, start: [0, 9], hill: 1.8,
+    ground: 'earth', groundColor: 0xcdd3da, bounds: { x0: -16, x1: 16, z0: -8, z1: 11 }, start: [0, 9], hill: 1.8,
     roads: [{ x: 0, z: 1, w: 5, d: 30, color: 0xb8b4aa }],
     weather: 'snow',
     props: [

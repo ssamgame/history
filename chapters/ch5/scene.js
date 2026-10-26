@@ -27,7 +27,7 @@ export function buildCh5Scene(world) {
       const x = p.getX(i), z = p.getZ(i), far = Math.max(0, Math.hypot(x, z) - 24);
       p.setY(i, Math.min(far * far * 0.04, 26) * (0.8 + 0.3 * Math.sin(x * 0.1) * Math.cos(z * 0.13)));
       const j = rand() * 0.04, inYard = Math.abs(x) < 16 && z > -9 && z < 13;
-      if (inYard) c.setRGB(0.62 + j, 0.57 + j, 0.47 + j); // 2026-10-25: 마당 흙이 거의 하얗게 보여 한 단계 짙게 else c.setRGB(0.32 + j, 0.47 + j, 0.28 + j);
+      if (inYard) c.setRGB(0.62 + j, 0.57 + j, 0.47 + j); else c.setRGB(0.32 + j, 0.47 + j, 0.28 + j); // 2026-10-25: 마당 흙이 거의 하얗게 보여 한 단계 짙게
       cols.push(c.r, c.g, c.b);
     }
     g.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));

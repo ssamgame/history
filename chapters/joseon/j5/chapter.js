@@ -69,7 +69,7 @@ function lightFires(ctx, easy) {
 
 // 삼전도: 수항단 위의 청 태종, 단 아래로 걸어 나온 인조가 세 번 무릎 꿇고 아홉 번 머리를 조아린다(뒤의 세자·신하들도 함께)
 const SAMJEON = {
-  origin: [400, 220], ground: 'earth', groundColor: 0xe6e9ec, bounds: { x0: -16, x1: 16, z0: -12, z1: 14 },
+  origin: [400, 220], ground: 'earth', groundColor: 0xcfd5dc, bounds: { x0: -16, x1: 16, z0: -12, z1: 14 },
   props: [{ type: 'water', x: 0, z: -30, w: 200, d: 24, color: 0x5a7a8a }],
 };
 async function samjeondo(ctx) {

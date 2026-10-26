@@ -39,7 +39,7 @@ export function buildJ5Scene(world) {
       const x = p.getX(i), z = p.getZ(i), h = groundH(x, z);
       p.setY(i, h);
       const j = rand() * 0.05;
-      if (h < -3 && rand() < 0.35) c.setRGB(0.62 + j, 0.64 + j, 0.6 + j); else c.setRGB(0.88 + j, 0.9 + j, 0.94 + j);
+      if (h < -3 && rand() < 0.35) c.setRGB(0.62 + j, 0.64 + j, 0.6 + j); else c.setRGB(0.78 + j, 0.81 + j, 0.86 + j); // 2026-10-25: 눈밭을 한 단계 낮춤(밝기 145 → 130 이하)
       cols.push(c.r, c.g, c.b);
     }
     g.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
