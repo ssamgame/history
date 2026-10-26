@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>고려편 새 기준 시안</title>
+<link rel="stylesheet" href="../styles.css">
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+<style>
+  #stage { position: fixed; inset: 0; }
+  #stage canvas { width: 100%; height: 100%; display: block; }
+  #ui { position: fixed; inset: 0; pointer-events: none; }
+  #ui > * { pointer-events: auto; }
+  #tabs { position: fixed; z-index: 90; left: 8px; top: 8px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+  #tabs a { font: 700 13px var(--font-ui); color: #3a2a1c; background: #fbf3ddee; border: 2px solid #6b4a32; border-radius: 8px; padding: 4px 9px; text-decoration: none; }
+  #tabs a.on { background: #c8402e; color: #fff; border-color: #7a2418; }
+  #bar { position: fixed; z-index: 90; left: 6px; bottom: 6px; font: 12px var(--font-ui); color: #fff; background: #0008; padding: 2px 8px; border-radius: 4px; }
+  .tag { position: fixed; z-index: 20; transform: translate(-50%, 0); font: 700 12px var(--font-ui); color: #3a2a1c; background: #fbf3ddea; border: 1.5px solid #6b4a32;
+    border-radius: 6px; padding: 1px 6px; white-space: nowrap; pointer-events: none; }
+  .tag small { font-weight: 400; color: #6b5844; }
+  #title { position: fixed; z-index: 90; right: 10px; top: 8px; font: 800 16px var(--font-display); color: #3a2a1c; background: #fbf3ddee; border: 2px solid #6b4a32; border-radius: 8px; padding: 4px 10px; }
+</style>
+<script>
+  window.__errors = [];
+  addEventListener('error', e => window.__errors.push(String(e.message || e)));
+  addEventListener('unhandledrejection', e => window.__errors.push(String(e.reason && e.reason.message || e.reason)));
+</script>
+</head>
+<body>
+<div id="stage"></div>
+<div id="ui"></div>
+<div id="tabs"></div>
+<div id="title"></div>
+<div id="bar"></div>
+<script type="module">
+  // 선생님 확인용 시안 갤러리(2026-10-26 기획서 7-3 1단계). ?view=people|guardian|actions|castle|play, play는 &stamp=1이면 도장 장면, &q=low|medium|high
+  import * as THREE from 'three';
+  import { createWorld, MOODS } from '../core/world.js';
+  import { makePerson } from '../core/people.js';
+  import { LOOKS } from '../content/characters.js';
+  import { FIGURE_LOOKS, GUARDIAN_LOOKS, GUARDIAN_OUTFITS, guardianLook, crowdLook, makeFigure, setAction, animateFigure, drawPieces } from '../core/figures.js';
+  import { SNOW_MOOD, buildHeunghwaSet, snowGround, snowPines, farMountains, giwaHouse, cityWall, flag, woodpile, jangdok } from '../chapters/goryeo/set.js';
+  import { createGauge, createCardHand, stampSeal } from '../core/hud-ops.js';
+
+  const q = new URLSearchParams(location.search);
+  const view = q.get('view') || 'people';
+  const VIEWS = { people: '사람(직업)', guardian: '지킴이·군중', actions: '동작', castle: '고려 성', play: '놀이 화면' };
+  document.getElementById('tabs').innerHTML = Object.entries(VIEWS).map(([k, v]) => `<a href="?view=${k}" class="${k === view && !q.get('side') && !q.get('stamp') ? 'on' : ''}">${v}</a>`).join('') + `<a href="?view=castle&side=in" class="${q.get('side') ? 'on' : ''}">성안</a><a href="?view=play&stamp=1" class="${q.get('stamp') ? 'on' : ''}">도장 쾅</a>`;
+  document.getElementById('title').textContent = `고려편 새 기준 시안 · ${VIEWS[view]}`;
+
+  MOODS.goryeoSnow = SNOW_MOOD; // 갤러리에서만 쓰는 분위기(world.js는 그대로)
+  const world = createWorld(document.getElementById('stage'), { quality: q.get('q') || 'medium' });
+  world.setMood('goryeoSnow');
+  world.player.visible = false;
+  world.resize(); addEventListener('resize', () => world.resize());
+  const L = world.level, figs = [], tags = [], updates = [];
+  const add = (look, x, z, ry = 0, action = 'idle', label = null, y = 0) => {
+    const f = makeFigure(look); f.position.set(x, y, z); f.rotation.y = ry; setAction(f, action); L.add(f); figs.push(f);
+    if (label) tag(f, label);
+    return f;
+  };
+  function tag(obj, html, dy = -0.25) { const d = document.createElement('div'); d.className = 'tag'; d.innerHTML = html; document.body.appendChild(d); tags.push({ d, obj, dy }); }
+  const ground = (flat, paths) => L.add(snowGround({ flat, paths }));
+  let set = null;
+  const persons = [];
+
+  if (view === 'people') {
+    ground({ x0: -30, x1: 30, z0: -20, z1: 20 }, [[-20, 3, 20, 3, 3]]);
+    const h = giwaHouse({ w: 8 }); h.position.set(-7, 0, -9); L.add(h);
+    const h2 = giwaHouse({ w: 6, wall: 0xf0e2c8 }); h2.position.set(7.5, 0, -10); h2.rotation.y = -0.2; L.add(h2);
+    const w = cityWall({ length: 40 }); w.position.set(0, 0, -17); L.add(w);
+    const fl = flag({}); fl.position.set(14, 4.3, -16.2); L.add(fl); updates.push(fl.userData.update);
+    L.add(snowPines([[-15, -5, 1.1], [16, -4, 1], [-19, 2, 0.9], [19, 4, 1.1]]));
+    L.add(farMountains());
+    const jobs = ['soldier', 'archer', 'official', 'monk', 'artisan', 'commoner', 'commonerWoman', 'khitan'];
+    jobs.forEach((j, i) => add(FIGURE_LOOKS[j], -7.6 + i * 2.25, 2, 0, 'idle', FIGURE_LOOKS[j].name));
+    // 비교: 지금 core/people.js의 병사(오른쪽 끝)
+    const old = makePerson(LOOKS.soldier, { track: false }); old.position.set(10.6, 0, 2); L.add(old); persons.push(old);
+    tag(old, '지금 병사<br><small>(비교)</small>');
+    world.setFixedCamera([1.6, 4.0, 13.6], [1.6, 1.45, 0.5]);
+  } else if (view === 'guardian') {
+    ground({ x0: -30, x1: 30, z0: -20, z1: 20 }, [[-20, 3, 20, 3, 3]]);
+    const w = cityWall({ length: 44 }); w.position.set(0, 0, -14); L.add(w);
+    L.add(snowPines([[-17, -6, 1.1], [17, -7, 1.2]])); L.add(farMountains());
+    const outfits = Object.keys(GUARDIAN_OUTFITS);
+    Object.keys(GUARDIAN_LOOKS).forEach((id, gi) => outfits.forEach((o, oi) => {
+      const f = add(guardianLook(id, o), -7.9 + gi * 6.4 + (oi - 1) * 2.0, 3.2, oi === 2 ? -0.8 : 0, 'idle', ['병사', '궁수', '일꾼'][oi]);
+      if (oi === 1) tag(f, `<b>${GUARDIAN_LOOKS[id].name}</b>`, -0.85);
+    }));
+    // 옷 이름은 맨 왼쪽 무리 아래
+    // 군중 변형: 백성 남녀·병사가 키·옷색·모자·든 것이 다르다
+    const crowd = [['commoner', 1], ['commoner', 2], ['commonerWoman', 1], ['commoner', 3], ['commonerWoman', 2], ['commoner', 4], ['soldier', 2], ['soldier', 3], ['commonerWoman', 3], ['artisan', 2]];
+    crowd.forEach(([j, s], i) => add(crowdLook(j, s), -11.5 + i * 2.55, -3.2, 0, 'idle'));
+    tag({ position: new THREE.Vector3(0, 0, -3.2) }, '뒷줄: 군중 변형(키·옷색·모자·든 것)', 3.3);
+    world.setFixedCamera([0, 5.2, 16], [0, 1.0, 0]);
+  } else if (view === 'actions') {
+    ground({ x0: -30, x1: 30, z0: -20, z1: 20 }, [[-20, 2, 20, 2, 3]]);
+    const w = cityWall({ length: 40 }); w.position.set(0, 0, -10); L.add(w);
+    L.add(snowPines([[-14, -4, 1], [15, -5, 1.1]])); L.add(farMountains());
+    const wp = woodpile(); wp.position.set(-12.5, 0, -2.5); L.add(wp);
+    const acts = [
+      [guardianLook('a', 'soldier'), 'walk', '걷기'], [guardianLook('b', 'worker'), 'cheer', '기뻐함'], [FIGURE_LOOKS.official, 'surprise', '놀람'],
+      [FIGURE_LOOKS.soldier, 'push', '밀기'], [FIGURE_LOOKS.archer, 'shoot', '활쏘기'], [guardianLook('c', 'worker'), 'carry', '옮기기'], [FIGURE_LOOKS.monk, 'nod', '고개 끄덕임'],
+    ];
+    acts.forEach(([l, a, n], i) => add(l, -9 + i * 3, 1.5, a === 'shoot' ? 0.9 : a === 'push' ? -0.6 : 0, a, n));
+    world.setFixedCamera([0, 4.8, 14.5], [0, 1.4, 0]);
+  } else {
+    set = buildHeunghwaSet(L, { snow: world.quality.particles > 0.3 });
+    updates.push(set.update);
+    const H = set.wallHeight, T = set.wallThick;
+    if (view === 'castle') {
+      // 크기 비교용 사람 몇: 성벽 위 병사, 성안 백성, 성 밖 거란 병사
+      [-26, -11, 6, 18].forEach((x, i) => add(crowdLook('soldier', i + 1), x, 0.3, 0, 'idle', null, H + 0.06));
+      add(FIGURE_LOOKS.archer, 9, 0.6, Math.PI, 'shoot', null, H + 0.06);
+      [[-6, 12], [-3, 10.5], [4, 13], [8, 16]].forEach(([x, z], i) => add(crowdLook(i % 2 ? 'commonerWoman' : 'commoner', i + 1), x, z, Math.PI * 0.9, 'idle'));
+      [[-18, -4.5], [12, -4.2], [20, -4.4], [-3, -14], [2, -16], [15, -9], [-12, -10]].forEach(([x, z], i) => add(crowdLook('khitan', i + 1), x, z, Math.PI, i < 3 ? 'push' : 'walk'));
+      if (q.get('side') === 'in') world.setFixedCamera([24, 24, 46], [1, 2.5, 3]);
+      else world.setFixedCamera([-30, 24, -40], [2, 1.5, -2]); // 성 밖에서: 옹성과 사다리, 성벽 너머 성안
+    } else {
+      // 놀이 화면: 성벽 한 구간(오른쪽 성벽)을 쿼터뷰로. 구역 셋(좌·중·우)과 병사 배치, 사다리로 오르는 거란 병사
+      const zoneMat = c => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.32, depthWrite: false });
+      const zones = [[8.2, 0x5fb0d8, '좌'], [13.2, 0xf0c860, '중'], [18.2, 0x5fb0d8, '우']];
+      for (const [x, c, n] of zones) {
+        const p = new THREE.Mesh(new THREE.PlaneGeometry(4.4, 2.0), zoneMat(c)); p.rotation.x = -Math.PI / 2; p.position.set(x, H + 0.24, 0.35); L.add(p);
+        const r = new THREE.Mesh(new THREE.RingGeometry(1.55, 1.75, 28), new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.85, depthWrite: false })); r.rotation.x = -Math.PI / 2; r.position.set(x, H + 0.26, 0.35); L.add(r);
+        tag(r, `${n} 구역`, 0.1);
+      }
+      add(FIGURE_LOOKS.soldier, 12.0, -0.1, Math.PI, 'push', null, H + 0.1);
+      add(crowdLook('soldier', 2), 14.2, 0.5, Math.PI * 0.62, 'idle', null, H + 0.1);
+      add(FIGURE_LOOKS.archer, 18.6, 0.3, Math.PI * 0.62, 'shoot', null, H + 0.1);
+      add(crowdLook('soldier', 3), 7.6, 0.6, Math.PI * 0.6, 'surprise', null, H + 0.1);
+      const me = add(guardianLook('b', 'soldier'), 10.0, 1.1, Math.PI * 0.35, 'cheer', null, H + 0.1);
+      tag(me, '나(지킴이)', -0.4);
+      // 사다리(세트의 x=12, 20)에 매달린 거란 병사와 아래에서 오는 무리
+      const climb = (x, y) => { const f = add(crowdLook('khitan', 1), x, -T / 2 - 0.1 - 6.8 * Math.sin(0.3) + y * Math.tan(0.3) - 0.45, 0, 'push', null, y); return f; };
+      climb(12, 2.2); climb(20, 1.2);
+      [[10, -7], [14.5, -8.5], [17, -6.5], [21.5, -8], [24, -10], [8, -11], [12.5, -12.5], [19, -12]].forEach(([x, z], i) => add(crowdLook('khitan', i + 1), x, z, 0, i % 3 === 0 ? 'surprise' : 'walk'));
+      world.setFixedCamera([9.0, 14.5, 9.5], [14.6, 3.0, -3.2]);
+      const ui = document.getElementById('ui');
+      const gauge = createGauge(ui, { value: 0.42 });
+      setTimeout(() => gauge.set(0.62), 400);
+      if (!q.get('stamp')) createCardHand(ui, [
+        { id: 'move', title: '병사 옮기기', text: '사다리 쪽으로 보내요', icon: 'soldier', color: '#dfe9f2' },
+        { id: 'push', title: '사다리 밀기', text: '두 명이면 큰 사다리도', icon: 'push', color: '#f2e2c8' },
+        { id: 'stone', title: '돌 굴리기', text: '아래 무리를 물러나게', icon: 'stone', color: '#e4e2dc' },
+        { id: 'flag', title: '깃발 올리기', text: '고려 기세가 올라요', icon: 'flag', color: '#f6d8d0' },
+      ], { onPick: () => {} }).cards[1].classList.add('picked');
+      if (q.get('stamp')) setTimeout(() => stampSeal(ui, { text: '지킴', sub: '흥화진을 지켰다!', keep: true }), 300);
+    }
+  }
+
+  if (q.get('cam')) { const c = q.get('cam').split(',').map(Number); world.setFixedCamera(c.slice(0, 3), c.slice(3)); } // 개발용: &cam=x,y,z,tx,ty,tz
+  // 그리기 횟수: 사람 하나(새/지금), 장면 전체
+  const one = drawPieces(makeFigure(FIGURE_LOOKS.soldier)), oldOne = drawPieces(makePerson(LOOKS.soldier, { track: false }));
+  const v = new THREE.Vector3();
+  function placeTags() {
+    const w = innerWidth, h = innerHeight;
+    for (const t of tags) {
+      if (t.obj.isObject3D) t.obj.getWorldPosition(v); else v.copy(t.obj.position);
+      v.y += t.dy;
+      v.project(world.camera);
+      t.d.style.left = `${(v.x + 1) / 2 * w}px`; t.d.style.top = `${(1 - v.y) / 2 * h}px`;
+      t.d.style.display = v.z < 1 ? '' : 'none';
+    }
+  }
+  let last = performance.now(), T = 0;
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now; T += dt;
+    world.step(dt, { x: 0, z: 0 });
+    for (const f of figs) animateFigure(f, dt);
+    for (const u of updates) u(dt, T);
+    world.render(); placeTags();
+    requestAnimationFrame(frame);
+  }
+  for (let i = 0; i < 30; i++) { for (const f of figs) animateFigure(f, 0.033); for (const u of updates) u(0.033, i * 0.033); }
+  world.step(0.016, { x: 0, z: 0 });
+  world.renderer.info.autoReset = false; world.renderer.info.reset(); world.render();
+  window.__calls = world.renderer.info.render.calls;
+  world.renderer.info.autoReset = true;
+  document.getElementById('bar').textContent = `그리기 ${window.__calls}회(그림자 포함) · 삼각형 ${world.renderer.info.render.triangles} · 사람 하나 조각: 새 ${one} / 지금 ${oldOne} · 사람 ${figs.length}명`;
+  placeTags();
+  window.__world = world; window.__figs = figs;
+  requestAnimationFrame(frame);
+  window.__ready = true;
+</script>
+</body>
+</html>
