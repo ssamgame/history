@@ -32,7 +32,7 @@ function snowCap(B, w, d, at, h = 0.12) {
   for (const s of [-1, 1]) B.cyl(h / 2, h / 2, w, 6, P.snow, [at[0], at[1], at[2] + s * d / 2], [0, 0, Math.PI / 2]);
 }
 
-// ── 성벽: 돌 켜(층마다 다른 돌), 걷는 길, 바깥 가장자리의 여장(기와 덮개 + 총안)과 눈 ──
+// ── 성벽: 돌 켜(층마다 다른 돌), 걷는 길, 바깥 가장자리의 여장(기와 덮개)과 눈 ──
 export function cityWall({ length = 16, height = 4.2, thick = 3.2, snow = true, crenel = true } = {}) {
   const g = new THREE.Group(); g.name = 'cityWall';
   const B = vcBuilder();
@@ -57,12 +57,11 @@ export function cityWall({ length = 16, height = 4.2, thick = 3.2, snow = true, 
     for (let i = 0; i < length / 2.5; i++) B.ball(0.35 + rnd() * 0.3, P.snow, [-length / 2 + 1 + rnd() * (length - 2), height + 0.1, thick / 2 - 0.4], [1.6, 0.3, 1]);
   }
   g.add(meshOf(B, 'wallBody'));
-  // 여장: 바깥 가장자리의 낮은 담. 칸마다 기와 덮개와 가운데 총안, 칸 사이는 틈(활 쏘는 곳)
+  // 여장: 바깥 가장자리의 낮은 담. 칸마다 기와 덮개(총안은 고려 성에 맞지 않아 넣지 않음), 칸 사이는 틈(활 쏘는 곳)
   if (crenel) {
     const W = vcBuilder(), mw = 1.3, gap = 0.45, h = 1.15, z = -thick / 2 + 0.28;
     for (let x = -length / 2 + mw / 2; x <= length / 2 - mw / 2 + 0.01; x += mw + gap) {
       W.box(mw, h, 0.55, pick([0xa89a88, 0x9f9180, 0xb0a290]), [x, height + h / 2, z]);
-      W.box(0.22, 0.22, 0.58, P.ink, [x, height + h * 0.5, z]); // 총안
       W.box(mw + 0.18, 0.12, 0.8, P.tile, [x, height + h + 0.05, z]); // 기와 덮개
       W.box(mw + 0.02, 0.1, 0.36, P.tile, [x, height + h + 0.16, z]);
       if (snow) snowCap(W, mw + 0.05, 0.62, [x, height + h + 0.26, z], 0.1);
