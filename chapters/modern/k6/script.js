@@ -38,7 +38,7 @@ export default {
       later: [{ who: 'uibyeong', text: '산길이 험해도 마을 사람들이 숨겨 주고 밥을 나눠 주어 버틸 수 있었네. 저 위의 안창호 선생도 만나 보게.' }],
     },
     ahnchangho: {
-      tooEarly: [{ who: 'ahnchangho', text: '무기를 든 의병들은 무엇을 지키려 하는지, 그 이야기부터 듣고 오게.' }],
+      tooEarly: [{ who: 'ahnchangho', text: '무기를 든 의병들은 무엇을 지키려 하는지, 그 이야기부터 듣고 오시오.' }],
       first: [
         { who: 'ahnchangho', text: '민족의 실력을 키워 나라를 지켜야 하오. 이것을 애국 계몽 운동이라 하오.', src: ['S51'] },
         { who: 'ahnchangho', text: '나와 이승훈 등은 학교를 세워 새로운 지식을 가르치고, 민족의 산업을 일으키려 하오.', src: ['S51'] },
@@ -57,7 +57,7 @@ export default {
   parts: {
     sort: {
       type: 'deliver', src: ['S51'], title: '의병 운동일까요, 애국 계몽 운동일까요? 알맞은 곳으로 가져가요', counter: '가져다 놓은 것',
-      howto: '머리 위의 글을 산속 「의병 진지」나 「애국 계몽 학교」로 가져가 그 안에서 멈춰 잠깐 서 있어요. 놓으면 처음 자리로 돌아와 다음 것을 들어요.',
+      howto: '머리 위의 글을 들고 산속 「의병 진지」나 「애국 계몽 학교」 가운데 알맞은 원 안에 들어가 잠깐 서 있어요. 그러면 처음 자리에서 다음 글을 들어요.',
       intro: [{ who: 'student', text: '나라를 지키는 방법은 여러 가지였어요. 무기를 들거나, 배우고 알려서 힘을 기르거나요.' }],
       bins: [{ id: 'army', label: '의병 운동' }, { id: 'edu', label: '애국 계몽 운동' }],
       cards: [

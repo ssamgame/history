@@ -21,12 +21,12 @@ export default {
       first: [
         { who: 'elder', text: '흥선 대원군께서는 경복궁을 고쳐 지으셨지.', src: ['S51'] },
         { who: 'elder', text: '양반에게도 세금을 내게 하셨다네.', src: ['S51'] },
-        { who: 'elder', text: '서양 나라들이 교류하자고 했지만 모두 거절하셨어.', src: ['S51'] },
+        { who: 'elder', text: '서양 나라들이 교류하자고 했지만 모두 거절하셨다네.', src: ['S51'] },
       ],
       later: [{ who: 'elder', text: '저런 배가 자꾸 나타나니 고기잡이 나가기도 겁이 난다네. 저 선비에게도 물어보게.' }],
     },
     scholar: {
-      tooEarly: [{ who: 'scholar', text: '이 마을 일은 어르신이 제일 잘 아시오. 먼저 어르신께 여쭈어 보시오.' }],
+      tooEarly: [{ who: 'scholar', text: '이 마을 일은 어르신이 제일 잘 아시오. 먼저 어르신께 여쭈어보시오.' }],
       first: [
         { who: 'scholar', text: '흥선 대원군이 물러난 뒤, 나라 안에서 문을 열고 다른 나라와 교류하자는 목소리가 커졌소.', src: ['S51'] },
         { who: 'scholar', text: '다른 나라와 교류할 수 있게 항구를 여는 것을 개항이라고 하오.', src: ['S51'] },
@@ -52,8 +52,8 @@ export default {
   parts: {
     regent: {
       type: 'deliver', src: ['S51'], title: '흥선 대원군이 한 일일까요? 알맞은 쪽으로 가져가요', counter: '가져다 놓은 것',
-      howto: '머리 위의 글을 「흥선 대원군이 한 일」이나 「다른 때의 일」로 가져가 그 안에서 멈춰 잠깐 서 있어요. 놓으면 처음 자리로 돌아와 다음 것을 들어요.',
-      intro: [{ who: 'elder', text: '흥선 대원군께서 하신 일을 기억하느냐? 알맞은 쪽으로 가져가 보거라.' }],
+      howto: '머리 위의 글을 들고 「흥선 대원군이 한 일」이나 「다른 때의 일」 가운데 알맞은 원 안에 들어가 잠깐 서 있어요. 그러면 처음 자리에서 다음 글을 들어요.',
+      intro: [{ who: 'elder', text: '흥선 대원군께서 하신 일을 기억하는가? 알맞은 쪽으로 가져가 보게.' }],
       bins: [{ id: 'yes', label: '흥선 대원군이 한 일', look: 'daewongun' }, { id: 'no', label: '다른 때의 일' }],
       cards: [
         { text: '경복궁을 고쳐 지었다', bin: 'yes', talk: [{ who: 'elder', text: '왕실의 위엄을 세우려고 경복궁을 다시 지으셨지.' }] },

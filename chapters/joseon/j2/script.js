@@ -23,7 +23,7 @@ export default {
     commoner: {
       first: [
         { who: 'commoner', text: '저는 한자를 몰라서 하고 싶은 말을 글로 적을 수가 없어요.', src: ['S27'] },
-        { who: 'commoner', text: '오른쪽 집현전에 학자님들이 계셔. 가 봐.' },
+        { who: 'commoner', text: '오른쪽 집현전에 학자님들이 계세요. 가 보세요.' },
       ],
       later: [{ who: 'commoner', text: '누구나 쓸 수 있는 글자가 있으면 얼마나 좋을까요.' }],
     },

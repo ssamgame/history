@@ -33,7 +33,7 @@ export default {
       later: [{ who: 'ahnchangho', text: '나라를 되찾으면 왕이 아니라 국민이 주인인 나라를 만들 것이오. 청사 앞의 김구 선생도 만나 보시오.' }],
     },
     kimgu: {
-      tooEarly: [{ who: 'kimgu', text: '임시 정부가 어떤 나라를 꿈꾸는지 안창호 선생께 먼저 듣고 오게.' }],
+      tooEarly: [{ who: 'kimgu', text: '임시 정부가 어떤 나라를 꿈꾸는지 안창호 선생께 먼저 듣고 오시오.' }],
       first: [
         { who: 'kimgu', text: '임시 정부는 독립운동 자금을 모으고, 다른 나라에 외교 기관을 두어 독립을 도와 달라고 요청하오.', src: ['S51'] },
         { who: 'kimgu', text: '독립군 단체를 아래에 두고 만주 지역에서 투쟁을 벌이기도 하지.', src: ['S51'] },
@@ -77,7 +77,7 @@ export default {
     },
     roles: {
       type: 'deliver', src: ['S51'], title: '임시 정부의 활동을 알맞은 부서로 가져가요', counter: '가져다 놓은 것',
-      howto: '머리 위의 글을 알맞은 부서 책상으로 가져가 그 안에서 멈춰 잠깐 서 있어요. 놓으면 처음 자리로 돌아와 다음 것을 들어요.',
+      howto: '머리 위의 글을 들고 알맞은 부서 책상 앞 원 안에 들어가 잠깐 서 있어요. 그러면 처음 자리에서 다음 글을 들어요.',
       intro: [{ who: 'kimgu', text: '임시 정부는 할 일이 많소. 각 부서에 일을 나누어 주시오.' }],
       bins: [{ id: 'home', label: '나라 안과 연락', look: 'citizen' }, { id: 'diplo', label: '외교와 자금', look: 'ahnchangho' }, { id: 'army', label: '무장 투쟁', look: 'independenceArmy' }],
       cards: [

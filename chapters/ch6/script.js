@@ -18,7 +18,7 @@ export default {
 
   npc: {
     baejungson: [{ who: 'baejungson', text: '배에 군사와 백성을 태워 남쪽 진도로 가자.', src: ['S21'] }],
-    sambyeolcho: [{ who: 'sambyeolcho', text: '배가 준비됐어요! 배중손 님께 먼저 말씀드려요.' }],
+    sambyeolcho: [{ who: 'sambyeolcho', text: '배는 준비됐어! 먼저 배중손 님께 가 봐.' }],
   },
 
   sail: {

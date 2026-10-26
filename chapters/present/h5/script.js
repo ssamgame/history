@@ -33,7 +33,7 @@ export default {
       later: [{ who: 'grandma', text: '밀면 한 그릇 먹고 가렴. 운동장에서 공부하는 학생들도 보고 오고.' }],
     },
     student: {
-      tooEarly: [{ who: 'student', text: '우리 마을 어른들이 어떻게 사시는지 먼저 들어 봐.' }],
+      tooEarly: [{ who: 'student', text: '우리 마을 어른들이 어떻게 사시는지 먼저 들어 보세요.' }],
       first: [
         { who: 'student', text: '교실이 부서져서 운동장에서 수업을 받아요.', src: ['S51'] },
         { who: 'student', text: '그래도 사람들은 서로를 적으로 여기는 교육을 강화하기도 했어요. 남과 북은 오랫동안 긴장했지요.', src: ['S51'] },
@@ -70,7 +70,7 @@ export default {
       intro: [{ who: 'student', text: '우리 마을 사람들이 어떻게 살고 있는지 역사책으로 넘겨 보세요.' }],
       pages: [
         { title: '판잣집', pic: 'shanty', lines: [{ who: 'narr', text: '도시로 몰려든 사람들은 판잣집 같은 어려운 환경에서 살았어요.', src: ['S51'] }] },
-        { title: '가족을 돌본 여성들', pic: 'peddler', lines: [{ who: 'narr', text: '전쟁으로 많은 남성이 죽거나 다쳐서, 여성들이 공장에 다니거나 행상을 하며 가족의 생계를 책임지는 경우가 많아졌어요.', src: ['S51'] }] },
+        { title: '가족을 돌본 여성들', pic: 'peddler', lines: [{ who: 'narr', text: '전쟁으로 많은 남성이 죽거나 다쳤어요.', src: ['S51'] }, { who: 'narr', text: '그래서 여성들이 공장에 다니거나 행상을 하며 가족의 생계를 책임지는 경우가 많아졌어요.', src: ['S51'] }] },
         { title: '부산 밀면', pic: 'milmyeon', lines: [{ who: 'narr', text: '메밀을 구하기 어려워서 구호물품으로 받은 밀가루로 냉면을 만들었어요. 이것이 부산 밀면의 시작이에요.', src: ['S51'] }] },
         { title: '운동장 교실', pic: 'outdoor', lines: [{ who: 'narr', text: '교실이 부서져서 학생들은 운동장에서 수업을 받았어요.', src: ['S51'] }] },
         { title: '이산가족 찾기', year: '1983년', pic: 'reunion', lines: [{ who: 'narr', text: '전쟁으로 헤어진 가족을 찾으려고 1983년 텔레비전 생방송이 138일 동안 이어졌고, 1만여 명이 다시 만났어요.', src: ['S62'] }] },

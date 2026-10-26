@@ -20,7 +20,7 @@ export default {
     gentleman: {
       first: [
         { who: 'gentleman', text: '한성과 인천 사이에 전신을 놓은 뒤, 일본과 중국까지 이어지는 통신망이 생겼소.', src: ['S51'] },
-        { who: 'gentleman', text: '전화기도 들여와서 소식을 빠르게 주고받을 수 있지요.', src: ['S51'] },
+        { who: 'gentleman', text: '전화기도 들여와서 소식을 빠르게 주고받을 수 있소.', src: ['S51'] },
       ],
       later: [{ who: 'gentleman', text: '내 옷차림이 신기하오? 양복과 구두라오. 저 아주머니는 전차를 타 보셨다던데.' }],
     },
@@ -53,12 +53,12 @@ export default {
   parts: {
     match: {
       type: 'deliver', src: ['S51'], title: '근대 문물을 하는 일에 맞게 가져가요', counter: '가져다 놓은 것',
-      howto: '머리 위의 이름을 그 문물이 하는 일 팻말로 가져가 그 안에서 멈춰 잠깐 서 있어요. 놓으면 처음 자리로 돌아와 다음 것을 들어요.',
+      howto: '머리 위의 이름을 들고 그 문물이 하는 일 팻말 앞 원 안에 들어가 잠깐 서 있어요. 그러면 처음 자리에서 다음 이름을 들어요.',
       intro: [{ who: 'gentleman', text: '요즘 한성에는 신기한 물건이 많소. 무엇이 어떤 일을 하는지 알맞게 가져가 보시오.' }],
       bins: [{ id: 'lamp', label: '밤거리를 밝혀요' }, { id: 'tram', label: '사람을 싣고 선로를 달려요' }, { id: 'tele', label: '글자를 전기 신호로 보내요' }, { id: 'phone', label: '먼 곳과 목소리로 이야기해요' }],
       cards: [
         { text: '전차', bin: 'tram' },
-        { text: '전화', bin: 'phone', talk: [{ who: 'gentleman', text: '전화기로 소식을 빠르게 주고받을 수 있지요.' }] },
+        { text: '전화', bin: 'phone', talk: [{ who: 'gentleman', text: '전화기로 소식을 빠르게 주고받을 수 있소.' }] },
         { text: '전등', bin: 'lamp', talk: [{ who: 'woman', text: '전등과 가로등 덕분에 밤에도 다닐 수 있게 되었어.' }] },
         { text: '전신', bin: 'tele', talk: [{ who: 'gentleman', text: '한성과 인천 사이에 전신을 놓은 뒤, 일본과 중국까지 통신망이 이어졌소.' }] },
       ],
@@ -66,7 +66,7 @@ export default {
     },
     tram: {
       type: 'drive', src: ['S51'], title: '전차를 몰아 서대문에서 청량리까지 가요', vehicle: 'tram', counter: '지난 정류장', seconds: 110, speed: 1.3,
-      howto: '선로를 따라 전차를 몰아요. 정류장(빛나는 곳)에서는 손님이 다 타고 내릴 때까지 멈춰 기다리고(남은 초가 화면 위 가운데에 보여요), 동대문 문길로 지나가요. 길을 건너는 수레를 조심해요.',
+      howto: '선로를 따라 전차를 몰아요. 빛나는 정류장에서는 손님이 다 타고 내릴 때까지 멈춰요. 동대문은 문 사이로 지나가고, 길을 건너는 수레를 조심해요.',
       intro: [{ who: 'woman', text: '1899년부터 서대문에서 청량리까지 전차가 다니기 시작했단다. 운전 한번 해 보련?', src: ['S51'] }],
       route: [
         { label: '서대문', say: '1899년, 서대문에서 청량리까지 전차가 다니기 시작했어요.' },
@@ -95,7 +95,7 @@ export default {
   },
   result: [{ who: 'narr', text: '근대 문물이 들어오면서 사람들의 생활 모습이 크게 달라졌어요.', src: ['S51'] }],
   quizzes: [
-    { kind: 'quiz', year: 1885, question: '전신은 무엇일까요?', options: ['글자나 숫자를 전기 신호로 바꾸어 보내는 통신', '밤을 밝히는 등', '선로 위를 달리는 차'], answer: 0, explain: '전신은 문자나 숫자를 전기 신호로 바꾸어 보내는 통신이에요.', src: ['S51'] },
+    { kind: 'quiz', year: 1885, question: '전신은 무엇일까요?', options: ['글자나 숫자를 전기 신호로 바꾸어 보내는 통신', '밤을 밝히는 등', '선로 위를 달리는 차'], answer: 0, explain: '전신은 글자나 숫자를 전기 신호로 바꾸어 보내는 통신이에요.', src: ['S51'] },
     { kind: 'quiz', year: 1899, question: '1899년 서대문에서 청량리까지 다닌 것은?', options: ['기차', '전차', '자동차'], answer: 1, explain: '1899년 서대문에서 청량리까지 전차가 다니기 시작했어요.', src: ['S51'] },
   ],
 };

@@ -33,7 +33,7 @@ export default {
       later: [{ who: 'clerk', text: '등불을 더 걸어야 하는데 손이 모자라는군. 저기 서 있는 젊은 관리도 오늘 잔치에 온다네.' }],
     },
     kimokgyun: {
-      tooEarly: [{ who: 'kimokgyun', text: '오늘 밤 우정총국에서 무슨 일이 열리는지부터 알아보고 오게.' }],
+      tooEarly: [{ who: 'kimokgyun', text: '오늘 밤 우정총국에서 무슨 잔치가 열리는지부터 알아보고 오시오.' }],
       first: [
         { who: 'kimokgyun', text: '청에 의지하는 세력을 몰아내고 새로운 조선을 만들어야 하오.', src: ['S51'] },
         { who: 'kimokgyun', text: '우리 개화 세력은 오늘 잔치를 틈타 정변을 일으킬 것이오.', src: ['S51'] },

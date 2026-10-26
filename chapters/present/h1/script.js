@@ -33,7 +33,7 @@ export default {
       later: [{ who: 'grandma', text: '이제 우리말 신문도 마음껏 읽을 수 있겠구나. 저 앞에 김구 선생도 오셨단다.' }],
     },
     kimgu: {
-      tooEarly: [{ who: 'kimgu', text: '오늘 시민들이 무엇을 느끼는지 먼저 들어 보게.' }],
+      tooEarly: [{ who: 'kimgu', text: '오늘 시민들이 무엇을 느끼는지 먼저 들어 보시오.' }],
       first: [
         { who: 'kimgu', text: '광복 소식에 다른 나라에 머물던 동포들이 고국으로 돌아오고 있소.', src: ['S51'] },
         { who: 'kimgu', text: '미국에서 독립운동을 한 이승만, 중국에서 임시 정부를 이끈 나 김구 등도 돌아왔소.', src: ['S51'] },
@@ -67,7 +67,7 @@ export default {
     },
     change: {
       type: 'deliver', src: ['S51'], title: '광복 뒤의 모습일까요, 일제 강점기의 모습일까요?', counter: '가져다 놓은 것',
-      howto: '머리 위의 글을 「광복 뒤」 학교나 「일제 강점기」 건물로 가져가 그 안에서 멈춰 잠깐 서 있어요. 놓으면 처음 자리로 돌아와 다음 것을 들어요.',
+      howto: '머리 위의 글을 들고 「광복 뒤」 학교나 「일제 강점기」 건물 가운데 알맞은 원 안에 들어가 잠깐 서 있어요. 그러면 처음 자리에서 다음 글을 들어요.',
       intro: [{ who: 'grandma', text: '광복 전과 뒤에 무엇이 달라졌는지, 알맞은 곳으로 가져가 보렴.' }],
       bins: [{ id: 'after', label: '광복 뒤', look: 'student' }, { id: 'before', label: '일제 강점기', look: 'gendarme' }],
       cards: [

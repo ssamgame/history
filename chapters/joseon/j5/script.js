@@ -31,7 +31,7 @@ export default {
       later: [{ who: 'soldier', text: '손이 꽁꽁 얼었어. 화톳불이 꺼지지 않게 해야 해.' }],
     },
     keeper: {
-      tooEarly: [{ who: 'keeper', text: '성벽 아래의 병사에게 먼저 가 보거라.' }],
+      tooEarly: [{ who: 'keeper', text: '성벽 아래의 병사에게 먼저 가 봐.' }],
       first: [
         { who: 'keeper', text: '양식은 50여 일을 버틸 만큼밖에 없어.', src: ['S38'] },
         { who: 'keeper', text: '조정의 대신들은 앞으로 어떻게 할지 의견이 나뉘었대. 행궁 앞에 가 봐.' },

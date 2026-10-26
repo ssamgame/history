@@ -25,12 +25,12 @@ export default {
       later: [{ who: 'peasant', text: '농사를 지어도 남는 게 없어요. 전봉준 장군님이 앞장서 주신다니 마음이 놓여요.' }],
     },
     jeonbongjun: {
-      tooEarly: [{ who: 'jeonbongjun', text: '농민들이 얼마나 힘든지 먼저 그들에게 직접 들어 보게.' }],
+      tooEarly: [{ who: 'jeonbongjun', text: '농민들이 얼마나 힘든지 먼저 그들에게 직접 들어 보시오.' }],
       first: [
         { who: 'jeonbongjun', text: '나는 동학의 지도자 전봉준이오. 군수의 횡포를 더는 참을 수 없소.', src: ['S51'] },
         { who: 'jeonbongjun', text: '농민들과 함께 고부 관아를 습격할 것이오.', src: ['S51'] },
       ],
-      later: [{ who: 'jeonbongjun', text: '혼자서는 아무것도 바꿀 수 없네. 마을을 돌며 뜻을 함께할 농민들을 모아 주게.' }],
+      later: [{ who: 'jeonbongjun', text: '혼자서는 아무것도 바꿀 수 없소. 뜻을 함께할 농민들이 더 있어야 하오.' }],
     },
     farmer: {
       tooEarly: [{ who: 'farmer', text: '우리를 이끌 분은 전봉준 장군님이시네. 장군님 말씀부터 듣고 오게.' }],
@@ -60,7 +60,7 @@ export default {
         { label: '냇가 마을', say: '농민들이 하나둘 모여들었어요.' },
         { label: '장터', talk: [{ who: 'farmer', text: '"백성을 괴롭히는 탐관오리를 몰아내자!"' }] },
         { label: '고부 관아 앞', needPickups: true, needSay: '아직 들판에 남은 농민이 있어요! 화살표를 따라가 봐요.',
-          talk: [{ who: 'jeonbongjun', text: '모두 모였구나. 이제 고부 관아로 가자!' }] },
+          talk: [{ who: 'jeonbongjun', text: '모두 모였구려. 이제 고부 관아로 갑시다!' }] },
       ],
       pickups: [{ label: '농민', follow: 'peasant', say: '농민이 함께해요!' }, { label: '농민', follow: 'peasant', say: '농민이 함께해요!' }, { label: '농민', follow: 'commoner', say: '농민이 함께해요!' }],
       fail: '화살표가 가리키는 빛나는 곳으로 걸어가요.',

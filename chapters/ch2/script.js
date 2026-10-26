@@ -21,7 +21,7 @@ export default {
   npc: {
     soldier: {
       first: [
-        { who: 'soldier', text: '거란 왕이 직접 대군을 이끌고 왔대!' },
+        { who: 'soldier', text: '거란 왕이 직접 대군을 이끌고 왔대!', src: ['S3'] },
         { who: 'soldier', text: '양규 님이 성 북쪽에 계셔. 어서 가 봐!' },
       ],
       later: [{ who: 'soldier', text: '양규 님은 성 북쪽에 계셔. 성문을 지킬 계획을 세우고 계실 거야.' }],

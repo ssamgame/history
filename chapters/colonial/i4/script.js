@@ -33,7 +33,7 @@ export default {
       later: [{ who: 'hongbeomdo', text: '이번 싸움은 김좌진 장군과 함께하네. 김 장군의 계획도 들어 보게.' }],
     },
     kimjwajin: {
-      tooEarly: [{ who: 'kimjwajin', text: '봉오동에서 이긴 홍범도 장군께 먼저 인사드리고 오게.' }],
+      tooEarly: [{ who: 'kimjwajin', text: '봉오동에서 이긴 홍범도 장군께 먼저 인사드리고 오너라.' }],
       first: [
         { who: 'kimjwajin', text: '청산리 골짜기의 지형을 이용해 일본군과 맞설 것이다.', src: ['S51'] },
         { who: 'kimjwajin', text: '흩어진 부대를 모으고, 적이 골짜기 깊이 들어오면 공격한다!' },
@@ -51,7 +51,7 @@ export default {
       type: 'drive', title: '숲속 진지를 돌며 흩어진 독립군 부대를 모아요', counter: '지난 진지', pickupCounter: '찾은 대원', seconds: 150,
       howto: '빛나는 진지를 차례로 지나가요. 숲에 흩어진 대원을 찾으면 뒤따라와요. 모두 모아야 골짜기 입구로 갈 수 있어요.',
       intro: [
-        { who: 'kimjwajin', text: '봉오동에서 진 일본군이 더 많은 군대를 이끌고 다시 쳐들어온다.' },
+        { who: 'kimjwajin', text: '봉오동에서 진 일본군이 더 많은 군대를 이끌고 다시 쳐들어온다.', src: ['S51'] },
         { who: 'kimjwajin', text: '흩어진 부대를 모아 청산리 골짜기로 가자!' },
       ],
       route: [
