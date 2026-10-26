@@ -1,14 +1,24 @@
-// 3장 「강감찬과 귀주 대첩」: 진영 탐험 → 쇠가죽 모으기 → 둑 터뜨리기 → 귀주의 바람 → 퀴즈.
+// 3장 「강감찬과 귀주 대첩」(2026-10-26 새로 만들기, docs/superpowers/specs/2026-10-26-ch3-spec.md):
+// 출정 카드 → 작전 준비(진영 탐험, 머리 위 말풍선, 쇠가죽 6묶음 줍기) → 놀이 ① 둑 수위 조절(chapters/kit/damflow.js)
+// → 물결 연출 → 놀이 ② 귀주 신호(chapters/kit/signal.js) → 귀주 대첩 연출 → 퀴즈 → 도장 · 지혜 카드.
+// 둑(흥화진 앞 냇물, 1018년 12월)과 귀주(1019년 2월)는 다른 때·곳이다: 화면을 바꿔(fade) 귀주 벌판으로 넘어간다.
 import { buildCh3Scene } from './scene.js';
 import { roam } from '../../core/flow.js';
-import { showHowTo, runWithRetries, actionButton } from '../../core/minigame.js';
+import { showHowTo } from '../../core/minigame.js';
+import { GUARDIAN_LOOKS, guardianLook } from '../../core/figures.js';
+import { runRounds, talk, popText, finale, pickGuardian, savedGuardian, usePlayerFigure } from '../kit/ops.js';
+import { damflow } from '../kit/damflow.js';
+import { signal } from '../kit/signal.js';
 import script from './script.js';
 
+const GUARDIAN_KEY = 'goryeo-game:guardian'; // 1·2장과 같은 저장 항목(지킴이 생김새)
 const EXPLORE_BOUNDS = { x0: -28, x1: 28, z0: -3.5, z1: 14 };
-const CROSS_SECONDS = 10;
+export const CROSS_SECONDS = 12; // 물 모으는 시간이 필요해서 10 → 12초
+export const DAM_LEVEL = { normal: 2 / 3, easy: 1 / 3 }; // 터뜨릴 때 있어야 하는 물 높이(3칸 중 2칸, 쉬운 모드 1칸)
 let scene = null;
-
-async function sayAll(dialogue, lines) { for (const l of lines) await dialogue.say(l); }
+const anchors = world => ({ gangamchan: world.npcs.get('gangamchan')?.mesh, soldier: world.npcs.get('soldier')?.mesh });
+// 개발용: ?debug=ch3-minigame&part=1 이면 놀이 ② 귀주 신호부터
+const debugPart = () => { try { const q = new URLSearchParams(location.search); return q.get('debug') ? +(q.get('part') || 0) : 0; } catch { return 0; } };
 
 function placePlayer(world, [x, z], ry = Math.PI) {
   world.player.visible = true;
@@ -25,9 +35,10 @@ function setStep(ctx, n) {
   const t = [world.npcs.get('gangamchan').mesh.position, world.npcs.get('soldier').mesh.position][n];
   if (t) world.setGoal({ x: t.x, z: t.z });
   else if (n === 3) world.setGoal({ x: scene.dam.x, z: scene.dam.z });
+  else world.setGoal(null);
 }
 
-// 쇠가죽 6개를 주워 둑으로 가져간다. 실패는 없다.
+// 쇠가죽 6개를 주워 둑으로 가져간다(작전 준비, 실패는 없다).
 function collectHides(ctx) {
   const { world, hud, audio } = ctx;
   return new Promise(resolve => {
@@ -55,41 +66,20 @@ function collectHides(ctx) {
     });
   });
 }
+function hidesBuilt() {
+  for (const h of scene.hides) { h.taken = true; h.mesh.visible = false; }
+  scene.damWall.visible = true; scene.ring.visible = false;
+}
 
 // 거란군이 냇물 한가운데에 왔을 때 둑을 터뜨린다. 진행도 k에서 거란군 무리(앞줄·뒷줄)의 가운데가 냇물 한가운데에 오는 때는 k≈0.67,
 // 무리 전체가 물속에 있는 때는 k≈0.56~0.78이다. 판정 칸은 그 둘레(0.5~0.82, 쉬운 모드 0.42~0.88)로 화면에 보이는 모습과 맞춘다.
 export const DAM_WINDOW = { normal: [0.5, 0.82], easy: [0.42, 0.88] };
-function damAttempt(ctx, easy, fail) {
-  const { world, audio } = ctx;
-  const [lo, hi] = easy ? DAM_WINDOW.easy : DAM_WINDOW.normal;
-  scene.river.army.visible = true; scene.river.army.position.y = 0; scene.wave.visible = false;
-  scene.river.setCross(0);
-  const btn = actionButton(ctx, '둑 터뜨리기');
-  let t = 0, done = false;
-  return new Promise(resolve => {
-    const finish = ok => {
-      if (done) return; done = true;
-      off(); btn.remove(); ctx.testHooks.ready = false;
-      resolve(ok);
-    };
-    btn.wait().then(() => {
-      if (done) return;
-      const k = t / CROSS_SECONDS;
-      if (k < lo) { fail.why = 'early'; return finish(false); }
-      if (k > hi) { fail.why = 'late'; return finish(false); }
-      audio.play('water');
-      finish(true);
-    });
-    const off = world.onUpdate(dt => {
-      if (done) return;
-      t += dt;
-      const k = Math.min(1, t / CROSS_SECONDS);
-      scene.river.setCross(k);
-      ctx.testHooks.ready = k >= lo + 0.03 && k <= hi - 0.03;
-      if (k >= 1) { fail.why = 'late'; finish(false); }
-    });
-  });
-}
+const damScene = () => ({
+  reset() { scene.river.army.visible = true; scene.river.army.position.y = 0; scene.wave.visible = false; scene.damWall.visible = true; },
+  cross: k => scene.river.setCross(k),
+  level: v => scene.setLevel(v),
+});
+const DAM_HINT = { early: () => script.dam.early, overflow: () => script.dam.over, late: () => script.dam.late, low: () => script.dam.low };
 
 // 물결이 둑에서 하류로 쏟아지고 거란군이 휩쓸린다.
 function playFlood(ctx) {
@@ -107,38 +97,25 @@ function playFlood(ctx) {
   });
 }
 
-// 귀주: 지원군이 오고 깃발이 북쪽으로 휘날리는 동안(3초, 쉬운 모드 5초) 공격 신호를 보낸다.
+// 귀주 신호: 지원군이 먼저 도착하고(신호 1) 1~1.5초 뒤 깃발이 북쪽으로 휘날린다(신호 2, 비바람이 남쪽에서 분다). 두 신호가 같이 켜진 동안 공격 신호
 let gujuSeed = 7;
-function gujuAttempt(ctx, easy, fail) {
-  const { world, hud, audio } = ctx;
+function gujuLights() {
   gujuSeed = (gujuSeed * 16807) % 2147483647;
-  const arriveAt = 3 + (gujuSeed % 3000) / 1000, open = easy ? 5 : 3;
+  const arrive = 3 + (gujuSeed % 1500) / 1000, flag = arrive + 1 + ((gujuSeed >> 4) % 500) / 1000;
+  return [{ label: script.guju.lights[0], at: arrive }, { label: script.guju.lights[1], at: flag }];
+}
+function gujuScene(ctx, lights) {
   scene.setFlags(false);
   scene.reinforcements.visible = true; scene.reinforcements.position.x = 30;
-  const btn = actionButton(ctx, '공격 신호');
-  let t = 0, done = false, announced = false;
-  return new Promise(resolve => {
-    const finish = ok => {
-      if (done) return; done = true;
-      off(); btn.remove(); hud.setCounter(null); ctx.testHooks.ready = false;
-      resolve(ok);
-    };
-    btn.wait().then(() => {
-      if (done) return;
-      if (t < arriveAt) { fail.why = 'early'; return finish(false); }
-      audio.play('whoosh');
-      finish(true);
-    });
-    const off = world.onUpdate(dt => {
-      if (done) return;
-      t += dt;
-      scene.reinforcements.position.x = Math.max(14, 30 - (t / arriveAt) * 16);
-      if (t >= arriveAt && !announced) { announced = true; scene.setFlags(true); hud.setCounter(script.guju.arrive); }
-      ctx.testHooks.ready = t >= arriveAt + 0.2 && t <= arriveAt + open - 0.2;
-      if (t > arriveAt + open) { fail.why = 'late'; scene.setFlags(false); finish(false); }
-    });
-  });
+  return {
+    update: t => { scene.reinforcements.position.x = Math.max(14, 30 - (t / lights[0].at) * 16); },
+    on: i => {
+      if (i === 0) popText(ctx, script.guju.arrive, null, 'good');
+      if (i === 1) scene.setFlags(true);
+    },
+  };
 }
+const GUJU_HINT = { early: () => script.guju.early, one: () => script.guju.one, late: () => script.guju.late };
 
 // 귀주 대첩: 공격 신호 뒤 고려군과 김종현의 지원군이 바람을 등지고 몰아쳐, 부딪친 거란군이 쓰러지고 나머지는 북쪽으로 달아난다(약 7초).
 export function playGujuBattle(ctx) {
@@ -156,7 +133,7 @@ export function playGujuBattle(ctx) {
         p.position.set(go[i].x + jit, 0, go[i].z - e * 4.8 - Math.max(0, t - 4.4) * 1.5);
       });
       scene.reinforcements.position.set(rf.x - e * 10, 0, rf.z - e * 6); // 지원군은 옆에서 들이친다
-      scene.reinforcements.children.forEach(p => { p.rotation.y = -Math.PI / 2 - e * 0.6; });
+      scene.reinforcements.rotation.y = -e * 0.6; // 무리째 고려군 쪽으로 돈다
       if (t > 2.2 && !clashed) { clashed = true; audio.play('whoosh'); scene.dust.forEach(d => { d.visible = true; }); }
       scene.dust.forEach(d => {
         const k = Math.max(0, Math.min(1, (t - 2.2) / 3));
@@ -181,7 +158,7 @@ function showAftermath(ctx) {
   const { world } = ctx;
   for (const h of scene.hides) { h.taken = true; h.mesh.visible = false; }
   scene.damWall.visible = true;
-  scene.river.army.visible = false;
+  scene.river.army.visible = false; scene.guju.visible = true;
   for (const k of scene.gujuKhitan) k.visible = false;
   scene.reinforcements.visible = true; scene.reinforcements.position.x = 14;
   scene.setFlags(true);
@@ -196,81 +173,104 @@ export default {
   script,
   quizzes: script.quizzes,
 
-  buildScene(world) { scene = buildCh3Scene(world); return scene; },
+  buildScene(world) {
+    scene = buildCh3Scene(world);
+    usePlayerFigure(world, guardianLook(savedGuardian(GUARDIAN_KEY, 'a'), 'soldier'));
+    return scene;
+  },
 
   enterStage(ctx, stage) {
-    if (stage === 'minigame') { ctx.world.bounds = EXPLORE_BOUNDS; placePlayer(ctx.world, scene.start); }
+    if (stage === 'minigame') { ctx.world.bounds = EXPLORE_BOUNDS; placePlayer(ctx.world, scene.start); hidesBuilt(); }
     if (stage === 'quiz') showAftermath(ctx);
   },
 
   async explore(ctx) {
-    const { world, dialogue } = ctx;
+    const { world, dialogue, input } = ctx;
     world.bounds = EXPLORE_BOUNDS;
     placePlayer(world, scene.start);
+    // 지킴이는 1장에서 고른다. 저장이 없을 때만(건너뛰었거나 3장부터 한 기기) 여기서 고른다
+    if (!savedGuardian(GUARDIAN_KEY, null)) {
+      const id = await pickGuardian(ctx, { key: GUARDIAN_KEY, ...script.guardian,
+        options: Object.entries(GUARDIAN_LOOKS).map(([id, g], i) => ({ id, name: `지킴이 ${'가나다'[i]}`, color: `#${g.sleeve.toString(16).padStart(6, '0')}` })) });
+      usePlayerFigure(world, guardianLook(id, 'soldier'));
+    }
     let step = 0;
     setStep(ctx, 0);
-    await sayAll(dialogue, script.start);
     dialogue.close();
-    ctx.input.enabled = true;
+    input.enabled = true;
+    const a = anchors(world);
     await new Promise(resolve => {
       const stop = roam(ctx, {
         async onTalk(id) {
           const n = script.npc[id];
           if (id === 'gangamchan') {
-            if (step === 0) { await sayAll(dialogue, n.first); step = 1; setStep(ctx, 1); }
-            else await sayAll(dialogue, n.later);
-          } else if (step === 0) await sayAll(dialogue, n.tooEarly);
-          else { await sayAll(dialogue, n.first); stop(); resolve(); }
+            await talk(ctx, step === 0 ? n.first : n.later, a);
+            if (step === 0) { step = 1; setStep(ctx, 1); }
+          } else if (step === 0) await talk(ctx, n.tooEarly, a);
+          else { await talk(ctx, n.first, a); stop(); resolve(); }
         },
       });
     });
-  },
-
-  async minigame(ctx) {
-    const { world, dialogue, input } = ctx;
-    // 1. 쇠가죽 모으기
+    // 쇠가죽 모으기(작전 준비)
+    input.enabled = false;
     setStep(ctx, 2);
     for (const k of ['gangamchan', 'soldier']) world.npcs.get(k).mark.visible = false;
     await showHowTo(ctx.ui, script.hides.howto);
     input.enabled = true;
     await collectHides(ctx);
     input.enabled = false;
-    await sayAll(dialogue, script.hides.built);
-    dialogue.close();
+  },
 
-    // 2. 둑 터뜨리기
-    setStep(ctx, 4);
-    await ctx.fade(true);
-    world.player.visible = false;
-    world.setFixedCamera(scene.damCam.pos, scene.damCam.target);
-    await ctx.fade(false);
-    await showHowTo(ctx.ui, script.dam.howto);
-    const damFail = { why: '' };
-    const a = await runWithRetries(ctx, easy => damAttempt(ctx, easy, damFail), {
-      failHint: () => (damFail.why === 'early' ? script.dam.early : script.dam.late),
-    });
-    await playFlood(ctx);
-    await sayAll(dialogue, script.dam.done);
-    dialogue.close();
+  async minigame(ctx) {
+    const { world, dialogue, input } = ctx;
+    input.enabled = false;
+    const part = debugPart();
+    let a = { first: true, easyModeUsed: false };
+    if (part < 1) {
+      // 놀이 ① 둑 수위 조절
+      setStep(ctx, 4);
+      await ctx.fade(true);
+      world.player.visible = false;
+      const f = scene.damFit; world.fitFixedCamera(f.target, f.dir, f.points, f.margin);
+      await ctx.fade(false);
+      await showHowTo(ctx.ui, script.dam.howto);
+      let why = 'early';
+      ctx.testHooks.damEasy = [];
+      a = await runRounds(ctx, [null], (_, { easy }) => {
+        ctx.testHooks.damEasy.push(easy);
+        return damflow(ctx, { window: DAM_WINDOW.normal, easyWindow: DAM_WINDOW.easy, crossSeconds: CROSS_SECONDS, minLevel: DAM_LEVEL.normal, easyMinLevel: DAM_LEVEL.easy,
+          easy, scene: damScene(), label: script.dam.button }).then(r => { why = r.why; return r.ok; });
+      }, { failHint: () => DAM_HINT[why](), easyAfter: 2 });
+      await playFlood(ctx);
+      scene.setLevel(0);
+      await talk(ctx, script.dam.done);
+      dialogue.close();
+    }
 
-    // 3. 귀주의 바람
+    // 놀이 ② 귀주 신호(다른 때·곳: 화면을 바꿔 귀주 벌판으로)
     setStep(ctx, 5);
     await ctx.fade(true);
+    world.player.visible = false;
+    scene.river.army.visible = false; scene.guju.visible = true;
     world.setFixedCamera(scene.gujuCam.pos, scene.gujuCam.target);
     await ctx.fade(false);
-    await sayAll(dialogue, script.guju.intro);
-    dialogue.close();
     await showHowTo(ctx.ui, script.guju.howto);
-    const gujuFail = { why: '' };
-    const b = await runWithRetries(ctx, easy => gujuAttempt(ctx, easy, gujuFail), {
-      failHint: () => (gujuFail.why === 'early' ? script.guju.early : script.guju.late),
-    });
-    await sayAll(dialogue, script.guju.charge); dialogue.close();
+    let why2 = 'early';
+    const b = await runRounds(ctx, [null], (_, { easy }) => {
+      const lights = gujuLights();
+      return signal(ctx, { lights, open: 3, easyOpen: 5, easy, scene: gujuScene(ctx, lights), label: script.guju.button }).then(r => { why2 = r.why; return r.ok; });
+    }, { failHint: () => GUJU_HINT[why2](), easyAfter: 2 });
+    await talk(ctx, script.guju.charge); dialogue.close();
     await playGujuBattle(ctx); // 깃발이 북쪽으로 휘날리자 고려군이 몰아쳐 이긴다
     for (const k of scene.gujuKhitan) k.visible = false;
-    await sayAll(dialogue, script.guju.done);
-    await sayAll(dialogue, script.result);
+    await talk(ctx, script.guju.done);
+    await talk(ctx, script.result);
     showAftermath(ctx);
     return { firstTryCorrect: [a, b].filter(x => x.first).length, firstTryTotal: 2, easyModeUsed: a.easyModeUsed || b.easyModeUsed };
+  },
+
+  // 장 끝(퀴즈 뒤): 도장 쾅과 지혜 카드 한 장(귀주 대첩 문장). 별은 지금 computeStars 그대로
+  async finale(ctx, result) {
+    await finale(ctx, { stamp: script.finale.stamp, sub: script.finale.sub, stars: result.stars, card: script.result[0] });
   },
 };

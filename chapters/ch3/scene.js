@@ -1,12 +1,16 @@
 // 3장 장면: 비바람 속 삼교천(고려 진영, 둑 자리, 냇물을 건너는 거란군)과 남쪽의 귀주 벌판.
+// 2026-10-26 새로 만들기: 둑 뒤에 물이 차오르는 못(setLevel), 둑 놀이 카메라 맞춤(damFit), 털모자 거란 병사·붉은 옷 고려 병사(crowdLook)로 두 편 옷 구분,
+// 귀주 병사는 한 사람씩 조각을 합쳐(flatten) 그리기 수를 줄인다.
 import * as THREE from 'three';
 import { backdropMountains } from '../kit/terrain.js';
 import { tent, tree, spearRack } from '../kit/buildings.js';
 import { BUILD } from '../kit/town.js';
 import { groundMaterial } from '../../core/textures.js';
-import { mat, makePerson } from '../../core/people.js';
+import { mat } from '../../core/people.js';
 import { scatter } from '../../core/props.js';
-import { LOOKS, look } from '../../content/characters.js';
+import { LOOKS } from '../../content/characters.js';
+import { makeFigure, setAction, crowdLook } from '../../core/figures.js';
+import { flatten } from '../kit/ops.js';
 import { createWeather } from '../../core/weather.js';
 
 const RIVER_Z = -8, RIVER_W = 6;
@@ -88,12 +92,16 @@ export function buildCh3Scene(world) {
   const wave = mk(new THREE.BoxGeometry(4, 1.6, RIVER_W), 0xcfe3ec, DAM_X, 0.3, RIVER_Z, L, false);
   wave.material = new THREE.MeshLambertMaterial({ color: 0xcfe3ec, transparent: true, opacity: 0.8 });
   wave.visible = false;
+  // 둑 뒤(상류, 서쪽)에 모이는 물: 물 높이(0~1)에 따라 수면이 올라온다
+  const pond = new THREE.Mesh(new THREE.BoxGeometry(7, 1, RIVER_W + 0.6), new THREE.MeshPhongMaterial({ color: 0x5f8aa0, transparent: true, opacity: 0.85, shininess: 60 }));
+  pond.position.set(DAM_X - 3.8, -0.9, RIVER_Z); pond.visible = false; L.add(pond);
+  const setLevel = v => { pond.visible = v > 0.01; pond.position.y = -0.95 + v * 1.25; };
 
   // 냇물을 건너는 거란군 (북쪽 강둑 → 남쪽)
   const zNorth = RIVER_Z - RIVER_W / 2, zSouth = RIVER_Z + RIVER_W / 2;
-  const army = new THREE.Group(); L.add(army);
+  const army = new THREE.Group(); army.visible = false; L.add(army); // 둑 놀이 때만 보인다(reset)
   for (let i = 0; i < 14; i++) {
-    const k = makePerson(LOOKS.khitan);
+    const k = makeFigure(crowdLook('khitan', i + 1)); setAction(k, 'walk');
     k.position.set(-6 + (i % 7) * 2.2, 0, -Math.floor(i / 7) * 2); k.rotation.y = 0; army.add(k);
   }
   const setCross = t => { army.position.set(4, 0, zNorth - 8 + t * (zSouth + 4 - (zNorth - 8))); };
@@ -105,11 +113,16 @@ export function buildCh3Scene(world) {
   }
 
   // 귀주 벌판: 남쪽 고려군, 북쪽 거란군, 동쪽에서 오는 지원군
-  const guju = new THREE.Group(); L.add(guju);
+  const guju = new THREE.Group(); guju.visible = false; L.add(guju); // 귀주 놀이·뒷이야기 때만 보인다
   const gujuFlags = [], gujuKhitan = [], gujuGoryeo = [];
+  // 고려군은 둘씩 짝지어 한 덩어리로 합친다(함께 나아간다, 그리기 수 절약)
+  for (let j = 0; j < 6; j++) {
+    const pair = new THREE.Group(); pair.position.set(-10 + j * 4, 0, GUJU_Z + 6); guju.add(pair);
+    for (const s of [0, 1]) { const p = makeFigure(crowdLook('soldier', j * 2 + s + 1)); p.position.set(s ? 1 : -1, 0, 0); p.rotation.y = Math.PI; pair.add(p); }
+    gujuGoryeo.push(flatten(pair));
+  }
   for (let i = 0; i < 12; i++) {
-    const p = makePerson(LOOKS.player); p.position.set(-11 + i * 2, 0, GUJU_Z + 6); p.rotation.y = Math.PI; guju.add(p); gujuGoryeo.push(p);
-    const q = makePerson(LOOKS.khitan); q.position.set(-11 + i * 2, 0, GUJU_Z - 6); q.rotation.order = 'YXZ'; guju.add(q); gujuKhitan.push(q);
+    const q = makeFigure(crowdLook('khitan', i + 2)); q.position.set(-11 + i * 2, 0, GUJU_Z - 6); q.rotation.order = 'YXZ'; guju.add(q); gujuKhitan.push(flatten(q));
   }
   // 싸움 먼지: 두 군대가 부딪치는 곳에 피어오르는 흙먼지(처음엔 숨김)
   const dust = [];
@@ -124,8 +137,9 @@ export function buildCh3Scene(world) {
   }
   const reinforcements = new THREE.Group(); reinforcements.visible = false; guju.add(reinforcements);
   for (let i = 0; i < 8; i++) {
-    const p = makePerson(look('soldier', { robe: 0x3c5a7a })); p.position.set((i % 4) * 2, 0, Math.floor(i / 4) * 2); p.rotation.y = -Math.PI / 2; reinforcements.add(p);
+    const p = makeFigure({ ...crowdLook('soldier', i + 1), robe: 0x3c5a7a }); p.position.set((i % 4) * 2, 0, Math.floor(i / 4) * 2); p.rotation.y = -Math.PI / 2; reinforcements.add(p);
   }
+  reinforcements.visible = true; flatten(reinforcements); reinforcements.visible = false; // 지원군은 한 무리로 함께 움직인다
   reinforcements.position.set(30, 0, GUJU_Z + 4);
 
   // 빗물 웅덩이 (진영 바닥)
@@ -159,8 +173,10 @@ export function buildCh3Scene(world) {
   const scene = {
     hides, damWall, ring, wave, rain, flagPoles, gujuFlags, gujuKhitan, gujuGoryeo, reinforcements, guju, dust, gujuZ: GUJU_Z,
     dam: { x: DAM_X, z: -2.5, r: 1.6 },
-    river: { army, setCross, zNorth, zSouth },
+    river: { army, setCross, zNorth, zSouth }, pond, setLevel,
     damCam: { pos: [6, 12, 12], target: [-4, 0, -9] },
+    // 둑 놀이 카메라: 둑·못과 거란군이 건너는 여울이 한 화면에 크게(fitFixedCamera). 남동쪽 위에서 내려다본다
+    damFit: { target: [-6, 0, RIVER_Z], dir: [0.45, 0.75, 0.75], points: [[DAM_X - 6, 0, RIVER_Z], [DAM_X + 1, 1.5, RIVER_Z + 4], [-2, 2, RIVER_Z - 9], [12, 2, RIVER_Z - 9], [12, 2, RIVER_Z + 3]], margin: 0.8 },
     gujuCam: { pos: [22, 10, GUJU_Z + 18], target: [0, 1, GUJU_Z] },
     gujuBounds: { x0: -12, x1: 12, z0: GUJU_Z + 7, z1: GUJU_Z + 12 },
     start: [0, 10],

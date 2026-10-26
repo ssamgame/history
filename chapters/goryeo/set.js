@@ -256,3 +256,16 @@ export function buildHeunghwaSet(world, { weather = true, ladders: withLadders =
   world.onUpdate(update);
   return { ladders, wallHeight: WALL_H, half: HALF, update };
 }
+
+// ── 성채 표시(2026-10-26 추가): 지도처럼 '여기에 성을 쌓았다'를 보이는 작은 성 한 채. 낮은 받침 + 여장 없는 성벽 한 칸 + 작은 망루 + 깃발.
+// 기존 부품(cityWall · kit 망루 · flag)을 그대로 모아 쓴다. 1장 강동 6주, 새 4장(ch7) 동북 9성 표시가 함께 쓴다. 바닥 가운데가 (0,0,0), 높이 약 6.
+export function castleMarker({ color = P.base, flagColor = P.flag, roof = 0xb89a68 } = {}) {
+  const g = new THREE.Group(); g.name = 'castleMarker';
+  const B = parts();
+  B.box(7.4, 0.6, 3.8, color, 'stone', [0, 0.3, 0]);
+  B.into(g, 'markerBase');
+  const wall = cityWall({ length: 6.4, height: 2.6, thick: 1.4, crenel: false }); wall.position.set(0, 0.6, 0.5); g.add(wall);
+  const tower = new THREE.Group(); tower.position.set(2.3, 0.6, -0.9); tower.scale.setScalar(0.75); kitWatchtower(tower, { h: 2.8, roof }); g.add(tower);
+  const f = flag({ color: flagColor, h: 3.4, w: 1.2, ch: 1.5 }); f.position.set(-2.4, 3.3, 0.5); g.add(f);
+  return g;
+}

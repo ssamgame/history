@@ -70,6 +70,6 @@ test('ch3: resume at quiz shows guju aftermath', () => {
 });
 
 test('ch3: guju lines avoid unsourced claims and the 1019 explanation cites S5', () => {
-  ok(!ch3Script.guju.intro.some(l => l.text.includes('내려왔')), 'no claim that the Khitan came down to Guju');
+  ok(!(ch3Script.guju.intro || []).some(l => l.text.includes('내려왔')), 'no claim that the Khitan came down to Guju');
   ok(ch3Script.quizzes[0].src.includes('S5'));
 });

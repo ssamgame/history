@@ -53,6 +53,7 @@ export function touchBot(s, { answers, wrongFirst = new Set(), noTaps = () => fa
   const zone = hud.joyZone;
   const pe = (type, x, y) => zone.dispatchEvent(new PointerEvent(type, { pointerId: 3, clientX: x, clientY: y, bubbles: true }));
   let dragging = false, stopped = false, taps = 0, earlyPressed = !pressEarlyOnce;
+  let damEarlyUsed = !pressEarlyOnce;
   const release = () => { if (dragging) { pe('pointerup', 100, 100); dragging = false; } };
   // 사람 손가락처럼 누른다: 버튼 한가운데 맨 위에 그 버튼이 있어야 한다(다른 화면이 덮고 있으면 기록해 두었다가 끝에 실패)
   const covered = [];
@@ -136,6 +137,15 @@ export function touchBot(s, { answers, wrongFirst = new Set(), noTaps = () => fa
     if (opsBoard && !noTaps()) {
       const want = [...opsBoard.querySelectorAll('.ops-zone')].find(z => +z.dataset.short > 0);
       if (want && [...opsBoard.querySelectorAll('.ops-token')].some(t => !t.hidden && !t.disabled)) tap(want);
+    }
+    // 둑 수위 조절(chapters/kit/damflow.js): 놀이가 알려 준 때(testHooks.dam)에 큰 단추를 누르고 있다가 뗀다.
+    // pressEarlyOnce면 처음 한 번은 바로 눌렀다 떼어 일찍 터뜨린다
+    const damBtn = !dialogue.isOpen() && !noTaps() && ui.querySelector('.dam-btn'), dh = ctx.testHooks.dam;
+    if (damBtn && dh) {
+      const pev = type => damBtn.dispatchEvent(new PointerEvent(type, { pointerId: 6, bubbles: true }));
+      if (!damEarlyUsed) { damEarlyUsed = true; tap(damBtn); pev('pointerdown'); pev('pointerup'); }
+      else if (!damBtn.classList.contains('down') && dh.press && !dh.release) pev('pointerdown');
+      else if (damBtn.classList.contains('down') && dh.release) pev('pointerup');
     }
     // 말 받아치기(chapters/kit/rally.js): 정답 구슬을 누른다. wrongFirst에 든 정답이면 그 판(소손녕의 말)마다 처음 한 번은 다른 구슬
     const rallyOrbs = !dialogue.isOpen() && !noTaps() && !ui.querySelector('.rally-board.busy') && [...ui.querySelectorAll('.rally-orb:not([disabled])')];

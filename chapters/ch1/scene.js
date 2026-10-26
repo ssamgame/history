@@ -6,6 +6,8 @@ import * as THREE from 'three';
 import { backdropMountains, surroundings } from '../kit/terrain.js';
 import { curvedHipRoof, tent, cart, boat, watchtower, spearRack, archeryTarget, straw } from '../kit/buildings.js';
 import { makeFigure, setAction, crowdLook } from '../../core/figures.js';
+import { castleMarker } from '../goryeo/set.js';
+import { flatten } from '../kit/ops.js';
 import { BUILD } from '../kit/town.js';
 import { makeFire } from '../../core/fire.js';
 import { groundMaterial } from '../../core/textures.js';
@@ -203,15 +205,15 @@ export function buildCh1Scene(world) {
     k.position.set(-16 + i * 4, 0, -27 - (i % 2) * 1.5); khitanGroup.add(k);
   }
 
-  // 강동 6주 빛기둥 (담판 뒤에 하나씩 땅에서 올라온다: pillars[i].set(0~1))
+  // 강동 6주 성채 표시 (담판 뒤에 하나씩 땅에서 솟아오른다: pillars[i].set(0~1)). 2026-10-26: 속이 빈 빛기둥(멀리서 하얀 줄기로 보임) 대신
+  // 작은 성 한 채(chapters/goryeo/set.js castleMarker)로, 나루터에서 보이게 강 건너 가까이 둔다. 이름표는 다 솟으면 위에 뜬다
   const gangdongPillars = new THREE.Group(); gangdongPillars.visible = false; L.add(gangdongPillars);
   const pillars = ['흥화진', '용주', '통주', '철주', '귀주', '곽주'].map((name, i) => {
-    const x = -25 + i * 10, z = -42 - (i % 2) * 4;
-    const pill = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 14, 10, 1, true),
-      new THREE.MeshBasicMaterial({ color: 0xffd36b, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false }));
-    pill.position.set(x, 7, z); gangdongPillars.add(pill);
-    const label = labelSprite(name); label.position.set(x, 9, z); gangdongPillars.add(label);
-    return Object.assign(Object.create(null), { set(k) { pill.scale.y = Math.max(0.001, k); pill.position.y = 7 * k; label.visible = k >= 1; } });
+    const x = -25 + i * 10, z = -31 - (i % 2) * 3.5;
+    const m = flatten(castleMarker({ flagColor: i % 2 ? 0xd9a441 : 0xb8452f })); // 조각을 재질별로 합쳐 가볍게
+    m.position.set(x, groundH(x, z), z); m.rotation.y = (i - 2.5) * 0.08; gangdongPillars.add(m);
+    const label = labelSprite(name); label.position.set(x, groundH(x, z) + 8.2, z); gangdongPillars.add(label);
+    return Object.assign(Object.create(null), { set(k) { m.scale.y = Math.max(0.001, k); m.visible = k > 0.01; label.visible = k >= 1; } });
   });
 
   // 풀포기·들꽃(진영 안), 바위·덤불(목책 밖). 길과 천막 자리는 비운다.
@@ -266,7 +268,6 @@ export function buildCh1Scene(world) {
       khitanGroup.position.y -= dt * 1.4; khitanGroup.position.z -= dt * 3;
       if (khitanGroup.position.y < -6) khitanGroup.visible = false;
     }
-    if (gangdongPillars.visible) gangdongPillars.children.forEach((c, i) => { if (c.isMesh) c.material.opacity = 0.25 + Math.sin(t * 2 + i) * 0.1; });
   });
   backdropMountains(world.level, { color: 0x6a7a4a, radius: 130 }); // 먼 산줄기(깊이감)
   surroundings(world, { bounds: world.bounds, trees: ['pine'], count: 8, back: false, seed: 11 }); // 걷는 곳 바깥에 그 장소다운 집·나무(깊이감)

@@ -8,6 +8,7 @@ test('ch1: scene builds with 4 npcs and hidden pillars', () => {
   eq([...w.npcs.values()].filter(n => !n.spot).map(n => n.id).sort(), ['archer', 'officer', 'seohui', 'soldier']);
   eq(s.gangdongPillars.visible, false);
   eq(s.gangdongPillars.children.filter(c => c.isSprite).length, 6);
+  eq(s.gangdongPillars.children.filter(c => c.name === 'castleMarker').length, 6, 'six small castles (not light columns)');
   ok(s.khitanGroup.children.length > 0);
   eq(w.bounds, { x0: -30.8, x1: 30.8, z0: -14.4, z1: 22 });
   w.dispose();

@@ -72,6 +72,18 @@
     const gauge = opsGauge(ctx, { title: s.rally.gauge });
     rally(ctx, { prompt: s.negotiation.q1.prompt, options: s.negotiation.q2.options, speaker: s.speakers.sonn.name, gauge });
   }
+  // 둑 수위 조절·귀주 신호(chapters/kit/damflow.js·signal.js, 고려 3장): 큰 단추와 물 높이 막대 / 두 신호 표시와 공격 단추
+  else if (kind === 'damflow' || kind === 'signal') {
+    const s = (await import('../chapters/ch3/script.js')).default;
+    const updates = new Set(); (function loop() { for (const f of updates) f(1 / 60); requestAnimationFrame(loop); })();
+    const { createHud } = await import('../core/screens.js');
+    const hud = createHud(ui, { touch: true });
+    hud.show({ no: 3, years: '1018~1019', event: '거란 3차 침입' }, { name: '강감찬의 군사' });
+    hud.setGoal(s.goals[kind === 'damflow' ? 4 : 5], [kind === 'damflow' ? 5 : 6, 7]);
+    const ctx = { ui, hud, testHooks: {}, onAction: () => () => {}, world: { onUpdate: f => { updates.add(f); return () => updates.delete(f); } } };
+    if (kind === 'damflow') { const { damflow } = await import('../chapters/kit/damflow.js'); damflow(ctx, { window: [0.5, 0.82], crossSeconds: 1000, minLevel: 2 / 3, easy: true, label: s.dam.button }); }
+    else { const { signal } = await import('../chapters/kit/signal.js'); signal(ctx, { lights: s.guju.lights.map((label, i) => ({ label, at: 1000 + i })), open: 3, label: s.guju.button }); }
+  }
   // 근대~현대편 카드형 미니게임: kind=kit:h3:0 (장 id: 부분 번호), &fill=1 이면 자리 놓기를 마지막 하나만 남기고 채운다
   else if (kind.startsWith('kit:')) {
     const [, id, n] = kind.split(':');
