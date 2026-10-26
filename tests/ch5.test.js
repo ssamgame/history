@@ -6,7 +6,7 @@ import { runChapter } from '../core/flow.js';
 import { CHAPTERS } from '../chapters/index.js';
 import ch5Script from '../chapters/ch5/script.js';
 import ch5 from '../chapters/ch5/chapter.js';
-import { buildCh5Scene } from '../chapters/ch5/scene.js';
+import { buildCh5Scene, STATIONS } from '../chapters/ch5/scene.js';
 import { testWorld, touchSetup, touchBot, memSave } from './bot.js';
 import { traceGlyph } from '../core/minigame.js';
 
@@ -17,9 +17,10 @@ test('ch5: script passes validation', () => {
   for (const [id, sp] of Object.entries(ch5Script.speakers)) if (id !== 'guide') ok(LOOKS[sp.look], id);
 });
 
-test('ch5: card order matches the spec', () => {
+test('ch5: workshop stations follow the passed-down order', () => {
   eq(ch5Script.making.cards, ['나무를 바닷물에 담그기', '소금물에 삶기', '그늘에서 말리기', '글자 새기기', '마구리(판 양 끝에 나무 덧대기)', '옻칠하기']);
-  eq(ch5Script.quizzes.map(q => q.options[q.answer]), ['부처의 힘으로 몽골의 침입을 물리치려고', '벌레가 먹지 않도록']);
+  eq(ch5Script.making.states.length, ch5Script.making.cards.length + 1);
+  eq(ch5Script.making.waves.map(w => w.active.length), [3, 5, 6]);
 });
 
 test('ch5: carving uses the real characters 大藏經 with every stroke in order', () => {
@@ -56,23 +57,26 @@ test('ch5: the board draws the real stroke shapes and fills each stroke when don
   ui.remove();
 });
 
-test('ch5: scene builds with four artisans in front of the start', () => {
+test('ch5: scene builds with one artisan to talk to, three working artisans and six stations', () => {
   const w = testWorld();
   const s = buildCh5Scene(w);
-  const artisans = ['artisan1', 'artisan2', 'artisan3', 'artisan4'];
-  for (const id of artisans) ok(w.npcs.has(id), id);
-  ok(artisans.every(id => w.npcs.get(id).mesh.position.z < s.start[1]), 'all ahead of the player');
+  ok(w.npcs.has('artisan1') && w.npcs.has('monk'), 'artisan and monk');
+  ok(!w.npcs.has('artisan2'), 'the other artisans are background workers');
+  eq(s.workers.length, 3);
+  ok([w.npcs.get('artisan1').mesh, ...s.workers].every(m => m.position.z < s.start[1]), 'all ahead of the player');
+  eq(STATIONS.length, 6);
   w.dispose();
 });
 
 test('ch5: completes with touch-only actions', async () => {
   const s = touchSetup(ch5Script.speakers);
-  const bot = touchBot(s, { answers, orders: [ch5Script.making.cards] });
+  const bot = touchBot(s, { answers });
   try {
-    const r = await runChapter(CHAPTERS[4], ch5, s.ctx, memSave());
+    const r = await runChapter(CHAPTERS.find(c => c.id === 'ch5'), ch5, s.ctx, memSave());
     eq(r.quizCorrect, 2); eq(r.easyModeUsed, false); eq(r.stars, 3);
+    eq(r.firstTryTotal, 2); eq(r.firstTryCorrect, 2);
   } finally { bot.stop(); s.done(); }
-}, { timeout: 150000 });
+}, { timeout: 300000 });
 
 test('ch5: resume at minigame puts the player at the start', () => {
   const s = touchSetup(ch5Script.speakers);
@@ -84,13 +88,13 @@ test('ch5: resume at minigame puts the player at the start', () => {
   } finally { s.done(); }
 });
 
-test('ch5: resume at quiz shows the finished library of woodblocks', () => {
+test('ch5: resume at quiz shows the finished library of woodblocks and the sea stage', () => {
   const s = touchSetup(ch5Script.speakers);
   try {
     const sc = ch5.buildScene(s.w, s.ctx);
     eq(sc.library.visible, false);
     ch5.enterStage(s.ctx, 'quiz');
     eq(sc.library.visible, true);
-    eq([s.w.player.position.x, s.w.player.position.z], sc.start);
+    eq(sc.sea.root.visible, true);
   } finally { s.done(); }
 });

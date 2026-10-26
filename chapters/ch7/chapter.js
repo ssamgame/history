@@ -1,7 +1,7 @@
 // 고려 새 4장 「윤관과 별무반」(장 id ch7, 2026-10-26, docs/superpowers/specs/2026-10-26-ch7-spec.md):
 // 출정 카드 → 첫 장면(말 탄 여진 군사에 고려 보병이 물러남) → 작전 준비(마을 탐험, 윤관 말풍선) → 놀이 「별무반 갈림길」(chapters/kit/switch.js, 3무리)
 // → 진군 · 성 9개 연출 → 퀴즈 → 도장 · 지혜 카드.
-// 아직 장 목록(chapters/index.js)에 넣지 않는다(고려편 5 · 6장 구성 변경 때 no: 4로). 그때까지는 PREVIEW_META로 직접 돌린다.
+// 장 목록(chapters/index.js)에는 2026-10-26 구성 변경 때 no: 4로 넣었다. PREVIEW_META는 미리 보기 도구 · 테스트용(목록 항목과 같은 값).
 import { buildCh7Scene, playOpening, playMarch } from './scene.js';
 import { roam } from '../../core/flow.js';
 import { showHowTo } from '../../core/minigame.js';
@@ -12,8 +12,8 @@ import { LOOKS } from '../../content/characters.js';
 import script from './script.js';
 
 const GUARDIAN_KEY = 'goryeo-game:guardian'; // 1~3장과 같은 저장 항목(지킴이 생김새)
-// 목록에 넣기 전 개발·시험용 장 정보(목록에 넣을 때 chapters/index.js의 항목으로 옮긴다)
-export const PREVIEW_META = { id: 'ch7', no: 4, session: 1, title: '윤관과 별무반', years: '1104~1109', event: '여진 정벌', place: '고려 동북쪽', mapXY: [52, 12] };
+// 개발 · 시험용 장 정보(chapters/index.js의 ch7 항목과 같은 값)
+export const PREVIEW_META = { id: 'ch7', no: 4, session: 1, title: '윤관과 별무반', years: '1104~1109', event: '여진과의 싸움', place: '고려 동북쪽', mapXY: [52, 12] };
 // 첫 시도 점수: 처음 한 번에 틀림 없이 끝낸 무리 수(셋 중 2 이상이면 2)
 export const WAVE_FIRST = clean => Math.min(2, clean);
 

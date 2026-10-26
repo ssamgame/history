@@ -156,6 +156,15 @@ export function touchBot(s, { answers, wrongFirst = new Set(), noTaps = () => fa
       if (right && wrongFirst.has(right.dataset.text) && !wrongUsed.has(key)) { wrongUsed.add(key); pick = rallyOrbs.find(o => o !== right); }
       if (pick) tap(pick);
     }
+    // 경판 공방(chapters/kit/conveyor.js): 고른 판의 다음 작업대를 누른다
+    const cv = !dialogue.isOpen() && !noTaps() && ctx.testHooks.conveyor;
+    if (cv && cv.ready) { const st = ui.querySelector(`.conv-st[data-st="${cv.answer}"]:not([disabled])`); if (st) tap(st); }
+    // 노 젓기 박자(chapters/kit/rhythm.js): 박자 순간 가까이에서 알맞은 쪽 노를 누른다
+    const rh = !dialogue.isOpen() && !noTaps() && ctx.testHooks.rhythm;
+    if (rh && Math.abs(rh.dt) < Math.min(0.08, rh.window)) { const rb = ui.querySelector(`.row-btn[data-side="${rh.side}"]`); if (rb) tap(rb); }
+    // 획 새기기(선택)를 묻는 화면: 건너뛴다
+    const skipCarve = ui.querySelector('.screen.carve-ask .skip');
+    if (skipCarve) { tap(skipCarve); return; }
     // 처인성 당겨 쏘기(chapters/kit/pullshot.js): 활 단추를 눌러 놀이가 알려 준 적 쪽(aim)의 반대로 끝까지 끌었다가, 충분히 당기면 놓는다
     const ph = !dialogue.isOpen() && !noTaps() && ctx.testHooks.pullshot, pad = ph && ui.querySelector('.pull-pad');
     if (pad) {

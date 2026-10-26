@@ -3,7 +3,8 @@ import { SOURCES } from '../content/sources.js';
 import { validateScript } from '../core/content.js';
 import { LOOKS } from '../content/characters.js';
 import { runChapter } from '../core/flow.js';
-import { CHAPTERS } from '../chapters/index.js';
+// 옛 삼별초 장(ch6)은 2026-10-26 장 구성 변경 때 목록에서 뺐다(새 6장 ch5에 합침). 폴더는 남아 있어 옛 장 정보로 시험한다
+const OLD_CH6 = { id: 'ch6', no: 6, session: 1, title: '삼별초의 항쟁', years: '1270~1273', event: '몽골에 맞선 항쟁', place: '진도·제주', mapXY: [32, 85] };
 import ch6Script from '../chapters/ch6/script.js';
 import ch6 from '../chapters/ch6/chapter.js';
 import { buildCh6Scene } from '../chapters/ch6/scene.js';
@@ -48,7 +49,7 @@ test('ch6: completes with touch-only actions', async () => {
   const s = touchSetup(ch6Script.speakers);
   const bot = touchBot(s, { answers, fits: Object.fromEntries(ch6Script.fit.circles.map(c => [c.answer, c.id])) });
   try {
-    const r = await runChapter(CHAPTERS[5], ch6, s.ctx, memSave());
+    const r = await runChapter(OLD_CH6, ch6, s.ctx, memSave());
     eq(r.quizCorrect, 2); eq(r.easyModeUsed, false); eq(r.stars, 3);
   } finally { bot.stop(); s.done(); }
 }, { timeout: 150000 });

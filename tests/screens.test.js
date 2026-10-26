@@ -21,7 +21,8 @@ test('one session: all six chapters are one lesson with one result card', async 
   ok(!SESSIONS[1].title.includes('차시'), SESSIONS[1].title);
   const save = { data: { chapters: {} } };
   save.chapterResult = id => save.data.chapters[id] || null;
-  eq(isUnlocked(CHAPTERS[3], save), false, 'ch4 waits for ch3');
+  eq(CHAPTERS.map(c => c.id), ['ch1', 'ch2', 'ch3', 'ch7', 'ch4', 'ch5'], '고려편 순서: 윤관(ch7)이 4장, 몽골(ch4) 5장, 대장경 · 삼별초(ch5) 6장');
+  eq(isUnlocked(CHAPTERS[3], save), false, 'chapter 4 (ch7) waits for ch3');
   save.data.chapters.ch3 = { stars: 1 };
   eq(isUnlocked(CHAPTERS[3], save), true);
 });
@@ -160,6 +161,8 @@ test('result card: only after chapter 6, lists all six chapters', async () => {
   save.chapterResult = id => save.data.chapters[id] || null;
   eq(isSessionDone(1, save), false, 'not after chapter 3');
   Object.assign(save.data.chapters, { ch4: mk(3), ch5: mk(2), ch6: mk(3) });
+  eq(isSessionDone(1, save), false, 'old ch6 does not count; chapter 4 (ch7) is still to do');
+  save.data.chapters.ch7 = mk(3);
   eq(isSessionDone(1, save), true);
   const el = root();
   const p = showSessionCard(el, 1, save, CHAPTERS);

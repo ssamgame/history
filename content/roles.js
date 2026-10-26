@@ -11,7 +11,8 @@ export const ROLES = {
   ch2: { name: '흥화진을 지키는 병사', does: '양규 장군과 함께 성벽을 지켜요.', look: 'player', scale: 1 },
   ch3: { name: '강감찬 군의 병사', does: '삼교천에서 둑을 쌓고 거란군을 기다려요.', look: 'player', scale: 1 },
   ch4: { name: '처인성의 젊은 궁수', does: '김윤후와 함께 활을 들고 성을 지켜요.', look: { robe: 0x5d6b3e, hat: 'helmet', gear: 'bow', face: STERN }, scale: 1 },
-  ch5: { name: '대장경 작업장의 어린 일꾼', does: '장인들을 도와 경판 만드는 일을 배워요.', look: 'kid', scale: CHILD },
+  ch7: { name: '별무반 갈림길의 병사', does: '모여드는 마을 사람들을 알맞은 부대로 보내요.', look: 'player', scale: 1 },
+  ch5: { name: '대장경 작업장의 어린 일꾼', does: '장인들을 도와 경판을 만들고, 삼별초의 배를 함께 저어요.', look: 'kid', scale: CHILD },
   ch6: { name: '삼별초의 젊은 병사', does: '배를 몰아 진도와 제주로 가며 싸워요.', look: 'sambyeolcho', scale: 1 },
   // 조선편
   j1: { name: '요동으로 가는 고려군 병사', does: '위화도 진영에서 장수들의 이야기를 들어요.', look: 'player', scale: 1 },

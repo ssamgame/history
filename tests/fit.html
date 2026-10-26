@@ -114,6 +114,29 @@
     pullshot(ctx, { field: { center: [0, 0], wallR: 12, spawnR: 34, bow: [0, 1.3, -11] }, lanes: [4.1, 4.71, 5.33], wave: { ...s.cheoin.waves[2], gap: 1000 }, enemies: [], gauge, texts: s.cheoin.texts });
     ui.querySelector('.pull-hint').hidden = false; ui.querySelector('.pull-hint').textContent = s.cheoin.texts.miss;
   }
+  // 경판 공방 · 노 젓기 박자(chapters/kit/conveyor.js · rhythm.js, 고려 새 6장 ch5): 벨트 · 작업대 여섯 · 힌트 · 게이지 / 노 단추 둘
+  else if (kind === 'conveyor' || kind === 'rhythm') {
+    const { opsGauge } = await import('../chapters/kit/ops.js');
+    const s = (await import('../chapters/ch5/script.js')).default;
+    const updates = new Set(); (function loop() { for (const f of updates) f(1 / 60); requestAnimationFrame(loop); })();
+    const { createHud } = await import('../core/screens.js');
+    const hud = createHud(ui, { touch: true });
+    hud.show({ no: 6, years: '1236~1273', event: '대장경과 삼별초 항쟁' }, { name: '경판 공방 지킴이' });
+    hud.setGoal(s.goals[kind === 'conveyor' ? 1 : 3], [kind === 'conveyor' ? 2 : 4, 5]);
+    const ctx = { ui, hud, testHooks: {}, onAction: () => () => {}, world: { onUpdate: f => { updates.add(f); return () => updates.delete(f); } } };
+    if (kind === 'conveyor') {
+      const { conveyor } = await import('../chapters/kit/conveyor.js');
+      const { MAKING_PICTURES } = await import('../chapters/ch5/pictures.js');
+      opsGauge(ctx, { value: 0.3, ...s.making.gauge });
+      conveyor(ctx, { stations: s.making.cards.map((label, i) => ({ label, short: s.making.short[i], picture: MAKING_PICTURES[i] })), active: [0, 1, 2, 3, 4, 5], states: s.making.states, colors: s.making.colors, boards: 3, gap: 0.01, beltSeconds: 100000 });
+      await new Promise(r => setTimeout(r, 100));
+      const h = ui.querySelector('.conv-hint'); h.hidden = false; h.textContent = s.making.order;
+    } else {
+      const { rhythm } = await import('../chapters/kit/rhythm.js');
+      rhythm(ctx, { seconds: 100000, texts: s.sambyeolcho.texts });
+      const p = ui.querySelector('.row-pop'); p.hidden = false; p.textContent = s.sambyeolcho.texts.same;
+    }
+  }
   // 근대~현대편 카드형 미니게임: kind=kit:h3:0 (장 id: 부분 번호), &fill=1 이면 자리 놓기를 마지막 하나만 남기고 채운다
   else if (kind.startsWith('kit:')) {
     const [, id, n] = kind.split(':');
