@@ -8,10 +8,10 @@ import { runRounds, commandBoard, escort, opsGauge, talk, finale, pickGuardian, 
 import script from './script.js';
 
 export const GUARDIAN_KEY = 'goryeo-game:guardian'; // 기기 안 저장에 새로 더한 한 항목(지킴이 생김새). 없으면 'a'
-// 성벽 지휘판 3파: 1파는 한 구역씩 느리게, 2파는 두 구역 동시, 3파는 세 구역 동시(큰 사다리는 병사 둘)
+// 성벽 지휘판 3파(2026-10-26 기획 결정: 3파 유지, 1·2파 간격만 줄임): 1파는 한 구역씩 느리게, 2파는 두 구역 동시, 3파는 세 구역 동시(큰 사다리는 병사 둘)
 export const WAVES = [
-  { units: 3, threats: [{ at: 0.5, zone: 0 }, { at: 6.5, zone: 2 }, { at: 12.5, zone: 1 }, { at: 18.5, zone: 0 }], timing: { climb: 6 } },
-  { units: 3, threats: [{ at: 0.5, zone: 0 }, { at: 0.5, zone: 2 }, { at: 9, zone: 1 }, { at: 9, zone: 0 }, { at: 17.5, zone: 2 }, { at: 17.5, zone: 1 }] },
+  { units: 3, threats: [{ at: 0.5, zone: 0 }, { at: 5.5, zone: 2 }, { at: 10.5, zone: 1 }, { at: 15.5, zone: 0 }], timing: { climb: 6 } },
+  { units: 3, threats: [{ at: 0.5, zone: 0 }, { at: 0.5, zone: 2 }, { at: 8.5, zone: 1 }, { at: 8.5, zone: 0 }, { at: 16.5, zone: 2 }, { at: 16.5, zone: 1 }] },
   { units: 4, threats: [{ at: 0.5, zone: 0 }, { at: 0.5, zone: 1, need: 2 }, { at: 0.5, zone: 2 }, { at: 10, zone: 2 }, { at: 10, zone: 0, need: 2 }, { at: 10, zone: 1 }] },
 ];
 // 호위: 무리 2개(가운데 길 막힘) → 4개(가운데만 열림) → 마지막 큰 무리(가운데 막힘)

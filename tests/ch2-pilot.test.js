@@ -46,6 +46,29 @@ test('ch2-pilot: command board — a soldier in the zone pushes the ladder away,
   } finally { s.done(); }
 });
 
+test('ch2-pilot: command board — a soldier who pushed shows 쉬는 중, then pops back; easy mode rests shorter', async () => {
+  for (const easy of [false, true]) {
+    const s = touchSetup(ch2Script.speakers);
+    try {
+      const p = commandBoard(s.ctx, { zones: ZONES, units: 3, threats: [{ at: 0, zone: 0 }, { at: 9, zone: 1 }], scene: {}, easy, timing: { climb: 1 } });
+      step(s, 0.2);
+      zoneBtn(s, 0).click();
+      let restSteps = 0, seen = null;
+      for (let k = 0; k < 160; k++) {
+        s.w.step(0.05, { x: 0, z: 0 });
+        const r = s.ui.querySelector('.ops-token.resting');
+        if (r) { restSteps += 1; seen = r; } else if (seen) break;
+      }
+      ok(seen, 'a resting token appears after the push');
+      ok(seen.textContent.includes('쉬는 중'), 'resting token says 쉬는 중');
+      ok(seen.classList.contains('back'), 'it pops back when the rest ends');
+      if (easy) ok(restSteps * 0.05 <= 1.05, `easy rest ${restSteps * 0.05}s is short`);
+      else ok(restSteps * 0.05 >= 1.3, `normal rest ${restSteps * 0.05}s`);
+      step(s, 12); await p;
+    } finally { s.done(); }
+  }
+});
+
 test('ch2-pilot: command board — a big ladder needs two soldiers, three breaches fail the round', async () => {
   const s = touchSetup(ch2Script.speakers);
   try {

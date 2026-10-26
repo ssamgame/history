@@ -19,7 +19,12 @@ const CSS = `
   box-shadow: 0 3px 0 #3b2f22; touch-action: none; cursor: grab; }
 .ops-token svg { width: 44px; height: 44px; pointer-events: none; }
 .ops-token.picked { outline: 4px solid var(--gold, #d9a441); transform: translateY(-4px); }
+.ops-token { position: relative; }
+.ops-token .rest { display: none; position: absolute; left: 50%; bottom: -2px; transform: translateX(-50%); white-space: nowrap; font: 800 11px var(--font-ui); color: #3b2f22; background: #f2ead9; border-radius: 6px; padding: 0 4px; }
 .ops-token.resting { opacity: .45; }
+.ops-token.resting .rest { display: block; }
+.ops-token.back { animation: ops-back .3s ease-out; }
+@keyframes ops-back { 50% { transform: scale(1.18); } }
 .ops-token[hidden] { display: none; }
 .ops-zones { display: flex; gap: 8px; flex: 1 1 380px; min-width: 0; }
 .ops-zone { flex: 1 1 0; min-width: 0; min-height: 64px; border-radius: 10px; border: 2px solid #3b2f22; background: #e6dcc3; color: #2b241c; padding: 4px 4px 2px;
@@ -136,8 +141,8 @@ export function commandBoard(ctx, { zones, units = 3, threats = [], practice = f
   ensureStyle();
   const { world, hud, audio } = ctx;
   const T = { warn: 1.6, raise: 0.8, climb: 5, push: 0.6, rest: 0.8, ...timing };
-  if (easy) T.climb *= 1.6;
-  const tx = { tray: '대기', need: n => `병사 ${n}명 필요`, blocked: '막았다!', breach: '올라왔다!', ...texts };
+  if (easy) { T.climb *= 1.6; T.rest = Math.min(T.rest, 0.4); } // 쉬운 모드: 밀어낸 병사가 더 빨리 돌아온다
+  const tx = { tray: '대기', rest: '쉬는 중', need: n => `병사 ${n}명 필요`, blocked: '막았다!', breach: '올라왔다!', ...texts };
   const unitZone = Array(units).fill(null), restUntil = Array(units).fill(0);
   let t = 0, picked = null, pickedZone = null, cursor = Math.floor(zones.length / 2), blocked = 0, breaches = 0, done = false;
   const live = threats.map(th => ({ ...th, need: easy ? 1 : (th.need || 1), state: 'wait', t: 0, h: null }));
@@ -146,7 +151,7 @@ export function commandBoard(ctx, { zones, units = 3, threats = [], practice = f
   const board = document.createElement('div'); board.className = 'ops-board';
   const tray = document.createElement('div'); tray.className = 'ops-tray'; tray.innerHTML = `<span class="ops-tray-label">${tx.tray}</span>`;
   const tokens = unitZone.map((_, i) => {
-    const b = document.createElement('button'); b.type = 'button'; b.className = 'ops-token'; b.dataset.unit = i; b.innerHTML = SOLDIER; b.setAttribute('aria-label', `병사 ${i + 1}`);
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'ops-token'; b.dataset.unit = i; b.innerHTML = `${SOLDIER}<span class="rest">${tx.rest}</span>`; b.setAttribute('aria-label', `병사 ${i + 1}`);
     tray.append(b); return b;
   });
   const zoneBox = document.createElement('div'); zoneBox.className = 'ops-zones';
@@ -169,7 +174,10 @@ export function commandBoard(ctx, { zones, units = 3, threats = [], practice = f
   const active = z => live.find(th => th.zone === z && ['warn', 'raise', 'climb'].includes(th.state));
   const free = () => unitZone.findIndex((u, i) => u === null && restUntil[i] <= t);
   const render = () => {
-    tokens.forEach((b, i) => { b.hidden = unitZone[i] !== null; b.classList.toggle('resting', restUntil[i] > t); b.classList.toggle('picked', picked === i); b.disabled = restUntil[i] > t; });
+    tokens.forEach((b, i) => {
+      const was = b.classList.contains('resting'), now = restUntil[i] > t;
+      if (was && !now) { b.classList.remove('back'); void b.offsetWidth; b.classList.add('back'); } // 쉬는 시간이 끝나면 톡 커졌다 돌아온다
+      b.hidden = unitZone[i] !== null; b.classList.toggle('resting', now); b.classList.toggle('picked', picked === i); b.disabled = restUntil[i] > t; });
     zoneEls.forEach((b, z) => {
       const n = count(z), th = active(z), need = th ? th.need : practice ? 1 : 0, short = Math.max(0, need - n);
       b.querySelector('.units').innerHTML = '<i></i>'.repeat(n);
