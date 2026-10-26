@@ -87,7 +87,10 @@ test('perf: 역사책 앞의 안내 대사를 읽는 동안 첫 쪽 그림을 �
 
 test('perf: 측정 페이지(tools/perf-bench.html)가 우선 장면 넷을 세 화질로 재고 결과 글을 만든다', async () => {
   const frame = document.createElement('iframe');
-  frame.src = '../tools/perf-bench.html?fast=1&auto=1'; frame.style.cssText = 'width:1000px;height:560px;position:fixed;left:-3000px;top:0;border:0';
+  frame.src = '../tools/perf-bench.html?fast=1&auto=1';
+  // 화면 안에 보이게 띄운다: 화면 밖(또는 투명)에 둔 iframe은 그린 화면이 쓰이지 않아 GPU가 밀린 일을 쌓아 두다가
+  // 역사책 첫 그림(toDataURL)에서 그 밀린 일을 한꺼번에 다 처리하느라 130초쯤 멈췄다(따로 열면 6초).
+  frame.style.cssText = 'width:1000px;height:560px;position:fixed;left:0;top:0;border:0;z-index:9999';
   document.body.appendChild(frame);
   try {
     await new Promise(r => frame.addEventListener('load', r));
@@ -127,7 +130,7 @@ test('perf: 몇 분 하면서 1분마다 평균 FPS·멈칫·메모리를 남긴
 
 test('perf: 측정 페이지의 오래 하기(?long=분)가 무대를 걸으며 1분마다 기록을 남긴다', async () => {
   const frame = document.createElement('iframe');
-  frame.src = '../tools/perf-bench.html?long=0.05&auto=1'; frame.style.cssText = 'width:1000px;height:560px;position:fixed;left:-3000px;top:0;border:0';
+  frame.src = '../tools/perf-bench.html?long=0.05&auto=1'; frame.style.cssText = 'width:1000px;height:560px;position:fixed;left:0;top:0;border:0;z-index:9999'; // 화면 안에(위 측정 페이지 테스트 참고)
   document.body.appendChild(frame);
   try {
     await new Promise(r => frame.addEventListener('load', r));
