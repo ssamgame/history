@@ -24,7 +24,7 @@ const CSS = `
 .ops-card .d { font-size: 12px; color: #5a4a38; margin: 0 6px; text-align: center; line-height: 1.2; }
 .ops-card.picked { transform: translateY(-20px) !important; border-color: var(--gold, #d9a441); box-shadow: 0 0 0 3px var(--gold, #d9a441), 0 12px 20px #0006; }
 .ops-card:active { filter: brightness(.96); }
-.ops-stamp { position: absolute; inset: 0; display: grid; place-items: center; z-index: 60; pointer-events: none; }
+.ops-stamp { position: absolute; inset: 0; display: grid; place-items: center; z-index: 60; background: rgba(20,22,20,.62); animation: ops-fade .25s ease-out reverse both; } /* 뒤의 지휘판·단추가 비치지 않게 어둡게 덮는다 */
 .ops-stamp .seal { position: relative; width: 176px; height: 176px; animation: ops-slam .42s cubic-bezier(.2,.9,.3,1.25) both; }
 .ops-stamp .ring { position: absolute; left: 50%; top: 50%; width: 176px; height: 176px; margin: -88px 0 0 -88px; border-radius: 50%; border: 6px solid #b8452f88; animation: ops-ring .6s .18s ease-out both; }
 .ops-stamp .sub { position: absolute; left: 50%; top: calc(50% + 104px); transform: translateX(-50%); white-space: nowrap; font: 800 26px var(--font-display); color: var(--hanji, #f2ead9);

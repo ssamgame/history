@@ -403,7 +403,13 @@ export async function talk(ctx, lines, anchors = {}) {
   const off = ctx.world.onUpdate(() => {
     if (!el || !anchor || el.hidden) return;
     const s = toScreen(ctx.world, anchor, 3.3), W = innerWidth, w = el.offsetWidth || 300, h = el.offsetHeight || 80;
-    const x = Math.min(W - w / 2 - 8, Math.max(w / 2 + 8, s.x)), y = Math.min(innerHeight - 8, Math.max(h + 24, s.front ? s.y : h + 24));
+    let x = Math.min(W - w / 2 - 8, Math.max(w / 2 + 8, s.x)), y = Math.min(innerHeight - 8, Math.max(h + 24, s.front ? s.y : h + 24));
+    // 왼쪽 위 목표 상자(.hud)를 가리지 않게: 옆으로 비킬 자리가 있으면 오른쪽으로, 없으면 아래로
+    const hud = ctx.ui.querySelector('.hud:not([hidden])')?.getBoundingClientRect();
+    if (hud && hud.height && x - w / 2 < hud.right + 8 && y - h - 16 < hud.bottom + 8) {
+      if (hud.right + 16 + w <= W - 8) x = hud.right + 16 + w / 2;
+      else y = Math.min(innerHeight - 8, hud.bottom + 8 + h + 16);
+    }
     el.style.left = `${x}px`; el.style.top = `${y}px`;
     el.style.setProperty('--tail', `${Math.min(w - 20, Math.max(20, w / 2 + s.x - x))}px`);
   });

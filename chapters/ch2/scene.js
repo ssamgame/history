@@ -8,6 +8,7 @@ import { LOOKS } from '../../content/characters.js';
 import { makeFigure, setAction, FIGURE_LOOKS, crowdLook } from '../../core/figures.js';
 import { buildHeunghwaSet, ladder as setLadder, flag as setFlag } from '../goryeo/set.js';
 import { useNpcFigure, flatten } from '../kit/ops.js';
+import { cart as kitCart, straw as kitStraw } from '../kit/buildings.js';
 
 export const HALF = 12, WALL_H = 4.2;
 export const ZONE_X = [8, 0, -8];          // 성벽 지휘판 구역: 성 밖 북쪽에서 볼 때 화면 왼쪽·가운데·오른쪽(카메라가 남쪽을 보므로 +x가 왼쪽)
@@ -51,9 +52,9 @@ export function buildCh2Scene(world) {
     const normal = setLadder({ len: LEN }); pivot.add(normal);
     const big = setLadder({ len: LEN }); big.scale.x = 1.8; big.visible = false; pivot.add(big);
     const top = new THREE.Object3D(); top.position.set(0, LEN - 0.3, 0); pivot.add(top);
-    const climber = flatten(fig(crowdLook('khitan', 4), 0, 0, 0.3, 0, pivot, 'walk')); climber.visible = false;
-    const climber2 = flatten(fig(crowdLook('khitan', 2), 0.4, 0, 0.3, 0, pivot, 'walk')); climber2.visible = false;
-    const carrier = flatten(fig(crowdLook('khitan', 1), 1.0, 0, -0.6, 0, group, 'push'));
+    const climber = flatten(fig(crowdLook('khitan', 6), 0, 0, 0.3, 0, pivot, 'walk')); climber.visible = false;
+    const climber2 = flatten(fig(crowdLook('khitan', 4), 0.4, 0, 0.3, 0, pivot, 'walk')); climber2.visible = false;
+    const carrier = flatten(fig(crowdLook('khitan', 2), 1.0, 0, -0.6, 0, group, 'push'));
     const dust = new THREE.Mesh(new THREE.IcosahedronGeometry(0.6, 1), new THREE.MeshLambertMaterial({ color: 0xdfe3e6, transparent: true, opacity: 0, depthWrite: false }));
     dust.position.set(0, 0.5, 0.2); group.add(dust);
     // 사람·축(pivot)은 굳히기가 들여다보지 않는 상자(hidden)에 둔다: 그러면 굳히기가 사람마다 재질별로 합쳐 그리기 수를 줄인다(움직임은 통째로)
@@ -64,7 +65,7 @@ export function buildCh2Scene(world) {
   world.onUpdate((dt, t) => { for (const f of waveFlags) if (f.visible) f.userData.update(dt, t); });
   // 성 밖에 몰려온 거란군(3파 뒤 물러간다)
   const khitanCrowd = new THREE.Group(); khitanCrowd.name = 'khitanCrowd'; L.add(khitanCrowd);
-  [[-12, -25], [-4.5, -26.5], [3.5, -25.5], [12, -26], [-9, -29], [0, -30], [9, -29.5], [-15, -31]].forEach(([x, z], i) => fig(crowdLook('khitan', i + 1), x, 0, z, 0, khitanCrowd));
+  [[-16, -21], [-19, -23.5], [-14.5, -25], [16, -21], [19, -23.5], [-4, -24.5], [4, -25], [-17.5, -27.5]].forEach(([x, z], i) => fig(crowdLook('khitan', i + 1), x, 0, z, 0, khitanCrowd));
   flatten(khitanCrowd); khitanCrowd.visible = false; // 함께 물러가는 무리: 통째로 한 벌
 
   // ── 호위 눈밭: 길목 둘(바위·나무 울타리)로 나뉜 세 갈래 길, 안전선 깃발, 길목 호위병, 구출 무리 일곱 ──
@@ -80,6 +81,23 @@ export function buildCh2Scene(world) {
       const rail = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.12, a - b + 0.4).translate(0, 0, 0), mat(0x6b4a32, 'wood')); rail.position.set(bx, 1.05, (a + b) / 2); field.add(rail);
     }
     for (const x of [-8.2, 8.2]) { const f = setFlag({ color: 0x2f6b5e, h: 3.4, w: 1.0, ch: 1.3 }); f.position.set(x, 0, FIELD.safeZ); field.add(f); }
+    // 들판 가장자리(걷는 곳 밖): 눈 덮인 소나무 줄, 버려진 수레·짚더미, 뒤쪽 거란 진영 나무 울타리. 한데 모아 합쳐 그린다(flatten)
+    const deco = new THREE.Group(); field.add(deco);
+    const at = (o, x, z, ry = 0) => { o.position.set(x, 0, z); o.rotation.y = ry; deco.add(o); return o; };
+    for (const sx of [-1, 1]) for (let z = -27.5; z >= -47; z -= 2.6 + rand() * 1.2) {
+      const x = sx * (11 + rand() * 3.5), h = 0.85 + rand() * 0.4, pine = new THREE.Group();
+      const c = new THREE.Mesh(new THREE.ConeGeometry(1.4, 3.6, 6), mat(0x3e5f4a, 'grass')); c.position.y = 2.4; c.castShadow = true;
+      const cap = new THREE.Mesh(new THREE.ConeGeometry(1.0, 1.2, 6), mat(0xf2f5f7, 'grain')); cap.position.y = 3.9;
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.22, 0.9, 6), mat(0x6b4a32, 'wood')); trunk.position.y = 0.45;
+      pine.add(c, cap, trunk); pine.scale.setScalar(h); at(pine, x, z, rand() * 3);
+    }
+    for (const [x, z, ry] of [[-10.2, -33.5, 0.5], [10.4, -38, -0.7]]) { const g = new THREE.Group(); kitCart(g, { load: true }); at(g, x, z, ry); }
+    for (const [x, z] of [[10.2, -31], [-10.6, -40.5], [9.8, -44]]) { const g = new THREE.Group(); kitStraw(g); g.scale.setScalar(0.8); at(g, x, z); }
+    for (let x = -13; x <= 13; x += 1.3) {
+      const p = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.13, 1.5, 5), mat(0x6b4a32, 'wood')); p.position.set(x, 0.75, -46.5); p.rotation.z = (rand() - 0.5) * 0.25; p.castShadow = true; deco.add(p);
+    }
+    { const r = new THREE.Mesh(new THREE.BoxGeometry(26.5, 0.1, 0.1), mat(0x6b4a32, 'wood')); r.position.set(0, 1.1, -46.5); deco.add(r); }
+    flatten(deco);
     const line = new THREE.Mesh(new THREE.PlaneGeometry(17, 0.35).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x2f6b5e, transparent: true, opacity: 0.55, depthWrite: false })); line.position.set(0, 0.04, FIELD.safeZ); field.add(line);
   }
   field.visible = false;
@@ -111,11 +129,11 @@ export function buildCh2Scene(world) {
   return {
     set, zones, defenders, ladders, waveFlags, khitanCrowd, field, guards, captives,
     escortField: FIELD,
-    // 지휘판 카메라: 성 밖 북쪽 위에서 성벽을 비스듬히 내려다본다. 아래쪽 지휘판(화면 아래 약 1/4)에 가리지 않게 아래로 빈 점을 하나 더 넣는다
+    // 지휘판 카메라: 성 밖 북쪽에서 성벽을 낮게 비스듬히 본다(사다리가 서 보이고 사람이 크게). 아래쪽 지휘판(화면 아래 약 1/4)에 가리지 않게 아래로 빈 점을 하나 더 넣는다
     wallFit: {
-      target: [0, 2.6, -16], dir: [0.14, 1.0, -1],
-      points: [[-11, WALL_H + 1.2, -12.4], [11, WALL_H + 1.2, -12.4], ...ZONE_X.flatMap(x => [[x, 0, BASE_Z - 0.6], [x, 0, BASE_Z - 6.4], [x, WALL_H + 3, -HALF - 0.6]]), [0, -6, -20]],
-      margin: 0.9,
+      target: [0, 2.4, -15], dir: [0.3, 0.75, -1],
+      points: [[-11, WALL_H + 1.2, -12.4], [11, WALL_H + 1.2, -12.4], ...ZONE_X.flatMap(x => [[x, 0, BASE_Z - 0.6], [x, 0, BASE_Z - 4.2], [x, WALL_H + 2.5, -HALF - 0.6]]), [0, -3, -19]],
+      margin: 0.92,
     },
     start: [0, 6],
     explore: { x0: -10.5, x1: 10.5, z0: -10.5, z1: 7 },

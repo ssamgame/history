@@ -143,6 +143,22 @@ test('ch2-pilot: speech bubbles sit over the speaker and the dialogue box goes b
   } finally { s.done(); }
 });
 
+test('ch2-pilot: a speech bubble never covers the goal box at the top left', async () => {
+  const s = touchSetup(ch2Script.speakers);
+  const hud = document.createElement('div'); hud.className = 'hud';
+  Object.assign(hud.style, { position: 'fixed', left: '0px', top: '0px', width: '45%', height: '55%' });
+  s.ui.append(hud);
+  try {
+    const m = new THREE.Object3D(); m.position.set(-4, 0, -30); s.w.level.add(m); // 멀리 왼쪽: 말풍선이 화면 왼쪽 위로 간다
+    s.w.player.position.set(0, 0, 0); s.w.snapCamera();
+    const p = talk(s.ctx, [{ who: 'soldier', text: '거란 왕이 직접 대군을 이끌고 왔대!', src: ['S3'] }], { soldier: m });
+    await sleep(10); s.w.step(0.016, { x: 0, z: 0 });
+    const a = s.ui.querySelector('.dlg').getBoundingClientRect(), b = hud.getBoundingClientRect();
+    ok(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom, `bubble ${Math.round(a.left)},${Math.round(a.top)} overlaps the goal box`);
+    s.dialogue.advance(); s.dialogue.advance(); await p;
+  } finally { hud.remove(); s.done(); }
+});
+
 test('ch2-pilot: guardian pick saves one new key; skipping keeps the default', async () => {
   const s = touchSetup(ch2Script.speakers);
   const key = 'goryeo-game:guardian-test';
