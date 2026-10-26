@@ -51,6 +51,12 @@ function lattice() {
   return latticeMat;
 }
 // 서양식 유리창: 네 칸 창틀과 하늘이 비친 유리
+// 불 켜진 창(밤 장면): 스스로 빛나는 따뜻한 노란 유리
+let litGlassMat = null;
+function litGlass() {
+  if (!litGlassMat) litGlassMat = new THREE.MeshBasicMaterial({ color: 0xffd98a });
+  return litGlassMat;
+}
 function glass() {
   if (glassMat) return glassMat;
   const cv = document.createElement('canvas'); cv.width = 64; cv.height = 96;
@@ -177,7 +183,7 @@ export function western(g, p = {}) {
     const n = [Math.sin(ry), 0, Math.cos(ry)];
     const at = k => [x + n[0] * k, y, z + n[2] * k];
     P.box(0.92, 1.3, 0.05, trim, 'stone', at(0.02), [0, ry, 0]);
-    P.box(0.7, 1.1, 0.05, 0, null, at(0.05), [0, ry, 0], { material: glass() });
+    P.box(0.7, 1.1, 0.05, 0, null, at(0.05), [0, ry, 0], { material: p.lit ? litGlass() : glass() }); // lit: 밤에 불 켜진 창
     P.box(1.0, 0.1, 0.22, trim, 'stone', [x + n[0] * 0.1, y - 0.68, z + n[2] * 0.1], [0, ry, 0]);
     P.box(1.04, 0.2, 0.12, trim, 'stone', [x + n[0] * 0.06, y + 0.74, z + n[2] * 0.06], [0, ry, 0]);
   };
@@ -202,7 +208,15 @@ export function western(g, p = {}) {
   const tri = new THREE.Shape([new THREE.Vector2(-1.05, 0), new THREE.Vector2(1.05, 0), new THREE.Vector2(0, 0.55)]);
   P.add(new THREE.ExtrudeGeometry(tri, { depth: 0.16, bevelEnabled: false }), trim, 'stone', [0, 2.84, d / 2 + 0.55]); // 세모 박공
   // 지붕: 탑·둥근 지붕이 없는 건물은 낮은 슬레이트 지붕
-  if (!p.tower && !p.dome && !p.flat) {
+  if (p.ruin) { // 전쟁에 부서진 건물: 지붕이 무너져 벽 위가 들쭉날쭉하고, 내려앉은 지붕판이 비스듬히 기댄다
+    P.box(w - 0.7, 0.04, d - 0.7, 0x2e2a26, 'grain', [0, h + 0.2, 0]); // 지붕이 없어 들여다보이는 어두운 안
+    const jag = i => 0.15 + (Math.abs(Math.sin(i * 12.9898) * 43758.5453) % 1) * 1.0;
+    for (let i = 0, x = -w / 2 + 0.45; x < w / 2; i++, x += 0.9) for (const s of [-1, 1]) { const k = jag(i * 2 + (s > 0 ? 1 : 0)); P.box(0.9, k, 0.35, color, 'stone', [x, h + k / 2, s * (d / 2 - 0.17)]); }
+    for (let i = 0, z = -d / 2 + 0.45; z < d / 2; i++, z += 0.9) for (const s of [-1, 1]) { const k = jag(i + 31 + s); P.box(0.35, k, 0.9, color, 'stone', [s * (w / 2 - 0.17), h + k / 2, z]); }
+    P.box(w * 0.35, 0.2, 2.6, 0x4a4f55, 'tile', [w * 0.28, 1.0, d / 2 + 0.9], [0.75, 0, 0.1]); // 무너져 내린 지붕판
+    for (let i = 0; i < 7; i++) P.add(new THREE.DodecahedronGeometry(0.3 + (i % 3) * 0.12, 0), color, 'stone', [-w / 2 + 1 + i * (w - 2) / 6, 0.2, d / 2 + 0.6 + (i % 2) * 0.5]);
+  }
+  if (!p.tower && !p.dome && !p.flat && !p.ruin) {
     const r = roofSurface({ W: w + 0.6, D: d + 0.6, H: Math.min(2.2, d * 0.35), profile: 'tile', thick: 0.1 });
     P.add(r.top, 0x4a4f55, 'tile', [0, h + 0.17, 0], [0, 0, 0], { smooth: true });
     P.add(r.under, 0x5a4a3a, 'wood', [0, h + 0.17, 0], [0, 0, 0], { smooth: true, shadow: false });
@@ -340,12 +354,73 @@ export function woodpile(g) {
   return P.into(g);
 }
 // 가로등(근대 이후 거리): 쇠기둥과 등
-export function lamp(g) {
+// lit: 불 켜진 가로등(밤 장면) — 전구가 스스로 빛나고, 발밑에 둥근 불빛이 번진다(빛 계산은 그대로, 재질만)
+let lampGlow = null, lampHalo = null, lampPool = null;
+export function lamp(g, p = {}) {
   const P = parts();
   P.cyl(0.07, 0.1, 3.4, 8, 0x2b2b2b, 'grain', [0, 1.7, 0]);
   P.box(0.5, 0.08, 0.08, 0x2b2b2b, 'grain', [0.2, 3.35, 0]);
   P.add(new THREE.ConeGeometry(0.25, 0.3, 6), 0x2b2b2b, 'grain', [0.42, 3.25, 0]);
-  P.add(new THREE.SphereGeometry(0.14, 8, 6), 0xfff1c8, 'grain', [0.42, 3.08, 0], [0, 0, 0], { shadow: false });
+  if (p.lit) {
+    lampGlow ||= new THREE.MeshBasicMaterial({ color: 0xffe9a8 });
+    lampHalo ||= new THREE.MeshBasicMaterial({ color: 0xffe2a0, transparent: true, opacity: 0.22, depthWrite: false });
+    lampPool ||= new THREE.MeshBasicMaterial({ color: 0xffd36a, transparent: true, opacity: 0.32, depthWrite: false });
+    P.add(new THREE.SphereGeometry(0.2, 10, 8), 0, null, [0.42, 3.06, 0], [0, 0, 0], { material: lampGlow, shadow: false });
+    P.add(new THREE.SphereGeometry(0.55, 12, 8), 0, null, [0.42, 3.06, 0], [0, 0, 0], { material: lampHalo, shadow: false }); // 전구 둘레 빛무리
+    P.add(new THREE.CircleGeometry(2.2, 24).rotateX(-Math.PI / 2), 0, null, [0.42, 0.06, 0], [0, 0, 0], { material: lampPool, shadow: false });
+  } else P.add(new THREE.SphereGeometry(0.14, 8, 6), 0xfff1c8, 'grain', [0.42, 3.08, 0], [0, 0, 0], { shadow: false });
+  return P.into(g);
+}
+// 벽걸이 전화기(1900년 무렵): 나무 상자, 위에 놋쇠 종 둘, 옆의 손잡이(발전기 핸들), 앞의 송화기 나팔, 줄에 매달린 수화기
+export function telephone(g) {
+  const P = parts();
+  P.box(0.5, 0.75, 0.22, 0x6b4a32, 'wood', [0, 0, 0]);
+  P.box(0.56, 0.08, 0.26, 0x4e3524, 'wood', [0, 0.41, 0]);
+  for (const s of [-1, 1]) P.add(new THREE.SphereGeometry(0.09, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), 0xc9a040, 'grain', [s * 0.12, 0.28, 0.12], [Math.PI / 2, 0, 0]);
+  P.cyl(0.03, 0.03, 0.2, 6, 0x2b2b2b, 'grain', [0, 0.02, 0.2], [Math.PI / 2, 0, 0]);
+  P.add(new THREE.ConeGeometry(0.09, 0.14, 10, 1, true), 0x1e1c1a, 'grain', [0, 0.02, 0.35], [-Math.PI / 2, 0, 0]);
+  P.cyl(0.015, 0.015, 0.22, 5, 0x2b2b2b, 'grain', [0.3, 0.05, 0.05], [0, 0, Math.PI / 2]);
+  P.box(0.04, 0.12, 0.04, 0x2b2b2b, 'grain', [0.41, 0.0, 0.05]);
+  P.cyl(0.045, 0.06, 0.22, 8, 0x1e1c1a, 'grain', [-0.33, -0.05, 0.08]); // 수화기
+  P.cyl(0.01, 0.01, 0.3, 4, 0x1e1c1a, 'grain', [-0.3, -0.25, 0.08], [0, 0, 0.3]);
+  return P.into(g);
+}
+// 텔레비전(1980년대): 작은 상 위에 나무 테두리 브라운관 상자와 회색 화면
+let tvScreen = null;
+export function tv(g) {
+  const P = parts();
+  P.box(1.4, 0.06, 0.8, 0x7a5a3c, 'wood', [0, 0.7, 0]);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) P.box(0.06, 0.7, 0.06, 0x5e4330, 'wood', [sx * 0.62, 0.35, sz * 0.34]);
+  P.box(1.1, 0.85, 0.7, 0x6b4a32, 'wood', [0, 1.16, 0]);
+  tvScreen ||= new THREE.MeshBasicMaterial({ color: 0xb8c8cc });
+  P.box(0.8, 0.6, 0.02, 0, null, [-0.08, 1.18, 0.36], [0, 0, 0], { material: tvScreen, shadow: false });
+  for (let i = 0; i < 2; i++) P.cyl(0.04, 0.04, 0.04, 8, 0xc8c2b6, 'grain', [0.43, 1.3 - i * 0.18, 0.36], [Math.PI / 2, 0, 0]);
+  P.cyl(0.012, 0.012, 0.6, 4, 0x8a8a88, 'grain', [-0.2, 1.85, 0], [0, 0, 0.5]);
+  P.cyl(0.012, 0.012, 0.6, 4, 0x8a8a88, 'grain', [0.2, 1.85, 0], [0, 0, -0.5]);
+  return P.into(g);
+}
+// 국숫집 상: 낮은 나무 상 위에 국수 담은 흰 그릇(n개)
+export function bowls(g, p = {}) {
+  const P = parts(), n = p.n || 4;
+  P.box(1.8, 0.07, 1.0, 0x7a5a3c, 'wood', [0, 0.72, 0]);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) P.box(0.07, 0.7, 0.07, 0x5e4330, 'wood', [sx * 0.8, 0.35, sz * 0.4]);
+  for (let i = 0; i < n; i++) {
+    const x = (i % 2 ? 0.4 : -0.4) + (i > 1 ? 0.1 : -0.1), z = i > 1 ? 0.22 : -0.2;
+    P.cyl(0.2, 0.13, 0.16, 12, 0xf2efe6, 'grain', [x, 0.84, z]);
+    P.cyl(0.17, 0.17, 0.02, 12, 0xe8d8a8, 'grain', [x, 0.91, z]); // 국수
+  }
+  return P.into(g);
+}
+// 측량 막대(토지 조사): 빨강·흰 띠를 칠한 긴 막대. kind 'tripod'는 세 다리 위의 측량기
+export function surveyPole(g, p = {}) {
+  const P = parts();
+  if (p.kind === 'tripod') {
+    for (let i = 0; i < 3; i++) { const a = i / 3 * Math.PI * 2; P.cyl(0.03, 0.03, 1.5, 5, 0x7a5a3c, 'wood', [Math.cos(a) * 0.3, 0.72, Math.sin(a) * 0.3], [Math.sin(a) * 0.38, 0, -Math.cos(a) * 0.38]); }
+    P.box(0.3, 0.22, 0.45, 0xc9a040, 'grain', [0, 1.55, 0]);
+    P.cyl(0.06, 0.06, 0.5, 8, 0x2b2b2b, 'grain', [0, 1.72, 0], [Math.PI / 2, 0, 0]);
+    return P.into(g);
+  }
+  for (let i = 0; i < 6; i++) P.cyl(0.04, 0.04, 0.4, 6, i % 2 ? 0xf2efe6 : 0xb8392b, 'grain', [0, 0.2 + i * 0.4, 0]);
   return P.into(g);
 }
 
@@ -408,9 +483,25 @@ export function tent(g, p = {}) {
   return P.into(g);
 }
 // 증기선: 뾰족한 뱃머리, 붉은 물선, 갑판, 흰 선실과 창, 굴뚝 둘, 돛대와 줄
-export function steamship(g) {
+// old: 1860~70년대 서양 군함(돛대 셋에 보조 증기 기관을 단 목조선: 짙은 나무 선체, 굴뚝 하나, 활대에 감아 둔 돛) — 근대 1장
+export function steamship(g, p = {}) {
   const P = parts();
   const hull = (scale, h) => { const sh = new THREE.Shape([new THREE.Vector2(-2.5 * scale, -8), new THREE.Vector2(2.5 * scale, -8), new THREE.Vector2(2.5 * scale, 4.5), new THREE.Vector2(0, 8.2), new THREE.Vector2(-2.5 * scale, 4.5)]); const geo = new THREE.ExtrudeGeometry(sh, { depth: h, bevelEnabled: false }); geo.rotateX(Math.PI / 2); return geo; };
+  if (p.old) {
+    P.add(hull(1, 2.4), 0x3a2c20, 'wood', [0, 2.0, 0]);
+    P.add(hull(1.02, 0.45), 0x1e1c1a, 'grain', [0, 0.3, 0]);
+    P.add(hull(1.03, 0.3), 0xc9b48a, 'wood', [0, 2.15, 0]); // 뱃전의 밝은 띠
+    P.box(4.7, 0.14, 12, 0x8a6a48, 'wood', [0, 2.05, -1.4]);
+    P.box(2.4, 1.0, 3, 0x5a4232, 'wood', [0, 2.6, -4.6]); // 뒤쪽 선실
+    P.cyl(0.5, 0.55, 3.0, 12, 0x1e1c1a, 'grain', [0, 3.6, -0.4]); // 굴뚝 하나
+    for (const [dz, hm] of [[4.2, 8.5], [0.9, 9.5], [-3.2, 8.2]]) {
+      P.cyl(0.1, 0.13, hm, 6, 0x4a3424, 'wood', [0, 2 + hm / 2, dz]);
+      for (const [k, yw] of [[0.55, 3.6], [0.82, 2.7]]) { P.box(yw, 0.08, 0.08, 0x4a3424, 'wood', [0, 2 + hm * k, dz]); P.box(yw * 0.9, 0.22, 0.2, 0xe2dccb, 'cloth', [0, 2 + hm * k - 0.16, dz + 0.05]); } // 활대와 감아 둔 돛
+    }
+    P.cyl(0.06, 0.08, 4, 5, 0x4a3424, 'wood', [0, 3.4, 9.2], [1.1, 0, 0]); // 뱃머리 기움 돛대
+    P.cyl(0.015, 0.015, 9.4, 3, 0x2b241c, 'grain', [0, 9.6, 0.5], [Math.PI / 2 - 0.02, 0, 0]);
+    return P.into(g);
+  }
   P.add(hull(1, 2.4), 0x2b2f36, 'grain', [0, 2.0, 0]);
   P.add(hull(1.02, 0.45), 0x8a2f24, 'grain', [0, 0.3, 0]);
   P.box(4.7, 0.14, 12, 0x8a6a48, 'wood', [0, 2.05, -1.4]);
@@ -817,13 +908,14 @@ export function toolRack(g, p = {}) {
   });
   return P.into(g);
 }
-// 방(벽보) 붙은 나무 게시판: 종이 몇 장
+// 방(벽보) 붙은 나무 게시판: 종이 몇 장. chalk: 운동장에 세운 칠판(짙은 초록 판에 분필 글줄)
 export function noticeBoard(g, p = {}) {
   const P = parts();
   for (const s of [-1, 1]) P.cyl(0.07, 0.08, 2.2, 6, 0x5e4330, 'wood', [s * 0.9, 1.1, 0]);
-  P.box(2.0, 1.1, 0.08, 0x8a6a48, 'wood', [0, 1.45, 0]);
+  P.box(2.0, 1.1, 0.08, p.chalk ? 0x2f4a3a : 0x8a6a48, p.chalk ? 'grain' : 'wood', [0, 1.45, 0]);
   P.box(2.2, 0.12, 0.3, 0x5e4330, 'wood', [0, 2.06, 0]);
-  for (let i = 0; i < (p.n || 3); i++) P.box(0.45, 0.6, 0.02, 0xe8e2d2, 'cloth', [-0.6 + i * 0.6, 1.42 + (i % 2) * 0.08, 0.05]);
+  if (p.chalk) for (let i = 0; i < 3; i++) P.box(1.2 - i * 0.25, 0.05, 0.02, 0xe8e6dc, 'cloth', [-0.2 + i * 0.05, 1.75 - i * 0.25, 0.05]);
+  else for (let i = 0; i < (p.n || 3); i++) P.box(0.45, 0.6, 0.02, 0xe8e2d2, 'cloth', [-0.6 + i * 0.6, 1.42 + (i % 2) * 0.08, 0.05]);
   return P.into(g);
 }
 // 모닥불 자리: 돌을 둥글게 두르고 장작과 붉은 숯(불길은 그리지 않아 가볍다)

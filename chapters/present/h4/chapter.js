@@ -50,7 +50,7 @@ export default makeKitChapter({
     { ...script.parts.help, arena: SNOWROAD, from: [0, 27],
       route: xy(script.parts.help.route, [{ x: 0, z: 20 }, { x: 0, z: 8 }, { x: 2, z: -8 }, { x: 0, z: -18 }]),
       pickups: xy(script.parts.help.pickups, [{ x: -14, z: 16 }, { x: 13, z: 2 }, { x: -12, z: -14 }]),
-      hazards: [{ x: -18, z: 14, to: [18, 14], kind: 'car', r: 1.5, speed: 0.45 }, { x: 18, z: -2, to: [-18, -2], kind: 'car', r: 1.5, speed: 0.5 }] },
+      hazards: [{ x: -18, z: 14, to: [18, 14], kind: 'truck', r: 1.5, speed: 0.45 }, { x: 18, z: -2, to: [-18, -2], kind: 'truck', r: 1.5, speed: 0.5 }] },
     { ...script.parts.flow, arena: MAP, from: [0, 30], route: xy(script.parts.flow.route, [M(42, 14), M(28, 24), M(41, 52), M(50, 47), M(36, 44)]) },
     { ...script.parts.truce, pages: script.parts.truce.pages.map(p => ({ ...p, figure: PIC[p.pic] })) },
   ],

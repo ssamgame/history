@@ -109,8 +109,8 @@ export function buildJ1Scene(world) {
   {
     const keep = [...tents, [0, -6], [-11, 1.5], [-4, -9.5], [-3, 5.5], [-8, 3], [14, -9], [0, -2]].map(([x, z]) => ({ x, z, r: 2.6 }));
     scatter(world, { kind: 'grass', count: 130, area: { x0: -24, x1: 24, z0: -13, z1: 14 }, avoid: [...keep, { x: 7, z: -12, r: 6 }], seed: 51, ground: groundH, color: 0x6f8f4a });
-    scatter(world, { kind: 'grass', count: 90, area: { x0: -32, x1: 32, z0: 12, z1: 18 }, seed: 52, ground: groundH, scale: [1.4, 2.4], color: 0x8a9a5a });
-    scatter(world, { kind: 'grass', count: 90, area: { x0: -32, x1: 32, z0: -18, z1: -13 }, avoid: [{ x: 0, z: -12, r: 12 }], seed: 53, ground: groundH, scale: [1.4, 2.4], color: 0x8a9a5a });
+    scatter(world, { kind: 'grass', count: 90, area: { x0: -32, x1: 32, z0: 12, z1: 18 }, seed: 52, ground: groundH, scale: [1.0, 1.6], color: 0x8a9a5a });
+    scatter(world, { kind: 'grass', count: 90, area: { x0: -32, x1: 32, z0: -18, z1: -13 }, avoid: [{ x: 0, z: -12, r: 12 }], seed: 53, ground: groundH, scale: [1.0, 1.6], color: 0x8a9a5a });
     scatter(world, { kind: 'rock', count: 14, area: { x0: -34, x1: 34, z0: -18, z1: 18 }, avoid: keep, seed: 54, ground: groundH, scale: [0.5, 1.2] });
     scatter(world, { kind: 'pine', count: 30, area: { x0: -90, x1: 90, z0: 34, z1: 70 }, seed: 55, ground: () => -0.4, scale: [1.2, 1.8] });
   }

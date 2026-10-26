@@ -23,7 +23,7 @@
 import * as THREE from 'three';
 import { BUILD, addFootprint, taegukgiTexture, addNature } from './town.js';
 import { bakeStatic } from './buildings.js';
-import { terrainField, terrainMesh } from './terrain.js';
+import { terrainField, terrainMesh, hillColorFor } from './terrain.js';
 import { mat, makePerson } from '../../core/people.js';
 import { createTapTargets } from '../../core/minigame.js';
 import { MAP_OUTLINE } from '../../core/screens.js';
@@ -127,10 +127,10 @@ export function buildArena(world, arena) {
     } else { // 걷는 곳은 평평하게, 바깥은 언덕(마을 땅과 같은 방식)
       const field = terrainField({ bounds: arena.bounds, props: [...(arena.props || []), ...(arena.center || [])], margin: arena.edge ? 13 : 4, hill: arena.hill ?? 0.8 }); // 둘레 건물(edge)이 서는 곳까지 평평하게
       if (kind === 'stone') { const f = field.flat, pave = new THREE.Mesh(box(f.x1 - f.x0, 0.04, f.z1 - f.z0), mat(color, 'stone')); pave.position.set((f.x0 + f.x1) / 2, 0.02, (f.z0 + f.z1) / 2); pave.receiveShadow = true; g.add(pave); }
-      const ground = terrainMesh(field, { color: kind === 'stone' ? 0x7d7158 : color, kind: kind === 'stone' ? 'earth' : kind, roads: arena.roads || [], size: 160, seg: 64 });
+      const ground = terrainMesh(field, { color: kind === 'stone' ? 0x7d7158 : color, kind: kind === 'stone' ? 'earth' : kind, roads: arena.roads || [], size: 160, seg: 64, hill: arena.hillColor ?? hillColorFor(kind, color, world.moodName) });
       ground.position.y = 0.01; g.add(ground);
       // 마을처럼 언덕에는 소나무·덤불·바위, 걷는 곳 가장자리에는 풀포기(지도·바다 무대와 nature: false는 빼고). 무대를 치우면 함께 치운다.
-      if (!arena.map && arena.nature !== false) addNature(world, { bounds: arena.bounds, props: [...(arena.props || []), ...(arena.center || [])], roads: arena.roads || [], start: arena.from }, field, kind, color, g);
+      if (!arena.map && arena.nature !== false) addNature(world, { bounds: arena.bounds, props: [...(arena.props || []), ...(arena.center || [])], roads: arena.roads || [], start: arena.from, hillColor: arena.hillColor }, field, kind, color, g);
     }
     if (arena.map) g.add(mapFloor(arena.map));
     for (const r of arena.roads || []) { const m = new THREE.Mesh(box(r.w, 0.05, r.d), mat(r.color || 0x8f7556, r.kind || 'earth')); m.position.set(r.x, r.y ?? 0.04, r.z); m.rotation.y = r.ry || 0; m.receiveShadow = true; g.add(m); }
@@ -319,6 +319,8 @@ export function drive(ctx, part, easy) {
     else if (hz.kind === 'mine') { add(hg, new THREE.SphereGeometry(0.6, 10, 8), 0x2b2b2b, 0, 0.3, 0); }
     else if (hz.kind === 'crowd') { for (let i = 0; i < 3; i++) { const p = makePerson(LOOKS.gendarme); p.position.set(i - 1, 0, 0); hg.add(p); } }
     else if (hz.kind === 'car') { BUILD.truck(hg, { color: 0x8a2f24 }); }
+    else if (hz.kind === 'cart') { const c = new THREE.Group(); c.rotation.y = Math.PI / 2; hg.add(c); BUILD.cart(c, { load: true }); } // 소달구지·손수레(1890년대 길)
+    else if (hz.kind === 'truck') { BUILD.truck(hg, { color: 0x55603f }); } // 군용 트럭(전쟁 장면)
     else { const r = add(hg, new THREE.DodecahedronGeometry(hz.r || 1.4, 0), 0x6b6862, 0, 0.4, 0); r.scale.y = 0.6; }
     return { ...hz, hg, ph: Math.random() * 6 };
   });
@@ -493,6 +495,8 @@ export function stops(ctx, part, easy) {
 }
 
 // ── deliver ───────────────────────────────────────────
+// 가져다 놓기 칸 이름표 자리: 원 앞쪽(카메라 쪽 dz)에 낮게(y는 글 가운데 높이) 두어, 먼 칸이어도 왼쪽 위 목표 상자 밑에 숨지 않게 한다
+export const BIN_LABEL = { y: 2.2, dz: 1.6 };
 export function deliver(ctx, part, easy) {
   const { world, audio } = ctx;
   const s = session(ctx, part, easy);
@@ -501,7 +505,7 @@ export function deliver(ctx, part, easy) {
     const disc = new THREE.Mesh(new THREE.CircleGeometry(2.1, 32).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xd9a441, transparent: true, opacity: 0.35 }));
     disc.position.set(b.x, 0.07, b.z); g.add(disc);
     const r = ring(0xd9a441, 2.0, 2.3); r.position.set(b.x, 0.08, b.z); g.add(r);
-    const lab = labelSprite(b.label, { size: 1.25 }); lab.position.set(b.x, 3.4, b.z); g.add(lab);
+    const lab = labelSprite(b.label, { size: 1.25 }); lab.position.set(b.x, BIN_LABEL.y, b.z + BIN_LABEL.dz); g.add(lab);
     if (b.look) standPerson(g, b.look, b.x, b.z - 2.6);
     return { ...b, disc, pos: s.at(b.x, b.z) };
   });

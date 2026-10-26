@@ -27,30 +27,45 @@ export function terrainField({ bounds, props = [], margin = 5, hill = 1 }) {
   const pads = props.filter(p => p.type !== 'water' && p.type !== 'crowd' && rectDist(p.x, p.z, flat) > 0)
     .map(p => ({ x: p.x, z: p.z, r: (p.type === 'western' ? Math.max(p.w || 8, p.d || 5) * 0.75 : 4.5) * (p.scale || 1) + 3 }));
   const inWater = (x, z) => waters.some(({ p, w, d, c, s }) => { const dx = x - p.x, dz = z - p.z, lx = dx * c - dz * s, lz = dx * s + dz * c; return Math.abs(lx) < w + 2 && Math.abs(lz) < d + 2; });
+  // 가장 가까운 물 칸 가장자리까지 거리(물 밖). 바닷가·강둑이 절벽처럼 솟지 않고 완만하게 오르게 쓴다
+  const waterDist = (x, z) => { let best = Infinity; for (const { p, w, d, c, s } of waters) { const dx = x - p.x, dz = z - p.z, lx = dx * c - dz * s, lz = dx * s + dz * c; best = Math.min(best, Math.hypot(Math.max(Math.abs(lx) - w - 2, 0), Math.max(Math.abs(lz) - d - 2, 0))); } return best; };
   const heightAt = (x, z) => {
     const d = rectDist(x, z, flat);
     if (d <= 0) return 0;
     if (inWater(x, z)) return -1.4;
     let h = smooth(d / 26) * (2.5 + 9 * fbm(x * 0.03 + 7, z * 0.03 + 3)) * hill + smooth(d / 6) * (fbm(x * 0.12, z * 0.12) - 0.3) * 0.9;
     for (const pd of pads) { const k = Math.hypot(x - pd.x, z - pd.z) / pd.r; if (k < 1.6) h *= smooth((k - 1) / 0.6); }
+    if (waters.length) h *= smooth(waterDist(x, z) / 12);
     return Math.max(h, 0);
   };
   return { heightAt, flat, inWater };
 }
 
-// 땅 메시: 꼭짓점 색에 높이·잡음에 따른 얼룩, 길 가장자리는 흙빛으로 닳은 듯이
-export function terrainMesh(field, { color = 0x5f7a4c, kind = 'grass', roads = [], size = 220, seg = 64, center = [0, 0] } = {}) {
+// 걷는 곳이 흙·돌인 마을·무대의 바깥 언덕 빛: 맨흙 산(사막처럼 보임) 대신 계절에 맞는 풀빛. 풀밭·눈밭은 null(바닥색 그대로)
+export function hillColorFor(kind, color, moodName = null) {
+  const hsl = {}; new THREE.Color(color).getHSL(hsl);
+  if (kind === 'grass' || hsl.l > 0.7 || moodName === 'snow') return null;
+  if (moodName === 'autumn') return 0x8a8450; // 누렇게 마른 가을 풀
+  if (moodName === 'winterDusk' || moodName === 'earlySpring') return 0x6f7450; // 겨울·이른 봄: 덜 푸른 풀
+  return 0x6a7c48;
+}
+
+// 땅 메시: 꼭짓점 색에 높이·잡음에 따른 얼룩, 길 가장자리는 흙빛으로 닳은 듯이. hill: 언덕 위 빛(없으면 바닥색을 조금 어둡게)
+export function terrainMesh(field, { color = 0x5f7a4c, kind = 'grass', roads = [], size = 220, seg = 64, center = [0, 0], hill = null } = {}) {
   const g = new THREE.PlaneGeometry(size, size, seg, seg); g.rotateX(-Math.PI / 2); g.translate(center[0], 0, center[1]);
   const p = g.attributes.position, cols = [], base = new THREE.Color(color), c = new THREE.Color();
   const hsl = {}; base.getHSL(hsl);
   const high = new THREE.Color().setHSL(hsl.h, hsl.s * 0.6, Math.max(0.08, hsl.l * 0.78)); // 언덕 위: 조금 어둡고 덜 진하게
   const worn = new THREE.Color(0x8f7a5c);
+  const hillC = hill == null ? null : new THREE.Color(hill), tmpC = new THREE.Color();
+  const highHill = hillC && (() => { const q = {}; hillC.getHSL(q); return new THREE.Color().setHSL(q.h, q.s * 0.7, q.l * 0.8); })();
   for (let i = 0; i < p.count; i++) {
     const x = p.getX(i), z = p.getZ(i), h = field.heightAt(x, z);
     p.setY(i, h);
     const n = fbm(x * 0.08, z * 0.08);
     c.copy(base).multiplyScalar(0.88 + n * 0.22);
-    if (h > 0.5) c.lerp(high, Math.min(1, h / 9));
+    if (hillC && h > 0.3) { tmpC.copy(hillC).multiplyScalar(0.9 + n * 0.2); c.lerp(tmpC, smooth((h - 0.3) / 2.2)); if (h > 3) c.lerp(highHill, Math.min(1, (h - 3) / 9)); }
+    else if (h > 0.5) c.lerp(high, Math.min(1, h / 9));
     if (h < -0.5) c.lerp(worn, 0.5); // 물가 진흙
     for (const r of roads) {
       const dx = Math.max(Math.abs(x - r.x) - r.w / 2, 0), dz = Math.max(Math.abs(z - r.z) - r.d / 2, 0), dd = Math.hypot(dx, dz);

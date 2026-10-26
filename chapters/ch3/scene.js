@@ -140,7 +140,7 @@ export function buildCh3Scene(world) {
   {
     const bank = [{ x: DAM_X, z: RIVER_Z, r: 5 }, { x: 10, z: RIVER_Z, r: 10 }];
     for (const [z0, z1, s] of [[RIVER_Z - RIVER_W / 2 - 2.6, RIVER_Z - RIVER_W / 2 - 0.4, 41], [RIVER_Z + RIVER_W / 2 + 0.4, RIVER_Z + RIVER_W / 2 + 2.2, 42]]) {
-      scatter(world, { kind: 'grass', count: 110, area: { x0: -60, x1: 60, z0, z1 }, avoid: bank, seed: s, ground: groundH, scale: [1.4, 2.4], color: 0x8a9a5a });
+      scatter(world, { kind: 'grass', count: 110, area: { x0: -60, x1: 60, z0, z1 }, avoid: bank, seed: s, ground: groundH, scale: [1.0, 1.7], color: 0x8a9a5a });
       scatter(world, { kind: 'rock', count: 16, area: { x0: -60, x1: 60, z0, z1 }, avoid: bank, seed: s + 3, ground: groundH, scale: [0.5, 1.3] });
     }
     const keep = [[-14, 9], [-6, 12], [8, 11], [16, 8], [22, 12], [-24, 6], [-12, 3], [-2, 7], [6, 3.5], [14, 4], [24, 5], [-4, 5], [5, 7.5], [0, 10], [DAM_X, -2.5]].map(([x, z]) => ({ x, z, r: 2.6 }));

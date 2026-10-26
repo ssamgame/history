@@ -50,7 +50,7 @@ export function buildCh4Scene(world) {
     const river = new THREE.Mesh(new THREE.PlaneGeometry(60, 12).rotateX(-Math.PI / 2), new THREE.MeshPhongMaterial({ color: 0x4f7488, shininess: 40, transparent: true, opacity: 0.92 }));
     river.position.set(JEOGO_X, 0.06, -10); L.add(river);
     mk(new THREE.BoxGeometry(60, 0.04, 3), 0x8f7556, JEOGO_X, 0.03, 2, L, false); // 강가 길
-    scatter(world, { kind: 'grass', count: 90, area: { x0: JEOGO_X - 28, x1: JEOGO_X + 28, z0: -4.5, z1: -1 }, seed: 61, scale: [1.6, 2.6], color: 0x7a8a50 }); // 갈대
+    scatter(world, { kind: 'grass', count: 90, area: { x0: JEOGO_X - 28, x1: JEOGO_X + 28, z0: -4.5, z1: -1 }, seed: 61, scale: [1.1, 1.8], color: 0x7a8a50 }); // 갈대(카메라 앞을 가리지 않게 키를 낮춤)
     scatter(world, { kind: 'pine', count: 14, area: { x0: JEOGO_X - 30, x1: JEOGO_X + 30, z0: 8, z1: 24 }, seed: 62, scale: [1, 1.4] });
     // 강둑의 버드나무와 바위, 강 건너 솔숲과 먼 산(국경의 강가)
     for (const [x, z] of [[-26, -3.6], [-12, -3.4], [14, -3.5], [24, -3.7], [-20, -17], [-4, -17.5], [10, -17], [26, -17.3]]) { const g = new THREE.Group(); g.position.set(JEOGO_X + x, 0, z); g.rotation.y = rand() * 3; L.add(g); tree(g, { kind: 'willow', x, z }); }

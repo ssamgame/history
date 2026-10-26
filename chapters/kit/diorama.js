@@ -1,7 +1,8 @@
 // 역사책 재현 그림: 쪽마다 게임 속 건물·인물 부품으로 작은 둥근 디오라마(모형 받침 위 장면)를 꾸며 한 번 찍은 그림.
 // 실제 사진·사료와 헷갈리지 않게 책에는 '재현 그림'이라고 적는다(core/minigame.js readBook).
 // spec = { base: 'grass'|'earth'|'stone'|'snow'|'sand', baseColor, r, water: [{ from }](x가 from보다 큰 쪽이 물), road: [{ x, z, w, d, color }],
-//          sky: 'day'|'dusk'|'gray'|'snow'|'night', props: [{ type, x, z, ry, ... }](kit BUILD), people: [[look, x, z, ry, { flag, scale, work }]],
+//          sky: 'day'|'dusk'|'gray'|'snow'|'night', props: [{ type, x, z, ry, ... }](kit BUILD), people: [[look, x, z, ry, { flag, scale, work, y, paper }]],
+//          (people의 y: 단·연단·기단 위에 세울 때 그 높이, paper: 손에 든 종이)
 //          crowd: [{ x, z, n, cols, looks, face, flags }], cam: [x, y, z], at: [x, y, z] }
 import * as THREE from 'three';
 import { BUILD } from './town.js';
@@ -30,6 +31,7 @@ function getRenderer() {
   return renderer;
 }
 
+export function buildDioramaScene(spec) { return build(spec); } // 검사용(tests/stage3-gfx.test.js)
 function build(spec) {
   const scene = new THREE.Scene();
   const sky = SKIES[spec.sky || 'day'];
@@ -59,7 +61,9 @@ function build(spec) {
   }
   for (const c of spec.crowd || []) { const g = new THREE.Group(); g.position.set(c.x, 0, c.z); g.rotation.y = c.ry || 0; scene.add(g); BUILD.crowd(g, c); }
   for (const [look, x, z, ry = 0, o = {}] of spec.people || []) {
-    const p = makePerson(LOOKS[look] || LOOKS.commoner, { track: false }); p.position.set(x, 0, z); p.rotation.y = ry; if (o.scale) p.scale.setScalar(o.scale);
+    const p = makePerson(LOOKS[look] || LOOKS.commoner, { track: false }); p.position.set(x, o.y || 0, z); p.rotation.y = ry; if (o.scale) p.scale.setScalar(o.scale);
+    p.userData.look = look;
+    if (o.paper) { const sh = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.4, 0.02), mat(0xf6f1e4, 'cloth')); sh.position.set(0, 1.45, 0.42); sh.rotation.x = -0.5; p.add(sh); } // 두 손으로 펼쳐 든 종이
     if (o.work) { setWork(p, o.work); for (let i = 0; i < 8; i++) animateWalk(p, false, 0.06); } // 일하는 자세로
     if (o.flag) { const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.6, 5), mat(0x5a3f2a)); pole.position.set(0.5, 2.4, 0); p.add(pole); }
     scene.add(p);

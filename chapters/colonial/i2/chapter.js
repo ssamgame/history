@@ -9,7 +9,7 @@ const JONGNO = { edge: { style: 'modern', seed: 352 }, center: [{ type: 'papers'
   origin: [400, 0], ground: 'stone', groundColor: 0xa09a8c, bounds: { x0: -24, x1: 24, z0: -28, z1: 28 },
   roads: [{ x: 0, z: 0, w: 7, d: 56, color: 0x8a8070 }, { x: 0, z: -14, w: 40, d: 6, color: 0x8a8070 }],
   props: [
-    { type: 'pavilion', x: 0, z: 25, solid: false },
+    { type: 'pavilion', x: -13, z: 25, solid: false }, // 탑골 공원 팔각정: 출발 자리 뒤(카메라 쪽)를 막지 않게 옆으로
     { type: 'hanok', x: -9, z: 12, ry: Math.PI / 2, tile: true }, { type: 'hanok', x: 9, z: 6, ry: -Math.PI / 2, tile: true },
     { type: 'rice', x: -8, z: -4, n: 6 }, { type: 'tent', x: 8, z: -6 },
     { type: 'western', x: -14, z: -22, w: 8, d: 5, h: 5, color: 0x8a4a3a }, { type: 'western', x: 14, z: -22, w: 8, d: 5, h: 6, color: 0x9a948a },

@@ -34,7 +34,7 @@ export function buildCh2Scene(world) {
       const x = p.getX(i), z = p.getZ(i), far = Math.max(0, Math.hypot(x, z - 20) - 60);
       p.setY(i, Math.min(far * far * 0.01, 16) + Math.sin(x * 0.3) * Math.cos(z * 0.25) * 0.15);
       const j = rand() * 0.04;
-      c.setRGB(0.9 + j, 0.92 + j, 0.95 + j);
+      c.setRGB(0.83 + j, 0.86 + j, 0.9 + j); // 2026-10-25: 흰 성벽·하늘과 구별되게 눈밭을 한 단계 낮춤
       cols.push(c.r, c.g, c.b);
     }
     g.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));

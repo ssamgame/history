@@ -6,14 +6,14 @@ import script from './script.js';
 const xy = (list, pts) => list.map((it, i) => ({ ...it, ...pts[i] }));
 const pines = pts => pts.map(([x, z]) => ({ type: 'tree', x, z, color: 0x34503a }));
 const FOREST = { edge: { style: 'forest', seed: 836 }, center: [{ type: 'firepit', x: -15, z: 5 }, { type: 'rifles', x: 16, z: 10 }, { type: 'woodpile', x: 17, z: -6, ry: 0.5 }, { type: 'cargo', x: -15, z: -15, kind: 'crate', n: 3 }, { type: 'rifles', x: 7, z: 18 }],
-  origin: [400, 0], ground: 'grass', groundColor: 0x4f6a3e, bounds: { x0: -24, x1: 24, z0: -26, z1: 26 },
+  origin: [400, 0], ground: 'grass', groundColor: 0x5a7646, bounds: { x0: -24, x1: 24, z0: -26, z1: 26 },
   props: [
     { type: 'tent', x: -12, z: 13, color: 0x6b6a4a }, { type: 'tent', x: 13, z: 3, color: 0x6b6a4a }, { type: 'tent', x: -12, z: -9, color: 0x6b6a4a },
     ...pines([[-20, 20], [20, 20], [-4, 22], [6, 12], [-20, 2], [20, -10], [-3, -14], [10, -20], [-18, -20], [3, 2]]),
   ],
 };
 const VALLEY = { edge: { style: 'forest', seed: 543 }, center: [{ type: 'rifles', x: -16, z: -12 }, { type: 'cargo', x: 16, z: -8, kind: 'crate', n: 3 }, { type: 'firepit', x: 16, z: 14 }], // 청산리 골짜기: 양쪽 산비탈의 숲, 가운데 골짜기 길
-  origin: [400, 0], ground: 'grass', groundColor: 0x55703f, bounds: { x0: -30, x1: 30, z0: -30, z1: 30 },
+  origin: [400, 0], ground: 'grass', groundColor: 0x5f7a48, bounds: { x0: -30, x1: 30, z0: -30, z1: 30 },
   roads: [{ x: 0, z: 0, w: 6, d: 70, color: 0x7a6a50 }],
   props: [...pines([[-9, -20], [-11, -10], [-9, 0], [-12, 8], [-9, 16], [9, -20], [11, -10], [9, 0], [12, 8], [9, 16], [-16, -4], [16, 4], [-16, 12], [16, -14]])],
 };
@@ -31,7 +31,7 @@ export default makeKitChapter({
   spot: [0, 3],
   layout: {
     // 1920년 만주의 깊은 산골짜기: 가파른 산이 둘러싼 좁은 골짜기, 솔숲 속 천막 진영과 장작, 골짜기를 따라 난 흙길
-    ground: 'grass', groundColor: 0x4f6b3e, bounds: { x0: -15, x1: 15, z0: -9, z1: 11 }, start: [0, 9], hill: 2.4,
+    ground: 'grass', groundColor: 0x68854f, bounds: { x0: -15, x1: 15, z0: -9, z1: 11 }, start: [0, 9], hill: 2.4,
     roads: [{ x: 0, z: 0, w: 4, d: 24, color: 0x7a6a50 }],
     props: [
       { type: 'tent', x: -10, z: 6, color: 0x8a8a6a }, { type: 'tent', x: -12, z: 0, color: 0x8a8a6a }, { type: 'tent', x: 11, z: 7, color: 0x8a8a6a }, { type: 'tent', x: 12.5, z: 1, color: 0x7a7a5a },
@@ -49,7 +49,7 @@ export default makeKitChapter({
     signs: [{ id: 'signHeroes', title: '여성 독립운동가', x: 7, z: 8 }, { id: 'signUiyeol', title: '의열단', x: -12, z: -6 }],
     scatter: [
       { kind: 'pine', count: 70, area: { x0: -70, x1: 70, z0: -60, z1: 30 }, avoid: [{ x: 0, z: 1, r: 18 }], seed: 431, scale: [1.2, 1.9] },
-      { kind: 'rock', count: 18, area: { x0: -15, x1: 15, z0: -9, z1: 11 }, avoid: [{ x: 0, z: 1, r: 4 }, { x: -10, z: 4, r: 4 }, { x: 10, z: 3, r: 5 }, { x: -5, z: 6, r: 2 }, { x: 5, z: -1, r: 2 }, { x: -6, z: -3, r: 2 }, { x: 7, z: 8, r: 2 }, { x: -12, z: -6, r: 2 }], seed: 432 },
+      { kind: 'rock', count: 18, area: { x0: -15, x1: 15, z0: -9, z1: 11 }, avoid: [{ x: 0, z: 1, r: 4 }, { x: -10, z: 4, r: 4 }, { x: 10, z: 3, r: 5 }, { x: -5, z: 6, r: 2 }, { x: 5, z: -1, r: 2 }, { x: -6, z: -3, r: 2 }, { x: 7, z: 8, r: 2 }, { x: -12, z: -6, r: 2 }], keep: (x, z) => Math.abs(x) > 3.5, seed: 432 }, // 가운데 흙길(너비 4)은 비운다
     ],
   },
   parts: [

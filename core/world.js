@@ -13,25 +13,33 @@ export const MOODS = {
     hemi: [0xffd9b8, 0x3e4a3a, 0.5],
     particles: 'embers',
   },
+  // 겨울 해 질 녘: 노을 하늘은 두고 하늘빛·해를 밝혀 흙 마을이 갈색으로 뭉치지 않게 (근대 2장 1884년 12월 갑신정변)
+  winterDusk: {
+    skyTop: 0x4f5f8a, skyHorizon: 0xf0b88a, skyBottom: 0x8a8070,
+    fog: [0xe0c0a4, 45, 150],
+    sun: { color: 0xffdcb8, intensity: 1.75, dir: [-34, 30, -16] },
+    hemi: [0xffe8d4, 0x7a7466, 1.0],
+    particles: null, clouds: 0.35,
+  },
   snow: {
-    skyTop: 0x8e9aa8, skyHorizon: 0xd9dee3, skyBottom: 0x9aa3a8,
+    skyTop: 0x8494a8, skyHorizon: 0xcdd6e0, skyBottom: 0x9aa3a8,
     fog: [0xd5dbe0, 30, 120],
     sun: { color: 0xe8eef5, intensity: 0.8, dir: [20, 30, 10] },
-    hemi: [0xeef3f8, 0x8a9096, 0.9],
+    hemi: [0xeef3f8, 0x7a8088, 0.75], // 2026-10-25: 흰 눈·성벽·하늘이 한 덩어리로 보이지 않게 조금 낮춤
     particles: 'snow',
   },
   storm: {
     skyTop: 0x3b4652, skyHorizon: 0x76828c, skyBottom: 0x4a5258,
     fog: [0x5f6b74, 20, 90],
-    sun: { color: 0xc8d2dc, intensity: 0.5, dir: [10, 30, 20] },
-    hemi: [0xb4c0cc, 0x3a4038, 0.75],
+    sun: { color: 0xc8d2dc, intensity: 0.7, dir: [10, 30, 20] },
+    hemi: [0xb4c0cc, 0x3a4038, 0.9],
     particles: 'rain',
   },
   overcast: {
     skyTop: 0x6f7a86, skyHorizon: 0xb9c0c4, skyBottom: 0x7a7f78,
     fog: [0xaeb5b8, 35, 130],
-    sun: { color: 0xe6e8ea, intensity: 0.9, dir: [15, 30, 20] },
-    hemi: [0xdfe4e8, 0x5a6050, 0.85],
+    sun: { color: 0xeceeec, intensity: 1.35, dir: [15, 30, 20] },
+    hemi: [0xe4e8ea, 0x747a6a, 1.15], // 2026-10-25: 다섯 장이 54~69로 어두워 밝힘
     particles: null,
   },
   morning: {
@@ -54,7 +62,7 @@ export const MOODS = {
     skyTop: 0x5f6e78, skyHorizon: 0xa9b4b0, skyBottom: 0x5e6a60,
     fog: [0x8f9b98, 28, 115],
     sun: { color: 0xd8e0e0, intensity: 0.75, dir: [10, 30, 20] },
-    hemi: [0xcfd8d8, 0x4a5444, 0.9],
+    hemi: [0xcfd8d8, 0x5a6454, 0.9],
     particles: 'rain', clouds: 0.85, cloud: 0xb0b8b8,
   },
   // 봄: 옅은 하늘과 부드러운 햇살 (조선 2장 경복궁)
@@ -91,10 +99,10 @@ export const MOODS = {
   },
   // 숲·산골: 나무 사이로 드는 초록빛, 옅은 산안개 (고려 5장 해인사, 일제 4장 만주)
   forest: {
-    skyTop: 0x7aa0b8, skyHorizon: 0xdfe8dc, skyBottom: 0x5f7454,
-    fog: [0xc8d8c8, 30, 120],
+    skyTop: 0x7aa0b8, skyHorizon: 0xe6ebe2, skyBottom: 0x5f7454,
+    fog: [0xd8ddd0, 30, 120],
     sun: { color: 0xfff2d6, intensity: 1.35, dir: [-20, 32, 12] },
-    hemi: [0xe6efe2, 0x405a38, 0.9],
+    hemi: [0xe6efe2, 0x56684a, 0.9],
     particles: null, clouds: 0.4,
   },
   // 옅은 안개: 조금 가라앉은 잿빛 낮(너무 어둡지 않게) (일제 5장 경성, 6장 충칭)
@@ -229,7 +237,7 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
       sky.material.uniforms.cloudAmt.value = world.quality.particles > 0.3 ? (m.clouds ?? 0.5) : 0;
       placeSun();
       hemi.color.set(m.hemi[0]); hemi.groundColor.set(m.hemi[1]); hemi.intensity = m.hemi[2];
-      world.mood = m;
+      world.mood = m; world.moodName = name; // moodName: 장면 부품이 계절에 맞는 언덕 풀빛을 고를 때 쓴다
     },
     setQuality(levelName) {
       const q = QUALITY[levelName];

@@ -53,7 +53,7 @@ export default makeKitChapter({
     { ...script.parts.match, arena: LAMPS, from: [0, 11], bins: xy(script.parts.match.bins, [{ x: -14, z: -4 }, { x: -5, z: -3 }, { x: 4, z: -5 }, { x: 14, z: -4 }]) },
     { ...script.parts.tram, arena: LINE, from: [0, 37],
       route: xy(script.parts.tram.route, [{ x: 0, z: 30 }, { x: 0, z: 8 }, { x: 0, z: -14 }, { x: 0, z: -35 }]),
-      hazards: [{ x: -7, z: 19, to: [7, 19], kind: 'car', r: 1.4, speed: 0.6 }, { x: 7, z: -3, to: [-7, -3], kind: 'car', r: 1.4, speed: 0.7 }, { x: -7, z: -25, to: [7, -25], kind: 'car', r: 1.4, speed: 0.65 }] },
+      hazards: [{ x: -7, z: 19, to: [7, 19], kind: 'cart', r: 1.4, speed: 0.6 }, { x: 7, z: -3, to: [-7, -3], kind: 'cart', r: 1.4, speed: 0.7 }, { x: -7, z: -25, to: [7, -25], kind: 'cart', r: 1.4, speed: 0.65 }] },
     { ...script.parts.goods, pages: script.parts.goods.pages.map(p => ({ ...p, figure: PIC[p.pic] })) },
   ],
   // 전차가 선로 위를 천천히 오간다

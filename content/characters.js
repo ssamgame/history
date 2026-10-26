@@ -48,6 +48,8 @@ export const LOOKS = {
   // 근대·일제 강점기·현대편
   daewongun: { robe: 0x4f5f86, hat: 'official', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'goatee', beardColor: '#cfc9bd', age: 'old', shape: 'long', browColor: '#8a847a' } },
   gojong: { robe: 0xc99a2e, hat: 'ikseon', trim: 0xa8392b, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'goatee', shape: 'long' } },
+  // 왕이던 때(1897년 황제가 되기 전)의 고종: 붉은 곤룡포 (역사책 아관 파천 쪽)
+  gojongKing: { robe: 0xa3262a, hat: 'ikseon', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'goatee', shape: 'long' } },
   kimokgyun: { robe: 0xc9d4d8, hat: 'gat', trim: 0x2b241c, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'thin', shape: 'round' } },
   jeonbongjun: { robe: 0xe6dcc3, hat: 'topknot', trim: 0x8a2f24, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'goatee', shape: 'long' } },
   peasant: { robe: 0xddd2bb, hat: 'topknot', trim: 0x7a4e32, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
@@ -72,12 +74,16 @@ export const LOOKS = {
   gwangbokgun: { robe: 0x6b6a4a, hat: 'cap', gear: 'rifle', trim: 0xa8392b, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   scholarModern: { robe: 0x4a4f5a, outfit: 'suit', hat: 'short', trim: 0x4a4f5a, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache', glasses: 'round' } },
   gendarme: { robe: 0x55603f, hat: 'cap', trim: 0xb8452f, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
+  // 1930년대 학교의 제복 입은 교사(칼은 차지 않음)
+  teacherUniform: { robe: 0x2f3540, hat: 'cap', trim: 0xc9a040, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache' } },
   rokSoldier: { robe: 0x5a6448, hat: 'steel', gear: 'rifle', trim: 0x3a3f2c, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   unSoldier: { robe: 0x6b6a4a, hat: 'steel', gear: 'rifle', trim: 0x3a3f2c, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   citizen: { robe: 0x5d7a9a, hat: 'short', trim: 0xe6dcc3, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   grandma: { robe: 0xd8cfbf, hat: 'bun', hairColor: '#b8b2a8', trim: 0x6b4a32, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', age: 'old' } },
   nkSoldier: { robe: 0x6b6a3a, hat: 'cap', gear: 'rifle', trim: 0x8a2f24, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   builder: { robe: 0x8a7a5a, hat: 'steel', trim: 0x3a3f2c, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
+  // 1950년대 아이: 상투 없이 짧게 깎은 머리, 무명 셔츠
+  kidModern: { robe: 0xcfc6b0, hat: 'short', trim: 0x5a6a7a, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
 };
 
 export const look = (id, extra = {}) => ({ ...LOOKS[id], ...extra });

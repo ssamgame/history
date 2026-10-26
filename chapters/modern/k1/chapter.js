@@ -8,14 +8,14 @@ const PALACE = { edge: { style: 'tile', seed: 462 }, center: [{ type: 'woodpile'
   origin: [400, 0], ground: 'earth', groundColor: 0x9a8a6a, bounds: { x0: -20, x1: 20, z0: -14, z1: 14 },
   props: [
     { type: 'hanok', x: -11, z: -12, tile: true, scale: 1.4 }, { type: 'rice', x: -15, z: -6, n: 6 }, { type: 'woodpile', x: -6, z: -8 }, { type: 'tree', x: -18, z: 4, kind: 'pine' },
-    { type: 'western', x: 11, z: -12, w: 7, d: 4, h: 4, color: 0x8c8577 }, { type: 'steamship', x: 16, z: -22, ry: Math.PI / 2, solid: false },
+    { type: 'western', x: 11, z: -12, w: 7, d: 4, h: 4, color: 0x8c8577 }, { type: 'steamship', x: 16, z: -22, ry: Math.PI / 2, solid: false, old: true },
     { type: 'water', x: 20, z: -30, w: 60, d: 20 },
   ],
 };
 const COAST = { edge: { style: 'thatch', seed: 515 }, center: [{ type: 'cannon', x: -8, z: -8, ry: Math.PI }, { type: 'cannon', x: -2, z: -9, ry: Math.PI }, { type: 'cargo', x: -15, z: -6, kind: 'barrel', n: 3 }, { type: 'firepit', x: 15, z: 4 }, { type: 'cannon', x: -7, z: 16, ry: Math.PI }, { type: 'firepit', x: 9, z: 9 }], // 강화도 해안: 갯벌 길, 망루, 포대, 연무당. 먼바다에 군함
   origin: [400, 0], ground: 'earth', groundColor: 0x8a7a5a, bounds: { x0: -20, x1: 20, z0: -14, z1: 24 },
   props: [
-    { type: 'water', x: 0, z: -40, w: 160, d: 40 }, { type: 'steamship', x: -10, z: -34, ry: Math.PI / 2, solid: false },
+    { type: 'water', x: 0, z: -40, w: 160, d: 40 }, { type: 'steamship', x: -10, z: -34, ry: Math.PI / 2, solid: false, old: true },
     { type: 'pavilion', x: -14, z: 7 }, { type: 'wall', x: 9, z: -6, w: 8, color: 0x8c8577 }, { type: 'rice', x: 13, z: -3, n: 3 },
     { type: 'hanok', x: 10, z: 18, tile: true }, { type: 'tree', x: -16, z: 18, kind: 'pine' }, { type: 'tree', x: 17, z: 8, kind: 'pine' },
     { type: 'boat', x: 8, z: -22, ry: 0.4 }, { type: 'boat', x: 13, z: -24, ry: -0.2, color: 0x6b4a32 },
@@ -26,7 +26,7 @@ const YEONMU = { edge: { style: 'tile', seed: 47 }, center: [{ type: 'papers', x
   props: [
     { type: 'pavilion', x: 0, z: -11 }, { type: 'desk', x: 0, z: -6 },
     { type: 'crowd', x: -4, z: -5, n: 2, cols: 2, looks: ['joseonOfficial'], face: Math.PI / 2 }, { type: 'crowd', x: 4, z: -5, n: 2, cols: 2, looks: ['gentleman'], face: -Math.PI / 2 },
-    { type: 'water', x: 0, z: -40, w: 160, d: 30 }, { type: 'steamship', x: -16, z: -24, ry: Math.PI / 2, solid: false },
+    { type: 'water', x: 0, z: -40, w: 160, d: 30 }, { type: 'steamship', x: -16, z: -24, ry: Math.PI / 2, solid: false, old: true },
   ],
 };
 
@@ -41,7 +41,7 @@ export default makeKitChapter({
     roads: [{ x: 0, z: 2, w: 4, d: 22 }, { x: 0, z: -3, w: 30, d: 4 }, { x: -12, z: -11, w: 3, d: 6, color: 0x8a7a5a }],
     props: [
       { type: 'water', x: 0, z: -45, w: 260, d: 60 },
-      { type: 'steamship', x: 14, z: -32, ry: 0.3, solid: false },
+      { type: 'steamship', x: 14, z: -32, ry: 0.3, solid: false, old: true },
       { type: 'pier', x: -12, z: -16, w: 3, d: 6, solid: false }, { type: 'boat', x: -15, z: -18, ry: 0.2 }, { type: 'boat', x: -9, z: -19, ry: -0.3, color: 0x6b4a32 },
       { type: 'wall', x: -9, z: -11, w: 12, h: 2.4, solid: false }, { type: 'wall', x: 9, z: -11, w: 12, h: 2.4, solid: false },
       { type: 'terrace', x: -3, z: -7.6, w: 8.6, d: 5.6, h: 0.9 }, { type: 'hanok', x: -3, z: -8, y: 0.9, tile: true, scale: 1.3 },

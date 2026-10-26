@@ -175,9 +175,9 @@ export function buildCh1Scene(world) {
   };
   yurt(0, -41, 1.5);
   for (const [x, z] of [[-9, -37], [9, -37], [-16, -44], [16, -44], [-6, -48], [7, -49], [-22, -38], [22, -38], [-13, -52], [14, -53]]) yurt(x, z, 0.9 + rand() * 0.3);
-  for (const [x, z] of [[-4, -36.5], [4, -36.5], [-18, -32], [18, -32]]) flag(x, z, 0x2a2a2e, khitanGroup, 4.4);
+  for (const [x, z] of [[-5, -39.5], [5, -39.5], [-18, -32], [18, -32]]) flag(x, z, 0x2a2a2e, khitanGroup, 4.4); // 담판 화면을 덮지 않게 소손녕 뒤로
   const sonn = makePerson(LOOKS.sonn);
-  sonn.position.set(0, 0, -36); khitanGroup.add(sonn);
+  sonn.position.set(0, 0, -36); sonn.rotation.y = -0.42; khitanGroup.add(sonn); // 서희 쪽을 보며 담판 카메라(서쪽) 쪽으로 조금 돈다
   for (let i = 0; i < 9; i++) {
     const k = makePerson(LOOKS.khitan);
     k.position.set(-16 + i * 4, 0, -27 - (i % 2) * 1.5); khitanGroup.add(k);
@@ -219,8 +219,9 @@ export function buildCh1Scene(world) {
   const scene = { ring, khitanGroup, gangdongPillars, sonn, emberCount: fire.emberCount, retreating: false,
     ferry: { x: 8, z: -13.4, r: 1.6 },
     negotiationSpot: {
-      seohui: [0, -32.8, Math.PI], player: [1.7, -31.6, Math.PI],
-      cam: { pos: [8, 4.4, -29.2], target: [0, 1.6, -34.4] },
+      // 노을 해(서쪽 -x·북쪽 -z)를 등지고 옆(서쪽)에서 두 사람을 본다(역광으로 얼굴이 그늘지지 않게). 학생은 서희 뒤쪽에 비켜 선다
+      seohui: [0, -32.8, Math.PI + 0.42], player: [1.0, -30.2, Math.PI + 0.3],
+      cam: { pos: [-9.5, 4.6, -31.4], target: [0, 0.2, -34.6] }, // 얼굴이 아래 대화창 위쪽에 보이게 조금 내려다본다
     },
   };
 

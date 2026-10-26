@@ -12,7 +12,8 @@ import script from './script.js';
 // 미니게임 무대(마을에서 떨어진 x 400)
 // 1) 비 내리는 위화도 진영: 군사들이 하는 말(팻말) 가운데 이성계가 든 까닭을 찾는다
 export const CAMP = {
-  origin: [400, 0], ground: 'grass', groundColor: 0x55704a, bounds: { x0: -18, x1: 18, z0: -14, z1: 14 },
+  origin: [400, 0], ground: 'grass', groundColor: 0x6a8656, // 2026-10-25: 장맛비 그늘에 너무 어두워 한 단계 밝게
+  bounds: { x0: -18, x1: 18, z0: -14, z1: 14 },
   props: [
     { type: 'water', x: 0, z: -36, w: 140, d: 30, color: 0x5a7a86 }, { type: 'water', x: 0, z: 34, w: 140, d: 30, color: 0x5a7a86 },
     { type: 'tent', x: -14, z: -9, color: 0xb8a888 }, { type: 'tent', x: 14, z: -9, color: 0xb8a888 }, { type: 'tent', x: 0, z: -12, color: 0x9a3a2a },

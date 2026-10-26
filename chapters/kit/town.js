@@ -8,7 +8,7 @@ import { LOOKS } from '../../content/characters.js';
 import { createWeather } from '../../core/weather.js';
 import * as LM from '../joseon/landmarks.js';
 import * as BLD from './buildings.js';
-import { terrainField, terrainMesh, mountainRing, skyline } from './terrain.js';
+import { terrainField, terrainMesh, mountainRing, skyline, hillColorFor } from './terrain.js';
 const { hipRoof, gableRoof } = LM;
 
 const box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
@@ -129,7 +129,7 @@ export const BUILD = {
     return 1.6;
   },
   // 증기선 (항구)
-  steamship(g) { BLD.steamship(g); return 0; },
+  steamship(g, p) { BLD.steamship(g, p); return 0; }, // old: 1860~70년대 돛대 셋 목조 증기 군함
   // 바다·강 (넓은 물판)
   water(g, p) { const m = new THREE.Mesh(new THREE.PlaneGeometry(p.w || 200, p.d || 60).rotateX(-Math.PI / 2), new THREE.MeshPhongMaterial({ color: p.color || 0x3f7d9a, shininess: 60, transparent: true, opacity: 0.93 })); m.position.y = -0.3; g.add(m); return 0; },
   // 섬·땅덩이(바다 무대): 모래톱 위에 풀. r 반지름
@@ -200,7 +200,12 @@ export const BUILD = {
   cart(g, p) { BLD.cart(g, p); return 1.2; },
   straw(g) { BLD.straw(g); return 1; },
   woodpile(g) { BLD.woodpile(g); return 0.8; },
-  lamp(g) { BLD.lamp(g); return 0.25; },
+  lamp(g, p) { BLD.lamp(g, p); return 0.25; }, // lit: 불 켜진 가로등(밤)
+  // 벽걸이 전화기·텔레비전·국수 그릇 상·측량 막대(역사책 그림 소품)
+  telephone(g) { BLD.telephone(g); return 0.4; },
+  tv(g) { BLD.tv(g); return 0.8; },
+  bowls(g, p) { BLD.bowls(g, p); return 1.0; },
+  surveyPole(g, p) { BLD.surveyPole(g, p); return 0.4; },
   // 군용 트럭
   truck(g, p) { BLD.truck(g, p); return { rect: [2.4, 5.2] }; },
   // 증기 기관차와 화물칸(쌀가마를 싣고), 선로
@@ -282,6 +287,7 @@ export function addNature(world, layout, field, kind, color, parent = world.leve
   const hsl = {}; new THREE.Color(color).getHSL(hsl);
   const snowy = hsl.l > 0.7;
   const seed = Math.round(Math.abs(b.x0 * 31 + b.z1 * 17)) + 5;
+  const hill = layout.hillColor ?? hillColorFor(kind, color, world.moodName);
   const hasPines = (layout.scatter || []).some(s => s.kind === 'pine');
   scatter(world, { parent, kind: 'pine', count: hasPines ? 35 : 70, area: wide, keep: onHill, ground: field.heightAt, seed, scale: [1.1, 1.9] });
   scatter(world, { parent, kind: 'bush', count: 30, area: wide, keep: onHill, ground: field.heightAt, seed: seed + 1, scale: [0.9, 1.6], color: snowy ? 0xdfe6ea : null });
@@ -294,7 +300,7 @@ export function addNature(world, layout, field, kind, color, parent = world.leve
   ];
   const onRoad = (x, z) => (layout.roads || []).some(r => Math.abs(x - r.x) < r.w / 2 + 0.6 && Math.abs(z - r.z) < r.d / 2 + 0.6);
   const f = field.flat;
-  scatter(world, { parent, kind: 'grass', count: 90, area: { x0: f.x0, x1: f.x1, z0: f.z0, z1: f.z1 }, avoid: busy, keep: (x, z) => !onRoad(x, z), seed: seed + 3, scale: [0.7, 1.2], color: new THREE.Color(color).multiplyScalar(1.25).getHex() });
+  scatter(world, { parent, kind: 'grass', count: 90, area: { x0: f.x0, x1: f.x1, z0: f.z0, z1: f.z1 }, avoid: busy, keep: (x, z) => !onRoad(x, z), seed: seed + 3, scale: [0.7, 1.2], color: new THREE.Color(hill ? new THREE.Color(color).lerp(new THREE.Color(hill), 0.7) : color).multiplyScalar(1.25).getHex() }); // 흙 마당의 풀포기는 언덕 풀빛 쪽으로(마른 흙빛 풀이 아니게)
   if (hsl.h > 0.17 && hsl.h < 0.45 && hsl.s > 0.2) scatter(world, { parent, kind: 'flower', count: 25, area: { x0: f.x0, x1: f.x1, z0: f.z0, z1: f.z1 }, avoid: busy, keep: (x, z) => !onRoad(x, z), seed: seed + 4 });
 }
 
@@ -309,10 +315,11 @@ export function buildTown(world, layout) {
     const f = field.flat, pave = new THREE.Mesh(box(f.x1 - f.x0, 0.04, f.z1 - f.z0), mat(color, 'stone'));
     pave.position.set((f.x0 + f.x1) / 2, 0.01, (f.z0 + f.z1) / 2); pave.receiveShadow = true; L.add(pave);
   }
-  L.add(terrainMesh(field, { color: kind === 'stone' ? 0x7d7158 : color, kind: kind === 'stone' ? 'earth' : kind, roads: layout.roads || [] }));
+  const hill = layout.hillColor ?? hillColorFor(kind, color, world.moodName); // 바깥 언덕: 흙·돌 바닥이어도 계절에 맞는 풀빛(맨흙 산이 사막처럼 보이지 않게)
+  L.add(terrainMesh(field, { color: kind === 'stone' ? 0x7d7158 : color, kind: kind === 'stone' ? 'earth' : kind, roads: layout.roads || [], hill }));
   // skyline: { style: 'hanok'|'brick'|'concrete', arc: [시작, 끝] 라디안, color } — 도시 장면의 먼 건물 실루엣
   if (layout.skyline) { const sk = skyline(field, { center: [(layout.bounds.x0 + layout.bounds.x1) / 2, (layout.bounds.z0 + layout.bounds.z1) / 2], ...layout.skyline }); if (sk) L.add(sk); }
-  if (layout.mountains !== false) { const mr = mountainRing(field, { color: kind === 'stone' ? 0x6a7a58 : color, center: [(layout.bounds.x0 + layout.bounds.x1) / 2, (layout.bounds.z0 + layout.bounds.z1) / 2] }); if (mr) L.add(mr); }
+  if (layout.mountains !== false) { const mr = mountainRing(field, { color: hill ?? (kind === 'stone' ? 0x6a7a58 : color), center: [(layout.bounds.x0 + layout.bounds.x1) / 2, (layout.bounds.z0 + layout.bounds.z1) / 2] }); if (mr) L.add(mr); }
   for (const r of layout.roads || []) { const m = new THREE.Mesh(box(r.w, 0.05, r.d), mat(r.color || 0x8f7556, r.kind || 'earth')); m.position.set(r.x, 0.025, r.z); m.receiveShadow = true; L.add(m); }
   const named = {};
   for (const p of layout.props || []) {
