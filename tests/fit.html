@@ -46,6 +46,18 @@
     const save = { data: { chapters: { ch1: { stars: 3 } } }, chapterResult: id => (id === 'ch1' ? { stars: 3 } : null) };
     showTitle(ui, { savedName: '5학년 3반 12번', hasProgress: true, storageOk: true, courses: COURSES, save, course: 'goryeo' });
   }
+  // 작전 지휘판(chapters/kit/ops.js, 고려 2장 3파): 병사 말 넷·구역 셋과 위 가운데 지킴 게이지
+  else if (kind === 'ops') {
+    const { commandBoard, opsGauge } = await import('../chapters/kit/ops.js');
+    const updates = new Set(); (function loop() { for (const f of updates) f(1 / 60); requestAnimationFrame(loop); })();
+    const { createHud } = await import('../core/screens.js');
+    const hud = createHud(ui, { touch: true });
+    hud.show({ no: 2, years: '1010', event: '거란 2차 침입' }, { name: '흥화진을 지키는 병사' });
+    hud.setGoal('작전: 성벽으로 오는 사다리를 막아 내자', [4, 6]);
+    const ctx = { ui, hud, testHooks: {}, onAction: () => () => {}, world: { onUpdate: f => { updates.add(f); return () => updates.delete(f); } } };
+    const gauge = opsGauge(ctx);
+    commandBoard(ctx, { zones: [{ label: '왼쪽' }, { label: '가운데' }, { label: '오른쪽' }], units: 4, threats: [{ at: 0, zone: 1, need: 2 }], gauge, timing: { warn: 1000 } });
+  }
   // 근대~현대편 카드형 미니게임: kind=kit:h3:0 (장 id: 부분 번호), &fill=1 이면 자리 놓기를 마지막 하나만 남기고 채운다
   else if (kind.startsWith('kit:')) {
     const [, id, n] = kind.split(':');

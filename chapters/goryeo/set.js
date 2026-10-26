@@ -205,7 +205,8 @@ export function campfire({ puffs = 9 } = {}) {
 
 // ── 2장 흥화진 세트 한 벌: 지금 2장 장면과 같은 배치(성안 반 너비 12, 남쪽 성문)에 새 부품을 보탠다 ──
 const HALF = 12, WALL_H = 4.2;
-export function buildHeunghwaSet(world, { weather = true } = {}) {
+// ladders: 성 밖 북쪽 성벽에 걸린 사다리 세 개(장면이 직접 움직이는 사다리를 쓰면 false), northFlags: 북쪽 성벽 위 깃발 두 개
+export function buildHeunghwaSet(world, { weather = true, ladders: withLadders = true, northFlags = true } = {}) {
   seed = 11;
   const L = world.level, updates = [];
   const put = (o, x, y, z, ry = 0) => { o.position.set(x, y, z); o.rotation.y = ry; L.add(o); if (o.userData.update) updates.push(o.userData.update); return o; };
@@ -236,7 +237,7 @@ export function buildHeunghwaSet(world, { weather = true } = {}) {
   { const B = parts(); for (let i = 0; i < 6; i++) { B.box(3, 0.7 * (i + 1), 0.8, P.parapet, 'stone', [0, 0.35 * (i + 1), -HALF + 0.4 + (5 - i) * 0.8]); B.box(2.9, 0.06, 0.6, P.snow, 'grain', [0, 0.7 * (i + 1) + 0.03, -HALF + 0.4 + (5 - i) * 0.8], [0, 0, 0], { shadow: false }); } L.add(B.into(new THREE.Group(), 'stairs')); }
   put(watchtower({}), -HALF - 0.8, WALL_H, -HALF - 0.8);
   put(watchtower({}), HALF + 0.8, WALL_H, -HALF - 0.8);
-  for (const [x, z, c] of [[-7, -HALF - 0.4, P.flag], [7, -HALF - 0.4, P.gold], [-HALF - 0.4, -6, P.flag], [-HALF - 0.4, 6, P.flag]]) put(flag({ color: c }), x, WALL_H + 0.2, z);
+  for (const [x, z, c] of [...(northFlags ? [[-7, -HALF - 0.4, P.flag], [7, -HALF - 0.4, P.gold]] : []), [-HALF - 0.4, -6, P.flag], [-HALF - 0.4, 6, P.flag]]) put(flag({ color: c }), x, WALL_H + 0.2, z);
   // 성안: 2장 자리에 초가 둘·기와집 둘, 장작더미·쌀가마·장독대·짚더미·우물, 모닥불
   put(thatchHouse(), -7, 0, 3, 0.2); put(giwaHouse(), 7, 0, -2, -0.3); put(giwaHouse(), -6, 0, -5, 0); put(thatchHouse(), 8, 0, 7, 0.4);
   const kit = (fn, x, z, ry = 0, p = {}) => { const g = new THREE.Group(); fn(g, p); return put(g, x, 0, z, ry); };
@@ -245,7 +246,7 @@ export function buildHeunghwaSet(world, { weather = true } = {}) {
   put(campfire(), 5, 0, 0.5);
   // 성 밖: 북쪽 성벽에 걸린 사다리, 거란 천막(2장 모양)
   const ladders = [];
-  for (const x of [-6, 2, 9]) { const len = 6.4, tilt = 0.32, l = put(ladder({ len }), x, 0, -HALF - 1.7 - len * Math.sin(tilt)); l.rotation.x = tilt; ladders.push(l); }
+  if (withLadders) for (const x of [-6, 2, 9]) { const len = 6.4, tilt = 0.32, l = put(ladder({ len }), x, 0, -HALF - 1.7 - len * Math.sin(tilt)); l.rotation.x = tilt; ladders.push(l); }
   { const B = parts(); for (const [x, z] of [[-14, -36], [-4, -40], [7, -37], [16, -42], [-20, -46], [0, -50], [12, -52]]) { B.cyl(2.1, 2.1, 1.7, 9, 0x8f7556, 'earth', [x, 0.85, z]); B.add(new THREE.ConeGeometry(2.4, 1.5, 9), 0x5e432c, 'wood', [x, 2.45, z]); B.add(new THREE.ConeGeometry(1.4, 0.5, 9), P.snow, 'grain', [x, 3.0, z]); } L.add(B.into(new THREE.Group(), 'camp')); }
   // 소나무(2장 모양과 같은 원뿔 + 눈)
   { const B = parts(); for (let i = 0; i < 40; i++) { const a = rnd() * Math.PI * 2, d = 30 + rnd() * 50, x = Math.cos(a) * d, z = Math.sin(a) * d + 20; if (Math.abs(x) < 26 && z > 16 && z < 80) continue; if (Math.abs(x) < 32 && z < -14 && z > -60) continue; B.add(new THREE.ConeGeometry(1.4, 3.6, 6), P.pine, 'grass', [x, 2.4, z]); B.add(new THREE.ConeGeometry(1.0, 1.2, 6), P.snow, 'grain', [x, 3.9, z]); } L.add(B.into(new THREE.Group(), 'pines')); }

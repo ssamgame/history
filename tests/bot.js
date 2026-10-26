@@ -131,6 +131,12 @@ export function touchBot(s, { answers, wrongFirst = new Set(), noTaps = () => fa
       tracing = false;
       return;
     }
+    // 작전 지휘판(chapters/kit/ops.js): 병사가 모자란 구역 칸을 누른다(대기 병사가 바로 간다)
+    const opsBoard = !dialogue.isOpen() && ui.querySelector('.ops-board');
+    if (opsBoard && !noTaps()) {
+      const want = [...opsBoard.querySelectorAll('.ops-zone')].find(z => +z.dataset.short > 0);
+      if (want && [...opsBoard.querySelectorAll('.ops-token')].some(t => !t.hidden && !t.disabled)) tap(want);
+    }
     if (dialogue.isOpen()) {
       release();
       if (dialogue.isChoosing()) {

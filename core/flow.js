@@ -63,6 +63,7 @@ export async function runChapter(meta, chapter, ctx, save, { resumeStage = 'intr
 
   result.seconds = Math.round(spent());
   result.stars = computeStars(result);
+  if (chapter.finale && ctx.ui) await chapter.finale(ctx, result); // (선택) 장 끝 연출: 도장·지혜 카드(2026-10-26 고려 2장 시범). 없는 장은 그대로
   save.finishChapter(meta.id, result);
   return result;
 }
