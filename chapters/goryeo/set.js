@@ -269,3 +269,26 @@ export function castleMarker({ color = P.base, flagColor = P.flag, roof = 0xb89a
   const f = flag({ color: flagColor, h: 3.4, w: 1.2, ch: 1.5 }); f.position.set(-2.4, 3.3, 0.5); g.add(f);
   return g;
 }
+
+// ── 말(2026-10-26 추가, 새 4장 별무반): 낮은 면 말 한 마리. 몸통·다리 넷·목·머리·귀·갈기·꼬리·발굽, 색 2가지(갈색·회색).
+// 조각은 색별로 합쳐 2~3번에 그린다. 머리가 +z, 바닥 가운데가 (0,0,0), 등 높이 약 1.7(사람 키 약 2.5 기준). 사람을 태우려면 RIDE_Y에 세운다.
+export const HORSE_COLORS = [0x7a5232, 0x8a8178];
+export const RIDE_Y = 1.18;
+export function horse({ color = HORSE_COLORS[0], mane = 0x2b241c, saddle = false } = {}) {
+  const g = new THREE.Group(); g.name = 'horse';
+  const B = parts();
+  B.box(0.72, 0.72, 1.9, color, 'cloth', [0, 1.3, 0]);
+  B.box(0.66, 0.5, 0.5, color, 'cloth', [0, 1.38, 0.85]); // 가슴
+  for (const [x, z] of [[-0.22, 0.68], [0.22, 0.68], [-0.22, -0.7], [0.22, -0.7]]) {
+    B.box(0.2, 1.0, 0.22, color, 'cloth', [x, 0.55, z]);
+    B.box(0.22, 0.14, 0.26, mane, 'grain', [x, 0.07, z]);
+  }
+  B.box(0.36, 0.9, 0.42, color, 'cloth', [0, 1.92, 1.12], [0.55, 0, 0]); // 목
+  B.box(0.34, 0.36, 0.8, color, 'cloth', [0, 2.3, 1.55], [0.3, 0, 0]); // 머리
+  for (const s of [-1, 1]) B.add(new THREE.ConeGeometry(0.07, 0.2, 4), color, 'cloth', [s * 0.11, 2.58, 1.3]);
+  B.box(0.1, 0.85, 0.22, mane, 'grain', [0, 2.05, 0.98], [0.55, 0, 0]); // 갈기
+  B.box(0.14, 0.85, 0.16, mane, 'grain', [0, 1.15, -1.05], [-0.3, 0, 0]); // 꼬리
+  if (saddle) B.box(0.8, 0.1, 0.7, 0x7a3b2e, 'cloth', [0, 1.7, -0.05]);
+  B.into(g, 'horseBody');
+  return g;
+}
