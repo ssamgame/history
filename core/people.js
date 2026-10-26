@@ -40,41 +40,42 @@ function faceMat(face) {
 }
 
 // 조선 모자 부품 [모양, 색, x, y(몸 기준 높이), z]. 머리 반지름 0.32, 머리 중심 높이 2.02.
+// 2026-10-26: 모자 아래 끝(챙)은 눈썹(약 2.18)보다 위에 둔다. 넓은 챙은 탐험 카메라(27도 위)에서도 눈썹이 보이게 더 올린다(tests/faces.test.js).
 const HAIR = () => [new THREE.SphereGeometry(0.33, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2.4), 0x1e1c1a, 0, 2.04, -0.01];
 const JOSEON_HATS = {
   // 갓: 넓은 챙과 높은 원통 모자 (양반·학자)
   gat: () => [HAIR(),
-    [new THREE.CylinderGeometry(0.66, 0.66, 0.025, 20), 0x1a1816, 0, 2.3, 0],
-    [new THREE.CylinderGeometry(0.19, 0.23, 0.34, 14), 0x1a1816, 0, 2.48, 0]],
+    [new THREE.CylinderGeometry(0.6, 0.6, 0.025, 20), 0x1a1816, 0, 2.39, 0],
+    [new THREE.CylinderGeometry(0.19, 0.23, 0.32, 14), 0x1a1816, 0, 2.55, 0]],
   // 익선관: 둥근 검은 관, 뒤가 높고 위로 선 두 날개 (임금·세자)
   ikseon: () => [
-    [new THREE.SphereGeometry(0.35, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), 0x1e1c1a, 0, 2.08, 0],
+    [new THREE.SphereGeometry(0.35, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2).rotateX(-0.45), 0x1e1c1a, 0, 2.08, 0],
     [new THREE.CylinderGeometry(0.25, 0.28, 0.22, 14), 0x1e1c1a, 0, 2.38, -0.1],
     [new THREE.BoxGeometry(0.06, 0.26, 0.2), 0x1e1c1a, -0.17, 2.56, -0.2],
     [new THREE.BoxGeometry(0.06, 0.26, 0.2), 0x1e1c1a, 0.17, 2.56, -0.2]],
   // 전립(벙거지): 챙 달린 둥근 모자와 붉은 술 (조선 군사)
   jeollip: () => [
-    [new THREE.CylinderGeometry(0.56, 0.56, 0.03, 18), 0x2a2622, 0, 2.27, 0],
-    [new THREE.SphereGeometry(0.3, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), 0x2a2622, 0, 2.28, 0],
-    [new THREE.SphereGeometry(0.08, 8, 6), 0xb8452f, 0, 2.6, 0]],
+    [new THREE.CylinderGeometry(0.5, 0.5, 0.03, 18), 0x2a2622, 0, 2.34, 0],
+    [new THREE.SphereGeometry(0.3, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), 0x2a2622, 0, 2.34, 0],
+    [new THREE.SphereGeometry(0.08, 8, 6), 0xb8452f, 0, 2.66, 0]],
   // 근대·현대: 짧은 머리, 중절모, 챙 달린 모자(학생·군인), 철모, 쪽진 머리, 땋은 머리
   short: () => [[new THREE.SphereGeometry(0.335, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2.2), 0x1e1c1a, 0, 2.05, -0.01]],
   fedora: () => [
-    [new THREE.CylinderGeometry(0.52, 0.52, 0.03, 18), 0x3a3530, 0, 2.3, 0],
-    [new THREE.CylinderGeometry(0.27, 0.31, 0.3, 14), 0x3a3530, 0, 2.45, 0],
-    [new THREE.CylinderGeometry(0.315, 0.315, 0.06, 14), 0x1e1c1a, 0, 2.33, 0]],
+    [new THREE.CylinderGeometry(0.5, 0.5, 0.03, 18), 0x3a3530, 0, 2.34, 0],
+    [new THREE.CylinderGeometry(0.27, 0.31, 0.3, 14), 0x3a3530, 0, 2.49, 0],
+    [new THREE.CylinderGeometry(0.315, 0.315, 0.06, 14), 0x1e1c1a, 0, 2.37, 0]],
   cap: () => [
-    [new THREE.CylinderGeometry(0.34, 0.33, 0.2, 14), 0x22262e, 0, 2.36, 0],
-    [new THREE.BoxGeometry(0.4, 0.03, 0.22), 0x111214, 0, 2.27, 0.3]],
+    [new THREE.CylinderGeometry(0.34, 0.33, 0.2, 14), 0x22262e, 0, 2.39, 0],
+    [new THREE.BoxGeometry(0.4, 0.03, 0.22), 0x111214, 0, 2.31, 0.3]],
   steel: () => [
-    [new THREE.SphereGeometry(0.37, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), 0x5a6448, 0, 2.12, 0],
-    [new THREE.CylinderGeometry(0.42, 0.42, 0.03, 16), 0x4e5840, 0, 2.13, 0]],
+    [new THREE.SphereGeometry(0.37, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2).rotateX(-0.32), 0x5a6448, 0, 2.15, 0],
+    [new THREE.CylinderGeometry(0.42, 0.42, 0.03, 16).rotateX(-0.32), 0x4e5840, 0, 2.16, 0]],
   bun: () => [HAIR(), [new THREE.SphereGeometry(0.13, 8, 6), 0x1e1c1a, 0, 1.98, -0.32]],
   braid: () => [HAIR(), [new THREE.CylinderGeometry(0.06, 0.04, 0.55, 6), 0x1e1c1a, 0, 1.75, -0.3]],
   // 청나라 모자: 낮은 원뿔과 붉은 술
   qing: () => [
-    [new THREE.ConeGeometry(0.44, 0.3, 14), 0x3a3028, 0, 2.4, 0],
-    [new THREE.SphereGeometry(0.08, 8, 6), 0xb8452f, 0, 2.58, 0]],
+    [new THREE.ConeGeometry(0.44, 0.3, 14), 0x3a3028, 0, 2.45, 0],
+    [new THREE.SphereGeometry(0.08, 8, 6), 0xb8452f, 0, 2.63, 0]],
 };
 
 // 움직이는 인물(따라오는 사람·감시원·행진하는 사람들)도 걸을 때 다리와 팔을 흔든다. 만든 인물을 모아 두고 매 프레임 자리가 바뀌었는지 본다.
@@ -163,15 +164,15 @@ export function makePerson({ robe, hat, trim = 0x2b241c, face = {}, gear = null,
     hp(new THREE.BoxGeometry(0.5, 0.32, 0.46), 0x1e1c1a, 0, 2.38, -0.02);
     hp(new THREE.BoxGeometry(1.2, 0.05, 0.07), 0x1e1c1a, 0, 2.38, -0.26);
   } else if (hat === 'helmet') {
-    hp(new THREE.ConeGeometry(0.38, 0.5, 7), 0x5d5a55, 0, 2.38, 0);
-    hp(new THREE.SphereGeometry(0.09, 5, 4), 0xb8452f, 0, 2.66, 0);
+    hp(new THREE.ConeGeometry(0.38, 0.5, 7), 0x5d5a55, 0, 2.42, 0).rotation.x = -0.3; // 뒤로 젖혀 써서 앞 끝이 눈썹보다 위(얼굴이 보이게)
+    hp(new THREE.SphereGeometry(0.09, 5, 4), 0xb8452f, 0, 2.71, -0.09);
   } else if (hat === 'general') {
-    hp(new THREE.ConeGeometry(0.4, 0.55, 8), 0x8a8478, 0, 2.4, 0);
-    hp(new THREE.SphereGeometry(0.11, 6, 5), 0xb8452f, 0, 2.72, 0);
+    hp(new THREE.ConeGeometry(0.4, 0.55, 8), 0x8a8478, 0, 2.45, 0).rotation.x = -0.3;
+    hp(new THREE.SphereGeometry(0.11, 6, 5), 0xb8452f, 0, 2.77, -0.1);
     for (const sx of [-0.48, 0.48]) part(new THREE.BoxGeometry(0.34, 0.14, 0.46), 0x8a8478, sx, 1.72, 0, g);
     part(new THREE.BoxGeometry(0.62, 0.5, 0.5), 0x8a8478, 0, 1.45, 0, g);
   } else if (hat === 'fur') {
-    hp(new THREE.CylinderGeometry(0.4, 0.36, 0.34, 8), 0x5a4130, 0, 2.3, 0);
+    hp(new THREE.CylinderGeometry(0.4, 0.36, 0.34, 8), 0x5a4130, 0, 2.38, 0);
   } else if (hat === 'topknot') {   // 맨머리에 상투
     hp(new THREE.SphereGeometry(0.33, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2.4), 0x1e1c1a, 0, 2.04, -0.01);
     hp(new THREE.SphereGeometry(0.1, 8, 6), 0x1e1c1a, 0, 2.4, -0.02);

@@ -45,7 +45,7 @@
 
   const q = new URLSearchParams(location.search);
   const view = q.get('view') || 'compare';
-  const VIEWS = { compare: '지금/새 사람', people: '직업 사람', guardian: '지킴이·군중', actions: '동작', castle: '성(2장 각도)', play: '놀이 화면' };
+  const VIEWS = { compare: '지금/새 사람', people: '직업 사람', guardian: '지킴이·군중', actions: '동작', castle: '성(2장 각도)', play: '놀이 화면', hats: '모자 쓴 사람' };
   const extra = [['castle&side=out', '성 밖', 'side'], ['play&stamp=1', '도장 쾅', 'stamp']];
   document.getElementById('tabs').innerHTML = Object.entries(VIEWS).map(([k, v]) => `<a href="?view=${k}" class="${k === view && !q.get('side') && !q.get('stamp') ? 'on' : ''}">${v}</a>`).join('')
     + extra.map(([h, v, k]) => `<a href="?view=${h}" class="${q.get(k) ? 'on' : ''}">${v}</a>`).join('');
@@ -94,6 +94,12 @@
     ];
     acts.forEach(([l, a, n], i) => add(l, -8.4 + i * 2.8, Z, a === 'shoot' ? -0.9 : a === 'push' ? -0.6 : 0, a, n));
     world.setFixedCamera([0, 4.4, Z + 12.5], [0, 1.6, Z]);
+  } else if (view === 'hats') {
+    // 모자 쓴 생김새를 모자마다 하나씩 한 줄로(지금 게임 people.js 그대로). &top=1이면 탐험 카메라 각도(27도 위)
+    const seen = new Map();
+    for (const [id, l] of Object.entries(LOOKS)) if (!['bald', 'topknot', 'short', 'buzz', 'swept', 'bun', 'braid'].includes(l.hat)) { if (!seen.has(l.hat)) seen.set(l.hat, [id, 0]); seen.get(l.hat)[1]++; }
+    [...seen].forEach(([hat, [id, n]], i, all) => addOld(LOOKS[id], (i - (all.length - 1) / 2) * 1.6, Z, `${hat}<br>${n}명`));
+    if (q.get('top')) world.setFixedCamera([-0.6, 9, Z + 16], [-0.6, 1.4, Z]); else world.setFixedCamera([-1.2, 3.3, Z + 12.5], [-1.2, 1.7, Z]);
   } else if (view === 'castle') {
     // 성안 사람들(2장 자리 근처)과 성벽 위 병사
     add(FIGURE_LOOKS.soldier, 5, 4.5, Math.PI * 0.8); add(LOOKS.yanggyu ? { ...LOOKS.yanggyu, job: 'soldier', add: ['armor'] } : FIGURE_LOOKS.soldier, -3, -7, 0);
