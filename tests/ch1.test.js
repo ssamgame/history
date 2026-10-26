@@ -66,6 +66,7 @@ test('ch1: completes with touch-only actions', async () => {
     eq(r.quizCorrect, 2);
     eq(r.stars, 3);
     ok(bot.taps >= 2, 'talked through the touch button');
+    ok(s.ui.querySelectorAll('.rally-orb').length === 0, 'rally finished');
   } finally { bot.stop(); s.done(); }
 }, { timeout: 90000 });
 
@@ -74,7 +75,9 @@ test('ch1: wrong first answer gives hint and lowers firstTryCorrect', async () =
   const bot = touchBot(s, { answers, wrongFirst: new Set(['고려는 고구려를 이은 나라이다.']) });
   try {
     ch1.buildScene(s.w, s.ctx);
+    const said = [], say = s.dialogue.say; s.dialogue.say = l => { said.push(l.text); return say(l); };
     const r = await ch1.minigame(s.ctx);
     eq(r, { firstTryCorrect: 1, firstTryTotal: 2, easyModeUsed: false });
+    ok(ch1Script.negotiation.q1.options.some(o => o.hint && said.some(t => t.startsWith(o.hint))), 'the wrong option hint was shown');
   } finally { bot.stop(); s.done(); }
 }, { timeout: 60000 });

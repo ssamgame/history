@@ -137,6 +137,15 @@ export function touchBot(s, { answers, wrongFirst = new Set(), noTaps = () => fa
       const want = [...opsBoard.querySelectorAll('.ops-zone')].find(z => +z.dataset.short > 0);
       if (want && [...opsBoard.querySelectorAll('.ops-token')].some(t => !t.hidden && !t.disabled)) tap(want);
     }
+    // 말 받아치기(chapters/kit/rally.js): 정답 구슬을 누른다. wrongFirst에 든 정답이면 그 판(소손녕의 말)마다 처음 한 번은 다른 구슬
+    const rallyOrbs = !dialogue.isOpen() && !noTaps() && !ui.querySelector('.rally-board.busy') && [...ui.querySelectorAll('.rally-orb:not([disabled])')];
+    if (rallyOrbs && rallyOrbs.length) {
+      const key = ui.querySelector('.rally-say')?.textContent || '';
+      const right = rallyOrbs.find(o => answers.has(o.dataset.text) || o.dataset.text === ctx.testHooks.rally?.answer);
+      let pick = right;
+      if (right && wrongFirst.has(right.dataset.text) && !wrongUsed.has(key)) { wrongUsed.add(key); pick = rallyOrbs.find(o => o !== right); }
+      if (pick) tap(pick);
+    }
     if (dialogue.isOpen()) {
       release();
       if (dialogue.isChoosing()) {

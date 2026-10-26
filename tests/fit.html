@@ -58,6 +58,20 @@
     const gauge = opsGauge(ctx);
     commandBoard(ctx, { zones: [{ label: '왼쪽' }, { label: '가운데' }, { label: '오른쪽' }], units: 4, threats: [{ at: 0, zone: 1, need: 2 }], gauge, timing: { warn: 1000 } });
   }
+  // 말 받아치기(chapters/kit/rally.js, 고려 1장): 가장 긴 소손녕 말(1판)과 가장 긴 대답 구슬(2판), 위 가운데 기세 게이지
+  else if (kind === 'rally') {
+    const { opsGauge } = await import('../chapters/kit/ops.js');
+    const { rally } = await import('../chapters/kit/rally.js');
+    const s = (await import('../chapters/ch1/script.js')).default;
+    const updates = new Set(); (function loop() { for (const f of updates) f(1 / 60); requestAnimationFrame(loop); })();
+    const { createHud } = await import('../core/screens.js');
+    const hud = createHud(ui, { touch: true });
+    hud.show({ no: 1, years: '993', event: '거란 1차 침입' }, { name: '고려의 젊은 병사' });
+    hud.setGoal(s.goals[3], [4, 5]);
+    const ctx = { ui, hud, testHooks: {}, onAction: () => () => {}, world: { onUpdate: f => { updates.add(f); return () => updates.delete(f); } } };
+    const gauge = opsGauge(ctx, { title: s.rally.gauge });
+    rally(ctx, { prompt: s.negotiation.q1.prompt, options: s.negotiation.q2.options, speaker: s.speakers.sonn.name, gauge });
+  }
   // 근대~현대편 카드형 미니게임: kind=kit:h3:0 (장 id: 부분 번호), &fill=1 이면 자리 놓기를 마지막 하나만 남기고 채운다
   else if (kind.startsWith('kit:')) {
     const [, id, n] = kind.split(':');
