@@ -84,8 +84,19 @@ function addHat(hg, hat, L) {
       hp(new THREE.TorusGeometry(0.335, 0.035, 6, 18), 0xe6dcc3, 0, 2.12, -0.02, 'cloth', [Math.PI / 2 + 0.2, 0, 0]);
       hp(new THREE.BoxGeometry(0.1, 0.16, 0.04), 0xe6dcc3, 0.08, 2.0, -0.34, 'cloth', [0.2, 0, 0.5]);
     } else hp(new THREE.SphereGeometry(0.35, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2.6), 0xece6d8, 0, 2.08, -0.03, 'cloth', [-0.2, 0, 0]);
+  } else if (hat === 'helmet' || hat === 'general') { // 투구: 머리 위쪽만 덮고 앞 가장자리를 이마 위로 올려 눈·눈썹이 보이게(people.js 투구 색 그대로)
+    const c = hat === 'general' ? 0x8a8478 : 0x5d5a55;
+    hp(new THREE.SphereGeometry(0.355, 14, 8, 0, Math.PI * 2, 0, Math.PI * 0.4), c, 0, 2.11, -0.04, 'cloth', [-0.38, 0, 0]);
+    hp(new THREE.TorusGeometry(0.33, 0.025, 5, 18), HAIR, 0, 2.23, -0.08, 'grain', [Math.PI / 2 - 0.38, 0, 0]); // 가장자리 띠
+    hp(new THREE.SphereGeometry(0.36, 12, 6, Math.PI * 1.15, Math.PI * 0.7, Math.PI * 0.42, Math.PI * 0.2), c, 0, 2.02, -0.04, 'cloth'); // 뒤 목 가리개(뒤쪽만)
+    hp(new THREE.ConeGeometry(0.06, 0.16, 6), c, 0, 2.47, -0.12, 'cloth', [-0.32, 0, 0]);
+    hp(new THREE.SphereGeometry(hat === 'general' ? 0.1 : 0.08, 6, 5), 0xb8452f, 0, 2.55, -0.15, 'grain');
+  } else if (hat === 'fur') { // 거란 털모자: 이마 위에 얹고 뒤로 조금 젖혀 얼굴이 보이게
+    hairCap(hg);
+    hp(new THREE.CylinderGeometry(0.39, 0.36, 0.3, 10), 0x5a4130, 0, 2.36, -0.06, 'grain', [-0.28, 0, 0]);
+    hp(new THREE.CylinderGeometry(0.3, 0.37, 0.08, 10), 0x6e5240, 0, 2.53, -0.11, 'grain', [-0.28, 0, 0]);
   } else if (hat === 'earflaps') {
-    for (const s of [-1, 1]) hp(new THREE.BoxGeometry(0.1, 0.3, 0.22), 0x4a3a2a, s * 0.34, 1.98, -0.02, 'grain');
+    for (const s of [-1, 1]) hp(new THREE.BoxGeometry(0.08, 0.28, 0.2), 0x4a3a2a, s * 0.35, 2.06, -0.08, 'grain'); // 귀가리개(볼 뒤쪽)
   }
   if (L.kid) { // 견습생 머리(아이·미혼은 뒤로 묶은 머리)
     if (hat !== 'hood' && hat !== 'helmet') hairCap(hg);
@@ -192,19 +203,19 @@ function mergePivot(pivot, isPivot) {
 let count = 0;
 export function makeFigure(look) {
   const L = { ...look };
-  const ownHat = ['hood', 'band', 'towel'].includes(L.hat);
+  const ownHat = ['hood', 'band', 'towel', 'helmet', 'general', 'fur'].includes(L.hat); // 투구·털모자도 여기서 얼굴이 보이게 다시 그린다
   const opts = { robe: L.robe, trim: L.trim, face: L.face, hairColor: L.hairColor, outfit: L.outfit === 'suit' ? 'suit' : null,
-    hat: ownHat || (L.kid && L.hat !== 'helmet') ? null : L.hat, gear: L.gear === 'spear' || L.gear === 'sword' ? L.gear : null };
+    hat: ownHat || L.kid ? null : L.hat, gear: L.gear === 'spear' || L.gear === 'sword' ? L.gear : null };
   const fig = makePerson(opts, { track: false });
   const u = fig.userData, hg = u.head;
   hg.name = 'headGroup';
   // 몸(엉덩이에서 기울일 수 있게): 다리 말고 모두 body 묶음으로 옮긴다
+  addBody(fig, u.arms, L); // 몸 부품은 몸 기준 높이로 먼저 붙이고 아래에서 body 묶음으로 함께 옮긴다
   const HIP = 0.55, body = new THREE.Group(); body.name = 'body'; body.position.y = HIP;
   for (const c of [...fig.children]) if (!u.legs.includes(c)) { fig.remove(c); c.position.y -= HIP; body.add(c); }
   fig.add(body);
   if (L.hat === 'earflaps' || (L.add || []).includes('earflaps')) addHat(hg, 'earflaps', L);
   addHat(hg, L.hat, L);
-  addBody(body, u.arms, L);
   addHands(u.arms, L);
   if (L.sleeve) for (const a of u.arms) a.children[0].material = mat(L.sleeve, 'cloth', 'object'); // 지킴이 소매색
   // 마디마다 같은 재질 조각 합치기
