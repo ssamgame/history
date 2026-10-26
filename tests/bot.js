@@ -156,6 +156,9 @@ export function touchBot(s, { answers, wrongFirst = new Set(), noTaps = () => fa
       if (right && wrongFirst.has(right.dataset.text) && !wrongUsed.has(key)) { wrongUsed.add(key); pick = rallyOrbs.find(o => o !== right); }
       if (pick) tap(pick);
     }
+    // 별무반 갈림길(chapters/kit/switch.js): 놀이가 알려 준 맞는 길 단추를 누른다
+    const lh = !dialogue.isOpen() && !noTaps() && ctx.testHooks.lanes;
+    if (lh && lh.ready) { const lb = ui.querySelector(`.switch-lane[data-lane="${lh.answer}"]:not([disabled])`); if (lb) tap(lb); }
     if (dialogue.isOpen()) {
       release();
       if (dialogue.isChoosing()) {

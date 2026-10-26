@@ -12,6 +12,7 @@ const CSS = `
 .switch-lane { position: relative; display: flex; align-items: center; gap: 8px; min-width: 128px; min-height: 64px; padding: 6px 16px 6px 8px; border-radius: 16px; box-sizing: border-box;
   border: 3px solid var(--hanji, #f2ead9); color: #fff; font: 800 20px var(--font-ui); box-shadow: 0 5px 0 #0007, 0 8px 16px #0005; cursor: pointer; touch-action: manipulation; }
 .switch-lane svg { width: 40px; height: 40px; flex: none; }
+.switch-lane .t { white-space: nowrap; }
 .switch-lane .k { position: absolute; left: 6px; top: 2px; font: 700 11px var(--font-ui); opacity: .8; }
 .switch-lane .n { margin-left: auto; min-width: 26px; padding: 0 6px; border-radius: 12px; background: #0005; font: 800 16px var(--font-ui); text-align: center; }
 .switch-lane.hot { outline: 4px solid #fff6c8; }
@@ -117,6 +118,7 @@ export function switchLanes(ctx, { lanes, people, rule, hints = {}, easy = false
         hint.textContent = hints[right] || ''; hint.hidden = !hint.textContent;
         scene.wrong?.(served);
         if (wrong >= maxWrong) finish(false);
+        else hooks();
         return;
       }
       ctx.audio?.play('correct');

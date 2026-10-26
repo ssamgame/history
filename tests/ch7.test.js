@@ -23,8 +23,8 @@ const laneBtn = (s, id) => s.ui.querySelector(`.switch-lane[data-lane="${id}"]`)
 // 한 무리를 돌린다: picks[i] = 그 사람에게 차례로 고를 길(정답이 아니면 틀린 고르기)
 async function runWave(s, people, picks, opts = {}) {
   let res = null;
-  const sent = [], wrong = [];
-  const p = switchLanes(s.ctx, { lanes: LANES, people, rule, hints: S.switch.hints, scene: { send: (i, lane) => { sent.push([i, lane]); }, wrong: i => wrong.push(i) }, ...opts }).then(r => { res = r; });
+  const sent = [], wrongSeen = [];
+  const p = switchLanes(s.ctx, { lanes: LANES, people, rule, hints: S.switch.hints, scene: { send: (i, lane) => { sent.push([i, lane]); }, wrong: i => wrongSeen.push(i) }, ...opts }).then(r => { res = r; });
   const todo = picks.map(a => [...a]);
   for (let n = 0; n < 400 && !res; n++) {
     const h = s.ctx.testHooks.lanes;
@@ -36,7 +36,7 @@ async function runWave(s, people, picks, opts = {}) {
     await sleep(1);
   }
   await p;
-  return { ...res, sent, wrong };
+  return { ...res, sent, wrongSeen };
 }
 
 test('ch7-switch: horse → 신기군, monk → 항마군, everyone else → 신보군 (rule kept as data in the script)', () => {

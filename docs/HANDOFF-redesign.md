@@ -10,7 +10,7 @@
 2. 이 파일 → `CLAUDE.md` → `docs/agent-guidelines.md` 차례로 읽는다.
 3. 팀원(서브 에이전트) 이름은 새 계정에서 이어지지 않는다. 같은 역할·모델로 새로 띄운다: 기획 sonnet, 개발 opus, 검토 opus. 띄울 때 이 파일과 해당 장 명세를 읽게 한다.
 4. 예전 계정의 예약 작업 '고려~현대 다시 만들기 이어하기'(`trig_01PxpghU97PNf3g9vxXDMURP`)는 **꺼 두었다**(옛 세션으로만 들어감). 새 계정에서 자동 이어하기가 필요하면 새로 만든다.
-5. 첫 작업은 아래 '바로 이어 할 일' 1번(ch7 마무리).
+5. 첫 작업은 아래 '바로 이어 할 일' 2번(5장, 폴더 `chapters/ch4`).
 
 ### 선생님 규칙 (꼭)
 - 한국어, 쉬운 말. 보고 형식: 수정 내용 / 파일 / 전후 차이 / 테스트 / 결과 / 남은 문제 / 다음 우선순위.
@@ -29,14 +29,15 @@
 | 명세 | dac7c49·82b8503·c0b73f1·51dc0c0 | `docs/superpowers/specs/2026-10-26-ch3-spec.md`·`ch7-spec.md`·`ch5-spec.md`(지금 ch4 폴더 몽골)·`ch6-spec.md`(지금 ch5 폴더 대장경+삼별초, 5절 장 구성 변경) |
 | 출처 | 8ae5e2d | S71 별무반·S72 윤관 여진 정벌(검색으로 여러 자료 일치, 원문은 이 환경에서 못 엶 → 게임 완성 뒤 검토). `ch7-spec.md` 끝 '확인 결과' 절 |
 
-### 하다 멈춘 것 — 고려 4장 ch7(윤관·별무반) `7cdbda8` [작업 중]
-- 된 것: `chapters/kit/switch.js`(별무반 갈림길: 길 단추·키보드 1·2·3·사람 카드 끌어 놓기, 틀리면 힌트, 두 번 틀리면 쉬운 모드), `chapters/goryeo/set.js`에 `horse()`·`HORSE_COLORS`·`RIDE_Y`, `content/characters.js`에 yungwan·jurchen·draftee·drafteeLeader, `tests/ch7.test.js`(index.html 목록에 있음).
-- 안 된 것: `chapters/ch7/script.js`·`scene.js`·`chapter.js`, `tests/bot.js`의 `testHooks.lanes`, `tests/fit.html` kind=switch, `tools/ch7-preview.html`(장 목록에 넣지 않고 띄워 보는 도구: ALL_CHAPTERS에 임시 meta를 넣고 core/main.js를 불러오는 방식 계획).
-- **지금 `ch7` 테스트는 실패한다**(장 모듈이 없어 import 실패, 예상된 실패. 다른 테스트에는 영향 없음 — index.html이 파일마다 따로 import). 다음 사람은 이 테스트를 보며 장 파일 3개를 쓴다.
-- 지킬 것: `ch7-spec.md` 그대로. 사실 줄은 4-2절을 src `['S71']`/`['S72']`로 본문에 바로 쓴다. 퀴즈 Q1 별무반, Q2 동북 9성. 쓰지 않음: 9성 이름·위치, 군사 수, 반환 까닭, "윤관 장군". **`chapters/index.js`에 등록하지 않는다**(5·6장 구성 변경 때).
+### 고려 4장 ch7(윤관·별무반) — 끝남 (2026-10-26 밤, 새 계정)
+- 커밋: `7cdbda8`(부품·말·인물·테스트) + 이번 커밋(장 파일 3개·봇·fit·미리 보기 도구).
+- 새 파일: `chapters/ch7/script.js`(사실 줄 S71·S72, 꼭 듣는 대사 7줄, 퀴즈 Q1 별무반 / Q2 동북 9성), `scene.js`(동북쪽 마을·갈림길 세 갈래와 깃발·부대 줄·서쪽 들판 첫 장면·성 9개), `chapter.js`(첫 장면 → 윤관 → 갈림길 3무리 → 진군·성 9개 → 퀴즈 → 도장, `PREVIEW_META`·`WAVE_FIRST`), `tools/ch7-preview.html`(목록에 없는 ch7을 게임 그대로 띄움: `tools/ch7-preview.html?debug=ch7-minigame`).
+- 고친 파일: `chapters/kit/switch.js`(틀린 뒤 시험 정보 갱신, 길 이름 줄바꿈 막음), `tests/bot.js`(맞는 길 단추 누르기), `tests/fit.html`(kind=switch), `tests/ch7.test.js`(지역 변수 이름 겹침 고침).
+- 테스트: ch7 14 · layout 30 · faces 13 · content 8 · ch3 18 모두 통과. 그리기 횟수(화질 보통, 1000×560): 첫 장면 44 · 탐험 118 · 1무리 138 · 3무리 200 · 성 9개 174 · 퀴즈 91.
+- 아직 `chapters/index.js`에 등록하지 않음(5·6장 구성 변경 때). 사진은 스크래치패드에만(편 끝 보고 때 다시 찍는다).
 
 ### 바로 이어 할 일 (차례)
-1. 개발: ch7 마무리(위) → 테스트 ch7·layout·faces·content.
+1. ~~ch7 마무리~~ 끝.
 2. 개발: 5장(`ch5-spec.md`, 폴더 `chapters/ch4`, 처인성 당겨 쏘기 `pullshot`) → 6장(`ch6-spec.md`, 폴더 `chapters/ch5`, 경판 공방 `conveyor`+노 젓기 `rhythm`, 획 따라 그리기는 선택) → 장 구성 변경(`ch6-spec.md` 5절: index.js 순서 1 ch1 / 2 ch2 / 3 ch3 / 4 ch7 / 5 ch4 / 6 ch5, ch6 목록에서 뺌, 결과 카드, 옛 ch6 기록). 공용 파일(`set.js`·`tests/bot.js`·`tests/index.html`·`tests/fit.html`)을 건드리므로 개발은 한 명이 차례로.
 3. 고려 끝 → 선생님께 한 번에 보고(사진) → 조선 → 근대 → 일제 → 현대. 조선~현대는 **놀이 교체 + 역사책 없애기만**(건물·장면 그대로). 새 놀이 지도는 `2026-10-26-minigame-map.md` 3절, 유지할 놀이 5개(j1 듣고 고르기·터 짓기, k5 전차, k6 매복, i1 몰래 지나가기). 역사책 쓰는 장 15곳: k1~k6, i1·i2·i3·i5·i6, h2·h4·h5·h6. 편마다 명세(기획) → 개발. 편 두 개를 개발 둘이 동시에 해도 됨(파일 안 겹치게).
 4. 모두 끝 → 선생님 확인 → 검토 팀원 역사 검토(1장 Q2, ch1 "싸우지 않고 말로", S71·S72 원문, 명세들의 '검토 필요' 6곳) → 메인 전체 테스트 → `core/precache.js` 판 올림(v66~) + `tests/sw.test.js` + 새 파일 PRECACHE(`chapters/kit/ops.js`·`rally.js`·`damflow.js`·`signal.js`·`switch.js`, `core/figures.js`·`core/hud-ops.js`, `chapters/goryeo/set.js`, 5·6장 새 부품, ch7 폴더) → 승인 뒤 main 병합·배포 → https://ssamgame.github.io/history/core/precache.js 에서 새 판 확인.

@@ -84,6 +84,20 @@
     if (kind === 'damflow') { const { damflow } = await import('../chapters/kit/damflow.js'); damflow(ctx, { window: [0.5, 0.82], crossSeconds: 1000, minLevel: 2 / 3, easy: true, label: s.dam.button }); }
     else { const { signal } = await import('../chapters/kit/signal.js'); signal(ctx, { lights: s.guju.lights.map((label, i) => ({ label, at: 1000 + i })), open: 3, label: s.guju.button }); }
   }
+  // 별무반 갈림길(chapters/kit/switch.js, 고려 새 4장 ch7): 길 단추 셋 · 사람 카드(가장 긴 줄 3무리) · 위 가운데 진행 막대
+  else if (kind === 'switch') {
+    const { opsGauge } = await import('../chapters/kit/ops.js');
+    const { switchLanes } = await import('../chapters/kit/switch.js');
+    const s = (await import('../chapters/ch7/script.js')).default;
+    const updates = new Set(); (function loop() { for (const f of updates) f(1 / 60); requestAnimationFrame(loop); })();
+    const { createHud } = await import('../core/screens.js');
+    const hud = createHud(ui, { touch: true });
+    hud.show({ no: 4, years: '1104~1109', event: '여진 정벌' }, { name: '별무반 지킴이' });
+    hud.setGoal(s.goals[1], [2, 4]);
+    const ctx = { ui, hud, testHooks: {}, onAction: () => () => {}, world: { onUpdate: f => { updates.add(f); return () => updates.delete(f); } } };
+    const gauge = opsGauge(ctx, { value: 0.3, ...s.switch.gauge });
+    switchLanes(ctx, { lanes: s.switch.lanes, people: s.switch.waves[2].people, rule: s.switch.rule, hints: s.switch.hints, name: p => p.name });
+  }
   // 근대~현대편 카드형 미니게임: kind=kit:h3:0 (장 id: 부분 번호), &fill=1 이면 자리 놓기를 마지막 하나만 남기고 채운다
   else if (kind.startsWith('kit:')) {
     const [, id, n] = kind.split(':');

@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>4장 미리 보기(개발용)</title>
+<link rel="stylesheet" href="../styles.css">
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+</head>
+<body>
+<div id="stage"></div>
+<div id="ui"></div>
+<script type="module">
+  // 개발용: 장 목록(chapters/index.js)에 아직 넣지 않은 고려 새 4장(ch7)을 게임 그대로 띄운다. 학생 화면에는 없다.
+  // 쓰는 법: tools/ch7-preview.html?debug=ch7-scene · ch7-explore · ch7-minigame · ch7-quiz (&perf=1)
+  import { ALL_CHAPTERS } from '../chapters/index.js';
+  import { PREVIEW_META } from '../chapters/ch7/chapter.js';
+  if (!ALL_CHAPTERS.some(c => c.id === 'ch7')) ALL_CHAPTERS.push({ ...PREVIEW_META, load: () => import('../chapters/ch7/chapter.js') });
+  await import('../core/main.js');
+</script>
+</body>
+</html>
