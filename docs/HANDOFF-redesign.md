@@ -1,32 +1,53 @@
-# 인수인계: 고려~현대 다시 만들기 (2026-10-26 밤 최신)
+# 인수인계: 고려~현대 다시 만들기 (2026-10-26 밤 최신 — 다른 계정으로 넘김)
 
 > 대화를 비운 뒤 새로 시작하면 **이 파일부터** 읽는다. 그다음 필요할 때만 `CLAUDE.md`, `docs/agent-guidelines.md`, 아래 문서들을 본다.
 > 작업 브랜치: `claude/goryeo-game-handoff-vus00f`. 학생 사이트(main)는 **goryeo-v65** 그대로(배포는 선생님 승인 때만).
 
-## ★ 지금 상태 (이 절이 가장 최신, 아래 3절보다 앞섬)
+## ★ 지금 상태 (이 절이 가장 최신, 아래 3절보다 앞섬) — 2026-10-26 밤, 다른 계정으로 넘김
 
-**선생님 새 규칙 (2026-10-26 밤)**
-- 놀이·기획 결정은 선생님께 묻지 말고 **기획 담당(sonnet)에게 물어 답을 받아 진행**. 선생님께는 편이 끝날 때 한 번에 보고.
-- **사용량이 96%에 이르면 작업을 멈추고, 커밋·push로 반영한 뒤 이 인수인계 파일을 최신으로 고친다.** 메인은 계정 사용량 숫자를 직접 볼 수 없으므로, 장 하나·명세 하나가 끝날 때마다 이 절을 바로 고쳐 늘 최신으로 둔다(갑자기 멈춰도 이어받을 수 있게).
+### 다른 계정에서 처음 할 일
+1. 저장소 `ssamgame/history`, 브랜치 **`claude/goryeo-game-handoff-vus00f`**를 받는다(`git fetch origin claude/goryeo-game-handoff-vus00f && git checkout claude/goryeo-game-handoff-vus00f`). 마지막 커밋은 이 인수인계 커밋.
+2. 이 파일 → `CLAUDE.md` → `docs/agent-guidelines.md` 차례로 읽는다.
+3. 팀원(서브 에이전트) 이름은 새 계정에서 이어지지 않는다. 같은 역할·모델로 새로 띄운다: 기획 sonnet, 개발 opus, 검토 opus. 띄울 때 이 파일과 해당 장 명세를 읽게 한다.
+4. 예전 계정의 예약 작업 '고려~현대 다시 만들기 이어하기'(`trig_01PxpghU97PNf3g9vxXDMURP`)는 **꺼 두었다**(옛 세션으로만 들어감). 새 계정에서 자동 이어하기가 필요하면 새로 만든다.
+5. 첫 작업은 아래 '바로 이어 할 일' 1번(ch7 마무리).
 
-**끝난 것 (모두 push됨)**
+### 선생님 규칙 (꼭)
+- 한국어, 쉬운 말. 보고 형식: 수정 내용 / 파일 / 전후 차이 / 테스트 / 결과 / 남은 문제 / 다음 우선순위.
+- **놀이·기획 결정은 선생님께 묻지 말고 기획 담당에게 물어 답을 받아 진행**한다. 선생님께는 **편이 끝날 때 한 번에** 보고(사진 몇 장).
+- **사용량이 96%에 이르면 멈추고, 커밋·push로 반영한 뒤 이 파일을 최신으로** 고친다. 메인은 사용량 숫자를 볼 수 없으니 장·명세 하나 끝날 때마다 이 절을 고쳐 둔다.
+- main 병합·학생 사이트 배포는 **선생님 승인 때만**. 미리보기 아티팩트 다시 올리지 않는다. 그림자·선명도·풀나무 수 그대로.
+- 팀원이 일하는 중의 미커밋 파일은 메인이 커밋하지 않는다(팀원이 마치고 커밋).
+- 만드는 동안 전체 테스트·검토 팀원 검토는 하지 않는다(게임 완성 뒤). 개발은 고친 부분 테스트만.
+
+### 끝난 것 (모두 push됨)
 | 장 | 커밋 | 내용 |
 |---|---|---|
-| 2장 흥화진 | b0c8010·e3c65ec | 아쉬운 점 1~4 고침(카메라 낮춤, 거란 병사 밝은 옷, 호위 들판 꾸밈, 도장 뒤 어둡게, 말풍선이 목표 상자 피함) + 기획 결정(1·2파 간격 줄임, '쉬는 중' 표시) |
+| 2장 흥화진 | 49f418f·b0c8010·e3c65ec | 시범 + 아쉬운 점 1~4 고침(카메라 낮춤, 거란 병사 밝은 옷, 호위 들판 꾸밈, 도장 뒤 어둡게, 말풍선이 목표 상자 피함) + 기획 결정(1·2파 간격 줄임, '쉬는 중' 표시, 쉬운 모드 쉬는 시간 0.4초). 공통 부품 `chapters/kit/ops.js` |
 | 1장 서희 | 59c0e92 | 놀이 「말 받아치기」(`chapters/kit/rally.js`) 2판, 강동 6주 연출, 퀴즈 Q2 새 문제(S19, 검토 필요) |
-| 명세 | dac7c49·82b8503·c0b73f1·51dc0c0 | 3장·ch7·5장(ch4 폴더)·6장(ch5 폴더, 장 구성 변경 5절 포함) |
-| 3장 강감찬 | 0867368 | 둑 수위(`damflow.js`)·귀주 신호(`signal.js`), 쇠가죽은 탐험으로, 1장 6주 → `castleMarker` 성채 6개, sources.md 재생성(content 테스트 출처 수 72). 그리기 탐험 122·둑 262·귀주 373. 남은 것: 둑 뒤 물웅덩이가 작게 보임 |
-| 출처 | 8ae5e2d | S71 별무반·S72 윤관 여진 정벌(검색으로 여러 자료 일치 확인, 원문은 이 환경에서 못 엶 → 게임 완성 뒤 검토). ch7 명세 끝 '확인 결과' 절 |
+| 3장 강감찬 | 0867368 | 둑 수위(`chapters/kit/damflow.js`)·귀주 신호(`chapters/kit/signal.js`), 쇠가죽은 탐험으로, 1장 6주 → `castleMarker` 성채 6개, `content/sources.md` 재생성(content 테스트 출처 수 72). 그리기 탐험 122·둑 262·귀주 373 |
+| 명세 | dac7c49·82b8503·c0b73f1·51dc0c0 | `docs/superpowers/specs/2026-10-26-ch3-spec.md`·`ch7-spec.md`·`ch5-spec.md`(지금 ch4 폴더 몽골)·`ch6-spec.md`(지금 ch5 폴더 대장경+삼별초, 5절 장 구성 변경) |
+| 출처 | 8ae5e2d | S71 별무반·S72 윤관 여진 정벌(검색으로 여러 자료 일치, 원문은 이 환경에서 못 엶 → 게임 완성 뒤 검토). `ch7-spec.md` 끝 '확인 결과' 절 |
 
-**진행 중**
-- 개발 담당(`developer`, opus): ch7(`ch7-spec.md`, `chapters/kit/switch.js`, S71·S72 문장 바로 사용, 장 목록 등록 X) 작업 중. 미커밋 파일은 개발이 마치고 커밋한다(메인이 커밋 X).
+### 하다 멈춘 것 — 고려 4장 ch7(윤관·별무반) `7cdbda8` [작업 중]
+- 된 것: `chapters/kit/switch.js`(별무반 갈림길: 길 단추·키보드 1·2·3·사람 카드 끌어 놓기, 틀리면 힌트, 두 번 틀리면 쉬운 모드), `chapters/goryeo/set.js`에 `horse()`·`HORSE_COLORS`·`RIDE_Y`, `content/characters.js`에 yungwan·jurchen·draftee·drafteeLeader, `tests/ch7.test.js`(index.html 목록에 있음).
+- 안 된 것: `chapters/ch7/script.js`·`scene.js`·`chapter.js`, `tests/bot.js`의 `testHooks.lanes`, `tests/fit.html` kind=switch, `tools/ch7-preview.html`(장 목록에 넣지 않고 띄워 보는 도구: ALL_CHAPTERS에 임시 meta를 넣고 core/main.js를 불러오는 방식 계획).
+- **지금 `ch7` 테스트는 실패한다**(장 모듈이 없어 import 실패, 예상된 실패. 다른 테스트에는 영향 없음 — index.html이 파일마다 따로 import). 다음 사람은 이 테스트를 보며 장 파일 3개를 쓴다.
+- 지킬 것: `ch7-spec.md` 그대로. 사실 줄은 4-2절을 src `['S71']`/`['S72']`로 본문에 바로 쓴다. 퀴즈 Q1 별무반, Q2 동북 9성. 쓰지 않음: 9성 이름·위치, 군사 수, 반환 까닭, "윤관 장군". **`chapters/index.js`에 등록하지 않는다**(5·6장 구성 변경 때).
 
-**다음 차례**
-1. 개발: ch7 → 5장(`ch5-spec.md`) → 6장(`ch6-spec.md`) → 장 구성 변경(6장 명세 5절: index.js 순서, 결과 카드, 옛 ch6 기록 처리). 같은 파일(`set.js`·`tests/bot.js`·`tests/index.html`)을 건드리므로 개발은 한 명이 차례로.
-2. 고려 끝 → 선생님께 한 번에 보고(사진) → 조선 → 근대 → 일제 → 현대(놀이 교체 + 역사책 없애기, 역사책 쓰는 장 15곳: k1~k6, i1·i2·i3·i5·i6, h2·h4·h5·h6). 편 두 개씩 개발 둘이 나눠 동시에 해도 됨(파일 안 겹치게).
-3. 모두 끝 → 선생님 확인 → 검토 팀원 역사 검토(1장 Q2, "싸우지 않고 말로", S71·S72 원문 등) → 메인 전체 테스트 → precache 판 올림 + 새 파일 PRECACHE(`ops.js`·`figures.js`·`hud-ops.js`·`goryeo/set.js`·`rally.js`·`damflow.js`·`signal.js`·`switch.js` 등) → 승인 뒤 배포.
+### 바로 이어 할 일 (차례)
+1. 개발: ch7 마무리(위) → 테스트 ch7·layout·faces·content.
+2. 개발: 5장(`ch5-spec.md`, 폴더 `chapters/ch4`, 처인성 당겨 쏘기 `pullshot`) → 6장(`ch6-spec.md`, 폴더 `chapters/ch5`, 경판 공방 `conveyor`+노 젓기 `rhythm`, 획 따라 그리기는 선택) → 장 구성 변경(`ch6-spec.md` 5절: index.js 순서 1 ch1 / 2 ch2 / 3 ch3 / 4 ch7 / 5 ch4 / 6 ch5, ch6 목록에서 뺌, 결과 카드, 옛 ch6 기록). 공용 파일(`set.js`·`tests/bot.js`·`tests/index.html`·`tests/fit.html`)을 건드리므로 개발은 한 명이 차례로.
+3. 고려 끝 → 선생님께 한 번에 보고(사진) → 조선 → 근대 → 일제 → 현대. 조선~현대는 **놀이 교체 + 역사책 없애기만**(건물·장면 그대로). 새 놀이 지도는 `2026-10-26-minigame-map.md` 3절, 유지할 놀이 5개(j1 듣고 고르기·터 짓기, k5 전차, k6 매복, i1 몰래 지나가기). 역사책 쓰는 장 15곳: k1~k6, i1·i2·i3·i5·i6, h2·h4·h5·h6. 편마다 명세(기획) → 개발. 편 두 개를 개발 둘이 동시에 해도 됨(파일 안 겹치게).
+4. 모두 끝 → 선생님 확인 → 검토 팀원 역사 검토(1장 Q2, ch1 "싸우지 않고 말로", S71·S72 원문, 명세들의 '검토 필요' 6곳) → 메인 전체 테스트 → `core/precache.js` 판 올림(v66~) + `tests/sw.test.js` + 새 파일 PRECACHE(`chapters/kit/ops.js`·`rally.js`·`damflow.js`·`signal.js`·`switch.js`, `core/figures.js`·`core/hud-ops.js`, `chapters/goryeo/set.js`, 5·6장 새 부품, ch7 폴더) → 승인 뒤 main 병합·배포 → https://ssamgame.github.io/history/core/precache.js 에서 새 판 확인.
 
-**다듬을 거리(편 끝에)**: 1장 퀴즈 배경 서희 얼굴 어두움(예전부터). 실제 탭 FPS 측정.
+### 다듬을 거리 (고려편 끝에)
+- 3장 둑 뒤 물웅덩이가 작게 보임. 1장 퀴즈 배경 서희 얼굴 어두움(예전부터). 실제 갤럭시 탭 FPS 측정(이 클라우드는 소프트웨어 렌더링이라 FPS 의미 없음, 그리기 횟수로 본다).
+
+### 화면 확인하는 법(클라우드)
+- `python3 -m http.server 8175` + Node Playwright(`require('playwright')`, `chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] })`, 1000×560). `?debug=ch3-minigame` 등. 개발 페이지에선 `window.__world`·`window.__ctx`로 장면을 움직여 볼 수 있다. 서버는 PID로 끈다.
+- 테스트: `NODE_PATH=$(npm root -g) PORT=8161 timeout 1500 node tools/test-node.cjs ch2 > 파일 2>&1` 후 `grep -E "FAIL|RESULT"`. **필터는 첫 인자 하나만** 먹으니 이름마다 따로 돌린다. 두 명이 같은 포트를 쓰지 않게(메인 8161, 개발 8163).
+- 백과사전·우리역사넷 사이트는 이 클라우드에서 직접 열리지 않는다(DNS/프록시). 검색(WebSearch)으로 여러 자료를 견주는 것까지만 된다.
 
 ## 0. 꼭 지킬 것
 - 사용자는 포항 초등 5학년 담임 선생님. 한국어, 쉬운 말.
