@@ -93,7 +93,7 @@ export default {
         { label: '1 이준', look: 'scholarModern', post: true, talk: [{ who: 'yijun', text: '을사늑약은 황제께서 허락하신 것이 아니오. 이 사실을 세계에 알리러 왔소.' }] },
         { label: '2 이상설', look: 'gentleman', post: true, talk: [{ who: 'yisangseol', text: '황제 폐하의 뜻을 받들어 먼 길을 왔소.' }] },
         { label: '3 이위종', look: 'gentleman', post: true, talk: [{ who: 'yiwijong', text: '우리 사정을 여러 나라 사람들에게 알리겠습니다.' }] },
-        { label: '4 회의장 문 앞', post: true, talk: [{ who: 'student', text: '일제의 방해로 회의장에 들어가지도 못했대요.' }, { who: 'student', text: '그래서 회의장 밖에서 연설을 하며 대한 제국의 상황을 알렸어요.', src: ['S51'] }] },
+        { label: '4 회의장 문 앞', post: true, talk: [{ who: 'student', text: '문 앞까지 왔지만 끝내 들어가지 못했대요.', src: ['S51'] }, { who: 'student', text: '그래서 회의장 밖에서 연설을 하며 대한 제국의 상황을 알렸어요.', src: ['S51'] }] },
       ],
       fail: '빛나는 이정표를 차례대로 따라 걸어가요.',
       done: [{ who: 'narr', text: '헤이그 특사 이준, 이상설, 이위종은 회의장 밖에서 연설을 하며 대한 제국의 상황을 알렸어요.', src: ['S51'] }],

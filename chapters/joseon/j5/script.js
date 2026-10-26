@@ -51,7 +51,7 @@ export default {
       tooEarly: [{ who: 'kimsangheon', text: '성안의 형편부터 살펴보고 오너라.' }],
       first: [
         { who: 'kimsangheon', text: '청과 화의할 수 없다. 끝까지 싸워야 한다.', src: ['S38'] },
-        { who: 'kimsangheon', text: '이처럼 화의에 반대하는 생각을 척화라고 한다.', src: ['S38'] },
+        { who: 'kimsangheon', text: '이처럼 화의(싸움을 멈추고 화해하자는 의논)에 반대하는 생각을 척화라고 한다.', src: ['S38'] },
       ],
       later: [{ who: 'kimsangheon', text: '나는 화의에 찬성할 수 없다.' }],
     },
@@ -88,7 +88,7 @@ export default {
   samjeondo: [
     { who: 'narr', text: '1637년 1월 30일, 인조는 소현세자와 신하들을 데리고 남한산성 서문을 나와 삼전도로 갔어요.', src: ['S63', 'S38'] },
     { who: 'narr', text: '삼전도에는 높은 단(수항단)이 세워져 있었고, 그 위에 청나라 황제(청 태종)가 앉아 있었어요.', src: ['S63'] },
-    { who: 'narr', text: '인조는 단 아래에서 세 번 무릎을 꿇고, 꿇을 때마다 세 번씩 모두 아홉 번 머리를 조아리는 예(삼궤구고두례)를 올리며 항복했어요.', src: ['S63'] },
+    { who: 'narr', text: '인조는 단 아래에서 세 번 무릎을 꿇고, 꿇을 때마다 세 번씩 머리를 땅에 조아렸어요. 이렇게 아홉 번 머리를 조아리는 예(삼궤구고두례)를 올리며 항복했어요.', src: ['S63'] },
   ],
 
   result: [

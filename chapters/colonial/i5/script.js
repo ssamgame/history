@@ -20,9 +20,10 @@ export default {
     student: {
       first: [
         { who: 'student', text: '우리는 일제의 차별적인 교육에 반대하고, 수업 중에 한국어를 쓰게 해 달라고 요구했어요.', src: ['S51'] },
+        { who: 'student', text: '1926년에는 순종의 장례식에 맞춰 6·10 만세 운동도 있었어요.', src: ['S51'] },
         { who: 'student', text: '1929년 광주에서 일어난 광주 학생 항일 운동은 3·1 운동 뒤 가장 큰 항일 운동이 되었어요.', src: ['S51'] },
       ],
-      later: [{ who: 'student', text: '1926년에는 순종의 장례식에 맞춰 6·10 만세 운동도 있었어요. 기와집의 조선어 학회 선생님도 만나 보세요.', src: ['S51'] }],
+      later: [{ who: 'student', text: '기와집의 조선어 학회 선생님도 만나 보세요.' }],
     },
     linguist: {
       tooEarly: [{ who: 'linguist', text: '요즘 학생들이 어떤 마음으로 지내는지 저 학생에게 먼저 들어 보렴.' }],
@@ -35,7 +36,8 @@ export default {
     historian: {
       tooEarly: [{ who: 'historian', text: '우리말을 지키는 일부터 알아야 하네. 조선어 학회에 먼저 다녀오게.' }],
       first: [
-        { who: 'historian', text: '일제는 우리 역사를 왜곡하지만, 신채호와 박은식 같은 역사학자들은 우리 역사가 독자적이고 자주적으로 발전해 왔다고 강조했다네.', src: ['S51'] },
+        { who: 'historian', text: '일제는 우리 역사를 거짓으로 꾸며 내지만, 신채호와 박은식 같은 역사학자들은 달랐네.', src: ['S51'] },
+        { who: 'historian', text: '우리 역사가 스스로의 힘으로 발전해 왔다고 강조했지.', src: ['S51'] },
         { who: 'historian', text: '이육사, 윤동주, 한용운 같은 문학가들은 저항 의식을 담은 작품을 썼지.', src: ['S51'] },
       ],
     },

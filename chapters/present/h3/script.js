@@ -25,7 +25,7 @@ export default {
       later: [{ who: 'soldier', text: '우리만 싸우는 게 아니야. 저기 유엔군 병사도 먼 나라에서 왔대. 이야기를 들어 봐.' }],
     },
     unSoldier: {
-      tooEarly: [{ who: 'unSoldier', text: '여기 상황은 국군 병사가 더 잘 알아. 먼저 이야기해 봐.' }],
+      tooEarly: [{ who: 'unSoldier', text: '여기 상황은 국군 병사가 더 잘 알아. 국군 병사와 먼저 이야기해 봐.' }],
       first: [
         { who: 'unSoldier', text: '국제 연합은 북한의 남침을 침략으로 보았어. 미국을 비롯한 16개 나라가 유엔군을 보냈지.', src: ['S57'] },
       ],
@@ -34,7 +34,7 @@ export default {
     officer: {
       tooEarly: [{ who: 'officer', text: '작전 이야기 전에, 유엔군 병사에게 어떤 나라들이 왔는지 들어 보아라.' }],
       first: [
-        { who: 'officer', text: '바다로 돌아가 인천에 상륙하는 작전을 펼칠 것이다.', src: ['S57'] },
+        { who: 'officer', text: '바다를 돌아 인천에 상륙하는 작전을 펼칠 것이다.', src: ['S57'] },
         { who: 'officer', text: '그러면 서울을 되찾을 수 있을 것이다.', src: ['S57'] },
       ],
     },
@@ -65,7 +65,7 @@ export default {
       type: 'drive', title: '인천 상륙 작전: 물때를 맞춰 인천에 상륙해요', vehicle: 'boat', counter: '지난 곳', pickupCounter: '구한 대원', seconds: 150,
       howto: '화살표를 따라 상륙정을 몰아요. 월미도 앞에서는 밀물이 찰 때까지 빛나는 곳에서 기다리고, 바다에 빠진 대원을 모두 구해 인천에 상륙해요.',
       intro: [
-        { who: 'officer', text: '이제 바다로 돌아가 인천에 상륙한다. 인천 앞바다는 밀물과 썰물의 차이가 아주 크다.', src: ['S57'] },
+        { who: 'officer', text: '이제 바다를 돌아 인천에 상륙한다. 인천 앞바다는 밀물과 썰물의 차이가 아주 크다.', src: ['S57'] },
         { who: 'unSoldier', text: '물이 찰 때를 기다렸다가 들어가야 해. 기뢰와 적의 배를 조심해!' },
       ],
       route: [

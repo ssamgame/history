@@ -30,13 +30,14 @@ export default {
         { who: 'grandma', text: '이제 일제가 강제로 바꾸게 한 일본식 이름 대신 우리 성과 이름을 되찾을 수 있단다.', src: ['S51'] },
         { who: 'grandma', text: '우리말과 우리글을 마음껏 쓰고, 학교에서는 한글 교과서로 우리 역사를 배울 거야.', src: ['S51'] },
       ],
-      later: [{ who: 'grandma', text: '이제 우리말 신문도 마음껏 읽을 수 있겠구나. 저 앞에 김구 선생도 오셨단다.' }],
+      later: [{ who: 'grandma', text: '이제 우리말 신문도 마음껏 읽을 수 있겠구나. 다른 나라에 있던 독립운동가들도 곧 돌아오실 거란다.' }],
     },
     kimgu: {
       tooEarly: [{ who: 'kimgu', text: '오늘 시민들이 무엇을 느끼는지 먼저 들어 보시오.' }],
       first: [
+        { who: 'guide', text: '몇 달 뒤의 이야기야. 김구 선생은 1945년 11월에 중국에서 고국으로 돌아왔어.', src: ['S51', 'S67'] },
         { who: 'kimgu', text: '광복 소식에 다른 나라에 머물던 동포들이 고국으로 돌아오고 있소.', src: ['S51'] },
-        { who: 'kimgu', text: '미국에서 독립운동을 한 이승만, 중국에서 임시 정부를 이끈 나 김구 등도 돌아왔소.', src: ['S51'] },
+        { who: 'kimgu', text: '미국에서 독립운동을 한 이승만은 10월에, 중국에서 임시 정부를 이끈 나 김구는 11월에 돌아왔소.', src: ['S51', 'S67'] },
       ],
     },
     signChildren: { always: [
@@ -60,7 +61,7 @@ export default {
         { label: '서당', talk: [{ who: 'grandma', text: '아이들이 우리말과 우리글을 마음껏 배우겠구나.' }] },
         { label: '장터', talk: [{ who: 'citizen', text: '장터 사람들도 모두 뛰어나와 만세를 부르고 있어요!' }] },
         { label: '마을 광장', needPickups: true, needSay: '아직 모으지 못한 태극기가 있어요. 화살표를 따라가 봐요.',
-          talk: [{ who: 'kimgu', text: '이 기쁨은 우리 민족이 끊임없이 독립운동을 벌인 결과이기도 하오.' }, { who: 'citizen', text: '만세! 온 동네가 거리로 나와 함께 기뻐하고 있어요!' }] },
+          talk: [{ who: 'citizen', text: '이 기쁨은 우리 민족이 끊임없이 독립운동을 벌인 결과이기도 해요.', src: ['S51'] }, { who: 'citizen', text: '만세! 온 동네가 거리로 나와 함께 기뻐하고 있어요!' }] },
       ],
       pickups: [{ label: '태극기' }, { label: '태극기' }, { label: '태극기' }, { label: '태극기' }],
       fail: '빛나는 곳을 따라 가요. 화살표가 길을 알려 줘요.',

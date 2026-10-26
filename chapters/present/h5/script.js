@@ -28,7 +28,7 @@ export default {
       tooEarly: [{ who: 'grandma', text: '저기 아주머니가 이 마을 사정을 잘 안단다. 먼저 만나 보렴.' }],
       first: [
         { who: 'grandma', text: '38도선 북쪽에서 피란 온 사람들은 고향 음식 냉면을 그리워했단다.', src: ['S51'] },
-        { who: 'grandma', text: '메밀을 구하기 어려워서 구호물품으로 받은 밀가루로 냉면을 만들었지. 이것이 부산 밀면의 시작이란다.', src: ['S51'] },
+        { who: 'grandma', text: '메밀을 구하기 어려워서 구호물품으로 받은 밀가루로 냉면을 만들었지. 이렇게 부산 밀면이 시작되었다고 하더구나.', src: ['S51'] },
       ],
       later: [{ who: 'grandma', text: '밀면 한 그릇 먹고 가렴. 운동장에서 공부하는 학생들도 보고 오고.' }],
     },
@@ -36,7 +36,7 @@ export default {
       tooEarly: [{ who: 'student', text: '우리 마을 어른들이 어떻게 사시는지 먼저 들어 보세요.' }],
       first: [
         { who: 'student', text: '교실이 부서져서 운동장에서 수업을 받아요.', src: ['S51'] },
-        { who: 'student', text: '그래도 사람들은 서로를 적으로 여기는 교육을 강화하기도 했어요. 남과 북은 오랫동안 긴장했지요.', src: ['S51'] },
+        { who: 'student', text: '전쟁 뒤 남과 북은 서로를 적으로 여기는 교육을 강화하기도 했어요. 그래서 오랫동안 긴장이 이어졌지요.', src: ['S51'] },
       ],
     },
     signFamily: { always: [
@@ -71,7 +71,7 @@ export default {
       pages: [
         { title: '판잣집', pic: 'shanty', lines: [{ who: 'narr', text: '도시로 몰려든 사람들은 판잣집 같은 어려운 환경에서 살았어요.', src: ['S51'] }] },
         { title: '가족을 돌본 여성들', pic: 'peddler', lines: [{ who: 'narr', text: '전쟁으로 많은 남성이 죽거나 다쳤어요.', src: ['S51'] }, { who: 'narr', text: '그래서 여성들이 공장에 다니거나 행상을 하며 가족의 생계를 책임지는 경우가 많아졌어요.', src: ['S51'] }] },
-        { title: '부산 밀면', pic: 'milmyeon', lines: [{ who: 'narr', text: '메밀을 구하기 어려워서 구호물품으로 받은 밀가루로 냉면을 만들었어요. 이것이 부산 밀면의 시작이에요.', src: ['S51'] }] },
+        { title: '부산 밀면', pic: 'milmyeon', lines: [{ who: 'narr', text: '메밀을 구하기 어려워서 구호물품으로 받은 밀가루로 냉면을 만들었어요. 부산 밀면은 이렇게 시작되었다고 해요.', src: ['S51'] }] },
         { title: '운동장 교실', pic: 'outdoor', lines: [{ who: 'narr', text: '교실이 부서져서 학생들은 운동장에서 수업을 받았어요.', src: ['S51'] }] },
         { title: '이산가족 찾기', year: '1983년', pic: 'reunion', lines: [{ who: 'narr', text: '전쟁으로 헤어진 가족을 찾으려고 1983년 텔레비전 생방송이 138일 동안 이어졌고, 1만여 명이 다시 만났어요.', src: ['S62'] }] },
       ],
@@ -79,7 +79,7 @@ export default {
   },
   result: [{ who: 'narr', text: '사람들은 어려움 속에서도 서로 도우며 다시 일어섰어요.', src: ['S51'] }],
   quizzes: [
-    { kind: 'quiz', year: 1953, question: '피란민이 밀가루로 냉면을 만들면서 생긴 음식은?', options: ['밀면', '떡볶이', '짜장면'], answer: 0, explain: '구호물품 밀가루로 만든 냉면이 부산 밀면의 시작이에요.', src: ['S51'] },
+    { kind: 'quiz', year: 1953, question: '피란민이 밀가루로 냉면을 만들면서 생긴 음식은?', options: ['밀면', '떡볶이', '짜장면'], answer: 0, explain: '구호물품 밀가루로 만든 냉면에서 부산 밀면이 시작되었다고 해요.', src: ['S51'] },
     { kind: 'quiz', year: 1953, question: '6·25 전쟁 뒤 우리에게 남은 과제는?', options: ['평화 통일', '개항', '신분제 없애기'], answer: 0, explain: '분단이 이어져 평화 통일은 우리의 과제로 남아 있어요.', src: ['S51'] },
   ],
 };

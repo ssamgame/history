@@ -48,7 +48,7 @@ export default {
     ] },
     signClock: { always: [
       { who: 'narr', text: '자격루는 경복궁 보루각에 두고 나라의 표준 시계로 썼어요.', src: ['S32'] },
-      { who: 'narr', text: '종이 울리면 나무 인형이 나타나 사람의 손을 거치지 않고 시간을 알렸어요.', src: ['S31'] },
+      { who: 'narr', text: '시간이 되면 나무 인형이 스스로 종과 북을 쳐서, 사람의 손을 거치지 않고 시간을 알렸어요.', src: ['S31', 'S32'] },
     ] },
     signGauge: { always: [
       { who: 'narr', text: '측우기는 깊이 약 31cm, 지름 약 15cm인 쇠 원통이에요.', src: ['S33'] },

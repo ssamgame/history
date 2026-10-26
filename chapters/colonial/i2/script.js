@@ -35,7 +35,7 @@ export default {
     yugwansun: {
       tooEarly: [{ who: 'yugwansun', text: '먼저 종교 지도자분의 말씀을 들어 보세요. 그다음에 제 고향 이야기를 할게요.' }],
       first: [
-        { who: 'yugwansun', text: '만세 시위가 전국으로 퍼지고 있어요. 학생, 노동자, 농민, 상인 모두가 함께해요.', src: ['S51'] },
+        { who: 'yugwansun', text: '만세 시위는 곧 전국으로 퍼질 거예요. 학생, 노동자, 농민, 상인 모두가 함께할 거예요.', src: ['S51'] },
         { who: 'yugwansun', text: '저는 고향 천안으로 내려가 만세 시위를 이끌 거예요.', src: ['S51'] },
       ],
     },
@@ -84,10 +84,10 @@ export default {
       type: 'book', title: '역사책으로 보는 3·1 운동',
       intro: [{ who: 'leader', text: '3·1 운동이 어떻게 일어나고 퍼졌는지 역사책으로 차례차례 넘겨 보시오.' }],
       pages: [
-        { title: '독립의 희망', pic: 'ww1end', lines: [{ who: 'narr', text: '제1차 세계 대전이 끝났어요.', src: ['S51'] }, { who: 'narr', text: '전쟁에서 진 나라들의 식민지가 독립하자, 우리 민족도 독립의 희망을 갖게 되었어요.', src: ['S51'] }] },
+        { title: '독립의 희망', year: '1918년', pic: 'ww1end', lines: [{ who: 'narr', text: '제1차 세계 대전이 끝났어요.', src: ['S51'] }, { who: 'narr', text: '전쟁에서 진 나라들의 식민지가 독립하자, 우리 민족도 독립의 희망을 갖게 되었어요.', src: ['S51'] }] },
         { title: '독립 선언', year: '1919년 3월 1일', pic: 'declaration', lines: [{ who: 'narr', text: '1919년 3월 1일, 학생과 시민들은 탑골 공원에서 독립 선언서를 읽고 만세 시위를 벌였어요(3·1 운동).', src: ['S51'] }] },
-        { title: '전국으로 퍼진 만세 시위', pic: 'spread', lines: [{ who: 'narr', text: '만세 시위는 전국으로 퍼졌고, 나라 밖에서도 일어났어요. 여러 계층이 참여한 전 민족적인 운동이었어요.', src: ['S51'] }, { who: 'narr', text: '유관순은 천안에서 만세 시위를 이끌다가 일제에 체포되었어요.', src: ['S51'] }] },
-        { title: '일제의 진압', pic: 'crackdown', lines: [{ who: 'narr', text: '일제는 만세 시위를 잔인하게 진압하고, 경기도 화성 제암리를 비롯한 여러 마을을 습격했어요.', src: ['S51'] }] },
+        { title: '전국으로 퍼진 만세 시위', year: '1919년', pic: 'spread', lines: [{ who: 'narr', text: '만세 시위는 전국으로 퍼졌고, 나라 밖에서도 일어났어요. 여러 계층이 참여한 전 민족적인 운동이었어요.', src: ['S51'] }, { who: 'narr', text: '유관순은 천안에서 만세 시위를 이끌다가 일제에 체포되었어요.', src: ['S51'] }] },
+        { title: '일제의 진압', year: '1919년', pic: 'crackdown', lines: [{ who: 'narr', text: '일제는 만세 시위를 잔인하게 진압하고, 경기도 화성 제암리를 비롯한 여러 마을을 습격했어요.', src: ['S51'] }] },
       ],
     },
   },

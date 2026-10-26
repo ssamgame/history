@@ -18,7 +18,7 @@ test('ch5: script passes validation', () => {
 });
 
 test('ch5: card order matches the spec', () => {
-  eq(ch5Script.making.cards, ['나무를 바닷물에 담그기', '소금물에 삶기', '그늘에서 말리기', '글자 새기기', '마구리(모서리를 구리판으로 고정)', '옻칠하기']);
+  eq(ch5Script.making.cards, ['나무를 바닷물에 담그기', '소금물에 삶기', '그늘에서 말리기', '글자 새기기', '마구리(판 양 끝에 나무 덧대기)', '옻칠하기']);
   eq(ch5Script.quizzes.map(q => q.options[q.answer]), ['부처의 힘으로 몽골의 침입을 물리치려고', '벌레가 먹지 않도록']);
 });
 

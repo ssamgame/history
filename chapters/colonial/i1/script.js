@@ -72,7 +72,7 @@ export default {
       howto: '헌병의 불빛을 피해 파란 고리를 차례로 지나 선생님께 책을 전해요. 짐 더미(덤불) 뒤에 숨으면 들키지 않아요.',
       intro: [
         { who: 'teacher', text: '학교에서는 우리 역사를 가르칠 수 없게 되었단다.' },
-        { who: 'teacher', text: '이 우리 역사책을 마을 끝 서당에 몰래 전해 주겠니? 헌병에게 들키면 안 된다.' },
+        { who: 'teacher', text: '이 우리 역사책을 마을 끝 서당까지 몰래 가져가 주겠니? 나는 서당에서 기다리마. 헌병에게 들키면 안 된다.' },
       ],
       waypoints: [
         { label: '쌀가마 뒤' },
@@ -88,10 +88,10 @@ export default {
       type: 'book', title: '역사책으로 보는 일제의 수탈',
       intro: [{ who: 'porter', text: '오늘도 쌀가마를 가득 실은 기차가 항구로 가네. 그동안 무슨 일이 있었는지 역사책으로 넘겨 보게.' }],
       pages: [
-        { title: '토지 조사 사업', pic: 'tojisa', lines: [{ who: 'narr', text: '일제가 토지 조사 사업을 벌여서 많은 농민이 땅을 빼앗겼어요.', src: ['S51'] }] },
+        { title: '토지 조사 사업', year: '1910년대', pic: 'tojisa', lines: [{ who: 'narr', text: '일제가 토지 조사 사업을 벌여서 많은 농민이 땅을 빼앗겼어요.', src: ['S51'] }] },
         { title: '철도', pic: 'railway', lines: [{ who: 'narr', text: '일제는 철도를 놓아 주요 도시와 항구를 이었어요.', src: ['S51'] }, { who: 'narr', text: '한반도에서 나는 물자를 일본으로 가져가고 일본 상품을 팔기 쉬워졌어요.', src: ['S51'] }] },
-        { title: '산미 증식 계획', pic: 'sanmi', lines: [{ who: 'narr', text: '일제가 쌀 생산을 늘리는 산미 증식 계획을 세웠어요.', src: ['S51'] }, { who: 'narr', text: '하지만 늘어난 것보다 더 많은 쌀이 일본으로 빠져나갔어요.', src: ['S51'] }] },
-        { title: '민족 말살 정책', pic: 'classroom', lines: [{ who: 'narr', text: '1930년대 후반, 일제는 우리 민족의 전통과 문화를 뿌리뽑으려 했어요. 신사 참배를 강요하고 학교에서는 일본어로 수업했어요.', src: ['S51'] }] },
+        { title: '산미 증식 계획', year: '1920년대', pic: 'sanmi', lines: [{ who: 'narr', text: '일제가 쌀 생산을 늘리는 산미 증식 계획을 세웠어요.', src: ['S51'] }, { who: 'narr', text: '하지만 늘어난 것보다 더 많은 쌀이 일본으로 빠져나갔어요.', src: ['S51'] }] },
+        { title: '민족 말살 정책', year: '1930년대 후반', pic: 'classroom', lines: [{ who: 'narr', text: '1930년대 후반, 일제는 우리 민족의 전통과 문화를 뿌리뽑으려 했어요. 신사 참배를 강요하고 학교에서는 일본어로 수업했어요.', src: ['S51'] }] },
       ],
     },
   },

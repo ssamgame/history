@@ -25,7 +25,7 @@ export default {
       first: [
         { who: 'navy', text: '저 배가 거북선이야. 이순신 장군께서 군관들과 함께 고쳐 만드셨대.', src: ['S36'] },
         { who: 'navy', text: '덮개 위에는 칼과 송곳을 꽂았고, 앞에는 용머리가 있지.', src: ['S36'] },
-        { who: 'navy', text: '거북선은 사천 바다 싸움에서 처음 싸움에 나섰어.', src: ['S37'] },
+        { who: 'navy', text: '거북선은 사천 앞바다 싸움에 처음 나섰어.', src: ['S37'] },
       ],
       later: [{ who: 'navy', text: '포구의 백성들도 소식을 많이 알고 있어.' }],
     },

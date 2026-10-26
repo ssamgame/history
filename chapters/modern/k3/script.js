@@ -7,7 +7,7 @@ export default {
     farmer: { name: '농민군', mark: '軍', color: '#6b4a32', look: 'uibyeong' },
   },
   intro: [
-    { who: 'narr', text: '개항 뒤 늘어난 세금과 탐관오리의 수탈로 백성의 생활은 어려워졌어요.', src: ['S51'] },
+    { who: 'narr', text: '개항 뒤 늘어난 세금과 탐관오리(백성을 괴롭히는 나쁜 관리)의 수탈(억지로 빼앗음)로 백성의 생활은 어려워졌어요.', src: ['S51'] },
     { who: 'narr', text: '특히 전라도 고부에서는 군수의 횡포에 농민의 불만이 커졌어요.', src: ['S51'] },
   ],
   start: [
@@ -35,7 +35,7 @@ export default {
     farmer: {
       tooEarly: [{ who: 'farmer', text: '우리를 이끌 분은 전봉준 장군님이시네. 장군님 말씀부터 듣고 오게.' }],
       first: [
-        { who: 'farmer', text: '고부에서 시작한 우리 운동이 큰 농민 운동이 되었어.', src: ['S51'] },
+        { who: 'farmer', text: '고부에서 시작한 우리 뜻이 온 나라로 퍼져 나갈 거야.' },
         { who: 'farmer', text: '마을마다 다니며 함께할 농민들을 모으자!' },
       ],
     },
@@ -96,8 +96,8 @@ export default {
         { title: '1차 봉기: 황토현', year: '1894년', pic: 'hwangtohyeon', lines: [{ who: 'narr', text: '다시 일어난 농민군은 황토현에서 관군을 크게 물리쳤어요.', src: ['S64'] }] },
         { title: '전주성을 차지하다', year: '1894년', pic: 'jeonju', lines: [{ who: 'narr', text: '농민군은 기세를 몰아 전라도의 중심인 전주성을 차지했어요.', src: ['S64'] }] },
         { title: '전주 화약과 집강소', year: '1894년', pic: 'hwayak', lines: [
-          { who: 'narr', text: '청과 일본 군대가 들어오자 농민군은 정부와 화약을 맺고 물러났어요.', src: ['S64', 'S51'] },
-          { who: 'narr', text: '그 뒤 전라도 고을마다 집강소를 두어 스스로 개혁을 펼쳤어요.', src: ['S64'] },
+          { who: 'narr', text: '청과 일본 군대가 들어오자 농민군은 정부와 화약(싸움을 멈추기로 한 약속)을 맺고 물러났어요.', src: ['S64', 'S51'] },
+          { who: 'narr', text: '그 뒤 전라도 고을마다 집강소(농민군이 고을 일을 돌보던 곳)를 두어 스스로 개혁을 펼쳤어요.', src: ['S64'] },
         ] },
         { title: '2차 봉기: 다시 일어서다', year: '1894년', pic: 'rise', lines: [{ who: 'narr', text: '일본군이 경복궁을 점령하자, 나라를 지키려고 농민군이 다시 일어났어요.', src: ['S51', 'S64'] }] },
         { title: '우금치 전투와 전봉준 체포', year: '1894년', pic: 'ugeumchi', lines: [{ who: 'narr', text: '농민군은 공주 우금치에서 일본군과 관군에게 크게 졌고, 전봉준 등 지도자들은 체포되었어요.', src: ['S64', 'S51'] }] },

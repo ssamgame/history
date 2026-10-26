@@ -20,7 +20,7 @@ export default {
     messenger: {
       first: [
         { who: 'messenger', text: '임시 정부는 비밀 조직을 두어 나라 안팎의 독립운동 단체와 연락해요.', src: ['S51'] },
-        { who: 'messenger', text: '독립신문을 펴내 동포들에게 독립운동 소식을 전하고 있어요.', src: ['S51'] },
+        { who: 'messenger', text: '임시 정부의 신문인 독립신문을 펴내 동포들에게 독립운동 소식을 전하고 있어요.', src: ['S51'] },
       ],
       later: [{ who: 'messenger', text: '오늘도 몰래 전할 소식이 한가득이에요. 안창호 선생님께 가 보세요. 저기 계세요.' }],
     },
@@ -81,7 +81,7 @@ export default {
       intro: [{ who: 'kimgu', text: '임시 정부는 할 일이 많소. 각 부서에 일을 나누어 주시오.' }],
       bins: [{ id: 'home', label: '나라 안과 연락', look: 'citizen' }, { id: 'diplo', label: '외교와 자금', look: 'ahnchangho' }, { id: 'army', label: '무장 투쟁', look: 'independenceArmy' }],
       cards: [
-        { text: '비밀 조직으로 독립운동 자금을 모았다', bin: 'home' },
+        { text: '비밀 조직을 두어 나라 안과 연락했다', bin: 'home' },
         { text: '다른 나라에 외교 기관을 두었다', bin: 'diplo', talk: [{ who: 'kimgu', text: '세계에 우리의 독립을 도와 달라고 요청하오.' }] },
         { text: '독립군 단체를 아래에 두었다', bin: 'army' },
         { text: '독립신문으로 소식을 전했다', bin: 'home' },

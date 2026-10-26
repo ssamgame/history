@@ -35,8 +35,8 @@ export default {
     unSoldier: {
       tooEarly: [{ who: 'unSoldier', text: '지금은 피란민을 돕는 게 먼저야. 그다음에 이야기하자.' }],
       first: [
-        { who: 'unSoldier', text: '우리는 다시 서울을 되찾았지만, 38도선 근처에서 싸움이 오래 이어지고 있어.', src: ['S51'] },
-        { who: 'unSoldier', text: '한편에서는 전쟁을 멈추려고 회담을 하고 있어.', src: ['S51'] },
+        { who: 'unSoldier', text: '1·4 후퇴로 서울을 다시 빼앗겼지만, 우리는 국군과 함께 꼭 서울을 되찾을 거야.', src: ['S51'] },
+        { who: 'unSoldier', text: '전쟁이 어떻게 멈추게 되는지, 앞의 이정표를 따라가 보자.' },
       ],
     },
     signPanmun: { always: [
@@ -86,7 +86,7 @@ export default {
       type: 'book', title: '역사책으로 보는 정전 협정',
       intro: [{ who: 'unSoldier', text: '여기가 판문점이야. 정전 협정을 맺기까지의 일을 역사책으로 넘겨 보자.' }],
       pages: [
-        { title: '정전 회담', pic: 'talks', lines: [{ who: 'narr', text: '서울을 되찾은 뒤 38도선 근처에서 싸움이 오래 이어졌고, 한편에서는 전쟁을 멈추려고 회담을 했어요.', src: ['S51'] }] },
+        { title: '정전 회담', year: '1951년 7월', pic: 'talks', lines: [{ who: 'narr', text: '1951년 3월 서울을 다시 되찾은 뒤 38도선 근처에서 싸움이 오래 이어졌어요.', src: ['S51', 'S68'] }, { who: 'narr', text: '한편에서는 전쟁을 멈추려고 회담을 했어요.', src: ['S51', 'S68'] }] },
         { title: '정전 협정', year: '1953년 7월', pic: 'armistice', lines: [{ who: 'narr', text: '1953년 7월 판문점에서 정전 협정이 맺어지면서 휴전선이 그어졌어요.', src: ['S51'] }] },
         { title: '정전이란?', pic: 'ceasefire', lines: [{ who: 'narr', text: '정전은 전쟁 중인 나라들이 전투를 잠시 멈추는 일이에요. 전쟁이 완전히 끝난 것은 아니에요.', src: ['S51'] }] },
       ],

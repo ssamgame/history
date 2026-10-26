@@ -82,7 +82,7 @@ export default {
       type: 'book', title: '역사책으로 보는 근대 문물',
       intro: [{ who: 'student', text: '개항 뒤 새로 들어온 것들을 역사책으로 한 쪽씩 넘겨 봐요.' }],
       pages: [
-        { title: '전신', pic: 'telegraph', lines: [{ who: 'narr', text: '전신은 글자나 숫자를 전기 신호로 바꾸어 보내는 통신이에요.', src: ['S51'] }, { who: 'narr', text: '한성과 인천 사이에 전신을 놓은 뒤, 일본과 중국까지 이어지는 통신망이 생겼어요.', src: ['S51'] }] },
+        { title: '전신', year: '1885년', pic: 'telegraph', lines: [{ who: 'narr', text: '전신은 글자나 숫자를 전기 신호로 바꾸어 보내는 통신이에요.', src: ['S51'] }, { who: 'narr', text: '한성과 인천 사이에 전신을 놓은 뒤, 일본과 중국까지 이어지는 통신망이 생겼어요.', src: ['S51', 'S69'] }] },
         { title: '전화기', pic: 'telephone', lines: [{ who: 'narr', text: '전화기를 들여와서 소식을 빠르게 주고받을 수 있게 되었어요.', src: ['S51'] }] },
         { title: '전차', year: '1899년', pic: 'tram', lines: [{ who: 'narr', text: '1899년부터 서대문에서 청량리까지 전차가 다니기 시작했어요.', src: ['S51'] }, { who: 'narr', text: '전차를 다니게 하려고 길을 넓히고 전봇대도 세웠어요.', src: ['S51'] }] },
         { title: '전등과 가로등', pic: 'lamp', lines: [{ who: 'narr', text: '전등과 가로등이 생겨서 밤에도 다닐 수 있게 되었어요.', src: ['S51'] }] },

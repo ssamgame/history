@@ -69,7 +69,7 @@ export default {
   },
 
   result: [
-    { who: 'narr', text: '거란군은 얻은 것 없이 물러갔어요.', src: ['S15'] },
+    { who: 'narr', text: '현종이 거란에 직접 찾아가겠다고 약속하자, 거란군은 물러갔어요.', src: ['S66', 'S15'] },
     { who: 'narr', text: '양규는 끝까지 싸우다 전사했어요.', src: ['S15'] },
   ],
 

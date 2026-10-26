@@ -8,7 +8,7 @@ export default {
   },
   intro: [
     { who: 'narr', text: '청일 전쟁에서 이긴 일본이 조선의 정치에 간섭하자, 고종과 명성 황후는 러시아의 힘을 빌려 이를 벗어나려 했어요.', src: ['S51'] },
-    { who: 'narr', text: '그러자 일본은 경복궁에 침입해 명성 황후를 시해했어요(을미사변). 고종은 러시아 공사관으로 몸을 피했어요.', src: ['S51', 'S54'] },
+    { who: 'narr', text: '그러자 일본은 경복궁에 침입해 명성 황후를 죽였어요(을미사변). 고종은 러시아 공사관으로 몸을 피했어요.', src: ['S51', 'S54'] },
   ],
   start: [
     { who: 'guide', text: '한성 서대문 밖 큰길이야. 새로 세운 돌문 앞에서 사람들이 모여 나라 이야기로 시끌시끌해.' },
@@ -59,7 +59,7 @@ export default {
       route: [
         { label: '독립신문사', hold: 3, holdLabel: '신문 뭉치 받는 중', holdSay: '신문사 사람이 갓 찍은 신문 뭉치를 건네줘요.', look: 'seojaepil', give: true },
         { label: '종로 가게', hold: 2, holdLabel: '신문 건네는 중', hand: true, talk: [{ who: 'citizen', text: '한글로 쓰여 있어서 누구나 읽을 수 있네요!' }] },
-        { label: '궁궐 앞 거리', hold: 2, holdLabel: '신문 건네는 중', hand: true, talk: [{ who: 'citizen', text: '임금께서 러시아 공사관에 머무신다니 걱정이에요.' }] },
+        { label: '궁궐 앞 거리', hold: 2, holdLabel: '신문 건네는 중', hand: true, talk: [{ who: 'citizen', text: '신문 덕분에 나라 사정을 알 수 있어 좋아요.' }] },
         { label: '시장', hold: 2, holdLabel: '신문 건네는 중', hand: true, say: '시장 사람들도 신문을 돌려 읽어요.' },
         { label: '서재필 선생', talk: [{ who: 'seojaepil', text: '수고했어요. 신문으로 자주독립의 뜻을 널리 알릴 수 있습니다.' }] },
       ],
@@ -70,7 +70,7 @@ export default {
       type: 'book', title: '역사책으로 보는 1895~1898년의 한성',
       intro: [{ who: 'citizen', text: '그동안 한성에서 있었던 일을 역사책으로 차례차례 넘겨 봐요.' }],
       pages: [
-        { title: '을미사변', year: '1895년', pic: 'eulmi', lines: [{ who: 'narr', text: '1895년, 일본이 경복궁에 침입해 명성 황후를 시해했어요. 이 일을 을미사변이라고 해요.', src: ['S54'] }] },
+        { title: '을미사변', year: '1895년', pic: 'eulmi', lines: [{ who: 'narr', text: '1895년, 일본이 경복궁에 침입해 명성 황후를 죽였어요. 이 일을 을미사변이라고 해요.', src: ['S54'] }] },
         { title: '러시아 공사관으로', year: '1896년 2월', pic: 'agwan', lines: [{ who: 'narr', text: '을미사변 뒤 고종은 몸을 피해 러시아 공사관으로 옮겼어요.', src: ['S54'] }] },
         { title: '독립신문', year: '1896년 4월', pic: 'newspaper', lines: [{ who: 'narr', text: '서재필이 독립신문을 펴냈어요. 한글로 쓴 우리나라 최초의 민간 신문이에요.', src: ['S53'] }] },
         { title: '대한 제국', year: '1897년 10월', pic: 'hwangudan', lines: [{ who: 'narr', text: '고종은 환구단에서 황제로 즉위하고, 나라 이름을 대한 제국으로 바꾸었어요.', src: ['S51', 'S54'] }] },
