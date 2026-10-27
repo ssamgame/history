@@ -28,7 +28,7 @@ model: claude-opus-5-5
   `NODE_PATH=$(npm root -g) PORT=8161 timeout 900 node tools/test-node.cjs "ch2" > $SCRATCH/t.txt 2>&1; grep -E "FAIL|RESULT" $SCRATCH/t.txt`
   (`ch2`, `j3`, `layout` 처럼 테스트 이름 앞부분 하나. 출력 전체를 읽지 말고 `FAIL|RESULT` 줄만 본다.)
 - 실패가 나면 그 테스트 하나만 다시 돌려 확인한다. 시간 문제로 보이는 실패는 한 번만 다시 돌린다.
-- 화면 확인 스크린샷은 꼭 필요한 장면 1~2장만 찍는다(Playwright, 1000×560, swiftshader).
+- 한 장을 마치면 선생님께 보여 드릴 사진을 **딱 2장** 찍는다(Playwright, 1000×560, swiftshader): ① 그 장 마을(탐험) 모습 `?debug=<장>-explore` ② 미니게임 안 모습 `?debug=<장>-minigame`. 저장 위치 `docs/team/shots/<장>-town.png`, `docs/team/shots/<장>-game.png`. 그 밖의 사진은 찍지 않는다.
 - 통과하면 `docs/team/tested.md`에 한 줄 적는다: `| 장 | 날짜 | 커밋 | 돌린 테스트 | 결과 |`.
 
 ## 보고 형식 (메인에게 돌려줄 때, 짧게)
