@@ -1,81 +1,199 @@
-// 2장 「양규와 흥화진」: 성안 탐험 → 성벽 방어 → 백성 구출 → 퀴즈.
-import { buildCh2Scene } from './scene.js';
+// 2장 「양규와 흥화진」(D-8): 성문을 열고 들어옴 → 병사·백성 이야기를 듣고 양규에게 → 양규를 따라 성벽에 올라
+// 양규가 가리킨 사다리를 밀어냄(같은 장면) → 백성 구출(구한 백성이 따라와 성으로 들어옴) → 퀴즈.
+import { buildCh2Scene, WALL_TOP, WALK_Z } from './scene.js';
 import { roam } from '../../core/flow.js';
-import { showHowTo, runWithRetries, createTapTargets } from '../../core/minigame.js';
+import { showHowTo, runWithRetries } from '../../core/minigame.js';
+import { enterThroughGate } from '../kit/gate.js';
+import { labelSprite } from '../kit/play.js';
 import script from './script.js';
+import * as THREE from 'three';
 
 const EXPLORE_BOUNDS = { x0: -10.5, x1: 10.5, z0: -10.5, z1: 7 };
+export const INTRO_FROM = [0, 22]; // 장 시작 장면: 남쪽 성문 밖 길
+const PEOPLE = ['soldier', 'villager']; // 이야기를 들어 볼 차례(병사 → 백성), 그다음 양규
+const STAND = [0, WALK_Z];          // 성벽 위 학생이 설 자리(계단 바로 위)
+const YG_POST = [1.4, WALK_Z];      // 성벽 위 양규 자리
+const LEAD_PATH = [[0, -6.4], [0, -11.9], [0.3, WALK_Z], YG_POST];
+const LEAD_SPEED = 3.6, WAIT_FAR = 5, WAIT_NEAR = 3.2;
+const WALL_BOUNDS = { x0: -11.5, x1: 11.5, z0: WALK_Z - 0.35, z1: WALK_Z + 0.35 };
+const PUSH_R = 1.4;      // 사다리 자리에서 이만큼 가까이 가면 밀어낸다
+const NEED_PUSH = 10;    // 이만큼 밀어내면 바로 성공
+const RAISE_SECONDS = 0.8; // 거란 병사가 사다리를 세우는 시간
+const RAISE_LEAN = 1.1;    // 세우기 전 사다리가 뒤로 눕혀진 각도(라디안)
+const FALL_SECONDS = 0.7;  // 밀린 사다리가 뒤로 넘어가는 시간
+
 let scene = null;
+let rescued = []; // 구한 백성 무리(구한 차례). 학생을 줄지어 따라온다
 
 async function sayAll(dialogue, lines) { for (const l of lines) await dialogue.say(l); }
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
-function setStep(ctx, n) {
-  const { world } = ctx;
-  ctx.setGoal(script.goals[n]);
-  world.npcs.get('soldier').mark.visible = n === 0;
-  world.npcs.get('yanggyu').mark.visible = n === 1;
-  scene.ring.visible = n === 2;
-  const targets = [world.npcs.get('soldier').mesh.position, world.npcs.get('yanggyu').mesh.position, scene.stairs];
-  world.setGoal(targets[n] ? { x: targets[n].x, z: targets[n].z } : null);
+// 양규의 첫 말(D-8): 아무 이야기도 안 들었으면 먼저 들어 보라 하고(막히지 않고 다시 찾아오면 된다),
+// 들었으면 들은 사람의 말을 차례로 이어받아 '이곳이 무너지면 안 된다'로 모은다
+export function yanggyuTalk(heard) {
+  const n = script.npc.yanggyu;
+  if (!PEOPLE.some(id => heard.has(id))) return [...n.greet, ...n.tooEarly];
+  return [...n.greet, ...PEOPLE.filter(id => heard.has(id)).map(id => n.heard[id]), ...n.land, ...n.go];
 }
 
-function placePlayer(world, [x, z], ry = Math.PI) {
+// 탐험 목표: 아직 이야기를 안 들은 다음 사람에게 느낌표와 화살표, 다 들었으면 양규
+function setStep(ctx, n, heard = new Set(PEOPLE)) {
+  const { world } = ctx;
+  ctx.setGoal(script.goals[n]);
+  const next = n === 0 ? PEOPLE.find(id => !heard.has(id)) : n === 1 ? 'yanggyu' : null;
+  for (const id of [...PEOPLE, 'yanggyu']) world.npcs.get(id).mark.visible = id === next;
+  const t = next && world.npcs.get(next).mesh.position;
+  world.setGoal(t ? { x: t.x, z: t.z } : null);
+}
+
+function placePlayer(world, [x, z], ry = Math.PI, y = 0) {
   world.player.visible = true;
-  world.player.position.set(x, 0, z); world.player.rotation.y = ry;
+  world.player.position.set(x, y, z); world.player.rotation.y = ry;
   world.camMode = 'follow'; world.snapCamera();
 }
 
-const RAISE_SECONDS = 0.8; // 거란 병사가 사다리를 세우는 시간
-const RAISE_LEAN = 1.1;    // 세우기 전 사다리가 뒤로 눕혀진 각도(라디안)
+// 성벽 계단: 계단(가운데 너비 3)은 z -7.2에서 북쪽으로 한 칸 0.8씩 오른다. 성벽 위는 WALL_TOP
+const onWall = p => p.z < -11.9;
+const onStairs = p => !onWall(p) && Math.abs(p.x) < 1.5 && p.z < -7.2;
+function heightAt(p) {
+  if (onWall(p)) return WALL_TOP;
+  if (onStairs(p)) return Math.min(WALL_TOP, 0.7 * (Math.floor((-7.2 - p.z) / 0.8) + 1));
+  return 0;
+}
+// 학생 자리에 따라 걷는 곳을 바꾼다(성안 땅 / 계단 / 성벽 위). 계단 옆에서 계단으로 올라서지는 못한다
+function climbBounds(p) {
+  if (onWall(p)) return { ...WALL_BOUNDS, z1: Math.abs(p.x) < 1.4 ? 7 : WALL_BOUNDS.z1 };
+  if (onStairs(p)) return { x0: -1.4, x1: 1.4, z0: WALL_BOUNDS.z0, z1: 7 };
+  const b = { ...EXPLORE_BOUNDS };
+  if (Math.abs(p.x) < 1.4) b.z0 = WALL_BOUNDS.z0;
+  else if (p.z < -7.2) { if (p.x > 0) b.x0 = 1.5; else b.x1 = -1.5; }
+  return b;
+}
+function setYanggyu(world, x, z, ry) {
+  world.moveNpc('yanggyu', x, z, ry);
+  const m = world.npcs.get('yanggyu').mesh.position;
+  m.y = heightAt(m);
+}
+
+// 양규가 앞장서 계단을 올라 성벽 위를 걷고 학생이 따라간다(1장 서희 따라 걷기와 같은 방식).
+// 학생이 멀어지면 양규가 멈춰 돌아보며 기다린다. 양규가 자리에 서면 학생 자리에 빛나는 원이 뜬다.
+export function followYanggyu(ctx) {
+  const { world, input } = ctx;
+  const yg = world.npcs.get('yanggyu'), m = yg.mesh.position;
+  yg.collider.r = 0; // 좁은 성벽 위에서 학생 길을 막지 않게
+  let i = 0, waiting = false;
+  for (const id of [...PEOPLE, 'yanggyu']) world.npcs.get(id).mark.visible = false;
+  ctx.setGoal(script.goals[2]);
+  scene.ring.position.set(STAND[0], WALL_TOP + 0.05, STAND[1]);
+  input.enabled = true;
+  return new Promise(resolve => {
+    const off = world.onUpdate(dt => {
+      const p = world.player.position;
+      world.bounds = climbBounds(p);
+      p.y += (heightAt(p) - p.y) * Math.min(1, dt * 14);
+      if (i < LEAD_PATH.length) {
+        const dp = Math.hypot(p.x - m.x, p.z - m.z);
+        if (waiting ? dp < WAIT_NEAR : dp > WAIT_FAR) waiting = !waiting;
+        if (waiting) yg.mesh.rotation.y = Math.atan2(p.x - m.x, p.z - m.z);
+        else {
+          let dx = LEAD_PATH[i][0] - m.x, dz = LEAD_PATH[i][1] - m.z;
+          const d = Math.hypot(dx, dz), step = LEAD_SPEED * dt;
+          if (d <= step) { setYanggyu(world, LEAD_PATH[i][0], LEAD_PATH[i][1], yg.mesh.rotation.y); i += 1; }
+          else { dx /= d; dz /= d; setYanggyu(world, m.x + dx * step, m.z + dz * step, Math.atan2(dx, dz)); }
+          if (i === LEAD_PATH.length) { yg.mesh.rotation.y = -Math.PI / 2; scene.ring.visible = true; } // 학생 쪽을 보고 선다
+        }
+        world.setGoal({ x: m.x, z: m.z });
+        return;
+      }
+      world.setGoal({ x: STAND[0], z: STAND[1] });
+      if (onWall(p) && Math.hypot(p.x - STAND[0], p.z - STAND[1]) < 1.6) {
+        off(); input.enabled = false; scene.ring.visible = false; world.setGoal(null);
+        p.set(STAND[0], WALL_TOP, STAND[1]); world.player.rotation.y = Math.PI;
+        resolve();
+      }
+    });
+  });
+}
+
+// 이어하기로 미니게임부터 시작할 때: 학생과 양규를 성벽 위에 세운다
+function putOnWall(world) {
+  const yg = world.npcs.get('yanggyu');
+  yg.collider.r = 0;
+  setYanggyu(world, YG_POST[0], YG_POST[1], Math.PI);
+  world.bounds = WALL_BOUNDS;
+  placePlayer(world, STAND, Math.PI, WALL_TOP);
+}
+
+// 장 시작 장면(상시 규칙): 남쪽 성문의 문짝이 열리고 학생이 성 밖 길에서 걸어 들어온다(약 4초). 누르면 건너뛴다.
+export function introWalk(ctx) {
+  ctx.world.bounds = EXPLORE_BOUNDS;
+  return enterThroughGate(ctx, { from: INTRO_FROM, to: scene.start, gate: scene.gate });
+}
 
 function resetLadders() {
   for (const l of scene.ladders) {
     l.group.visible = false; l.pivot.rotation.x = l.tilt;
     l.climber.visible = false; l.carrier.visible = false;
   }
+  for (const r of scene.wallRings) r.visible = false;
 }
 
-// 성벽 방어 한 번: 45초 버티면 성공, 사다리 3개가 올라오면 실패. 시간은 월드 시계로 잰다.
+function callLabel(world) { // 양규 머리 위 "저기다!"
+  if (!scene.callLabel) {
+    scene.callLabel = labelSprite(script.wall.point, { size: 0.9 });
+    scene.callLabel.position.set(0, 3.2, 0); scene.callLabel.visible = false;
+    world.npcs.get('yanggyu').mesh.add(scene.callLabel);
+  }
+  return scene.callLabel;
+}
+
+// 성벽 방어 한 번(D-8): 학생은 성벽 위를 걷는다. 거란 병사가 사다리를 세우면 양규가 "저기다!" 하고 그쪽을 가리키고
+// (성벽 위 빛나는 원·화살표), 학생이 그 자리에 가까이 가면 사다리를 밀어낸다. 버튼도 멈춤도 없다.
+// 성공: 사다리 10개를 밀어내거나 45초 버티기. 실패: 사다리 3개가 꼭대기까지 올라옴. 시간은 월드 시계로 잰다.
 function wallDefense(ctx, easy) {
   const { world, hud, audio } = ctx;
   ctx.testHooks.wallAttempts = (ctx.testHooks.wallAttempts || 0) + 1;
-  const spawnEvery = easy ? 3.5 : 2.2, climbTime = easy ? 5.6 : 4, duration = 45;
-  const taps = createTapTargets(ctx);
+  const spawnEvery = easy ? 5 : 3.6, climbTime = easy ? 10 : 7, duration = 45;
   resetLadders();
-  let t = 0, nextSpawn = 0.8, blocked = 0, breaches = 0, slotSeed = 5, done = false;
-  const active = new Map();
+  world.bounds = WALL_BOUNDS;
+  const p = world.player.position;
+  p.set(clamp(p.x, WALL_BOUNDS.x0, WALL_BOUNDS.x1), WALL_TOP, WALK_Z);
+  const yg = world.npcs.get('yanggyu'), m = yg.mesh.position, label = callLabel(world);
+  let t = 0, nextSpawn = 1, blocked = 0, breaches = 0, slotSeed = 5, done = false, pointed = null, callT = 0;
+  const active = new Map(), falling = new Map();
   return new Promise(resolve => {
     const finish = ok => {
       if (done) return; done = true;
-      off(); taps.dispose(); resetLadders();
-      hud.setTimer(null); hud.setCounter(null);
+      off(); resetLadders(); label.visible = false;
+      hud.setTimer(null); hud.setCounter(null); world.setGoal(null);
       resolve(ok);
+    };
+    const push = l => {
+      blocked += 1; ctx.testHooks.wallPushed = (ctx.testHooks.wallPushed || 0) + 1;
+      audio.play('tap'); active.delete(l); falling.set(l, { k: 0, from: l.pivot.rotation.x });
+      scene.wallRings[scene.ladders.indexOf(l)].visible = false;
     };
     const off = world.onUpdate(dt => {
       if (done) return;
       t += dt;
       hud.setTimer(duration - t);
-      hud.setCounter(`막은 사다리 ${blocked} · 올라온 사다리 ${breaches}/3`);
+      hud.setCounter(`밀어낸 사다리 ${blocked}/${NEED_PUSH} · 올라온 사다리 ${breaches}/3`);
       if (t >= nextSpawn) {
         nextSpawn = t + spawnEvery;
-        const free = scene.ladders.filter(l => !active.has(l));
+        const free = scene.ladders.filter(l => !active.has(l) && !falling.has(l) && Math.abs(l.x - p.x) >= PUSH_R + 0.6);
         if (free.length) {
           slotSeed = (slotSeed * 16807) % 2147483647;
           const l = free[slotSeed % free.length];
           l.group.visible = true; l.carrier.visible = true; l.climber.visible = false;
           l.pivot.rotation.x = l.tilt - RAISE_LEAN;
-          const a = { t: 0 };
-          a.target = taps.add(l.top, {
-            label: '밀기',
-            onTap() { blocked += 1; audio.play('tap'); active.delete(l); taps.remove(a.target); l.group.visible = false; },
-          });
-          active.set(l, a);
+          active.set(l, { t: 0 });
+          scene.wallRings[scene.ladders.indexOf(l)].visible = true;
         }
       }
+      for (const l of active.keys()) if (Math.abs(p.x - l.x) < PUSH_R) push(l); // 가까이 가면 밀어낸다
       for (const [l, a] of active) {
         a.t += dt;
-        if (a.t < RAISE_SECONDS) {
-          // 사다리를 세우는 중: 뒤로 눕혀 있던 사다리가 성벽 쪽으로 일어선다
+        if (a.t < RAISE_SECONDS) { // 사다리를 세우는 중: 뒤로 눕혀 있던 사다리가 성벽 쪽으로 일어선다
           const r = a.t / RAISE_SECONDS;
           l.pivot.rotation.x = l.tilt - RAISE_LEAN * (1 - r * r * (3 - 2 * r));
           continue;
@@ -83,31 +201,65 @@ function wallDefense(ctx, easy) {
         l.pivot.rotation.x = l.tilt;
         l.climber.visible = true;
         const k = Math.min(1, (a.t - RAISE_SECONDS) / climbTime);
-        l.climber.position.set(0, k * (l.len - 1.2), 0.25);
-        a.target.btn.style.setProperty('--p', k.toFixed(3)); // 버튼 테두리가 올라온 만큼 차오른다
+        l.climber.position.set(0, k * (l.len - 0.3), 0.25); // 끝에 다다르면 성가퀴 위로 몸이 드러난다
         if (a.t >= RAISE_SECONDS + climbTime) {
           breaches += 1; audio.play('wrong');
-          taps.remove(a.target); active.delete(l); l.group.visible = false;
+          active.delete(l); l.group.visible = false;
+          scene.wallRings[scene.ladders.indexOf(l)].visible = false;
           if (breaches >= 3) return finish(false);
         }
       }
-      if (t >= duration) finish(true);
+      for (const [l, f] of falling) { // 밀린 사다리는 오르던 병사와 함께 뒤로 넘어간다
+        f.k += dt / FALL_SECONDS;
+        l.pivot.rotation.x = f.from - 1.3 * Math.min(1, f.k * f.k);
+        if (f.k >= 1) { falling.delete(l); l.group.visible = false; l.climber.visible = false; l.carrier.visible = false; }
+      }
+      // 양규는 가장 급한 사다리를 가리킨다: 그 사다리 너머로 걸어가 그쪽을 보고 "저기다!"
+      let target = null;
+      for (const [l, a] of active) if (!target || a.t > active.get(target).t) target = l;
+      if (target !== pointed) {
+        pointed = target;
+        if (target) { callT = 1.6; ctx.testHooks.pointed = (ctx.testHooks.pointed || 0) + 1; }
+      }
+      callT -= dt; label.visible = callT > 0;
+      if (target) {
+        const gx = clamp(target.x + (p.x <= target.x ? 1.6 : -1.6), WALL_BOUNDS.x0, WALL_BOUNDS.x1), dx = gx - m.x, step = 3.2 * dt;
+        if (Math.abs(dx) > step) setYanggyu(world, m.x + Math.sign(dx) * step, WALK_Z, dx > 0 ? Math.PI / 2 : -Math.PI / 2);
+        else yg.mesh.rotation.y = Math.atan2(target.x - m.x, -14 - m.z);
+      }
+      world.setGoal(target ? { x: target.x, z: WALK_Z } : null);
+      if (blocked >= NEED_PUSH || t >= duration) finish(true);
     });
   });
 }
 
-// 백성 구출 한 번: 90초 안에 네 무리 이상 구하면 성공.
+// 구한 백성 무리는 앞사람(첫 무리는 학생)을 줄지어 따라 걷는다
+function followChain(world, dt) {
+  let lead = world.player.position;
+  for (const c of rescued) {
+    const gp = c.group.position, dx = lead.x - gp.x, dz = lead.z - gp.z, d = Math.hypot(dx, dz);
+    if (d > 2.2) {
+      const step = Math.min(d - 2.2, Math.min(8, 2 + (d - 2.2) * 2) * dt);
+      gp.x += dx / d * step; gp.z += dz / d * step;
+      c.group.rotation.y = Math.atan2(dx, dz) - Math.PI; // 무리 안 사람들은 -z를 보고 서 있다
+    }
+    lead = gp;
+  }
+}
+
+// 백성 구출 한 번: 90초 안에 네 무리 이상 구하면 성공. 구한 무리는 사라지지 않고 학생을 따라온다(D-8).
 function rescue(ctx, easy) {
   const { world, hud, audio } = ctx;
   const speed = easy ? 0.3 : 0.6, duration = 90, need = 4, f = scene.field;
+  rescued = [];
   const groups = scene.captives.map(c => {
     c.group.visible = true; c.escort.visible = true;
-    c.group.position.set(c.start[0], 0, c.start[1]);
-    return { c, state: 'walking', fade: 0 };
+    c.group.position.set(c.start[0], 0, c.start[1]); c.group.rotation.y = 0;
+    return { c, state: 'walking' };
   });
   world.bounds = f.bounds;
   placePlayer(world, f.start, Math.PI);
-  let t = 0, saved = 0, done = false;
+  let t = 0, done = false;
   return new Promise(resolve => {
     const finish = ok => {
       if (done) return; done = true;
@@ -118,27 +270,51 @@ function rescue(ctx, easy) {
       if (done) return;
       t += dt;
       hud.setTimer(duration - t);
-      hud.setCounter(`구한 백성 ${saved}/${need}무리`);
+      hud.setCounter(`구한 백성 ${rescued.length}/${need}무리`);
       const p = world.player.position;
       let nearest = null, nd = Infinity;
       for (const g of groups) {
+        if (g.state !== 'walking') continue;
         const gp = g.c.group.position;
-        if (g.state === 'walking') {
-          gp.z -= speed * dt;
-          const d = Math.hypot(p.x - gp.x, p.z - gp.z);
-          if (d < 2.0) { g.state = 'saved'; saved += 1; g.c.escort.visible = false; audio.play('correct'); }
-          else if (gp.z < f.lostZ) { g.state = 'lost'; g.c.group.visible = false; }
-          else if (d < nd) { nd = d; nearest = gp; }
-        } else if (g.state === 'saved') {
-          gp.z += 1.5 * dt; g.fade += dt;
-          if (g.fade > 2.5) { g.state = 'home'; g.c.group.visible = false; }
-        }
+        gp.z -= speed * dt;
+        const d = Math.hypot(p.x - gp.x, p.z - gp.z);
+        if (d < 2.0) { g.state = 'saved'; rescued.push(g.c); g.c.escort.visible = false; audio.play('correct'); }
+        else if (gp.z < f.lostZ) { g.state = 'lost'; g.c.group.visible = false; }
+        else if (d < nd) { nd = d; nearest = gp; }
       }
+      followChain(world, dt);
       world.setGoal(nearest ? { x: nearest.x, z: nearest.z } : null);
-      if (saved >= need) return finish(true);
+      if (rescued.length >= need) return finish(true);
       if (t >= duration || !groups.some(g => g.state === 'walking')) finish(false);
     });
   });
+}
+
+// 구출을 마치면 구한 백성들이 학생을 따라 줄지어 성문으로 걸어 들어온다(약 4초)
+async function walkHome(ctx) {
+  const { world, dialogue } = ctx;
+  await ctx.fade(true);
+  for (const c of scene.captives) if (!rescued.includes(c)) c.group.visible = false;
+  scene.gate.setOpen(1);
+  world.bounds = { x0: -24, x1: 24, z0: 0, z1: 72 };
+  placePlayer(world, [0, 26], Math.PI);
+  rescued.forEach((c, i) => { c.group.visible = true; c.group.position.set(0, 0, 28.4 + i * 2.3); c.group.rotation.y = 0; });
+  ctx.setGoal(script.goals[4]);
+  await ctx.fade(false);
+  await sayAll(dialogue, script.rescue.home);
+  dialogue.close();
+  const s0 = world.speedScale;
+  world.speedScale = 0.8; world.autoMove = { x: 0, z: -1 };
+  await new Promise(resolve => {
+    let t = 0;
+    const off = world.onUpdate(dt => {
+      t += dt;
+      if (world.autoMove && world.player.position.z <= 7) world.autoMove = null;
+      followChain(world, dt);
+      if ((!world.autoMove && t > 4.6) || t > 8) { off(); resolve(); }
+    });
+  });
+  world.autoMove = null; world.speedScale = s0;
 }
 
 function showAftermath(ctx) {
@@ -155,19 +331,25 @@ export default {
   script,
   quizzes: script.quizzes,
 
-  buildScene(world) { scene = buildCh2Scene(world); return scene; },
+  buildScene(world) {
+    scene = buildCh2Scene(world); rescued = [];
+    world.closeView = true; // 낮은 카메라·정면 대화(상시 규칙). 장이 끝나면 world.clearLevel이 끈다
+    return scene;
+  },
 
   enterStage(ctx, stage) {
-    if (stage === 'minigame') { ctx.world.bounds = EXPLORE_BOUNDS; placePlayer(ctx.world, [0, -6]); }
+    if (stage === 'minigame') putOnWall(ctx.world);
     if (stage === 'quiz') showAftermath(ctx);
   },
 
   async explore(ctx) {
     const { world, dialogue } = ctx;
+    world.closeView = true;
+    await introWalk(ctx);
     world.bounds = EXPLORE_BOUNDS;
-    placePlayer(world, scene.start);
+    const heard = new Set();
     let step = 0;
-    setStep(ctx, 0);
+    setStep(ctx, 0, heard);
     await sayAll(dialogue, script.start);
     dialogue.close();
     ctx.input.enabled = true;
@@ -175,34 +357,46 @@ export default {
       const stop = roam(ctx, {
         async onTalk(id) {
           const n = script.npc[id];
-          if (id === 'soldier') {
-            if (step === 0) { await sayAll(dialogue, n.first); step = 1; setStep(ctx, 1); }
-            else await sayAll(dialogue, n.later);
+          if (PEOPLE.includes(id)) {
+            const isNew = !heard.has(id);
+            await sayAll(dialogue, isNew ? n.first : n.later);
+            if (!isNew || step !== 0) return;
+            heard.add(id);
+            const next = PEOPLE.find(k => !heard.has(k)) || 'yanggyu';
+            await dialogue.say(script.next[next]);
+            if (next === 'yanggyu') step = 1;
+            setStep(ctx, step, heard);
           } else if (id === 'yanggyu') {
-            if (step === 0) await sayAll(dialogue, n.tooEarly);
-            else if (step === 1) { await sayAll(dialogue, n.first); step = 2; setStep(ctx, 2); }
-            else await sayAll(dialogue, n.later);
-          } else await sayAll(dialogue, n.always);
+            await sayAll(dialogue, yanggyuTalk(heard));
+            if (!PEOPLE.some(k => heard.has(k))) return;
+            await sayAll(dialogue, script.follow);
+            stop(); setTimeout(resolve, 0); // roam이 대화를 닫고 입력을 정리한 뒤에 따라 걷기를 시작한다
+          }
         },
-        zones: [{ ...scene.stairs, active: () => step === 2, onEnter() { stop(); resolve(); } }],
       });
     });
+    await followYanggyu(ctx);
   },
 
   async minigame(ctx) {
     const { world, dialogue, input } = ctx;
     input.enabled = false;
+    if (!(world.player.position.y > WALL_TOP - 0.2)) putOnWall(world); // 성벽 위 그 자리에서 이어서(같은 장면)
+    world.bounds = WALL_BOUNDS;
+    // 성벽 위 카메라: 학생 뒤 조금 위에서 성가퀴 너머를 내려다본다(사다리 끝과 오르는 거란 병사가 보이게)
+    world.followOffset = new THREE.Vector3(0, 7, 5.5); world.followLookY = WALL_TOP - 1;
+    world.camMode = 'follow'; world.snapCamera();
     setStep(ctx, 3);
     scene.ring.visible = false;
-    await ctx.fade(true);
-    world.player.visible = false;
-    world.fitFixedCamera(scene.wallFit.target, scene.wallFit.dir, scene.wallFit.points); // 어떤 화면 비율에서도 사다리가 다 보이게
-    scene.khitan.visible = false; // 카메라와 성벽 사이의 거란 진영(줄·천막)이 사다리를 가리지 않게
-    await ctx.fade(false);
+    await sayAll(dialogue, script.wall.start);
+    dialogue.close();
     await showHowTo(ctx.ui, script.wall.howto);
+    input.enabled = true;
     const a = await runWithRetries(ctx, easy => wallDefense(ctx, easy), { failHint: script.wall.failHint });
+    input.enabled = false;
     await sayAll(dialogue, script.wall.done);
     dialogue.close();
+    world.followOffset = null; world.followLookY = null;
 
     await ctx.fade(true);
     scene.khitan.visible = false;
@@ -215,8 +409,9 @@ export default {
     input.enabled = true;
     const b = await runWithRetries(ctx, easy => rescue(ctx, easy), { failHint: script.rescue.failHint });
     input.enabled = false;
+    await walkHome(ctx);
     await ctx.fade(true);
-    showAftermath(ctx); // 구출이 끝나면 들판에 멈춰 선 백성·거란 병사를 치운다(퀴즈 내내 서 있지 않게)
+    showAftermath(ctx); // 들판에 멈춰 선 백성·거란 병사를 치운다(퀴즈 내내 서 있지 않게)
     await ctx.fade(false);
     await sayAll(dialogue, script.rescue.done);
     await sayAll(dialogue, script.result);

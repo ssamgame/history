@@ -223,6 +223,8 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
     bounds: { x0: -50, x1: 50, z0: -50, z1: 50 },
     camMode: 'follow',
     closeView: false, // 가까운 시점(D-5): 낮은 카메라, 대화 때 인물 얼굴을 정면에서 크게(학생 몸은 숨김). 장이 켜고 끈다
+    followOffset: null, // 따라가기 카메라 자리(학생 기준 Vector3)를 장이 잠깐 바꿀 때(고려 2장 성벽 위). 없으면 보통 자리
+    followLookY: null,  // 따라가기 카메라가 바라보는 높이를 장이 잠깐 바꿀 때. 없으면 closeView에 따라 1.2 또는 1
     autoMove: null, // 정해진 걸음({x,z}): 있으면 입력 대신 이 방향으로 걷는다(장 시작 장면)
     quality: QUALITY[quality],
     qualityLevel: quality,
@@ -339,10 +341,10 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
     },
     snapCamera() {
       camera.position.copy(player.position).add(world.camOffset());
-      camTarget.copy(player.position).setY(world.closeView ? 1.2 : 1); camTarget.z += LOOK_AHEAD; camera.lookAt(camTarget);
+      camTarget.copy(player.position).setY(world.followLookY ?? (world.closeView ? 1.2 : 1)); camTarget.z += LOOK_AHEAD; camera.lookAt(camTarget);
     },
     // 따로 쓰는 벡터(offsetVec)에 담는다. tmp를 같이 쓰면 'tmp.copy(p).add(camOffset())'가 '오프셋×2'가 되어 카메라가 원점 근처에 머문다.
-    camOffset() { return offsetVec.copy(world.closeView ? CAM_LOW : CAM_OFFSET).multiplyScalar(camera.aspect < 1 ? Math.min(2.1, 1.15 / camera.aspect) : 1); }, // 세로 화면은 좌우가 좁아 더 멀리서 본다
+    camOffset() { return offsetVec.copy(world.followOffset || (world.closeView ? CAM_LOW : CAM_OFFSET)).multiplyScalar(camera.aspect < 1 ? Math.min(2.1, 1.15 / camera.aspect) : 1); }, // 세로 화면은 좌우가 좁아 더 멀리서 본다
     onUpdate(fn) {
       updaters.push(fn);
       return () => { const i = updaters.indexOf(fn); if (i >= 0) updaters.splice(i, 1); };
@@ -392,7 +394,7 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
       if (world.camMode === 'follow') {
         const a = 1 - Math.exp(-dt * 4);
         camera.position.lerp(tmp.copy(p).add(world.camOffset()), a);
-        camTarget.lerp(tmp.copy(p).setY(world.closeView ? 1.2 : 1).setZ(p.z + LOOK_AHEAD), a);
+        camTarget.lerp(tmp.copy(p).setY(world.followLookY ?? (world.closeView ? 1.2 : 1)).setZ(p.z + LOOK_AHEAD), a);
         camera.lookAt(camTarget);
       }
       placeSun();
@@ -405,7 +407,7 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
         o.traverse(c => { if (c.geometry) c.geometry.dispose(); });
       }
       world.colliders.length = 0; world.npcs.clear(); updaters.length = 0; goal = null;
-      world.closeView = false; world.autoMove = null; if (hidForTalk) { player.visible = true; hidForTalk = false; } camera.fov = FOV; camera.updateProjectionMatrix();
+      world.closeView = false; world.followOffset = null; world.followLookY = null; world.autoMove = null; if (hidForTalk) { player.visible = true; hidForTalk = false; } camera.fov = FOV; camera.updateProjectionMatrix();
     },
     render() { renderer.render(scene, camera); },
     dispose() {

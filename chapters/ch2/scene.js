@@ -1,5 +1,5 @@
 // 2장 장면: 눈 덮인 흥화진 성, 북쪽의 거란 진영, 성 남쪽의 눈 들판.
-import { makeSign } from '../../core/signs.js';
+import { gateLeaves, nameBoard } from '../kit/gate.js';
 import * as THREE from 'three';
 import { backdropMountains } from '../kit/terrain.js';
 import { hanok, woodpile, jars, straw } from '../kit/buildings.js';
@@ -15,6 +15,10 @@ const HALF = 12;          // 성 안쪽 반 너비
 const WALL_H = 4.2;
 const LADDER_Z = -14.5;   // 사다리 밑동 (북쪽 성벽 바깥)
 const FIELD_Z = 50;       // 들판 중심
+// 사다리 자리: 북쪽 성가퀴 사이 틈(성가퀴는 x -12부터 1.8 간격)
+export const LADDER_X = [-9.3, -5.7, -2.1, 1.5, 5.1, 8.7];
+export const WALL_TOP = WALL_H + 0.14; // 성벽 위 걷는 높이(쌓인 눈 위)
+export const WALK_Z = -12.55;          // 성벽 위 걷는 줄(성가퀴 안쪽)
 
 function seeded(s) { return () => (s = (s * 16807) % 2147483647) / 2147483647; }
 
@@ -47,7 +51,8 @@ export function buildCh2Scene(world) {
   mk(new THREE.BoxGeometry(HALF * 2 + 3.2, WALL_H, 1.6), stone, 0, WALL_H / 2, -HALF - 0.8);
   for (const sx of [-1, 1]) mk(new THREE.BoxGeometry(1.6, WALL_H, HALF * 2 + 3.2), stone, sx * (HALF + 0.8), WALL_H / 2, 0);
   for (const sx of [-1, 1]) mk(new THREE.BoxGeometry(HALF - 2.5 + 1.6, WALL_H, 1.6), stone, sx * (2.5 + (HALF - 2.5 + 1.6) / 2), WALL_H / 2, HALF + 0.8);
-  mk(new THREE.BoxGeometry(5, WALL_H - 1, 0.4), 0x5d4330, 0, (WALL_H - 1) / 2, HALF + 0.8);
+  // 남쪽 성문: 시작 장면에서 문짝 두 개가 성안 쪽으로 열린다(D-8)
+  const gate = gateLeaves(L, { x: 0, z: HALF + 0.8, width: 5, height: WALL_H - 1, color: 0x5d4330 });
   // 성벽 위에 쌓인 눈
   mk(new THREE.BoxGeometry(HALF * 2 + 3.4, 0.14, 1.7), 0xf2f5f7, 0, WALL_H + 0.07, -HALF - 0.8, L, false);
   for (const sx of [-1, 1]) mk(new THREE.BoxGeometry(1.7, 0.14, HALF * 2 + 3.4), 0xf2f5f7, sx * (HALF + 0.8), WALL_H + 0.07, 0, L, false);
@@ -102,12 +107,13 @@ export function buildCh2Scene(world) {
   // 사다리 6개와 오르는 거란 병사 (처음엔 숨김)
   const len = Math.hypot(WALL_H, LADDER_Z + HALF + 1.6 + 0.0);
   const tilt = Math.atan2(-(LADDER_Z + HALF + 1.6), WALL_H);
-  const ladders = [-10, -6, -2, 2, 6, 10].map(x => {
+  const ladders = LADDER_X.map(x => {
     const group = new THREE.Group(); group.position.set(x, 0, LADDER_Z); group.visible = false; L.add(group);
     const pivot = new THREE.Group(); pivot.rotation.x = tilt; group.add(pivot);
     // 굵고 밝은 나무 사다리 (멀리서도 보이도록)
-    for (const sx of [-0.42, 0.42]) mk(new THREE.BoxGeometry(0.2, len, 0.2), 0xb07a42, sx, len / 2, 0, pivot);
-    for (let y = 0.4; y < len; y += 0.5) mk(new THREE.BoxGeometry(0.84, 0.12, 0.12), 0xc48a4c, 0, y, 0, pivot);
+    // 사다리 끝은 성가퀴 사이로 1.3쯤 솟는다(성벽 위 학생 눈에 사다리가 보이게)
+    for (const sx of [-0.42, 0.42]) mk(new THREE.BoxGeometry(0.2, len + 1.3, 0.2), 0xb07a42, sx, (len + 1.3) / 2, 0, pivot);
+    for (let y = 0.4; y < len + 1.3; y += 0.5) mk(new THREE.BoxGeometry(0.84, 0.12, 0.12), 0xc48a4c, 0, y, 0, pivot);
     const top = new THREE.Object3D(); top.position.set(0, len - 0.3, 0); pivot.add(top);
     // 사다리를 타는 병사: 밝은 옷에 붉은 띠로 성벽 위에서 눈에 띄게
     const climber = makePerson(LOOKS.khitanBright); climber.visible = false; pivot.add(climber);
@@ -137,24 +143,21 @@ export function buildCh2Scene(world) {
   world.addNpc('soldier', LOOKS.soldier, 5, 4.5, Math.PI * 0.8);
   world.addNpc('yanggyu', LOOKS.yanggyu, -3, -7, 0);
   world.addNpc('villager', LOOKS.villager, -8, 5.5, Math.PI * 0.6);
-  // 안내판(볼거리): 읽지 않아도 장은 끝난다
-  world.addSpot('signHeunghwa', makeSign('흥화진'), 0.5, 2);
-  world.addSpot('signNaju', makeSign('현종의 피란'), 3, -5.5);
+  // 성문 바로 안쪽 길옆 장소 이름판(D-8, 읽는 안내판이 아니다). 열린 오른쪽 문짝에 가리지 않는 자리
+  nameBoard(L, '흥화진', 3, 8.8);
+  // 성벽 위 사다리 자리마다 빛나는 원(양규가 가리킨 곳). 학생이 그 원에 가까이 가면 사다리를 밀어낸다
+  const wallRings = LADDER_X.map(x => {
+    const r = new THREE.Mesh(new THREE.RingGeometry(0.6, 0.9, 24), new THREE.MeshBasicMaterial({ color: 0xff6a3d, transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
+    r.rotation.x = -Math.PI / 2; r.position.set(x, WALL_TOP + 0.04, WALK_Z); r.visible = false; L.add(r); return r;
+  });
 
   const ring = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.25, 28), new THREE.MeshBasicMaterial({ color: 0xd9a441, transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
   ring.rotation.x = -Math.PI / 2; ring.position.set(0, 0.08, -6); ring.visible = false; L.add(ring);
-  world.onUpdate((dt, t) => { if (ring.visible) ring.material.opacity = 0.55 + Math.sin(t * 4) * 0.3; });
+  world.onUpdate((dt, t) => { const o = 0.55 + Math.sin(t * 4) * 0.3; ring.material.opacity = o; for (const r of wallRings) r.material.opacity = o; });
 
   backdropMountains(world.level, { color: 0xc8ccd0, radius: 130 }); // 먼 산줄기(깊이감)
   return {
-    ring, stairs: { x: 0, z: -6, r: 1.6 }, ladders, captives, khitan, khitanFront,
-    wallCam: { pos: [0, 10.5, -36], target: [0, 2.5, -13] },
-    // 성벽 방어 카메라가 화면 비율과 상관없이 담아야 할 점들: 성벽 양 끝과 사다리 6개의 밑동·꼭대기
-    wallFit: {
-      target: [0, 2.5, -13], dir: [0, 8, -23],
-      points: [[-14.4, 0, -14.5], [14.4, 0, -14.5], [-14.4, WALL_H + 1, -13.6], [14.4, WALL_H + 1, -13.6],
-        ...[-10, -6, -2, 2, 6, 10].flatMap(x => [[x, 0, LADDER_Z], [x, WALL_H + 0.8, -HALF - 1.6]])],
-    },
+    ring, gate, wallRings, stairs: { x: 0, z: -6, r: 1.6 }, ladders, captives, khitan, khitanFront,
     field: { bounds: { x0: -24, x1: 24, z0: 20, z1: 72 }, start: [0, 68], lostZ: 21 }, // 플레이어는 남쪽에서 북쪽(화면 위)으로 쫓아간다
     start: [0, 6],
   };
