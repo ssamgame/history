@@ -51,6 +51,13 @@
 - **구성 변경**: `chapters/index.js` 순서 ch1 ch2 ch3 **ch7(4장)** ch4(5장) ch5(6장), 옛 ch6 뺌. S71 · S72가 이미 `sources.js`에 있어 **ch7은 load 있음**(검토 팀원 원문 확인은 배포 전 그대로 남음). `isUnlocked`는 앞 장이 준비 중(load 없음)이면 그 앞 장 기준, `isSessionDone`은 load 없는 장 빼고 셈. 결과 카드 6줄(④ 윤관 줄, ⑥ 대장경 · 삼별초 합친 줄). `core/quizview.js`에 윤관 얼굴. 테스트 `screens`·`courses`(준비 중 건너뛰기 새 테스트)·`ch6`(옛 장 정보 로컬)·`ch7` 주석·`goryeo-feedback` 5장 2개 교체.
 - 그리기 횟수: 탐험 220 · 공방 1무리 178 · 3무리 199 · 경판 완성 246 · 노 젓기 61 · 제주 56.
 
+### 선생님 답 (2026-10-27) · 조선편 놀이 교체 — 끝남
+- 선생님 답: ① 고려편 배포는 **선생님이 먼저 직접 해 보신 뒤**(확인 주소 `https://raw.githack.com/ssamgame/history/<커밋>/index.html`) ② 윤관 장(ch7)은 지금처럼 열어 둠 ③ 조선편 바로 시작.
+- 조선편 명세 `docs/superpowers/specs/2026-10-27-joseon-spec.md`(메인이 기획 겸함). 새 부품 `chapters/kit/panel.js`(판 틀) · `assemble.js` · `dial.js` · `scale.js` · `formation.js` · `crane.js`.
+  - j1 그대로. j3 해 그림자 맞추기(자격루 · 측우기는 짧은 장면). j2 글자 조립소(원리는 놀이 앞 해설 3줄). j4 미끼 유인(유지) + 학익진 날개 펴기, 공격 신호는 연출. j5 의견 저울(화톳불 켜기 뺌). j6 흔들리는 거중기(도르래 카드 뺌, 해설 1줄).
+  - 테스트 j2~j6 · layout(KINDS → jp:*) · fit(jp:*, j4wing · j6pulley 뺌) · bot(조선 판 누르기, `testHooks.wrongOnce`). 전체 534 중 533 통과(h4 역사책 하나는 동시에 돌릴 때만 나는 시간 문제, 따로 돌리면 통과).
+- 다음: 근대편(놀이 교체 + 역사책 없애기). 새 지도 `2026-10-26-minigame-map.md` 3절 근대편, 유지 k5 전차 · k6 매복.
+
 ### 바로 이어 할 일 (차례)
 1. ~~ch7 마무리~~ 끝.
 2. ~~5장~~ ~~6장~~ ~~장 구성 변경~~ 끝(아래 3번부터). 옛 계획: 6장(`ch6-spec.md`, 폴더 `chapters/ch5`, 경판 공방 `conveyor`+노 젓기 `rhythm`, 획 따라 그리기는 선택) → 장 구성 변경(`ch6-spec.md` 5절: index.js 순서 1 ch1 / 2 ch2 / 3 ch3 / 4 ch7 / 5 ch4 / 6 ch5, ch6 목록에서 뺌, 결과 카드, 옛 ch6 기록). 공용 파일(`set.js`·`tests/bot.js`·`tests/index.html`·`tests/fit.html`)을 건드리므로 개발은 한 명이 차례로.

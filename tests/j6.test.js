@@ -10,7 +10,6 @@ import { JOSEON, SESSIONS, isSessionDone } from '../chapters/index.js';
 import { testWorld, touchSetup, touchBot, memSave } from './bot.js';
 
 const answers = new Set(j6Script.quizzes.map(q => q.options[q.answer]));
-const cardPicks = new Set(j6Script.pulley.cards.filter(c => c.correct).map(c => c.text));
 
 test('j6: script passes validation', () => eq(validateScript(j6Script, SOURCES), []));
 
@@ -35,28 +34,30 @@ test('j6: scene — three gaps the crane can fill, four people', () => {
 
 test('j6: completes with touch-only actions', async () => {
   const s = touchSetup(j6Script.speakers);
-  const bot = touchBot(s, { answers, cardPicks });
+  const bot = touchBot(s, { answers });
   try {
     const r = await runChapter(JOSEON[5], j6, s.ctx, memSave());
     eq(r.quizCorrect, 2);
-    eq(r.firstTryCorrect, 2);
+    eq(r.firstTryCorrect, 1); eq(r.firstTryTotal, 1, 'one play: 흔들리는 거중기');
     eq(r.stars, 3);
   } finally { bot.stop(); s.done(); }
 }, { timeout: 150000 });
 
-test('j6: dropping a stone too early gives the early hint', async () => {
+test('j6: a missed drop shows the hint and the stone keeps swinging; the stone swings back and forth', async () => {
   const s = touchSetup(j6Script.speakers);
-  const said = [];
-  const say = s.dialogue.say;
-  s.dialogue.say = l => { said.push(l.text); return say(l); };
-  const bot = touchBot(s, { answers, cardPicks, pressEarlyOnce: true });
+  const pops = [];
+  const mo = new MutationObserver(() => { for (const p of s.ui.querySelectorAll('.ops-pop')) pops.push(p.textContent); });
+  mo.observe(s.ui, { childList: true, subtree: true });
+  const bot = touchBot(s, { answers, pressEarlyOnce: true });
   try {
-    j6.buildScene(s.w, s.ctx);
+    const sc = j6.buildScene(s.w, s.ctx);
+    const xs = []; const set = sc.setSlide; sc.setSlide = k => { xs.push(k); set(k); };
     j6.enterStage(s.ctx, 'minigame');
     const r = await j6.minigame(s.ctx);
-    ok(said.includes(j6Script.wall.early), 'early hint');
-    eq(r.firstTryCorrect, 1);
-  } finally { bot.stop(); s.done(); }
+    ok(pops.includes(j6Script.wall.miss), 'miss hint');
+    eq(r, { firstTryCorrect: 0, firstTryTotal: 1, easyModeUsed: false });
+    ok(xs.some((k, i) => i > 0 && k < xs[i - 1] - 1e-4), 'the crane comes back (swings), not one way');
+  } finally { mo.disconnect(); bot.stop(); s.done(); }
 }, { timeout: 150000 });
 
 test('joseon: all six chapters load and the result card opens after chapter 6', async () => {

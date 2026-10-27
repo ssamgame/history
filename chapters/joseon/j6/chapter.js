@@ -1,8 +1,10 @@
-// 조선편 6장 「영조·정조와 수원 화성」: 공사장 탐험(관리·일꾼·정약용·정조) → 도르래 실험 → 거중기로 성벽 빈자리 채우기 → 퀴즈.
+// 조선편 6장 「영조·정조와 수원 화성」: 공사장 탐험(관리·일꾼·정약용·정조) → 도르래 해설 → 놀이 「흔들리는 거중기」(chapters/kit/crane.js, 2026-10-27) → 퀴즈.
 import { buildJ6Scene, GAPS } from './scene.js';
-import { showHowTo, chooseCards } from '../../../core/minigame.js';
+import { showHowTo } from '../../../core/minigame.js';
+import { crane } from '../../kit/crane.js';
+import { popText } from '../../kit/ops.js';
 import { LOOKS } from '../../../content/characters.js';
-import { sayAll, placePlayer, talkInOrder, setTalkStep, tryPart, sumParts, timingPress } from '../common.js';
+import { sayAll, placePlayer, talkInOrder, setTalkStep, tryPart, sumParts } from '../common.js';
 import script from './script.js';
 
 const ORDER = ['official', 'worker', 'jeongyakyong', 'jeongjo'];
@@ -30,19 +32,6 @@ export function pulleySVG() {
   return `<svg viewBox="0 0 330 180" role="img" aria-label="도르래 세 가지"><rect x="10" y="12" width="310" height="10" fill="#6b4a32"/>${setup(60, 0, '가')}${setup(165, 1, '나')}${setup(270, 2, '다')}</svg>`;
 }
 
-// 돌 하나 내리기: 돌이 왼쪽에서 오른쪽으로 지나가고, i번째 빈자리 위(±창)에서 누르면 성공
-// 돌 하나: 거중기가 돌 더미에서 돌을 집어 올린 뒤(인형뽑기처럼) 왼쪽에서 오른쪽으로 옮긴다. i번째 빈자리 위(±창)에서 누르면
-// 줄을 풀어 돌을 빈자리에 내려놓는다.
-async function dropStone(ctx, i, easy, fail) {
-  const k0 = scene.kOf(GAPS[i]), w = easy ? 0.075 : 0.055;
-  await scene.pickUp();
-  scene.showGap(i);
-  const ok = await timingPress(ctx, { label: '내리기', seconds: easy ? 7.5 : 6, set: scene.setSlide, window: [k0 - w, k0 + w], fail });
-  scene.showGap(null);
-  if (ok) { ctx.audio.play('tap'); await scene.placeAt(i); }
-  return ok;
-}
-
 export default {
   id: 'j6',
   mood: 'autumn',
@@ -64,14 +53,8 @@ export default {
     input.enabled = false;
     setTalkStep(ctx, script, ORDER, 4);
     world.setGoal(null);
-    await showHowTo(ctx.ui, {
-      title: '거중기로 성 쌓기',
-      steps: ['도르래 세 가지 중에서 가장 적은 힘으로 돌을 드는 것을 골라요.', '거중기가 돌을 옆으로 옮겨요. 돌이 빛나는 빈자리 바로 위에 오면 \'내리기\'를 눌러요.', '빈자리 세 곳을 모두 채우면 성공이에요.'],
-      keyboard: '카드와 버튼을 마우스로, 내리기는 E·스페이스도 돼요', touch: '카드와 화면 아래 큰 버튼을 손가락으로 눌러요',
-    });
-    const parts = [];
-    parts.push(await tryPart(ctx, easy => chooseCards(ctx, { title: script.pulley.title, prompt: script.pulley.prompt, figure: pulleySVG(), cards: script.pulley.cards, easy, hint: script.pulley.fail }), script.pulley.fail));
-    await sayAll(dialogue, script.pulley.done); dialogue.close();
+    await showHowTo(ctx.ui, script.wall.howtoCard);
+    await sayAll(dialogue, script.pulley.done); dialogue.close(); // 도르래의 원리(해설)
 
     await ctx.fade(true);
     world.fitFixedCamera(scene.wallFit.target, scene.wallFit.dir, scene.wallFit.points, scene.wallFit.margin);
@@ -81,12 +64,14 @@ export default {
     GAPS.forEach((_, i) => scene.fill(i, false));
     await ctx.fade(false);
     await sayAll(dialogue, script.wall.howto); dialogue.close();
-    const fail = {};
-    parts.push(await tryPart(ctx, async easy => {
+    // 놀이 「흔들리는 거중기」(2026-10-27): 돌이 좌우로 오가고 칸마다 빨라진다. 빈자리 위에서 '내리기'
+    const parts = [await tryPart(ctx, async easy => {
       GAPS.forEach((_, i) => scene.fill(i, false));
-      for (let i = 0; i < GAPS.length; i++) if (!await dropStone(ctx, i, easy, fail)) return false;
-      return true;
-    }, () => (fail.why === 'early' ? script.wall.early : script.wall.late)));
+      const r = await crane(ctx, { gaps: GAPS.length, easy, label: '내리기',
+        scene: { set: scene.setSlide, kOf: i => scene.kOf(GAPS[i]), pickUp: () => scene.pickUp(), place: i => scene.placeAt(i), showGap: i => scene.showGap(i) },
+        onMiss: () => popText(ctx, script.wall.miss, null, 'bad') });
+      return r.ok ? (r.wrong ? 'missed' : true) : false;
+    }, script.wall.fail)];
     blockers.forEach(m => { m.visible = true; });
     await sayAll(dialogue, script.wall.done);
     await sayAll(dialogue, script.result);

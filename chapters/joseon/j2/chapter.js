@@ -1,8 +1,7 @@
-// 조선편 2장 「세종과 훈민정음」: 궁궐 탐험(백성·집현전 학자·세종) → 글자 만들기(기본 자음, 획 더하기, 모음, 낱말 모으기) → 퀴즈.
+// 조선편 2장 「세종과 훈민정음」: 궁궐 탐험(백성·집현전 학자·세종) → 글자의 원리 해설 → 놀이 「글자 조립소」(chapters/kit/assemble.js, 2026-10-27 카드 대신) → 퀴즈.
 import { buildJ2Scene } from './scene.js';
-import { showHowTo, chooseCards } from '../../../core/minigame.js';
-import { SHAPES, NATURE, TREE, LETTERS as LETTER_TILES, plusStroke } from './pictures.js';
-import { PLAY } from '../../kit/play.js';
+import { showHowTo } from '../../../core/minigame.js';
+import { assemble } from '../../kit/assemble.js';
 import { LOOKS } from '../../../content/characters.js';
 import { sayAll, placePlayer, talkInOrder, setTalkStep, tryPart, sumParts } from '../common.js';
 import script from './script.js';
@@ -65,29 +64,20 @@ export default {
     input.enabled = false;
     setTalkStep(ctx, script, ORDER, 3);
     world.setGoal(null);
-    await showHowTo(ctx.ui, {
-      title: '글자 만들기',
-      steps: ['그림을 보고 알맞은 글자 카드를 골라요.', '기본 자음은 소리를 낼 때의 입·혀·이·목구멍 모양을 본떴어요.', '모음은 하늘·땅·사람을 본떴어요.', '틀리게 고르면 해설을 보고 다시 골라요.'],
-      keyboard: '카드를 눌러 골라요', touch: '카드를 눌러 골라요',
-    });
-    // 그림 한 장씩: 맞는 카드 하나를 고른다. 한 차례(라운드) 안에서 한 번이라도 틀리면 그 차례는 'missed'
-    const round = (screens, hint) => async easy => {
+    await showHowTo(ctx.ui, script.assemble.howto);
+    // 글자의 원리(놀이 앞 해설): 기본 자음 · 획 더하기 · 모음
+    await sayAll(dialogue, [...script.consonants.done, ...script.strokes.done, ...script.vowels.done]); dialogue.close();
+    // 글자 조립소: 낱말마다 낱자 조각을 소리 나는 차례대로 글자 칸에 넣는다(2026-10-27, 카드 고르기 대신)
+    const A = script.assemble;
+    const parts = [await tryPart(ctx, async easy => {
       let missed = false;
-      for (const sc of screens) {
-        const r = await chooseCards(ctx, { title: sc.title, prompt: sc.prompt, figure: sc.figure, cards: sc.options.map(t => ({ text: t, correct: t === sc.answer })), easy, hint });
-        if (r !== true) missed = true;
+      for (const [k, w] of script.words.entries()) {
+        const r = await assemble(ctx, { word: w.answer, decoys: A.decoys[k], title: w.title, prompt: A.prompt, hint: script.wordsFail, easy });
+        if (!r.ok) return false;
+        if (r.wrong) missed = true;
       }
       return missed ? 'missed' : true;
-    };
-    const C = script.consonants, S = script.strokes, V = script.vowels;
-    const parts = [];
-    parts.push(await tryPart(ctx, round(C.pictures.map((p, i) => ({ title: `${C.title} (${i + 1}/${C.pictures.length})`, prompt: `그림은 「${p.caption}」이에요. 이 모양을 본떠 만든 글자는?`, figure: SHAPES[p.shape], options: C.options, answer: p.answer })), C.fail), C.fail));
-    await sayAll(dialogue, C.done); dialogue.close();
-    parts.push(await tryPart(ctx, round(S.steps.map(st => ({ title: S.title, prompt: `「${st.base}」에 획을 하나 더하면 어떤 글자가 될까요?`, figure: plusStroke(st.base), options: st.options, answer: st.answer })), S.fail), S.fail));
-    await sayAll(dialogue, S.done); dialogue.close();
-    parts.push(await tryPart(ctx, round(V.pictures.map(p => ({ title: V.title, prompt: `그림은 「${p.caption}」이에요. 이것을 본떠 만든 모음은?`, figure: NATURE[p.shape], options: V.options, answer: p.answer })), V.fail), V.fail));
-    await sayAll(dialogue, V.done); dialogue.close();
-    parts.push(await tryPart(ctx, round(script.words.map((w, k) => ({ title: w.title, prompt: w.prompt, figure: k ? LETTER_TILES(w.cards) : TREE, options: w.options, answer: w.answer })), script.wordsFail), script.wordsFail));
+    }, script.wordsFail)];
     await sayAll(dialogue, script.wordsDone);
     await sayAll(dialogue, script.result);
     dialogue.close();

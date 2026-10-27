@@ -22,9 +22,7 @@
   else if (kind === 'j3dial') { const [c, s] = await J('j3'); chooseCards({ ui }, { title: s.dial.title, prompt: s.dial.prompt, figure: c.dialSVG(4), cards: [{ text: '🐍 뱀', correct: false }, { text: '🐴 말', correct: true }, { text: '🐑 양', correct: false }] }); }
   else if (kind === 'j3gauge') { const [c, s] = await J('j3'); chooseCards({ ui }, { title: s.rain.title, prompt: s.rain.prompt, figure: c.gaugeSVG(5), cards: [{ text: '눈금 6', correct: false }, { text: '눈금 5', correct: true }, { text: '눈금 4', correct: false }] }); }
   else if (kind === 'j3clock') { const [, s] = await J('j3'); orderCards({ ui }, { title: s.clock.title, cards: s.clock.cards }); }
-  else if (kind === 'j4wing') { const [c, s] = await J('j4'); placeOnBoard({ ui }, { title: s.wing.title, ...c.WING_BOARD }); }
   else if (kind === 'j5sort') { const [, s] = await J('j5'); sortCards({ ui }, { title: s.sort.title, bins: s.sort.bins, cards: s.sort.cards }); }
-  else if (kind === 'j6pulley') { const [c, s] = await J('j6'); chooseCards({ ui }, { title: s.pulley.title, prompt: s.pulley.prompt, figure: c.pulleySVG(), cards: s.pulley.cards }); }
   // 탐험 화면 위 정보(HUD)와 대화창을 가장 긴 글로 한꺼번에 띄운다(세로·가로 화면 배치 검사)
   else if (kind === 'hud') {
     const { createHud } = await import('../core/screens.js');
@@ -136,6 +134,18 @@
       rhythm(ctx, { seconds: 100000, texts: s.sambyeolcho.texts });
       const p = ui.querySelector('.row-pop'); p.hidden = false; p.textContent = s.sambyeolcho.texts.same;
     }
+  }
+  // 조선편 놀이 판(chapters/kit/panel.js 위: 글자 조립소 · 해 그림자 · 의견 저울 · 학익진, 2026-10-27): kind=jp:이름. 가장 긴 글로
+  else if (kind.startsWith('jp:')) {
+    const name = kind.slice(3);
+    const updates = new Set(); (function loop() { for (const f of updates) f(1 / 60); requestAnimationFrame(loop); })();
+    const ctx = { ui, testHooks: {}, onAction: () => () => {}, world: { onUpdate: f => { updates.add(f); return () => updates.delete(f); } } };
+    if (name === 'assemble') { const s = (await import('../chapters/joseon/j2/script.js')).default; (await import('../chapters/kit/assemble.js')).assemble(ctx, { word: s.words[1].answer, decoys: s.assemble.decoys[1], title: s.words[1].title, prompt: s.assemble.prompt }); }
+    if (name === 'dial') { const s = (await import('../chapters/joseon/j3/script.js')).default; const c = await import('../chapters/joseon/j3/chapter.js'); (await import('../chapters/kit/dial.js')).dial(ctx, { hours: c.HOURS, target: 6, title: s.dial.title, prompt: s.dial.prompt(c.HOURS[6]) }); }
+    if (name === 'scale') { const s = (await import('../chapters/joseon/j5/script.js')).default; (await import('../chapters/kit/scale.js')).scale(ctx, { bins: s.sort.bins, cards: s.sort.cards.slice().sort((a, b) => b.text.length - a.text.length), title: s.sort.title, prompt: s.sort.prompt }); }
+    if (name === 'formation') { const s = (await import('../chapters/joseon/j4/script.js')).default; (await import('../chapters/kit/formation.js')).formation(ctx, { seconds: 100000, title: s.wing.title, prompt: s.wing.prompt }); }
+    await new Promise(r => setTimeout(r, 50));
+    const h = ui.querySelector('.jp-hint'); if (h) h.textContent = '가장 긴 힌트가 들어갈 자리: 학이 날개를 펼친 것처럼 두 날개 끝을 앞으로 굽혀 적을 둘러싸요.';
   }
   // 근대~현대편 카드형 미니게임: kind=kit:h3:0 (장 id: 부분 번호), &fill=1 이면 자리 놓기를 마지막 하나만 남기고 채운다
   else if (kind.startsWith('kit:')) {

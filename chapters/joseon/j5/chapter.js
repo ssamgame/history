@@ -1,71 +1,19 @@
-// 조선편 5장 「병자호란과 남한산성」: 산성 탐험(병사·창고지기·김상헌·최명길) → 척화·주화 나누기 → 화톳불 다시 켜기 → 항복 해설 → 퀴즈.
+// 조선편 5장 「병자호란과 남한산성」: 산성 탐험(병사·창고지기·김상헌·최명길) → 놀이 「의견 저울」(chapters/kit/scale.js, 2026-10-27) → 항복 해설 · 삼전도 → 퀴즈.
 import { buildJ5Scene } from './scene.js';
 import { showHowTo } from '../../../core/minigame.js';
-import { PLAY, buildArena } from '../../kit/play.js';
+import { buildArena } from '../../kit/play.js';
+import { scale } from '../../kit/scale.js';
 import * as THREE from 'three';
 import { mat, makePerson } from '../../../core/people.js';
 import { LOOKS } from '../../../content/characters.js';
 import { sayAll, placePlayer, talkInOrder, setTalkStep, tryPart, sumParts } from '../common.js';
 import script from './script.js';
 
-// 행궁 마당(마을에서 떨어진 x 400): 왼쪽에 김상헌(척화), 오른쪽에 최명길(주화). 말을 그 생각을 한 사람에게 가져간다.
-const HALL = {
-  origin: [400, 0], ground: 'stone', groundColor: 0xd8dade, bounds: { x0: -18, x1: 18, z0: -12, z1: 14 },
-  props: [
-    { type: 'hanok', x: 0, z: -14, tile: true, scale: 1.6 },
-    { type: 'crowd', x: -10, z: -8.5, n: 1, looks: ['kimsangheon'] }, { type: 'crowd', x: 10, z: -8.5, n: 1, looks: ['choemyeonggil'] },
-  ],
-};
-const SORT_BINS = [{ x: -10, z: -5 }, { x: 10, z: -5 }];
-
 const ORDER = ['soldier', 'keeper', 'kimsangheon', 'choemyeonggil'];
 const SPOT = [0, -3];
 let scene = null;
 
 export const PLAYER = { robe: 0x4a556a, hat: 'jeollip', gear: 'spear', trim: 0xd8d0bc, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } };
-
-// 화톳불 켜기 한 번: 시간 안에 여섯 개 모두 켜면 성공. 꺼진 불 가까이(2.2 안)에서 대화 버튼을 누르면 켜진다.
-// 화살표는 가장 가까운 꺼진 불을 가리킨다.
-function lightFires(ctx, easy) {
-  const { world, hud, audio } = ctx;
-  const duration = easy ? 110 : 75;
-  scene.resetFires();
-  placePlayer(world, SPOT);
-  ctx.input.enabled = true;
-  let t = 0, done = false, near = null;
-  return new Promise(resolve => {
-    const finish = ok => {
-      if (done) return; done = true;
-      off(); unbind(); hud.setTimer(null); hud.setCounter(null); world.setGoal(null); hud.setPrompt?.(null); hud.setTalkEnabled?.(false); ctx.input.enabled = false;
-      resolve(ok);
-    };
-    const unbind = ctx.onAction(() => {
-      if (done || !near) return;
-      scene.light(near); audio.play('correct'); near = null;
-    });
-    const off = world.onUpdate(dt => {
-      if (done) return;
-      t += dt;
-      const p = world.player.position;
-      let nearest = null, nd = Infinity;
-      near = null;
-      for (const f of scene.fires) {
-        if (f.lit) continue;
-        const d = Math.hypot(p.x - f.x, p.z - f.z);
-        if (d < 2.2 && (!near || d < Math.hypot(p.x - near.x, p.z - near.z))) near = f;
-        if (d < nd) { nd = d; nearest = f; }
-      }
-      hud.setTalkEnabled?.(!!near);
-      hud.setPrompt?.(near ? new THREE.Vector3(near.x, 0, near.z) : null);
-      const lit = scene.fires.filter(f => f.lit).length;
-      hud.setTimer(duration - t);
-      hud.setCounter(`켠 화톳불 ${lit}/${scene.fires.length}`);
-      world.setGoal(nearest ? { x: nearest.x, z: nearest.z } : null);
-      if (lit === scene.fires.length) return finish(true);
-      if (t >= duration) finish(false);
-    });
-  });
-}
 
 // 삼전도: 수항단 위의 청 태종, 단 아래로 걸어 나온 인조가 세 번 무릎 꿇고 아홉 번 머리를 조아린다(뒤의 세자·신하들도 함께)
 const SAMJEON = {
@@ -124,7 +72,6 @@ async function samjeondo(ctx) {
 
 export default {
   id: 'j5',
-  lightFires: (ctx, easy) => lightFires(ctx, easy), // 시험·개발용
   samjeondo: ctx => samjeondo(ctx),
   mood: 'snow',
   player: PLAYER,
@@ -145,16 +92,11 @@ export default {
     input.enabled = false;
     setTalkStep(ctx, script, ORDER, 4);
     world.setGoal(null);
-    await showHowTo(ctx.ui, {
-      title: '남한산성의 겨울',
-      steps: ['머리 위의 말을 척화(김상헌)나 주화(최명길) 자리로 가져가 그 안에서 멈춰 잠깐 서 있어요. 놓으면 처음 자리로 돌아와 다음 것을 들어요.', '눈보라에 꺼진 화톳불 여섯 개를 찾아가, 불 옆에서 대화 버튼을 눌러 다시 켜요.'],
-      keyboard: '걷기는 W A S D 또는 방향키, 불 켜기는 E', touch: '화면 왼쪽을 끌어 걷고, 대화 버튼으로 불을 켜요',
-    });
-    const parts = [];
-    parts.push(await tryPart(ctx, easy => PLAY.deliver(ctx, { arena: HALL, from: [0, 11], counter: '전한 말', bins: script.sort.bins.map((b, i) => ({ ...b, ...SORT_BINS[i] })), cards: script.sort.cards.map((c, i) => ({ ...c, talk: i === 0 ? [{ who: 'kimsangheon', text: '그렇소. 끝까지 싸워 나라의 뜻을 지켜야 하오.' }] : i === 2 ? [{ who: 'choemyeonggil', text: '백성과 나라를 살리려면 화의해야 하오.' }] : null })) }, easy), script.sort.fail));
-    await sayAll(dialogue, script.fires.howto); dialogue.close();
-    parts.push(await tryPart(ctx, easy => lightFires(ctx, easy), script.fires.fail));
-    await sayAll(dialogue, script.fires.done);
+    await showHowTo(ctx.ui, script.sort.howto);
+    // 놀이 「의견 저울」(2026-10-27, 가져가기 대신): 말풍선을 같은 생각의 접시에 놓으면 저울이 수평이 된다(옳고 그름 점수 없음)
+    const S = script.sort;
+    const parts = [await tryPart(ctx, easy => scale(ctx, { bins: S.bins, cards: S.cards, title: S.title, prompt: S.prompt, hint: S.fail, easy })
+      .then(r => (r.ok ? (r.wrong ? 'missed' : true) : false)), S.fail)];
     await sayAll(dialogue, script.result.slice(0, 1)); dialogue.close(); // 강화도 함락 → 항복하기로
     await samjeondo(ctx); // 삼전도의 항복(삼궤구고두례)
     await sayAll(dialogue, script.result.slice(2)); // 볼모

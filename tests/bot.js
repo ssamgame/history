@@ -156,6 +156,23 @@ export function touchBot(s, { answers, wrongFirst = new Set(), noTaps = () => fa
       if (right && wrongFirst.has(right.dataset.text) && !wrongUsed.has(key)) { wrongUsed.add(key); pick = rallyOrbs.find(o => o !== right); }
       if (pick) tap(pick);
     }
+    // 조선편 놀이 판(chapters/kit/assemble · dial · scale · formation.js): 놀이가 알려 준 답을 누른다. testHooks.wrongOnce면 한 번은 일부러 틀린다
+    const H = ctx.testHooks, wrongOnce = () => { if (!H.wrongOnce) return false; H.wrongOnce = false; return true; };
+    if (H.assemble?.ready) {
+      const right = ui.querySelector(`.asm-tile[data-letter="${H.assemble.answer}"]:not(.used)`);
+      const t = wrongOnce() ? ui.querySelector(`.asm-tile:not(.used):not([data-letter="${H.assemble.answer}"])`) : right;
+      if (t) tap(t); return;
+    }
+    if (H.dial?.ready) {
+      const d = H.dial, off = d.need - d.sun;
+      if (wrongOnce()) { const r = ui.querySelector('.jp-dial [data-act="right"]'); tap(r); tap(r); tap(ui.querySelector('.jp-dial [data-act="check"]')); return; }
+      tap(ui.querySelector(`.jp-dial [data-act="${Math.abs(off) <= d.tol / 2 ? 'check' : off > 0 ? 'right' : 'left'}"]`)); return;
+    }
+    if (H.scale?.ready) {
+      const other = ui.querySelector(`.scale-pan:not([data-bin="${H.scale.answer}"]) .jp-btn`);
+      tap(wrongOnce() ? other : ui.querySelector(`.scale-pan[data-bin="${H.scale.answer}"] .jp-btn`)); return;
+    }
+    if (H.formation?.ready) { const f = H.formation; if (!f.left || !f.right) tap(ui.querySelector(`.form-row [data-side="${f.left ? 'right' : 'left'}"]`)); }
     // 경판 공방(chapters/kit/conveyor.js): 고른 판의 다음 작업대를 누른다
     const cv = !dialogue.isOpen() && !noTaps() && ctx.testHooks.conveyor;
     if (cv && cv.ready) { const st = ui.querySelector(`.conv-st[data-st="${cv.answer}"]:not([disabled])`); if (st) tap(st); }
