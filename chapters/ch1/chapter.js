@@ -3,17 +3,15 @@ import { buildCh1Scene } from './scene.js';
 import { roam } from '../../core/flow.js';
 import script from './script.js';
 
-const START = [0, 19];
+export const START = [0, 19];
+export const INTRO_FROM = [0, 36]; // 장 시작 장면: 진영 밖 길(걷는 곳 z1=22 바깥)
 const FERRY_RETURN = [8, -12.2];
 const SEOHUI_HOME = [-11, 1.3, 0.15];
 
 let scene = null;
 
-// 시점 시험판(D-2): 주소에 ?view=b(1인칭) 또는 ?view=c(어깨 너머)가 있을 때만 1장 탐험에서 켠다.
-export function readView(search) {
-  const v = new URLSearchParams(search || '').get('view');
-  return v === 'b' || v === 'c' ? v : null;
-}
+// 시험판(D-4): 주소에 ?try=1이 있을 때만 1장 탐험에서 낮은 카메라·대화 때 얼굴 크게·시작 장면을 켠다.
+export function readTry(search) { return new URLSearchParams(search || '').get('try') === '1'; }
 
 async function sayAll(dialogue, lines) { for (const l of lines) await dialogue.say(l); }
 
@@ -30,6 +28,30 @@ function setStep(ctx, n) {
 function placePlayer(world, [x, z], ry = Math.PI) {
   world.player.position.set(x, 0, z); world.player.rotation.y = ry;
   world.camMode = 'follow'; world.snapCamera();
+}
+
+// 장 시작 장면(D-4 ㉱): 학생 병사가 진영 밖 길에서 걸어 들어온다(약 3.7초). 그동안 입력을 막고, 누르거나 키를 누르면 건너뛴다.
+export function introWalk(ctx) {
+  const { world, input } = ctx;
+  const b0 = world.bounds, s0 = world.speedScale;
+  input.enabled = false;
+  world.bounds = { ...b0, z1: INTRO_FROM[1] };
+  placePlayer(world, INTRO_FROM);
+  world.speedScale = 0.7; world.autoMove = { x: 0, z: -1 };
+  return new Promise(resolve => {
+    let off = null;
+    const end = e => {
+      if (!off) return;
+      off(); off = null;
+      removeEventListener('keydown', end, true); removeEventListener('pointerdown', end, true);
+      world.autoMove = null; world.speedScale = s0; world.bounds = b0;
+      world.player.position.set(START[0], 0, START[1]);
+      if (e) world.snapCamera(); // 건너뛰면 카메라도 바로 제자리로
+      resolve();
+    };
+    off = world.onUpdate(() => { if (world.player.position.z <= START[1]) end(); });
+    addEventListener('keydown', end, true); addEventListener('pointerdown', end, true);
+  });
 }
 
 function showAftermath(world) {
@@ -54,8 +76,8 @@ export default {
 
   async explore(ctx) {
     const { world, dialogue } = ctx;
-    world.viewMode = readView(typeof location !== 'undefined' ? location.search : '');
-    placePlayer(world, START);
+    world.tryMode = readTry(typeof location !== 'undefined' ? location.search : '');
+    if (world.tryMode) await introWalk(ctx); else placePlayer(world, START);
     let step = 0;
     setStep(ctx, 0);
     await sayAll(dialogue, script.start);
@@ -77,7 +99,7 @@ export default {
         zones: [{ ...scene.ferry, active: () => step === 2, onEnter() { stop(); resolve(); } }],
       });
     });
-    world.viewMode = null; world.player.visible = true; // 미니게임부터는 지금 카메라 그대로
+    world.tryMode = false; // 미니게임부터는 지금 카메라 그대로
   },
 
   async minigame(ctx) {

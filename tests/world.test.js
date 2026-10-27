@@ -168,28 +168,26 @@ test('signs: 모든 안내판 제목이 판 높이의 절반쯤 되는 큰 글�
   }
 });
 
-// D-2 시점 시험판: viewMode 'b'(1인칭)·'c'(어깨 너머). 위/아래는 앞/뒤, 왼/오른쪽은 몸 돌리기.
-test('world: viewMode b/c — up walks forward, left/right turns, camera sits at eye or over shoulder', () => {
+// D-4 시험판(tryMode): 따라가기 카메라가 낮고(0,6,9), 대화 카메라가 얼굴에 더 다가간다. autoMove는 정해진 걸음.
+test('world: tryMode lowers the follow camera and zooms the talk camera on the face', () => {
   const w = makeWorld();
-  w.player.position.set(0, 0, 0); w.player.rotation.y = Math.PI; // 북쪽(-z)을 본다
-  w.viewMode = 'b'; w.snapCamera();
-  eq(+w.camera.position.y.toFixed(2), 1.55);
-  for (let i = 0; i < 30; i++) w.step(1 / 30, { x: 0, z: -1 }); // 위
-  ok(w.player.position.z < -3, 'forward goes north ' + w.player.position.z);
-  ok(Math.abs(w.player.position.x) < 0.01, 'no sideways drift');
-  ok(!w.player.visible, 'b hides the body');
-  const r0 = w.player.rotation.y;
-  for (let i = 0; i < 15; i++) w.step(1 / 30, { x: 1, z: 0 }); // 오른쪽: 제자리에서 돈다
-  ok(w.player.rotation.y !== r0, 'right turns');
-  ok(w.player.position.z < -3 && w.player.position.z > -3.5 - 6.5, 'turning does not walk');
-  w.viewMode = 'c'; w.player.rotation.y = Math.PI; w.snapCamera();
-  const p = w.player.position, c = w.camera.position;
-  w.step(0, { x: 0, z: 0 });
-  ok(w.player.visible, 'c shows the body');
-  eq(+c.y.toFixed(2), 2.5);
-  ok(c.z - p.z > 3.4, 'camera behind the player');
-  ok(Math.abs(c.x - p.x) > 0.8, 'camera off to the shoulder');
-  w.viewMode = null; w.step(1 / 30, { x: 0, z: 0 });
-  ok(w.player.visible, 'body shown again without view mode');
+  w.player.position.set(0, 0, 0);
+  w.snapCamera(); eq([w.camera.position.y, w.camera.position.z], [8.5, 12]);
+  w.tryMode = true; w.snapCamera(); eq([w.camera.position.y, w.camera.position.z], [6, 9]);
+  const npc = makePerson({}); npc.position.set(0, 0, -4); w.level.add(npc);
+  const talk = () => {
+    w.setTalkCamera(npc);
+    for (let i = 0; i < 120; i++) w.step(1 / 30, { x: 0, z: 0 });
+    return w.camera.fov;
+  };
+  ok(talk() < 47, 'try talk zooms in on the face ' + w.camera.fov);
+  w.camMode = 'follow'; for (let i = 0; i < 120; i++) w.step(1 / 30, { x: 0, z: 0 });
+  ok(Math.abs(w.camera.fov - 50) < 0.5, 'fov back after talk ' + w.camera.fov);
+  w.tryMode = false;
+  eq(talk(), 50);
+  w.camMode = 'follow';
+  w.autoMove = { x: 0, z: -1 };
+  for (let i = 0; i < 30; i++) w.step(1 / 30, { x: 0, z: 0 });
+  ok(w.player.position.z < -2, 'autoMove walks ' + w.player.position.z);
   w.dispose();
 });
