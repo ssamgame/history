@@ -70,14 +70,26 @@ test('action: E key and click both press the big button', async () => {
   ctx.done();
 });
 
-test('howto: shows keyboard and touch lines and resolves on 시작', async () => {
+test('howto D-11-2: shows the steps but no keyboard/touch lines, and resolves on 시작', async () => {
   const ui = document.createElement('div'); document.body.appendChild(ui);
-  const p = showHowTo(ui, { title: '성벽 방어', steps: ['사다리를 눌러 밀어내요'], keyboard: '마우스로 클릭', touch: '손가락으로 눌러요' });
+  const p = showHowTo(ui, { title: '성벽 방어', steps: ['사다리를 밀어내요', '10개면 성공!'], keyboard: '마우스로 클릭', touch: '손가락으로 눌러요' });
   const t = ui.textContent;
-  ok(t.includes('성벽 방어') && t.includes('마우스로 클릭') && t.includes('손가락으로 눌러요'));
+  ok(t.includes('성벽 방어') && t.includes('10개면 성공!'));
+  ok(!t.includes('마우스로 클릭') && !t.includes('손가락으로 눌러요') && !t.includes('키보드') && !t.includes('터치:'), 'no control lines');
   [...ui.querySelectorAll('button')].find(b => b.textContent.includes('시작')).click();
   await p;
   ui.remove();
+});
+
+import goryeo1 from '../chapters/ch1/script.js';
+import goryeo2 from '../chapters/ch2/script.js';
+import goryeo3 from '../chapters/ch3/script.js';
+test('howto D-11-2: Goryeo chapters 1-3 explain each game in two lines (what to do + how to win)', () => {
+  const found = [];
+  const visit = (o, where) => { if (!o || typeof o !== 'object') return; if (o.title && Array.isArray(o.steps)) found.push([where, o.steps]); else for (const [k, v] of Object.entries(o)) visit(v, `${where}.${k}`); };
+  visit(goryeo1, 'ch1'); visit(goryeo2, 'ch2'); visit(goryeo3, 'ch3');
+  ok(found.length >= 5, `howto cards found: ${found.length}`);
+  for (const [where, steps] of found) eq([where, steps.length], [where, 2]);
 });
 
 test('hud: timer and counter show and hide', () => {

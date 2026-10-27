@@ -12,19 +12,18 @@ function missNote(card) {
 const result = missed => (missed ? 'missed' : true);
 const DEFAULT_HINT = '해설을 떠올려 보고 다시 골라 봐요.';
 
-export function showHowTo(ui, { title, steps, keyboard, touch }) {
+// 조작(키보드·터치) 줄은 보이지 않는다(D-11-2: 첫 화면에서 한 번만 안내). 설명은 두 줄(할 일 + 성공 조건)로 쓴다.
+export function showHowTo(ui, { title, steps }) {
   return new Promise(resolve => {
     const screen = el('section', 'screen howto');
     const card = el('div', 'card');
     card.append(el('div', 'eyebrow', '방법'), el('h2', null, title));
     const ol = el('ol', 'howto-steps');
     for (const s of steps) ol.append(el('li', null, s));
-    const ctl = el('div', 'howto-controls');
-    ctl.append(el('p', null, `키보드·마우스: ${keyboard}`), el('p', null, `터치: ${touch}`));
     const go = el('button', 'btn primary', '시작');
     go.type = 'button';
     go.addEventListener('click', () => { screen.remove(); resolve(); });
-    card.append(ol, ctl, go);
+    card.append(ol, go);
     screen.append(card);
     ui.append(screen);
   });

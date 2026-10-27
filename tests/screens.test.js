@@ -313,3 +313,15 @@ test('screens D-9: no 역사 수첩 in the menu or on the chapter result card', 
     ok(!r.textContent.includes('수첩'), 'result card has no notebook button');
   } finally { r.remove(); }
 });
+
+test('title D-11-2: one short controls line (walk and talk) on the first screen', async () => {
+  const ui = document.createElement('div'); document.body.appendChild(ui);
+  showTitle(ui, { courses: [] });
+  await new Promise(r => setTimeout(r, 0));
+  const c = ui.querySelector('.title .controls');
+  ok(c, 'controls line');
+  const t = c.textContent;
+  ok(t.includes('걷기') && t.includes('방향키') && t.includes('WASD') && t.includes('화면 왼쪽'), t);
+  ok(t.includes('말 걸기') && t.includes('대화') && t.includes('스페이스'), t);
+  ui.remove();
+});

@@ -47,7 +47,7 @@ export function showTitle(root, { savedName, hasProgress, storageOk, courses = [
           h('h1', {}, '역사 속으로 ', h('span', {}, '걸어가기')),
           h('p', { class: 'lead' }, '시대를 골라 그때 사람이 되어 보세요. 직접 걷고, 이야기를 듣고, 역사의 현장을 겪어 봐요.'),
           !storageOk && h('p', { class: 'warn' }, '이 기기에서는 저장되지 않아요. 끝까지 한 번에 해 주세요.'),
-          h('p', { class: 'controls' }, '키보드: W A S D 또는 방향키로 이동, E 또는 스페이스로 대화 · 터치: 화면 왼쪽을 끌어 이동, 오른쪽 아래 대화 버튼')),
+          h('p', { class: 'controls' }, '걷기: 방향키·WASD 또는 화면 왼쪽을 손가락으로 끌기 · 말 걸기: 가까이 가서 스페이스·E 또는 「대화」 단추')),
         cards.length > 0 && h('div', { class: 'title-courses' }, h('div', { class: 'title-courses-head' }, '시대 고르기'), cards),
         h('div', { class: 'title-actions' },
           h('div', { class: 'row' },
