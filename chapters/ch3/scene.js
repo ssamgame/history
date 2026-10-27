@@ -5,13 +5,22 @@ import { tent, tree, spearRack } from '../kit/buildings.js';
 import { BUILD } from '../kit/town.js';
 import { groundMaterial } from '../../core/textures.js';
 import { mat, makePerson } from '../../core/people.js';
+import { gateLeaves, nameBoard } from '../kit/gate.js';
 import { scatter } from '../../core/props.js';
 import { LOOKS, look } from '../../content/characters.js';
 import { createWeather } from '../../core/weather.js';
 
 const RIVER_Z = -8, RIVER_W = 6;
-const DAM_X = -20;
-const GUJU_Z = 62;
+const DAM_X = -10;   // 쇠가죽 둑(냇물 위쪽). 물은 +x 쪽(아래쪽)으로 흐른다
+const ARMY_X = 1.5;  // 거란군이 냇물을 건너는 여울(둑 위 학생 자리에서 화면 안에 보이게)
+const GUJU_Z = 42;   // 귀주 벌판(진영 남문 밖). 귀주 놀이 때만 보인다
+const GATE_Z = 24;   // 진영 남문
+// 냇가 둑(D-10): 학생과 강감찬이 올라서는 흙둑. 둑 위 높이 BANK_TOP
+export const BANK = { x0: DAM_X - 0.6, x1: DAM_X + 10.6, z0: -4.6, z1: -2.6 };
+export const BANK_TOP = 0.35;
+export function bankHeight(x, z) {
+  return x > BANK.x0 && x < BANK.x1 && z > BANK.z0 && z < BANK.z1 ? BANK_TOP : 0;
+}
 
 // 땅 높이(지형과 같은 식): 소품을 땅 위에 놓을 때 쓴다
 function groundH(x, z) {
@@ -65,10 +74,10 @@ export function buildCh3Scene(world) {
   const put = (fn, x, z, ry = 0, p = {}, r = 0.9) => { const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = ry; L.add(g); fn(g, p); if (r) world.addCollider({ x, z, r }); return g; };
   put(spearRack, 2, 12.5, 0); put(spearRack, -19, 11, 0.3); put(BUILD.rice, 12, 13, 0.2, { n: 6 }, 1.3);
   // 냇가: 강둑의 버드나무와 갈대(둑 막을 자리와 거란군이 건너는 여울은 비운다)
-  for (const [x, z] of [[-34, -4.6], [-28, -4.8], [-12, -4.6], [16, -4.7], [24, -4.6], [32, -4.9], [-30, -11.6], [-10, -11.8], [18, -11.6], [28, -11.8]]) put(tree, x, z, rand() * 3, { kind: 'willow', x, z }, 0);
-  scatter(world, { kind: 'grass', count: 90, area: { x0: -42, x1: 42, z0: -12.5, z1: -3.8 }, avoid: [{ x: DAM_X, z: RIVER_Z, r: 4.5 }, { x: 4, z: RIVER_Z, r: 9 }], seed: 41, ground: groundH, scale: [1.1, 1.9], color: 0x8a8a52 });
+  for (const [x, z] of [[-34, -4.6], [-28, -4.8], [-14, -4.6], [16, -4.7], [24, -4.6], [32, -4.9], [-30, -11.6], [-15, -11.8], [18, -11.6], [28, -11.8]]) put(tree, x, z, rand() * 3, { kind: 'willow', x, z }, 0);
+  scatter(world, { kind: 'grass', count: 90, area: { x0: -42, x1: 42, z0: -12.5, z1: -3.8 }, avoid: [{ x: DAM_X, z: RIVER_Z, r: 4.5 }, { x: ARMY_X, z: RIVER_Z, r: 9 }, { x: DAM_X + 5, z: -3.6, r: 6 }], seed: 41, ground: groundH, scale: [1.1, 1.9], color: 0x8a8a52 });
   const flagPoles = [];
-  for (const [x, z, c] of [[-10, 2, 0xb8452f], [0, 2, 0xd9a441], [10, 2, 0xb8452f]]) {
+  for (const [x, z, c] of [[-16, 2, 0xb8452f], [0, 2, 0xd9a441], [10, 2, 0xb8452f]]) {
     mk(new THREE.CylinderGeometry(0.07, 0.07, 4.4, 5), 0x5a3f2a, x, 2.2, z);
     const f = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 1.9).translate(0.65, 0, 0), new THREE.MeshLambertMaterial({ color: c, side: THREE.DoubleSide }));
     f.position.set(x, 3.4, z); L.add(f); flagPoles.push(f);
@@ -83,7 +92,18 @@ export function buildCh3Scene(world) {
   const damWall = new THREE.Group(); damWall.visible = false; L.add(damWall);
   for (let k = 0; k < 7; k++) mk(new THREE.BoxGeometry(1, 1.4, 0.5), 0x7a4e32, DAM_X, 0.2, RIVER_Z - RIVER_W / 2 + 0.5 + k * 0.85, damWall).rotation.y = Math.PI / 2;
   const ring = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.25, 28), new THREE.MeshBasicMaterial({ color: 0xd9a441, transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
-  ring.rotation.x = -Math.PI / 2; ring.position.set(DAM_X, 0.08, -2.5); ring.visible = false; L.add(ring);
+  ring.rotation.x = -Math.PI / 2; ring.position.set(DAM_X + 1, 0.08, -1.4); ring.visible = false; L.add(ring);
+  // 냇가 흙둑과 둑 마개(D-10): 쇠가죽 둑 남쪽 끝의 나무 마개. 빛나는 원은 강감찬이 "지금이다!" 할 때 켜진다
+  mk(new THREE.BoxGeometry(BANK.x1 - BANK.x0, 1.2, BANK.z1 - BANK.z0), 0x6e5a3e, (BANK.x0 + BANK.x1) / 2, BANK_TOP - 0.6, (BANK.z0 + BANK.z1) / 2);
+  const plugAt = { x: DAM_X + 2.4, z: -3.6 }; // 쇠가죽 둑에서 조금 동쪽: 학생이 마개 앞에 서도 둑이 가려지지 않게
+  for (const [dx, dz, h] of [[-0.3, -0.25, 1.3], [0.05, 0.2, 1.1], [0.35, -0.15, 1.2]]) mk(new THREE.CylinderGeometry(0.16, 0.2, h, 6), 0x5a3f2a, plugAt.x + dx - 0.4, BANK_TOP + h / 2, plugAt.z + dz - 0.4);
+  { // 마개 말뚝에서 쇠가죽 둑 끝까지 맨 굵은 줄
+    const ax = plugAt.x - 0.4, az = plugAt.z - 0.4, bx = DAM_X, bz = RIVER_Z - RIVER_W / 2 + 0.5 + 6 * 0.85, len = Math.hypot(bx - ax, bz - az);
+    const rope = mk(new THREE.CylinderGeometry(0.06, 0.06, len, 5), 0x3b2a1c, (ax + bx) / 2, 0.75, (az + bz) / 2);
+    rope.rotation.order = 'YXZ'; rope.rotation.y = Math.atan2(bx - ax, bz - az); rope.rotation.x = Math.PI / 2 - 0.12;
+  }
+  const plugRing = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.25, 28), ring.material.clone());
+  plugRing.rotation.x = -Math.PI / 2; plugRing.position.set(plugAt.x, BANK_TOP + 0.06, plugAt.z); plugRing.visible = false; L.add(plugRing);
   // 터지는 물결
   const wave = mk(new THREE.BoxGeometry(4, 1.6, RIVER_W), 0xcfe3ec, DAM_X, 0.3, RIVER_Z, L, false);
   wave.material = new THREE.MeshLambertMaterial({ color: 0xcfe3ec, transparent: true, opacity: 0.8 });
@@ -92,11 +112,11 @@ export function buildCh3Scene(world) {
   // 냇물을 건너는 거란군 (북쪽 강둑 → 남쪽)
   const zNorth = RIVER_Z - RIVER_W / 2, zSouth = RIVER_Z + RIVER_W / 2;
   const army = new THREE.Group(); L.add(army);
-  for (let i = 0; i < 14; i++) {
+  for (let i = 0; i < 14; i++) { // 다섯 줄 세 겹: 둑 위에서 한눈에 보이게
     const k = makePerson(LOOKS.khitan);
-    k.position.set(-6 + (i % 7) * 2.2, 0, -Math.floor(i / 7) * 2); k.rotation.y = 0; army.add(k);
+    k.position.set(-4.4 + (i % 5) * 2.2, 0, -Math.floor(i / 5) * 1.8); k.rotation.y = 0; army.add(k);
   }
-  const setCross = t => { army.position.set(4, 0, zNorth - 8 + t * (zSouth + 4 - (zNorth - 8))); };
+  const setCross = t => { army.position.set(ARMY_X, 0, zNorth - 8 + t * (zSouth + 4 - (zNorth - 8))); };
   setCross(0);
   // 북쪽 거란 진영
   for (const [x, z] of [[-10, -30], [2, -34], [14, -31], [-20, -38], [8, -42]]) {
@@ -105,7 +125,7 @@ export function buildCh3Scene(world) {
   }
 
   // 귀주 벌판: 남쪽 고려군, 북쪽 거란군, 동쪽에서 오는 지원군
-  const guju = new THREE.Group(); L.add(guju);
+  const guju = new THREE.Group(); guju.visible = false; L.add(guju);
   const gujuFlags = [], gujuKhitan = [], gujuGoryeo = [];
   for (let i = 0; i < 12; i++) {
     const p = makePerson(LOOKS.player); p.position.set(-11 + i * 2, 0, GUJU_Z + 6); p.rotation.y = Math.PI; guju.add(p); gujuGoryeo.push(p);
@@ -127,6 +147,32 @@ export function buildCh3Scene(world) {
     const p = makePerson(look('soldier', { robe: 0x3c5a7a })); p.position.set((i % 4) * 2, 0, Math.floor(i / 4) * 2); p.rotation.y = -Math.PI / 2; reinforcements.add(p);
   }
   reinforcements.position.set(30, 0, GUJU_Z + 4);
+  // 신호 북(D-10): 고려군 깃발 뒤 나무 틀에 건 큰 북. 빛나는 원은 강감찬이 "지금이다!" 할 때 켜진다
+  const drumMesh = new THREE.Group(); guju.add(drumMesh);
+  for (const sx of [-0.75, 0.75]) mk(new THREE.BoxGeometry(0.16, 2, 0.16), 0x5a3f2a, sx, 1, 0, drumMesh);
+  mk(new THREE.BoxGeometry(1.8, 0.16, 0.2), 0x5a3f2a, 0, 1.95, 0, drumMesh);
+  const drumBody = mk(new THREE.CylinderGeometry(0.62, 0.62, 0.7, 14), 0x8a2f24, 0, 1.25, 0, drumMesh); drumBody.rotation.x = Math.PI / 2;
+  for (const sz of [-0.36, 0.36]) { const head = mk(new THREE.CylinderGeometry(0.6, 0.6, 0.04, 14), 0xe2d6b4, 0, 1.25, sz, drumMesh); head.rotation.x = Math.PI / 2; }
+  const drumRing = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.25, 28), ring.material.clone());
+  drumRing.rotation.x = -Math.PI / 2; drumRing.position.y = 0.08; drumRing.visible = false; guju.add(drumRing);
+  const drum = { x: 0, z: GUJU_Z + 11, r: 1.3, mesh: drumMesh, ring: drumRing,
+    place(x) { this.x = x; drumMesh.position.set(x, 0, this.z - 1.2); drumRing.position.x = x; drumRing.position.z = this.z; } };
+  drum.place(5);
+
+  // 진영 남문과 울타리(D-10 시작 장면): 문짝 두 개가 열리고 학생이 걸어 들어온다. 문 안쪽 길옆에 이름판
+  {
+    const xs = [];
+    for (let x = -34; x <= 34; x += 0.9) if (Math.abs(x) > 2.6) xs.push(x);
+    const pm = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.17, 0.2, 2.6, 6), mat(0x6b4a32, 'wood', 'object'), xs.length);
+    const o = new THREE.Object3D();
+    xs.forEach((x, i) => { o.position.set(x, 1.3, GATE_Z); o.rotation.y = i; o.updateMatrix(); pm.setMatrixAt(i, o.matrix); });
+    pm.castShadow = true; L.add(pm);
+    for (let x = -33; x <= 33; x += 1.6) if (Math.abs(x) > 3) world.addCollider({ x, z: GATE_Z, r: 0.9 });
+    for (const sx of [-1, 1]) mk(new THREE.BoxGeometry(0.4, 3.6, 0.4), 0x5a3f2a, sx * 2.7, 1.8, GATE_Z);
+    mk(new THREE.BoxGeometry(6, 0.35, 0.45), 0x5a3f2a, 0, 3.5, GATE_Z);
+  }
+  const gate = gateLeaves(L, { x: 0, z: GATE_Z, width: 5, height: 2.6, color: 0x6b4a32 });
+  nameBoard(L, '삼교천 진영', 3.5, GATE_Z - 3); // 출처 S3(흥화진 앞 삼교천)
 
   // 빗물 웅덩이 (진영 바닥)
   {
@@ -138,14 +184,14 @@ export function buildCh3Scene(world) {
   }
   // 냇가 갈대와 바위, 진영의 젖은 풀, 귀주 벌판 둘레
   {
-    const bank = [{ x: DAM_X, z: RIVER_Z, r: 5 }, { x: 10, z: RIVER_Z, r: 10 }];
+    const bank = [{ x: DAM_X, z: RIVER_Z, r: 5 }, { x: ARMY_X, z: RIVER_Z, r: 9 }, { x: DAM_X + 2, z: -3.6, r: 4 }, { x: DAM_X + 8, z: -3.6, r: 4 }];
     for (const [z0, z1, s] of [[RIVER_Z - RIVER_W / 2 - 2.6, RIVER_Z - RIVER_W / 2 - 0.4, 41], [RIVER_Z + RIVER_W / 2 + 0.4, RIVER_Z + RIVER_W / 2 + 2.2, 42]]) {
       scatter(world, { kind: 'grass', count: 110, area: { x0: -60, x1: 60, z0, z1 }, avoid: bank, seed: s, ground: groundH, scale: [1.0, 1.7], color: 0x8a9a5a });
       scatter(world, { kind: 'rock', count: 16, area: { x0: -60, x1: 60, z0, z1 }, avoid: bank, seed: s + 3, ground: groundH, scale: [0.5, 1.3] });
     }
-    const keep = [[-14, 9], [-6, 12], [8, 11], [16, 8], [22, 12], [-24, 6], [-12, 3], [-2, 7], [6, 3.5], [14, 4], [24, 5], [-4, 5], [5, 7.5], [0, 10], [DAM_X, -2.5]].map(([x, z]) => ({ x, z, r: 2.6 }));
+    const keep = [[10, -1.5], [-14, 9], [-6, 12], [8, 11], [16, 8], [22, 12], [-24, 6], [-12, 3], [-2, 7], [6, 3.5], [14, 4], [24, 5], [-4, 5], [5, 7.5], [0, 10], [DAM_X + 1, -1.4], [0, 14], [3.5, GATE_Z - 3]].map(([x, z]) => ({ x, z, r: 2.6 }));
     scatter(world, { kind: 'grass', count: 120, area: { x0: -28, x1: 28, z0: -2, z1: 16 }, avoid: keep, seed: 43, ground: groundH, color: 0x6f8f4a });
-    scatter(world, { kind: 'pine', count: 40, area: { x0: -70, x1: 70, z0: 20, z1: 110 }, avoid: [{ x: 0, z: GUJU_Z, r: 30 }, { x: 22, z: GUJU_Z + 18, r: 10 }], seed: 44, ground: groundH, scale: [1, 1.6] });
+    scatter(world, { kind: 'pine', count: 40, area: { x0: -70, x1: 70, z0: 20, z1: 110 }, avoid: [{ x: 0, z: GUJU_Z, r: 30 }, { x: 22, z: GUJU_Z + 18, r: 10 }, { x: 0, z: GATE_Z + 8, r: 10 }, { x: -15, z: GUJU_Z, r: 14 }], seed: 44, ground: groundH, scale: [1, 1.6] });
     scatter(world, { kind: 'grass', count: 140, area: { x0: -26, x1: 34, z0: GUJU_Z - 14, z1: GUJU_Z + 16 }, seed: 45, ground: groundH, color: 0x7a9450 });
     scatter(world, { kind: 'rock', count: 20, area: { x0: -60, x1: 60, z0: -60, z1: -16 }, seed: 46, ground: groundH, scale: [0.8, 2.2] });
   }
@@ -153,22 +199,29 @@ export function buildCh3Scene(world) {
 
   world.addNpc('gangamchan', LOOKS.gangamchan, -4, 5, 0);
   world.addNpc('soldier', LOOKS.soldier, 5, 7.5, Math.PI * 0.8);
+  world.addNpc('scout', LOOKS.archer, 10, -1.5, Math.PI); // 냇가에서 강 건너를 살피는 척후병
 
   // 깃발 방향: 북쪽(-z)으로 휘날리면 rotation.y = +PI/2, 남쪽이면 -PI/2
   let flagDir = -Math.PI / 2;
   const scene = {
+    gate, damX: DAM_X, plug: { ...plugAt, r: 1.3, ring: plugRing }, drum,
+    stand: { x: DAM_X + 6, z: -3.6 }, gangOnBank: [DAM_X + 7.4, -3.6],
+    gujuStand: [-2.5, GUJU_Z + 11], gangAtGuju: [-4, GUJU_Z + 11],
+    // 둑으로 가는 길(쇠가죽을 둔 곳 옆에서 둑 위로), 귀주로 가는 길(남문을 나가 거란군 줄의 서쪽으로 돌아 고려군 뒤로)
+    bankPath: [[DAM_X + 3, -1.6], [DAM_X + 3.6, -3.6], [DAM_X + 7.4, -3.6]],
+    gujuPath: [[DAM_X + 7, -1.2], [0, 2], [0, 14], [0, GATE_Z + 2], [-15, GATE_Z + 6], [-15, GUJU_Z + 11], [-4, GUJU_Z + 11]],
     hides, damWall, ring, wave, rain, flagPoles, gujuFlags, gujuKhitan, gujuGoryeo, reinforcements, guju, dust, gujuZ: GUJU_Z,
-    dam: { x: DAM_X, z: -2.5, r: 1.6 },
+    dam: { x: DAM_X + 1, z: -1.4, r: 1.6 },
     river: { army, setCross, zNorth, zSouth },
-    damCam: { pos: [6, 12, 12], target: [-4, 0, -9] },
-    gujuCam: { pos: [22, 10, GUJU_Z + 18], target: [0, 1, GUJU_Z] },
     gujuBounds: { x0: -12, x1: 12, z0: GUJU_Z + 7, z1: GUJU_Z + 12 },
     start: [0, 10],
     setFlags(northward) { flagDir = northward ? Math.PI / 2 : -Math.PI / 2; rain.setWind(northward ? -2 : 2); },
   };
   world.onUpdate((dt, t) => {
     for (const f of [...flagPoles, ...gujuFlags]) f.rotation.y += (flagDir + Math.sin(t * 3 + f.position.x) * 0.25 - f.rotation.y) * Math.min(1, dt * 3);
-    if (ring.visible) ring.material.opacity = 0.55 + Math.sin(t * 4) * 0.3;
+    for (const r of [ring, plugRing, drumRing]) if (r.visible) r.material.opacity = 0.55 + Math.sin(t * 4) * 0.3;
+    // 흙둑 위에서는 학생과 강감찬이 둑 높이에 선다
+    for (const o of [world.player, world.npcs.get('gangamchan').mesh]) o.position.y += (bankHeight(o.position.x, o.position.z) - o.position.y) * Math.min(1, dt * 14);
     hides.forEach((h, i) => { if (!h.taken) h.mesh.rotation.y = Math.sin(t + i) * 0.2; });
   });
   scene.setFlags(false);

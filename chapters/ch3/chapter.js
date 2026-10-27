@@ -1,11 +1,19 @@
-// 3장 「강감찬과 귀주 대첩」: 진영 탐험 → 쇠가죽 모으기 → 둑 터뜨리기 → 귀주의 바람 → 퀴즈.
-import { buildCh3Scene } from './scene.js';
+// 3장 「강감찬과 귀주 대첩」(D-10): 진영 남문을 열고 들어옴 → 병사·척후병 이야기를 듣고 강감찬에게 → 쇠가죽 모으기 →
+// 강감찬을 따라 둑 위로 올라 "지금이다!" 하면 둑 마개로 걸어가 터뜨림 → 강감찬을 따라 귀주로 걸어가 깃발이 바뀌면 신호 북으로 → 퀴즈.
+// 화면을 어둡게 넘기거나 고정 카메라로 바꾸지 않고, 낮은 따라가기 카메라(closeView) 그대로 한 장면에서 이어진다.
+import { buildCh3Scene, BANK, BANK_TOP } from './scene.js';
 import { roam } from '../../core/flow.js';
-import { showHowTo, runWithRetries, actionButton } from '../../core/minigame.js';
+import { showHowTo, runWithRetries } from '../../core/minigame.js';
+import { enterThroughGate } from '../kit/gate.js';
+import { labelSprite } from '../kit/play.js';
 import script from './script.js';
 
 const EXPLORE_BOUNDS = { x0: -28, x1: 28, z0: -3.5, z1: 14 };
-const CROSS_SECONDS = 10;
+export const INTRO_FROM = [0, 31]; // 장 시작 장면: 남문 밖 길
+const PEOPLE = ['soldier', 'scout']; // 이야기를 들어 볼 차례(병사 → 척후병), 그다음 강감찬
+const CROSS_SECONDS = { normal: 10, easy: 14 }; // 거란군이 냇물을 다 건너는 시간(쉬운 방식은 더 천천히)
+const LEAD_SPEED = 4.2, WAIT_FAR = 5, WAIT_NEAR = 3.2; // 1·2장과 같은 따라 걷기
+const LABEL_SECONDS = 1.6;
 let scene = null;
 
 async function sayAll(dialogue, lines) { for (const l of lines) await dialogue.say(l); }
@@ -16,24 +24,93 @@ function placePlayer(world, [x, z], ry = Math.PI) {
   world.camMode = 'follow'; world.snapCamera();
 }
 
-function setStep(ctx, n) {
-  const { world } = ctx;
-  ctx.setGoal(script.goals[n]);
-  world.npcs.get('gangamchan').mark.visible = n === 0;
-  world.npcs.get('soldier').mark.visible = n === 1;
-  scene.ring.visible = n === 3;
-  const t = [world.npcs.get('gangamchan').mesh.position, world.npcs.get('soldier').mesh.position][n];
-  if (t) world.setGoal({ x: t.x, z: t.z });
-  else if (n === 3) world.setGoal({ x: scene.dam.x, z: scene.dam.z });
+// 강감찬의 첫 말(D-10): 아무 이야기도 안 들었으면 먼저 들어 보라 하고(막히지 않고 다시 찾아오면 된다),
+// 들었으면 들은 사람의 말을 차례로 이어받아 '쇠가죽으로 물을 막아 두자'로 모은다
+export function gangamchanTalk(heard) {
+  const n = script.npc.gangamchan;
+  if (!PEOPLE.some(id => heard.has(id))) return [...n.greet, ...n.tooEarly];
+  return [...n.greet, ...PEOPLE.filter(id => heard.has(id)).map(id => n.heard[id]), ...n.plan, ...n.go];
 }
 
-// 쇠가죽 6개를 주워 둑으로 가져간다. 실패는 없다.
+// 탐험 목표: 아직 이야기를 안 들은 다음 사람에게 느낌표와 화살표, 다 들었으면 강감찬
+function setStep(ctx, n, heard = new Set(PEOPLE)) {
+  const { world } = ctx;
+  ctx.setGoal(script.goals[n]);
+  const next = n === 0 ? PEOPLE.find(id => !heard.has(id)) : n === 1 ? 'gangamchan' : null;
+  for (const id of [...PEOPLE, 'gangamchan']) world.npcs.get(id).mark.visible = id === next;
+  const t = next && world.npcs.get(next).mesh.position;
+  if (t) world.setGoal({ x: t.x, z: t.z });
+  else if (n === 3) world.setGoal({ x: scene.dam.x, z: scene.dam.z });
+  else world.setGoal(null);
+  scene.ring.visible = n === 3;
+}
+
+// 강감찬 머리 위 짧은 외침("지금이다!", "아직이다!" 등). 놀이를 멈추지 않는다
+const labels = new Map();
+function shout(world, text) {
+  if (!labels.has(text)) {
+    const s = labelSprite(text, { size: 0.9 }); s.position.set(0, 3.2, 0); s.visible = false;
+    world.npcs.get('gangamchan').mesh.add(s); labels.set(text, s);
+  }
+  for (const [k, s] of labels) s.visible = k === text;
+  return labels.get(text);
+}
+function hush() { for (const s of labels.values()) s.visible = false; }
+
+// 강감찬이 앞장서 path를 따라 걷고 학생이 따라간다(1·2장 따라 걷기와 같은 방식). 학생이 멀어지면 멈춰 돌아보며 기다린다.
+// 강감찬이 끝에 서면 학생 자리(stand)에 빛나는 원이 뜨고, 학생이 오면 끝난다.
+function followGangamchan(ctx, { path, stand, bounds, face, speed = LEAD_SPEED }) {
+  const { world, input } = ctx;
+  const gc = world.npcs.get('gangamchan'), m = gc.mesh.position;
+  gc.collider.r = 0; // 좁은 둑 위·남문에서 학생 길을 막지 않게
+  gc.mark.visible = false;
+  let i = 0, waiting = false;
+  world.bounds = bounds;
+  input.enabled = true;
+  return new Promise(resolve => {
+    const off = world.onUpdate(dt => {
+      const p = world.player.position;
+      if (i < path.length) {
+        const dp = Math.hypot(p.x - m.x, p.z - m.z);
+        if (waiting ? dp < WAIT_NEAR : dp > WAIT_FAR) waiting = !waiting;
+        if (waiting) gc.mesh.rotation.y = Math.atan2(p.x - m.x, p.z - m.z);
+        else {
+          let dx = path[i][0] - m.x, dz = path[i][1] - m.z;
+          const d = Math.hypot(dx, dz), step = speed * dt, y = m.y;
+          if (d <= step) { world.moveNpc('gangamchan', path[i][0], path[i][1], gc.mesh.rotation.y); i += 1; }
+          else { dx /= d; dz /= d; world.moveNpc('gangamchan', m.x + dx * step, m.z + dz * step, Math.atan2(dx, dz)); }
+          m.y = y; // 둑 높이는 장면이 맞춘다
+          if (i === path.length) { gc.mesh.rotation.y = face; scene.ring.position.set(stand[0], 0.08 + (stand[1] > BANK.z0 && stand[1] < BANK.z1 ? BANK_TOP : 0), stand[1]); scene.ring.visible = true; }
+        }
+        world.setGoal({ x: m.x, z: m.z });
+        return;
+      }
+      world.setGoal({ x: stand[0], z: stand[1] });
+      if (Math.hypot(p.x - stand[0], p.z - stand[1]) < 1.6) {
+        off(); input.enabled = false; scene.ring.visible = false; world.setGoal(null);
+        world.player.rotation.y = Math.PI;
+        resolve();
+      }
+    });
+  });
+}
+
+// 장 시작 장면(상시 규칙): 진영 남문의 문짝이 열리고 학생이 문 밖 길에서 걸어 들어온다(약 4초). 누르면 건너뛴다.
+export function introWalk(ctx) {
+  ctx.world.bounds = EXPLORE_BOUNDS;
+  return enterThroughGate(ctx, { from: INTRO_FROM, to: scene.start, gate: scene.gate, speed: 1 });
+}
+
+// 쇠가죽 6개를 주워 둑으로 가져간다. 실패는 없다. 그동안 강감찬은 둑 옆으로 걸어가 기다린다.
 function collectHides(ctx) {
   const { world, hud, audio } = ctx;
+  const gc = world.npcs.get('gangamchan'), m = gc.mesh.position, post = scene.bankPath[0];
   return new Promise(resolve => {
     let carrying = false, done = false;
-    const off = world.onUpdate(() => {
+    const off = world.onUpdate(dt => {
       if (done) return;
+      const gx = post[0] - m.x, gz = post[1] - m.z, gd = Math.hypot(gx, gz);
+      if (gd > 0.05) { const st = Math.min(gd, 3 * dt); world.moveNpc('gangamchan', m.x + gx / gd * st, m.z + gz / gd * st, Math.atan2(gx, gz)); }
       const p = world.player.position;
       if (!carrying) {
         let nearest = null, nd = Infinity, left = 0;
@@ -49,6 +126,7 @@ function collectHides(ctx) {
         else { carrying = true; setStep(ctx, 3); }
       } else if (Math.hypot(p.x - scene.dam.x, p.z - scene.dam.z) < scene.dam.r) {
         done = true; off(); hud.setCounter(null); world.setGoal(null);
+        world.moveNpc('gangamchan', post[0], post[1], Math.atan2(p.x - post[0], p.z - post[1]));
         scene.ring.visible = false; scene.damWall.visible = true; audio.play('correct');
         resolve();
       }
@@ -56,37 +134,56 @@ function collectHides(ctx) {
   });
 }
 
-// 거란군이 냇물 한가운데에 왔을 때 둑을 터뜨린다. 진행도 k에서 거란군 무리(앞줄·뒷줄)의 가운데가 냇물 한가운데에 오는 때는 k≈0.67,
-// 무리 전체가 물속에 있는 때는 k≈0.56~0.78이다. 판정 칸은 그 둘레(0.5~0.82, 쉬운 모드 0.42~0.88)로 화면에 보이는 모습과 맞춘다.
+// 둑 위에 학생과 강감찬을 세운다(놀이 2의 시작 자리, 다시 하기 때마다)
+const BANK_BOUNDS = { x0: BANK.x0 + 0.6, x1: BANK.x1 - 2.6, z0: -4.2, z1: -3.0 };
+export function setupDam(ctx) {
+  const { world } = ctx;
+  scene.damWall.visible = true;
+  for (const h of scene.hides) { h.taken = true; h.mesh.visible = false; }
+  const gc = world.npcs.get('gangamchan'); gc.collider.r = 0;
+  world.moveNpc('gangamchan', scene.gangOnBank[0], scene.gangOnBank[1], -Math.PI / 2);
+  gc.mesh.position.y = BANK_TOP;
+  world.bounds = BANK_BOUNDS;
+  placePlayer(world, [scene.stand.x, scene.stand.z]);
+  world.player.position.y = BANK_TOP;
+}
+
+// 둑 터뜨리기 한 번(D-10, 버튼 없음): 거란군이 냇물을 건넌다. 무리가 냇물 한가운데에 오면(진행도 lo~hi) 강감찬이 "지금이다!" 하고
+// 둑 마개(빛나는 원)를 가리키고, 학생이 마개에 가까이 가면 막은 물이 쏟아진다. 그 전에 가면 마개는 반응하지 않고 강감찬이 "아직이다!".
+// 진행도 k에서 무리 가운데가 냇물 한가운데에 오는 때는 k≈0.67, 무리 전체가 물속에 있는 때는 k≈0.56~0.78이다.
 export const DAM_WINDOW = { normal: [0.5, 0.82], easy: [0.42, 0.88] };
-function damAttempt(ctx, easy, fail) {
+export function damAttempt(ctx, easy, fail) {
   const { world, audio } = ctx;
-  const [lo, hi] = easy ? DAM_WINDOW.easy : DAM_WINDOW.normal;
+  const [lo, hi] = easy ? DAM_WINDOW.easy : DAM_WINDOW.normal, T = easy ? CROSS_SECONDS.easy : CROSS_SECONDS.normal;
+  const plug = scene.plug, gc = world.npcs.get('gangamchan');
   scene.river.army.visible = true; scene.river.army.position.y = 0; scene.wave.visible = false;
-  scene.river.setCross(0);
-  const btn = actionButton(ctx, '둑 터뜨리기');
-  let t = 0, done = false;
+  scene.river.setCross(0); plug.ring.visible = false; hush(); world.setGoal(null);
+  ctx.testHooks.damNow = false;
+  let t = 0, done = false, near = false, labelT = 0;
   return new Promise(resolve => {
     const finish = ok => {
       if (done) return; done = true;
-      off(); btn.remove(); ctx.testHooks.ready = false;
+      off(); plug.ring.visible = false; hush(); world.setGoal(null); ctx.testHooks.damNow = false;
       resolve(ok);
     };
-    btn.wait().then(() => {
-      if (done) return;
-      const k = t / CROSS_SECONDS;
-      if (k < lo) { fail.why = 'early'; return finish(false); }
-      if (k > hi) { fail.why = 'late'; return finish(false); }
-      audio.play('water');
-      finish(true);
-    });
     const off = world.onUpdate(dt => {
       if (done) return;
       t += dt;
-      const k = Math.min(1, t / CROSS_SECONDS);
+      const k = Math.min(1, t / T);
       scene.river.setCross(k);
-      ctx.testHooks.ready = k >= lo + 0.03 && k <= hi - 0.03;
-      if (k >= 1) { fail.why = 'late'; finish(false); }
+      const p = world.player.position, open = k >= lo && k <= hi;
+      const at = Math.hypot(p.x - plug.x, p.z - plug.z) < plug.r;
+      if (open && !ctx.testHooks.damNow) { // 강감찬이 마개 쪽을 보고 "지금이다!"
+        ctx.testHooks.damNow = true; plug.ring.visible = true;
+        shout(world, script.dam.now); labelT = 99;
+        gc.mesh.rotation.y = Math.atan2(plug.x - gc.mesh.position.x, plug.z - gc.mesh.position.z);
+        world.setGoal({ x: plug.x, z: plug.z });
+      }
+      if (at && open) { audio.play('water'); return finish(true); }
+      if (at && !near && !open) { ctx.testHooks.damTooEarly = (ctx.testHooks.damTooEarly || 0) + 1; shout(world, script.dam.wait); labelT = LABEL_SECONDS; }
+      near = at;
+      labelT -= dt; if (labelT <= 0) hush();
+      if (k > hi) { fail.why = 'late'; finish(false); }
     });
   });
 }
@@ -95,46 +192,68 @@ function damAttempt(ctx, easy, fail) {
 function playFlood(ctx) {
   const { world } = ctx;
   scene.damWall.visible = false;
-  scene.wave.visible = true; scene.wave.position.x = scene.dam.x;
+  scene.wave.visible = true; scene.wave.position.x = scene.damX;
   return new Promise(resolve => {
     let t = 0;
     const off = world.onUpdate(dt => {
       t += dt;
-      scene.wave.position.x = scene.dam.x + t * 30;
+      scene.wave.position.x = scene.damX + t * 30;
       scene.river.army.position.y = -t * 1.2;
       if (t > 1.6) { off(); scene.wave.visible = false; scene.river.army.visible = false; resolve(); }
     });
   });
 }
 
-// 귀주: 지원군이 오고 깃발이 북쪽으로 휘날리는 동안(3초, 쉬운 모드 5초) 공격 신호를 보낸다.
+// 귀주 벌판에 학생과 강감찬을 세운다(놀이 3의 시작 자리, 다시 하기 때마다). 쉬운 방식은 신호 북이 더 가깝다
+let gujuColliders = [];
+export function setupGuju(ctx, easy) {
+  const { world } = ctx;
+  scene.guju.visible = true;
+  scene.drum.place(easy ? 1.5 : 5);
+  world.moveNpc('gangamchan', scene.gangAtGuju[0], scene.gangAtGuju[1], Math.PI);
+  world.npcs.get('gangamchan').collider.r = 0;
+  world.bounds = scene.gujuBounds;
+  placePlayer(world, scene.gujuStand);
+}
+// 귀주로 걸어가는 동안 두 군대 사이를 가로지르지 않게 병사 자리에 부딪힘을 둔다(놀이가 끝나면 치운다)
+function armyColliders(world, on) {
+  for (const c of gujuColliders) { const i = world.colliders.indexOf(c); if (i >= 0) world.colliders.splice(i, 1); }
+  gujuColliders = on ? [...scene.gujuKhitan, ...scene.gujuGoryeo].map(p => world.addCollider({ x: p.position.x, z: p.position.z, r: 0.9 })) : [];
+}
+
+// 귀주의 바람 한 번(D-10, 버튼 없음): 김종현의 지원군이 오고 깃발이 북쪽으로 휘날리는 동안(3초, 쉬운 방식 5초)
+// 강감찬이 "지금이다!" 하고 신호 북(빛나는 원)을 가리키고, 학생이 북에 가까이 가면 북이 울린다. 그 전에 가면 "깃발을 보아라!".
 let gujuSeed = 7;
-function gujuAttempt(ctx, easy, fail) {
+export function gujuAttempt(ctx, easy, fail) {
   const { world, hud, audio } = ctx;
   gujuSeed = (gujuSeed * 16807) % 2147483647;
-  const arriveAt = 3 + (gujuSeed % 3000) / 1000, open = easy ? 5 : 3;
-  scene.setFlags(false);
+  const arriveAt = 3 + (gujuSeed % 3000) / 1000, open = easy ? 5 : 3, drum = scene.drum, gc = world.npcs.get('gangamchan');
+  scene.setFlags(false); drum.ring.visible = false; hush(); world.setGoal(null);
   scene.reinforcements.visible = true; scene.reinforcements.position.x = 30;
-  const btn = actionButton(ctx, '공격 신호');
-  let t = 0, done = false, announced = false;
+  ctx.testHooks.drumNow = false;
+  let t = 0, done = false, announced = false, near = false, labelT = 0;
   return new Promise(resolve => {
     const finish = ok => {
       if (done) return; done = true;
-      off(); btn.remove(); hud.setCounter(null); ctx.testHooks.ready = false;
+      off(); hud.setCounter(null); drum.ring.visible = false; hush(); world.setGoal(null); ctx.testHooks.drumNow = false;
       resolve(ok);
     };
-    btn.wait().then(() => {
-      if (done) return;
-      if (t < arriveAt) { fail.why = 'early'; return finish(false); }
-      audio.play('whoosh');
-      finish(true);
-    });
     const off = world.onUpdate(dt => {
       if (done) return;
       t += dt;
-      scene.reinforcements.position.x = Math.max(14, 30 - (t / arriveAt) * 16);
-      if (t >= arriveAt && !announced) { announced = true; scene.setFlags(true); hud.setCounter(script.guju.arrive); }
-      ctx.testHooks.ready = t >= arriveAt + 0.2 && t <= arriveAt + open - 0.2;
+      scene.reinforcements.position.x = Math.max(9, 30 - (t / arriveAt) * 21);
+      if (t >= arriveAt && !announced) {
+        announced = true; scene.setFlags(true); hud.setCounter(script.guju.arrive);
+        ctx.testHooks.drumNow = true; drum.ring.visible = true;
+        shout(world, script.guju.now); labelT = 99;
+        gc.mesh.rotation.y = Math.atan2(drum.x - gc.mesh.position.x, drum.z - gc.mesh.position.z);
+        world.setGoal({ x: drum.x, z: drum.z });
+      }
+      const p = world.player.position, at = Math.hypot(p.x - drum.x, p.z - drum.z) < drum.r;
+      if (at && announced) { audio.play('whoosh'); return finish(true); }
+      if (at && !near && !announced) { ctx.testHooks.drumTooEarly = (ctx.testHooks.drumTooEarly || 0) + 1; shout(world, script.guju.wait); labelT = LABEL_SECONDS; }
+      near = at;
+      labelT -= dt; if (labelT <= 0) hush();
       if (t > arriveAt + open) { fail.why = 'late'; scene.setFlags(false); finish(false); }
     });
   });
@@ -182,12 +301,14 @@ function showAftermath(ctx) {
   for (const h of scene.hides) { h.taken = true; h.mesh.visible = false; }
   scene.damWall.visible = true;
   scene.river.army.visible = false;
+  scene.guju.visible = true;
   for (const k of scene.gujuKhitan) k.visible = false;
-  scene.reinforcements.visible = true; scene.reinforcements.position.x = 14;
+  scene.reinforcements.visible = true; scene.reinforcements.position.x = 9;
   scene.setFlags(true);
+  world.moveNpc('gangamchan', scene.gangAtGuju[0], scene.gangAtGuju[1], Math.PI);
   world.bounds = scene.gujuBounds;
-  placePlayer(world, [0, scene.gujuBounds.z0 + 2]);
-  ctx.setGoal(script.goals[6]);
+  placePlayer(world, scene.gujuStand);
+  ctx.setGoal(script.goals[8]);
 }
 
 export default {
@@ -196,7 +317,11 @@ export default {
   script,
   quizzes: script.quizzes,
 
-  buildScene(world) { scene = buildCh3Scene(world); return scene; },
+  buildScene(world) {
+    scene = buildCh3Scene(world); labels.clear(); gujuColliders = [];
+    world.closeView = true; // 낮은 카메라·정면 대화(상시 규칙). 장이 끝나면 world.clearLevel이 끈다
+    return scene;
+  },
 
   enterStage(ctx, stage) {
     if (stage === 'minigame') { ctx.world.bounds = EXPLORE_BOUNDS; placePlayer(ctx.world, scene.start); }
@@ -205,10 +330,12 @@ export default {
 
   async explore(ctx) {
     const { world, dialogue } = ctx;
+    world.closeView = true;
+    await introWalk(ctx);
     world.bounds = EXPLORE_BOUNDS;
-    placePlayer(world, scene.start);
+    const heard = new Set();
     let step = 0;
-    setStep(ctx, 0);
+    setStep(ctx, 0, heard);
     await sayAll(dialogue, script.start);
     dialogue.close();
     ctx.input.enabled = true;
@@ -216,11 +343,20 @@ export default {
       const stop = roam(ctx, {
         async onTalk(id) {
           const n = script.npc[id];
-          if (id === 'gangamchan') {
-            if (step === 0) { await sayAll(dialogue, n.first); step = 1; setStep(ctx, 1); }
-            else await sayAll(dialogue, n.later);
-          } else if (step === 0) await sayAll(dialogue, n.tooEarly);
-          else { await sayAll(dialogue, n.first); stop(); resolve(); }
+          if (PEOPLE.includes(id)) {
+            const isNew = !heard.has(id);
+            await sayAll(dialogue, isNew ? n.first : n.later);
+            if (!isNew || step !== 0) return;
+            heard.add(id);
+            const next = PEOPLE.find(k => !heard.has(k)) || 'gangamchan';
+            await dialogue.say(script.next[next]);
+            if (next === 'gangamchan') step = 1;
+            setStep(ctx, step, heard);
+          } else if (id === 'gangamchan') {
+            await sayAll(dialogue, gangamchanTalk(heard));
+            if (!PEOPLE.some(k => heard.has(k))) return;
+            stop(); setTimeout(resolve, 0); // roam이 대화를 닫고 입력을 정리한 뒤에 넘어간다
+          }
         },
       });
     });
@@ -228,43 +364,51 @@ export default {
 
   async minigame(ctx) {
     const { world, dialogue, input } = ctx;
+    world.closeView = true;
     // 1. 쇠가죽 모으기
     setStep(ctx, 2);
-    for (const k of ['gangamchan', 'soldier']) world.npcs.get(k).mark.visible = false;
+    for (const k of [...PEOPLE, 'gangamchan']) world.npcs.get(k).mark.visible = false;
+    world.bounds = EXPLORE_BOUNDS;
     await showHowTo(ctx.ui, script.hides.howto);
     input.enabled = true;
     await collectHides(ctx);
     input.enabled = false;
     await sayAll(dialogue, script.hides.built);
-    dialogue.close();
 
-    // 2. 둑 터뜨리기
-    setStep(ctx, 4);
-    await ctx.fade(true);
-    world.player.visible = false;
-    world.setFixedCamera(scene.damCam.pos, scene.damCam.target);
-    await ctx.fade(false);
+    // 2. 둑 터뜨리기: 강감찬을 따라 둑 위로 올라가(같은 장면) 신호에 맞춰 마개로 걸어간다
+    await sayAll(dialogue, script.dam.lead);
+    dialogue.close();
+    ctx.setGoal(script.goals[4]);
+    await followGangamchan(ctx, { path: scene.bankPath.slice(1), stand: [scene.stand.x, scene.stand.z], bounds: { ...EXPLORE_BOUNDS, z0: BANK_BOUNDS.z0 }, face: -Math.PI / 2 });
+    setupDam(ctx);
+    ctx.setGoal(script.goals[5]);
+    await sayAll(dialogue, script.dam.start);
+    dialogue.close();
     await showHowTo(ctx.ui, script.dam.howto);
     const damFail = { why: '' };
-    const a = await runWithRetries(ctx, easy => damAttempt(ctx, easy, damFail), {
-      failHint: () => (damFail.why === 'early' ? script.dam.early : script.dam.late),
+    const a = await runWithRetries(ctx, easy => { setupDam(ctx); input.enabled = true; return damAttempt(ctx, easy, damFail).finally(() => { input.enabled = false; }); }, {
+      failHint: () => script.dam.late,
     });
     await playFlood(ctx);
     await sayAll(dialogue, script.dam.done);
-    dialogue.close();
 
-    // 3. 귀주의 바람
-    setStep(ctx, 5);
-    await ctx.fade(true);
-    world.setFixedCamera(scene.gujuCam.pos, scene.gujuCam.target);
-    await ctx.fade(false);
+    // 3. 귀주의 바람: 강감찬을 따라 남문을 나가 귀주 벌판의 고려군 뒤로 걸어간다(어둡게 넘기지 않음)
+    scene.guju.visible = true; scene.reinforcements.visible = false;
+    armyColliders(world, true);
+    await sayAll(dialogue, script.guju.lead);
+    dialogue.close();
+    ctx.setGoal(script.goals[6]);
+    await followGangamchan(ctx, { path: scene.gujuPath, stand: scene.gujuStand, bounds: { x0: -18, x1: 18, z0: BANK_BOUNDS.z0, z1: scene.gujuBounds.z1 }, face: Math.PI, speed: 5.2 });
+    ctx.setGoal(script.goals[7]);
     await sayAll(dialogue, script.guju.intro);
+    await sayAll(dialogue, script.guju.start);
     dialogue.close();
     await showHowTo(ctx.ui, script.guju.howto);
     const gujuFail = { why: '' };
-    const b = await runWithRetries(ctx, easy => gujuAttempt(ctx, easy, gujuFail), {
-      failHint: () => (gujuFail.why === 'early' ? script.guju.early : script.guju.late),
+    const b = await runWithRetries(ctx, easy => { setupGuju(ctx, easy); input.enabled = true; return gujuAttempt(ctx, easy, gujuFail).finally(() => { input.enabled = false; }); }, {
+      failHint: () => script.guju.late,
     });
+    armyColliders(world, false);
     await sayAll(dialogue, script.guju.charge); dialogue.close();
     await playGujuBattle(ctx); // 깃발이 북쪽으로 휘날리자 고려군이 몰아쳐 이긴다
     for (const k of scene.gujuKhitan) k.visible = false;
