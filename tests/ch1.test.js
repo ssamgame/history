@@ -37,7 +37,7 @@ test('ch1: low quality scene builds with flat water and fewer embers', () => {
 import { SOURCES } from '../content/sources.js';
 import { validateScript } from '../core/content.js';
 import ch1Script from '../chapters/ch1/script.js';
-import ch1 from '../chapters/ch1/chapter.js';
+import ch1, { readView } from '../chapters/ch1/chapter.js';
 import { runChapter } from '../core/flow.js';
 import { CHAPTERS } from '../chapters/index.js';
 
@@ -78,3 +78,10 @@ test('ch1: wrong first answer gives hint and lowers firstTryCorrect', async () =
     eq(r, { firstTryCorrect: 1, firstTryTotal: 2, easyModeUsed: false });
   } finally { bot.stop(); s.done(); }
 }, { timeout: 60000 });
+
+test('ch1: view trial only with ?view=b or ?view=c', () => {
+  eq(readView('?debug=ch1-explore&view=b'), 'b');
+  eq(readView('?view=c'), 'c');
+  eq(readView(''), null);
+  eq(readView('?view=x'), null);
+});

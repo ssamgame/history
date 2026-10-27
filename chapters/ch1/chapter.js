@@ -9,6 +9,12 @@ const SEOHUI_HOME = [-11, 1.3, 0.15];
 
 let scene = null;
 
+// 시점 시험판(D-2): 주소에 ?view=b(1인칭) 또는 ?view=c(어깨 너머)가 있을 때만 1장 탐험에서 켠다.
+export function readView(search) {
+  const v = new URLSearchParams(search || '').get('view');
+  return v === 'b' || v === 'c' ? v : null;
+}
+
 async function sayAll(dialogue, lines) { for (const l of lines) await dialogue.say(l); }
 
 function setStep(ctx, n) {
@@ -48,6 +54,7 @@ export default {
 
   async explore(ctx) {
     const { world, dialogue } = ctx;
+    world.viewMode = readView(typeof location !== 'undefined' ? location.search : '');
     placePlayer(world, START);
     let step = 0;
     setStep(ctx, 0);
@@ -70,6 +77,7 @@ export default {
         zones: [{ ...scene.ferry, active: () => step === 2, onEnter() { stop(); resolve(); } }],
       });
     });
+    world.viewMode = null; world.player.visible = true; // 미니게임부터는 지금 카메라 그대로
   },
 
   async minigame(ctx) {

@@ -123,6 +123,7 @@ export const MOODS = {
 };
 
 const SPEED = 6.5;
+const TURN_SPEED = 2.4; // 시점 시험판에서 몸 돌리는 빠르기(라디안/초)
 const PLAYER_R = 0.4;
 const CAM_OFFSET = new THREE.Vector3(0, 8.5, 12);
 const LOOK_AHEAD = -4; // 카메라는 플레이어보다 조금 앞(북쪽)을 본다
@@ -214,11 +215,21 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
     sun.position.copy(camTarget).addScaledVector(sunDir, 80);
   }
 
+  // 시점 시험판 카메라 자리: B는 눈높이에서 보는 방향, C는 뒤 3.6·높이 2.5·오른 어깨 쪽 1.
+  const viewPos = new THREE.Vector3(), viewLook = new THREE.Vector3();
+  let viewWasB = false;
+  function viewCam(mode, pos, look) {
+    const p = player.position, ry = player.rotation.y, fx = Math.sin(ry), fz = Math.cos(ry);
+    if (mode === 'b') { pos.set(p.x + fx * 0.25, 1.55, p.z + fz * 0.25); look.set(p.x + fx * 6, 1.4, p.z + fz * 6); }
+    else { pos.set(p.x - fx * 3.6 - fz * 1.0, 2.5, p.z - fz * 3.6 + fx * 1.0); look.set(p.x + fx * 4, 1.4, p.z + fz * 4); }
+  }
+
   const world = {
     scene, camera, renderer, level, player, goalArrow, sun,
     colliders: [], npcs: new Map(),
     bounds: { x0: -50, x1: 50, z0: -50, z1: 50 },
     camMode: 'follow',
+    viewMode: null, // 시점 시험판(D-2): 'b' 1인칭, 'c' 어깨 너머. 켜면 위/아래=앞/뒤, 왼/오른쪽=몸 돌리기
     quality: QUALITY[quality],
     qualityLevel: quality,
 
@@ -327,6 +338,7 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
       applyFit();
     },
     snapCamera() {
+      if (world.viewMode) { viewCam(world.viewMode, camera.position, camTarget); camera.lookAt(camTarget); return; }
       camera.position.copy(player.position).add(world.camOffset());
       camTarget.copy(player.position).setY(1); camTarget.z += LOOK_AHEAD; camera.lookAt(camTarget);
     },
@@ -340,8 +352,13 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
     step(dt, move) {
       if (world.paused) return;
       elapsed += dt;
-      const len = Math.hypot(move.x, move.z), moving = len > 0.01;
       const p = player.position;
+      if (world.viewMode && world.camMode === 'follow') { // 시점 시험판: 앞뒤로 걷고 제자리에서 돈다
+        player.rotation.y -= move.x * TURN_SPEED * dt;
+        const ry = player.rotation.y, f = -move.z;
+        move = { x: Math.sin(ry) * f, z: Math.cos(ry) * f, keepFacing: true };
+      }
+      const len = Math.hypot(move.x, move.z), moving = len > 0.01;
       if (moving) {
         const sp = SPEED * (world.speedScale || 1); // 배·전차 같은 탈것은 더 빠르게
         p.x += move.x * sp * dt; p.z += move.z * sp * dt;
@@ -351,9 +368,11 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
         }
         const b = world.bounds;
         p.x = Math.min(b.x1, Math.max(b.x0, p.x)); p.z = Math.min(b.z1, Math.max(b.z0, p.z));
-        let diff = Math.atan2(move.x, move.z) - player.rotation.y;
-        diff = Math.atan2(Math.sin(diff), Math.cos(diff));
-        player.rotation.y += diff * Math.min(1, dt * 12);
+        if (!move.keepFacing) {
+          let diff = Math.atan2(move.x, move.z) - player.rotation.y;
+          diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+          player.rotation.y += diff * Math.min(1, dt * 12);
+        }
       }
       animateWalk(player, moving, dt);
       for (const n of world.npcs.values()) if (n.mark.visible) n.mark.position.y = (n.spot ? 3.1 : 3.5) + Math.sin(elapsed * 3) * 0.12;
@@ -372,7 +391,16 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
         camTarget.lerp(talkTarget, a);
         camera.lookAt(camTarget);
       }
-      if (world.camMode === 'follow') {
+      if (world.viewMode === 'b') player.visible = world.camMode !== 'follow'; // 1인칭: 걷는 동안 몸을 숨긴다(대화 중엔 보인다)
+      else if (viewWasB) player.visible = true;
+      viewWasB = world.viewMode === 'b';
+      if (world.camMode === 'follow' && world.viewMode) {
+        const a = 1 - Math.exp(-dt * 6);
+        viewCam(world.viewMode, viewPos, viewLook);
+        camera.position.lerp(viewPos, a);
+        camTarget.lerp(viewLook, a);
+        camera.lookAt(camTarget);
+      } else if (world.camMode === 'follow') {
         const a = 1 - Math.exp(-dt * 4);
         camera.position.lerp(tmp.copy(p).add(world.camOffset()), a);
         camTarget.lerp(tmp.copy(p).setY(1).setZ(p.z + LOOK_AHEAD), a);
@@ -388,6 +416,7 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
         o.traverse(c => { if (c.geometry) c.geometry.dispose(); });
       }
       world.colliders.length = 0; world.npcs.clear(); updaters.length = 0; goal = null;
+      world.viewMode = null;
     },
     render() { renderer.render(scene, camera); },
     dispose() {
