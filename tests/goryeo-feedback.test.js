@@ -74,7 +74,7 @@ test('goryeo4: 처인성 화살은 멀리서도 보이게 크고 빛나는 꼬�
   } finally { s.done(); }
 });
 
-test('goryeo4: 노비 문서는 글씨가 있는 종이이고, 불에 타 검게 그을리다 사라진다', async () => {
+test('goryeo4: 노비 문서는 글씨가 있는 종이이고, 연기를 내며 검게 그을리다 재가 된다(D-13: 불길 없이)', async () => {
   const s = touchSetup(ch4Script.speakers);
   try {
     const sc = ch4.buildScene(s.w, s.ctx);
@@ -82,9 +82,10 @@ test('goryeo4: 노비 문서는 글씨가 있는 종이이고, 불에 타 검게
     ok(paper.material.map, '종이 그림(노비 문서)');
     const burn = sc.burnDocuments();
     step(s.w, 2);
-    ok(sc.fire.visible && paper.material.color.r < 0.9, '불이 붙어 종이 색이 변한다');
+    ok(sc.smoke.visible && paper.material.color.r < 0.9, '연기가 나고 종이 색이 변한다');
     step(s.w, 6.5); await burn;
     eq(sc.documents.visible, false, '다 타서 사라진다');
+    ok(sc.ashPile.visible, '재가 남는다');
   } finally { s.done(); }
 });
 

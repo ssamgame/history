@@ -81,35 +81,86 @@ test('ch4: the envoy incident comes before the invasion, with its source and an 
   ok(iEnvoy >= 0 && iInvade > iEnvoy, 'envoy story first, then the 1231 invasion');
   ok(story.includes('밝혀지지 않았'), 'says the culprit is unknown');
   ok(lines.some(l => l.text.includes('저고여') && l.src.includes('S22')), 'envoy line cites S22');
-  ok(ch4Script.npc.minister.first.some(l => l.text.includes('사신') && l.src && l.src.includes('S22')), 'minister mentions it');
+  ok(ch4Script.npc.minister.heard.some(l => l.text.includes('사신') && l.src && l.src.includes('S22')), 'minister mentions it');
 });
 
-test('ch4: Goryeo archers rise on the wall and a tapped Mongol is shot and falls', async () => {
-  const { cheoinDefense } = await import('../chapters/ch4/chapter.js');
+test('ch4 D-13: archers rise; walking to the spot Kim Yun-hu points at makes an archer shoot (no buttons)', async () => {
+  const { cheoinDefense, putOnCheoinWall } = await import('../chapters/ch4/chapter.js');
   const s = touchSetup(ch4Script.speakers);
   try {
     const sc = ch4.buildScene(s.w, s.ctx);
-    ok(sc.archers.length >= 4, 'archers exist');
     ok(sc.archers.every(a => !a.group.visible), 'hidden before the battle');
-    const f = sc.areas.cheoin.fit;
-    s.w.fitFixedCamera(f.target, f.dir, f.points);
+    putOnCheoinWall(s.ctx);
+    ok(s.w.player.position.y > 2, `student on the wall (y ${s.w.player.position.y.toFixed(2)})`);
     cheoinDefense(s.ctx, false);
     const step = n => { for (let i = 0; i < n; i++) s.w.step(0.05, { x: 0, z: 0 }); };
-    step(20); // 1초: 궁수가 올라오고 첫 몽골군이 나타난다
+    step(20);
     ok(sc.archers.every(a => a.group.visible), 'archers appear');
-    const top = Math.max(...sc.archers.map(a => a.group.position.y));
-    ok(top > 0.5, `archers stand up on the wall (y ${top.toFixed(2)})`);
-    const btn = [...s.ui.querySelectorAll('.tap-target')].find(b => !b.hidden);
-    ok(btn, 'a Mongol to shoot');
+    ok(Math.max(...sc.archers.map(a => a.group.position.y)) > 0.5, 'archers stand up on the wall');
+    eq(s.ui.querySelectorAll('.tap-target').length, 0, 'no tap buttons');
     const target = sc.mongols.find(m => m.group.visible);
-    btn.click();
-    step(2);
+    ok(target, 'a Mongol approaches');
+    ok(sc.spotRing.visible && s.ctx.testHooks.pointed, 'Kim Yun-hu points at a glowing spot');
+    const g = s.w.getGoal(); ok(g && Math.abs(g.x - s.ctx.testHooks.spot.x) < 0.01, 'arrow to the spot');
+    s.w.player.position.set(s.ctx.testHooks.spot.x, 2.4, s.ctx.testHooks.spot.z);
+    step(1);
+    eq(s.ctx.testHooks.cheoinShot, 1, 'shot');
     ok(sc.arrows.some(a => a.visible), 'an arrow flies');
-    ok(target.group.visible, 'the Mongol does not vanish at once');
-    step(22); // 1.2초 뒤: 화살(0.85초 동안 날아감)이 닿아 쓰러지는 중
+    step(24);
     ok(target.group.rotation.x < -0.6, `falls backward (rx ${target.group.rotation.x.toFixed(2)})`);
-    step(40); // 2초 뒤: 쓰러진 몽골군은 치워진다
-    ok(!target.group.visible, 'cleared after falling');
+    ok(s.w.player.position.y > 2, 'student stays on the wall');
+  } finally { s.done(); }
+});
+
+test('ch4 D-13: the wall walk keeps the student on the ramp or on top of the north wall', async () => {
+  const { cheoinPlace, CHEOIN } = await import('../chapters/ch4/scene.js');
+  const p = { x: CHEOIN.x, z: -30 }; // 성 밖 들판 → 성벽 위로
+  const y = cheoinPlace(p);
+  eq(y, CHEOIN.top);
+  ok(Math.abs(Math.hypot(p.x - CHEOIN.x, p.z) - CHEOIN.R) < 0.3, 'on the wall ring');
+  const q = { x: CHEOIN.x + Math.cos(CHEOIN.rampA) * (CHEOIN.ramp0 + 1), z: Math.sin(CHEOIN.rampA) * (CHEOIN.ramp0 + 1) };
+  const yq = cheoinPlace(q);
+  ok(yq > 0 && yq < CHEOIN.top, `on the ramp (${yq.toFixed(2)})`);
+});
+
+test('ch4 D-13: villager then minister; minister alone first is never stuck; gate and 개경 board; one-paragraph intro', async () => {
+  const { ministerTalk } = await import('../chapters/ch4/chapter.js');
+  const n = ch4Script.npc.minister;
+  eq(ministerTalk(new Set()), n.tooEarly);
+  const all = ministerTalk(new Set(['villager']));
+  ok(all.some(l => l.src && l.src.includes('S10')) && all[all.length - 1].text.includes('지도'), 'leads to the map');
+  const w = testWorld();
+  const sc = buildCh4Scene(w);
+  ok(w.npcs.has('villager'), 'villager');
+  ok(sc.palaceGate && sc.palaceGate.leaves.length === 2, 'gate');
+  let board = false; w.level.traverse(o => { if (o.userData && o.userData.title === '개경') board = true; });
+  ok(board, '개경 name board');
+  eq([...w.npcs.values()].filter(x => x.spot).length, 0, 'no reading signs');
+  eq(ch4Script.intro.length, 1); ok(!ch4Script.intro[0].text.includes('\n'));
+  w.dispose();
+});
+
+test('ch4 D-13: the slave documents are carried to the pile and burn with smoke only (no flames)', async () => {
+  const { setupChungju, carryDocuments } = await import('../chapters/ch4/chapter.js');
+  const s = touchSetup(ch4Script.speakers);
+  try {
+    const sc = ch4.buildScene(s.w, s.ctx);
+    setupChungju(s.ctx);
+    let done = false;
+    carryDocuments(s.ctx).then(() => { done = true; });
+    for (let k = 0; k < 3; k++) {
+      const g1 = s.w.getGoal(); s.w.player.position.set(g1.x, 0, g1.z); s.w.step(0.05, { x: 0, z: 0 });
+      ok(s.w.player.children.includes(sc.bundles[k]), `carrying bundle ${k + 1}`);
+      const g2 = s.w.getGoal(); s.w.player.position.set(g2.x, 0, g2.z); s.w.step(0.05, { x: 0, z: 0 });
+    }
+    await sleep(5);
+    ok(done, 'all three placed');
+    let flame = false; s.w.level.traverse(o => { if (o.material && o.material.color && o.visible && o.material.color.r > 0.8 && o.material.color.g < 0.6 && o.material.color.b < 0.3 && o.material.isMeshBasicMaterial) flame = true; });
+    ok(!flame, 'no flame-coloured glowing meshes');
+    sc.burnDocuments();
+    for (let i = 0; i < 160; i++) s.w.step(0.05, { x: 0, z: 0 });
+    ok(sc.smoke.visible && sc.ashPile.visible, 'smoke and ash');
+    eq(sc.documents.visible, false);
   } finally { s.done(); }
 });
 
@@ -122,7 +173,7 @@ test('ch4: resume at minigame puts the player in the palace', () => {
   } finally { s.done(); }
 });
 
-test('ch4: resume at quiz shows Chungju with the slave documents already burnt', () => {
+test('ch4: resume at quiz shows Chungju with the slave documents already turned to ash', () => {
   const s = touchSetup(ch4Script.speakers);
   try {
     const sc = ch4.buildScene(s.w, s.ctx);
@@ -130,6 +181,8 @@ test('ch4: resume at quiz shows Chungju with the slave documents already burnt',
     eq(s.w.camMode, 'fixed');
     eq(s.w.player.visible, false);
     eq(sc.documents.visible, false, 'documents gone');
-    eq(sc.fire.visible, true, 'fire still burning');
+    eq(sc.smoke.visible, true, 'smoke still rising');
+    eq(sc.ashPile.visible, true, 'ash left');
   } finally { s.done(); }
 });
+

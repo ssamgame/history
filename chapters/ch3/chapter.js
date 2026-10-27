@@ -1,7 +1,8 @@
 // 3장 「강감찬과 귀주 대첩」(D-10): 진영 남문을 열고 들어옴 → 병사·척후병 이야기를 듣고 강감찬에게 → 쇠가죽 모으기 →
 // 강감찬을 따라 둑 위로 올라 "지금이다!" 하면 둑 마개로 걸어가 터뜨림 → 강감찬을 따라 귀주로 걸어가 깃발이 바뀌면 신호 북으로 → 퀴즈.
 // 화면을 어둡게 넘기거나 고정 카메라로 바꾸지 않고, 낮은 따라가기 카메라(closeView) 그대로 한 장면에서 이어진다.
-import { buildCh3Scene, BANK, BANK_TOP, HILL_H } from './scene.js';
+import { buildCh3Scene, BANK, BANK_TOP, HILL_H, bankHeight } from './scene.js';
+import { leadWalk } from '../kit/lead.js';
 import { roam } from '../../core/flow.js';
 import { showHowTo, runWithRetries } from '../../core/minigame.js';
 import { enterThroughGate } from '../kit/gate.js';
@@ -12,7 +13,6 @@ const EXPLORE_BOUNDS = { x0: -28, x1: 28, z0: -3.5, z1: 14 };
 export const INTRO_FROM = [0, 31]; // 장 시작 장면: 남문 밖 길
 const PEOPLE = ['soldier', 'scout']; // 이야기를 들어 볼 차례(병사 → 척후병), 그다음 강감찬
 const CROSS_SECONDS = { normal: 10, easy: 14 }; // 거란군이 냇물을 다 건너는 시간(쉬운 방식은 더 천천히)
-const LEAD_SPEED = 4.2, WAIT_FAR = 5, WAIT_NEAR = 3.2; // 1·2장과 같은 따라 걷기
 const LABEL_SECONDS = 1.6;
 const SIDE_R = 1.9; // 강감찬 곁: 신호는 학생이 이 안에서 기다릴 때만 난다(D-12)
 let scene = null;
@@ -59,42 +59,11 @@ function shout(world, text) {
 function hush() { for (const s of labels.values()) s.visible = false; }
 function byGang(world) { const p = world.player.position, m = world.npcs.get('gangamchan').mesh.position; return Math.hypot(p.x - m.x, p.z - m.z) < SIDE_R; }
 
-// 강감찬이 앞장서 path를 따라 걷고 학생이 따라간다(1·2장 따라 걷기와 같은 방식). 학생이 멀어지면 멈춰 돌아보며 기다린다.
-// 강감찬이 끝에 서면 학생 자리(stand)에 빛나는 원이 뜨고, 학생이 오면 끝난다.
-function followGangamchan(ctx, { path, stand, bounds, face, speed = LEAD_SPEED }) {
-  const { world, input } = ctx;
-  const gc = world.npcs.get('gangamchan'), m = gc.mesh.position;
-  gc.collider.r = 0; // 좁은 둑 위·남문에서 학생 길을 막지 않게
-  gc.mark.visible = false;
-  let i = 0, waiting = false;
-  world.bounds = bounds;
-  input.enabled = true;
-  return new Promise(resolve => {
-    const off = world.onUpdate(dt => {
-      const p = world.player.position;
-      if (i < path.length) {
-        const dp = Math.hypot(p.x - m.x, p.z - m.z);
-        if (waiting ? dp < WAIT_NEAR : dp > WAIT_FAR) waiting = !waiting;
-        if (waiting) gc.mesh.rotation.y = Math.atan2(p.x - m.x, p.z - m.z);
-        else {
-          let dx = path[i][0] - m.x, dz = path[i][1] - m.z;
-          const d = Math.hypot(dx, dz), step = speed * dt, y = m.y;
-          if (d <= step) { world.moveNpc('gangamchan', path[i][0], path[i][1], gc.mesh.rotation.y); i += 1; }
-          else { dx /= d; dz /= d; world.moveNpc('gangamchan', m.x + dx * step, m.z + dz * step, Math.atan2(dx, dz)); }
-          m.y = y; // 둑 높이는 장면이 맞춘다
-          if (i === path.length) { gc.mesh.rotation.y = face; scene.ring.position.set(stand[0], 0.08 + (stand[1] > BANK.z0 && stand[1] < BANK.z1 ? BANK_TOP : 0), stand[1]); scene.ring.visible = true; }
-        }
-        world.setGoal({ x: m.x, z: m.z });
-        return;
-      }
-      world.setGoal({ x: stand[0], z: stand[1] });
-      if (Math.hypot(p.x - stand[0], p.z - stand[1]) < 1.6) {
-        off(); input.enabled = false; scene.ring.visible = false; world.setGoal(null);
-        world.player.rotation.y = Math.PI;
-        resolve();
-      }
-    });
-  });
+// 강감찬이 앞장서 걷고 학생이 따라간다(공용 leadWalk, 1·2장과 같은 방식). 둑 위에서는 둑 높이에 선다
+async function followGangamchan(ctx, { path, stand, bounds, face }) {
+  ctx.world.bounds = bounds;
+  await leadWalk(ctx, { id: 'gangamchan', path, stand, ring: scene.ring, face, heightAt: bankHeight });
+  ctx.world.player.rotation.y = Math.PI;
 }
 
 // 장 시작 장면(상시 규칙): 진영 남문의 문짝이 열리고 학생이 문 밖 길에서 걸어 들어온다(약 4초). 누르면 건너뛴다.
