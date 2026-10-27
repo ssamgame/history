@@ -174,5 +174,77 @@ test('ch3 D-10: full run keeps the low camera and walks (no fixed camera, no but
     eq(r.firstTryTotal, 2); eq(r.firstTryCorrect, 2);
     eq(s.w.followOffset, null);
     ok(sc.damWall.visible, 'dam stays');
+    ok(sc.river.army.position.y > -0.01, 'the Khitan army was pushed back, not sunk');
   } finally { off(); bot.stop(); s.done(); }
 }, { timeout: 150000 });
+
+// ---- D-12: 미리 와 있으면 신호가 나지 않고, 강감찬 곁으로 돌아와야 신호. 귀주는 장면 전환으로 언덕에서 대치 ----
+test('ch3 D-12: waiting at the plug never gets the signal; coming back beside Gang Gam-chan does', async () => {
+  const s = touchSetup(ch3Script.speakers);
+  try {
+    const sc = ch3.buildScene(s.w, s.ctx);
+    setupDam(s.ctx);
+    let res = null;
+    damAttempt(s.ctx, false, { why: '' }).then(r => { res = r; });
+    const y = s.w.player.position.y;
+    s.w.player.position.set(sc.plug.x, y, sc.plug.z);
+    for (let i = 0; i < 140; i++) s.w.step(0.05, { x: 0, z: 0 }); // 7초: 신호 구간(5~8.2초)에 들어섰다
+    await sleep(5);
+    eq(res, null, 'nothing bursts while the student waits at the plug');
+    eq(s.ctx.testHooks.damNow, false, 'no signal yet');
+    const g = s.w.getGoal(); ok(g && Math.abs(g.x - sc.stand.x) < 0.01, 'arrow points back beside Gang Gam-chan');
+    s.w.player.position.set(sc.stand.x, y, sc.stand.z);
+    s.w.step(0.05, { x: 0, z: 0 });
+    eq(s.ctx.testHooks.damNow, true, 'signal once back beside him');
+    s.w.player.position.set(sc.plug.x, y, sc.plug.z);
+    s.w.step(0.05, { x: 0, z: 0 });
+    await sleep(5);
+    eq(res, true);
+  } finally { s.done(); }
+});
+
+test('ch3 D-12: the drum also waits until the student is beside Gang Gam-chan', async () => {
+  const s = touchSetup(ch3Script.speakers);
+  try {
+    const sc = ch3.buildScene(s.w, s.ctx);
+    setupGuju(s.ctx, false);
+    let res = null;
+    gujuAttempt(s.ctx, false, { why: '' }).then(r => { res = r; });
+    s.w.player.position.set(sc.drum.x, s.w.player.position.y, sc.drum.z);
+    for (let i = 0; i < 130; i++) s.w.step(0.05, { x: 0, z: 0 }); // 6.5초: 깃발은 이미 북쪽
+    await sleep(5);
+    eq(res, null); eq(s.ctx.testHooks.drumNow, false);
+    s.w.player.position.set(sc.gujuStand[0], s.w.player.position.y, sc.gujuStand[1]);
+    s.w.step(0.05, { x: 0, z: 0 });
+    eq(s.ctx.testHooks.drumNow, true);
+  } finally { s.done(); }
+});
+
+test('ch3 D-12: Guju opens on the hill beside Gang Gam-chan, the Khitan camp far across the field, no Samgyocheon soldiers', () => {
+  const s = touchSetup(ch3Script.speakers);
+  try {
+    const sc = ch3.buildScene(s.w, s.ctx);
+    setupGuju(s.ctx, false);
+    for (let i = 0; i < 20; i++) s.w.step(0.05, { x: 0, z: 0 });
+    ok(s.w.player.position.y > 1, `student stands on the hill (${s.w.player.position.y.toFixed(2)})`);
+    const gc = s.w.npcs.get('gangamchan').mesh.position;
+    ok(Math.hypot(gc.x - s.w.player.position.x, gc.z - s.w.player.position.z) < 2.6, 'beside Gang Gam-chan');
+    const gap = Math.min(...sc.gujuGoryeo.map(p => p.position.z)) - Math.max(...sc.gujuKhitan.map(p => p.position.z));
+    ok(gap > 15, `the armies face each other across the field (${gap})`);
+    eq(sc.river.army.visible, false, 'Samgyocheon Khitan army hidden');
+    ok(Math.min(...sc.gujuKhitan.map(p => p.position.z)) - 20 > 24, 'Guju is far from the camp');
+  } finally { s.done(); }
+});
+
+test('ch3 D-12: the flood is water (teal, see-through, white foam), pushes the Khitan back and nobody sinks', () => {
+  const s = touchSetup(ch3Script.speakers);
+  try {
+    const sc = ch3.buildScene(s.w, s.ctx);
+    sc.flood.show(0, 1.2, 0.5);
+    let teal = false, foam = false;
+    sc.flood.group.traverse(o => { if (o.material) { const c = o.material.color; if (o.material.transparent && c.b > c.r && c.g > c.r) teal = true; if (c.r > 0.9 && c.g > 0.9 && c.b > 0.9) foam = true; } });
+    ok(teal && foam, 'teal water and white foam');
+    sc.flood.hide();
+    eq(sc.flood.group.visible, false);
+  } finally { s.done(); }
+});

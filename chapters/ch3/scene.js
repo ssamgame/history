@@ -13,7 +13,13 @@ import { createWeather } from '../../core/weather.js';
 const RIVER_Z = -8, RIVER_W = 6;
 const DAM_X = -10;   // 쇠가죽 둑(냇물 위쪽). 물은 +x 쪽(아래쪽)으로 흐른다
 const ARMY_X = 1.5;  // 거란군이 냇물을 건너는 여울(둑 위 학생 자리에서 화면 안에 보이게)
-const GUJU_Z = 42;   // 귀주 벌판(진영 남문 밖). 귀주 놀이 때만 보인다
+const GUJU_Z = 75;   // 귀주 벌판(진영에서 멀리 남쪽, 장면 전환으로만 간다). 귀주 놀이 때만 보인다
+// 귀주 언덕(D-12): 고려군 뒤 둥근 언덕. 꼭대기(타원, 가로 반지름 12·세로 6)는 높이 HILL_H로 평평하다
+export const HILL = { x: 0, z: GUJU_Z + 11, rx: 12, rz: 6 };
+export const HILL_H = 1.2;
+export function hillHeight(x, z) {
+  return ((x - HILL.x) / HILL.rx) ** 2 + ((z - HILL.z) / HILL.rz) ** 2 < 1 ? HILL_H : 0;
+}
 const GATE_Z = 24;   // 진영 남문
 // 냇가 둑(D-10): 학생과 강감찬이 올라서는 흙둑. 둑 위 높이 BANK_TOP
 export const BANK = { x0: DAM_X - 0.6, x1: DAM_X + 10.6, z0: -4.6, z1: -2.6 };
@@ -32,6 +38,52 @@ function groundH(x, z) {
 }
 
 function seeded(s) { return () => (s = (s * 16807) % 2147483647) / 2147483647; }
+
+// 쏟아지는 물(D-12): 둑에서 아래쪽(+x)으로 흘러가며 퍼지는 청록 반투명 물살과 앞쪽의 흰 물거품.
+// 평면·곡면 몇 장으로 만들고, 화질 '보통·높음'(waves)에서만 꼭짓점을 위치에 따라 출렁이게 한다.
+function makeFlood(parent, waves) {
+  const g = new THREE.Group(); g.visible = false; parent.add(g);
+  const LEN = 34, W = RIVER_W + 1.2;
+  const bodyGeo = new THREE.PlaneGeometry(LEN, W, waves ? 34 : 1, waves ? 6 : 1).rotateX(-Math.PI / 2).translate(-LEN / 2, 0, 0); // 앞끝이 x=0
+  const body = new THREE.Mesh(bodyGeo, new THREE.MeshPhongMaterial({ color: 0x2f8a92, transparent: true, opacity: 0.78, shininess: 60, specular: 0x9fd6dc, depthWrite: false }));
+  g.add(body);
+  const back = new THREE.Mesh(new THREE.PlaneGeometry(LEN, W + 1.6).rotateX(-Math.PI / 2).translate(-LEN / 2, -0.12, 0), new THREE.MeshLambertMaterial({ color: 0x1f6670, transparent: true, opacity: 0.55, depthWrite: false }));
+  g.add(back);
+  // 앞쪽 물마루: 반쯤 감긴 곡면(물살 색) 위에 흰 물거품 곡면
+  const crestGeo = new THREE.CylinderGeometry(0.75, 0.75, W, 12, 1, true, 0, Math.PI).rotateX(Math.PI / 2).rotateY(Math.PI / 2);
+  const crest = new THREE.Mesh(crestGeo, new THREE.MeshPhongMaterial({ color: 0x3fa3aa, transparent: true, opacity: 0.85, side: THREE.DoubleSide, depthWrite: false }));
+  crest.position.set(-0.4, 0.15, 0); g.add(crest);
+  const foamGeo = new THREE.CylinderGeometry(0.85, 0.85, W + 0.3, 12, waves ? 6 : 1, true, 0, Math.PI * 0.9).rotateX(Math.PI / 2).rotateY(Math.PI / 2);
+  const foam = new THREE.Mesh(foamGeo, new THREE.MeshBasicMaterial({ color: 0xf4f8f8, transparent: true, opacity: 0.9, side: THREE.DoubleSide, depthWrite: false }));
+  foam.position.set(0.1, 0.55, 0); g.add(foam);
+  const spray = [];
+  if (waves) for (let i = 0; i < 12; i++) { // 앞에서 튀는 물보라(보통·높음만)
+    const s = new THREE.Mesh(new THREE.SphereGeometry(0.35, 7, 5), foam.material); s.userData.k = (i * 0.37) % 1; g.add(s); spray.push(s);
+  }
+  const bp = bodyGeo.attributes.position, base = Float32Array.from(bp.array);
+  const fp = foamGeo.attributes.position, fbase = Float32Array.from(fp.array);
+  return {
+    group: g,
+    // t초째 모습: 앞끝 x, 퍼지는 정도, 출렁임
+    show(front, spread, t) {
+      g.visible = true;
+      g.position.set(front, -0.3, RIVER_Z);
+      g.scale.set(1, 1, spread);
+      foam.scale.y = 1 + Math.sin(t * 9) * 0.12; crest.rotation.x = Math.sin(t * 5) * 0.08;
+      if (waves) {
+        for (let i = 0; i < bp.count; i++) {
+          const x = base[i * 3], z = base[i * 3 + 2], near = Math.max(0, 1 + x / 8); // 앞쪽일수록 높고 거칠다
+          bp.setY(i, Math.sin(x * 0.9 + t * 7 + z * 0.8) * 0.12 + Math.cos(z * 1.7 - t * 5) * 0.06 + near * 0.5);
+        }
+        bp.needsUpdate = true;
+        for (let i = 0; i < fp.count; i++) fp.setY(i, fbase[i * 3 + 1] + Math.sin(fbase[i * 3 + 2] * 2.3 + t * 11) * 0.08);
+        fp.needsUpdate = true;
+        spray.forEach((s, i) => { const k = (t * 1.6 + s.userData.k) % 1; s.position.set(0.3 + k * 1.5, 0.6 + Math.sin(k * Math.PI) * 1.1, (i / 11 - 0.5) * W * 0.95); s.scale.setScalar(1 - k * 0.7); });
+      }
+    },
+    hide() { g.visible = false; },
+  };
+}
 
 export function buildCh3Scene(world) {
   const L = world.level, rand = seeded(19);
@@ -105,9 +157,7 @@ export function buildCh3Scene(world) {
   const plugRing = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.25, 28), ring.material.clone());
   plugRing.rotation.x = -Math.PI / 2; plugRing.position.set(plugAt.x, BANK_TOP + 0.06, plugAt.z); plugRing.visible = false; L.add(plugRing);
   // 터지는 물결
-  const wave = mk(new THREE.BoxGeometry(4, 1.6, RIVER_W), 0xcfe3ec, DAM_X, 0.3, RIVER_Z, L, false);
-  wave.material = new THREE.MeshLambertMaterial({ color: 0xcfe3ec, transparent: true, opacity: 0.8 });
-  wave.visible = false;
+  const flood = makeFlood(L, world.quality.water === 'waves');
 
   // 냇물을 건너는 거란군 (북쪽 강둑 → 남쪽)
   const zNorth = RIVER_Z - RIVER_W / 2, zSouth = RIVER_Z + RIVER_W / 2;
@@ -128,25 +178,29 @@ export function buildCh3Scene(world) {
   const guju = new THREE.Group(); guju.visible = false; L.add(guju);
   const gujuFlags = [], gujuKhitan = [], gujuGoryeo = [];
   for (let i = 0; i < 12; i++) {
-    const p = makePerson(LOOKS.player); p.position.set(-11 + i * 2, 0, GUJU_Z + 6); p.rotation.y = Math.PI; guju.add(p); gujuGoryeo.push(p);
-    const q = makePerson(LOOKS.khitan); q.position.set(-11 + i * 2, 0, GUJU_Z - 6); q.rotation.order = 'YXZ'; guju.add(q); gujuKhitan.push(q);
+    const p = makePerson(LOOKS.player); p.position.set(-11 + i * 2, 0, GUJU_Z + 2); p.rotation.y = Math.PI; guju.add(p); gujuGoryeo.push(p);
+    const q = makePerson(LOOKS.khitan); q.position.set(-11 + i * 2, 0, GUJU_Z - 18); q.rotation.order = 'YXZ'; guju.add(q); gujuKhitan.push(q);
   }
   // 싸움 먼지: 두 군대가 부딪치는 곳에 피어오르는 흙먼지(처음엔 숨김)
   const dust = [];
   for (let i = 0; i < 10; i++) {
     const d = new THREE.Mesh(new THREE.SphereGeometry(1, 8, 6), new THREE.MeshLambertMaterial({ color: 0xb8a888, transparent: true, opacity: 0, depthWrite: false }));
-    d.position.set(-10 + i * 2.2, 0.8, GUJU_Z); d.userData.ph = i * 0.7; d.visible = false; guju.add(d); dust.push(d);
+    d.position.set(-10 + i * 2.2, 0.8, GUJU_Z - 16); d.userData.ph = i * 0.7; d.visible = false; guju.add(d); dust.push(d);
   }
   for (const [x, c] of [[-8, 0xb8452f], [0, 0xd9a441], [8, 0xb8452f]]) {
-    mk(new THREE.CylinderGeometry(0.08, 0.08, 5, 5), 0x5a3f2a, x, 2.5, GUJU_Z + 8, guju);
+    mk(new THREE.CylinderGeometry(0.08, 0.08, 5, 5), 0x5a3f2a, x, 2.5 + HILL_H, GUJU_Z + 8, guju);
     const f = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 2.2).translate(0.8, 0, 0), new THREE.MeshLambertMaterial({ color: c, side: THREE.DoubleSide }));
-    f.position.set(x, 3.8, GUJU_Z + 8); guju.add(f); gujuFlags.push(f);
+    f.position.set(x, 3.8 + HILL_H, GUJU_Z + 8); guju.add(f); gujuFlags.push(f);
   }
   const reinforcements = new THREE.Group(); reinforcements.visible = false; guju.add(reinforcements);
   for (let i = 0; i < 8; i++) {
     const p = makePerson(look('soldier', { robe: 0x3c5a7a })); p.position.set((i % 4) * 2, 0, Math.floor(i / 4) * 2); p.rotation.y = -Math.PI / 2; reinforcements.add(p);
   }
-  reinforcements.position.set(30, 0, GUJU_Z + 4);
+  reinforcements.position.set(30, 0, GUJU_Z - 2);
+  { // 귀주 언덕: 꼭대기가 평평한 둥근 흙언덕(고려군 뒤)
+    const hill = mk(new THREE.CylinderGeometry(1, 1.35, HILL_H + 0.4, 24), 0x5f7a45, HILL.x, (HILL_H + 0.4) / 2 - 0.4, HILL.z, guju);
+    hill.scale.set(HILL.rx, 1, HILL.rz);
+  }
   // 신호 북(D-10): 고려군 깃발 뒤 나무 틀에 건 큰 북. 빛나는 원은 강감찬이 "지금이다!" 할 때 켜진다
   const drumMesh = new THREE.Group(); guju.add(drumMesh);
   for (const sx of [-0.75, 0.75]) mk(new THREE.BoxGeometry(0.16, 2, 0.16), 0x5a3f2a, sx, 1, 0, drumMesh);
@@ -154,25 +208,26 @@ export function buildCh3Scene(world) {
   const drumBody = mk(new THREE.CylinderGeometry(0.62, 0.62, 0.7, 14), 0x8a2f24, 0, 1.25, 0, drumMesh); drumBody.rotation.x = Math.PI / 2;
   for (const sz of [-0.36, 0.36]) { const head = mk(new THREE.CylinderGeometry(0.6, 0.6, 0.04, 14), 0xe2d6b4, 0, 1.25, sz, drumMesh); head.rotation.x = Math.PI / 2; }
   const drumRing = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.25, 28), ring.material.clone());
-  drumRing.rotation.x = -Math.PI / 2; drumRing.position.y = 0.08; drumRing.visible = false; guju.add(drumRing);
+  drumRing.rotation.x = -Math.PI / 2; drumRing.visible = false; guju.add(drumRing);
   const drum = { x: 0, z: GUJU_Z + 11, r: 1.3, mesh: drumMesh, ring: drumRing,
-    place(x) { this.x = x; drumMesh.position.set(x, 0, this.z - 1.2); drumRing.position.x = x; drumRing.position.z = this.z; } };
+    place(x) { this.x = x; drumMesh.position.set(x, HILL_H, this.z - 1.2); drumRing.position.set(x, HILL_H + 0.08, this.z); } };
   drum.place(5);
 
   // 진영 남문과 울타리(D-10 시작 장면): 문짝 두 개가 열리고 학생이 걸어 들어온다. 문 안쪽 길옆에 이름판
+  const campEdge = new THREE.Group(); L.add(campEdge); // 귀주 장면에서는 숨긴다(멀리 진영 울타리가 보이지 않게)
   {
     const xs = [];
     for (let x = -34; x <= 34; x += 0.9) if (Math.abs(x) > 2.6) xs.push(x);
     const pm = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.17, 0.2, 2.6, 6), mat(0x6b4a32, 'wood', 'object'), xs.length);
     const o = new THREE.Object3D();
     xs.forEach((x, i) => { o.position.set(x, 1.3, GATE_Z); o.rotation.y = i; o.updateMatrix(); pm.setMatrixAt(i, o.matrix); });
-    pm.castShadow = true; L.add(pm);
+    pm.castShadow = true; campEdge.add(pm);
     for (let x = -33; x <= 33; x += 1.6) if (Math.abs(x) > 3) world.addCollider({ x, z: GATE_Z, r: 0.9 });
-    for (const sx of [-1, 1]) mk(new THREE.BoxGeometry(0.4, 3.6, 0.4), 0x5a3f2a, sx * 2.7, 1.8, GATE_Z);
-    mk(new THREE.BoxGeometry(6, 0.35, 0.45), 0x5a3f2a, 0, 3.5, GATE_Z);
+    for (const sx of [-1, 1]) mk(new THREE.BoxGeometry(0.4, 3.6, 0.4), 0x5a3f2a, sx * 2.7, 1.8, GATE_Z, campEdge);
+    mk(new THREE.BoxGeometry(6, 0.35, 0.45), 0x5a3f2a, 0, 3.5, GATE_Z, campEdge);
   }
-  const gate = gateLeaves(L, { x: 0, z: GATE_Z, width: 5, height: 2.6, color: 0x6b4a32 });
-  nameBoard(L, '삼교천 진영', 3.5, GATE_Z - 3); // 출처 S3(흥화진 앞 삼교천)
+  const gate = gateLeaves(campEdge, { x: 0, z: GATE_Z, width: 5, height: 2.6, color: 0x6b4a32 });
+  nameBoard(campEdge, '삼교천 진영', 3.5, GATE_Z - 3); // 출처 S3(흥화진 앞 삼교천)
 
   // 빗물 웅덩이 (진영 바닥)
   {
@@ -191,8 +246,8 @@ export function buildCh3Scene(world) {
     }
     const keep = [[10, -1.5], [-14, 9], [-6, 12], [8, 11], [16, 8], [22, 12], [-24, 6], [-12, 3], [-2, 7], [6, 3.5], [14, 4], [24, 5], [-4, 5], [5, 7.5], [0, 10], [DAM_X + 1, -1.4], [0, 14], [3.5, GATE_Z - 3]].map(([x, z]) => ({ x, z, r: 2.6 }));
     scatter(world, { kind: 'grass', count: 120, area: { x0: -28, x1: 28, z0: -2, z1: 16 }, avoid: keep, seed: 43, ground: groundH, color: 0x6f8f4a });
-    scatter(world, { kind: 'pine', count: 40, area: { x0: -70, x1: 70, z0: 20, z1: 110 }, avoid: [{ x: 0, z: GUJU_Z, r: 30 }, { x: 22, z: GUJU_Z + 18, r: 10 }, { x: 0, z: GATE_Z + 8, r: 10 }, { x: -15, z: GUJU_Z, r: 14 }], seed: 44, ground: groundH, scale: [1, 1.6] });
-    scatter(world, { kind: 'grass', count: 140, area: { x0: -26, x1: 34, z0: GUJU_Z - 14, z1: GUJU_Z + 16 }, seed: 45, ground: groundH, color: 0x7a9450 });
+    scatter(world, { kind: 'pine', count: 40, area: { x0: -70, x1: 70, z0: 20, z1: 110 }, avoid: [{ x: 0, z: GUJU_Z, r: 30 }, { x: 22, z: GUJU_Z + 18, r: 10 }, { x: 0, z: GATE_Z + 8, r: 10 }, { x: 0, z: GUJU_Z - 30, r: 22 }], seed: 44, ground: groundH, scale: [1, 1.6] });
+    scatter(world, { kind: 'grass', count: 140, area: { x0: -26, x1: 34, z0: GUJU_Z - 24, z1: GUJU_Z + 4 }, seed: 45, ground: groundH, color: 0x7a9450 });
     scatter(world, { kind: 'rock', count: 20, area: { x0: -60, x1: 60, z0: -60, z1: -16 }, seed: 46, ground: groundH, scale: [0.8, 2.2] });
   }
   const rain = createWeather(world, 'rain', { count: 900 });
@@ -204,16 +259,15 @@ export function buildCh3Scene(world) {
   // 깃발 방향: 북쪽(-z)으로 휘날리면 rotation.y = +PI/2, 남쪽이면 -PI/2
   let flagDir = -Math.PI / 2;
   const scene = {
-    gate, damX: DAM_X, plug: { ...plugAt, r: 1.3, ring: plugRing }, drum,
-    stand: { x: DAM_X + 6, z: -3.6 }, gangOnBank: [DAM_X + 7.4, -3.6],
+    gate, campEdge, damX: DAM_X, plug: { ...plugAt, r: 1.3, ring: plugRing }, drum,
+    stand: { x: DAM_X + 6, z: -3.6 }, gangOnBank: [DAM_X + 5, -4.2], // 강감찬은 학생 서쪽(마개 쪽)에 서서 거란군 쪽 화면을 가리지 않는다
     gujuStand: [-2.5, GUJU_Z + 11], gangAtGuju: [-4, GUJU_Z + 11],
     // 둑으로 가는 길(쇠가죽을 둔 곳 옆에서 둑 위로), 귀주로 가는 길(남문을 나가 거란군 줄의 서쪽으로 돌아 고려군 뒤로)
-    bankPath: [[DAM_X + 3, -1.6], [DAM_X + 3.6, -3.6], [DAM_X + 7.4, -3.6]],
-    gujuPath: [[DAM_X + 7, -1.2], [0, 2], [0, 14], [0, GATE_Z + 2], [-15, GATE_Z + 6], [-15, GUJU_Z + 11], [-4, GUJU_Z + 11]],
-    hides, damWall, ring, wave, rain, flagPoles, gujuFlags, gujuKhitan, gujuGoryeo, reinforcements, guju, dust, gujuZ: GUJU_Z,
+    bankPath: [[DAM_X + 3, -1.6], [DAM_X + 3.6, -3.6], [DAM_X + 5, -4.2]],
+    hides, damWall, ring, flood, rain, flagPoles, gujuFlags, gujuKhitan, gujuGoryeo, reinforcements, guju, dust, gujuZ: GUJU_Z,
     dam: { x: DAM_X + 1, z: -1.4, r: 1.6 },
     river: { army, setCross, zNorth, zSouth },
-    gujuBounds: { x0: -12, x1: 12, z0: GUJU_Z + 7, z1: GUJU_Z + 12 },
+    gujuBounds: { x0: -9, x1: 9, z0: GUJU_Z + 8, z1: GUJU_Z + 14 },
     start: [0, 10],
     setFlags(northward) { flagDir = northward ? Math.PI / 2 : -Math.PI / 2; rain.setWind(northward ? -2 : 2); },
   };
@@ -221,7 +275,7 @@ export function buildCh3Scene(world) {
     for (const f of [...flagPoles, ...gujuFlags]) f.rotation.y += (flagDir + Math.sin(t * 3 + f.position.x) * 0.25 - f.rotation.y) * Math.min(1, dt * 3);
     for (const r of [ring, plugRing, drumRing]) if (r.visible) r.material.opacity = 0.55 + Math.sin(t * 4) * 0.3;
     // 흙둑 위에서는 학생과 강감찬이 둑 높이에 선다
-    for (const o of [world.player, world.npcs.get('gangamchan').mesh]) o.position.y += (bankHeight(o.position.x, o.position.z) - o.position.y) * Math.min(1, dt * 14);
+    for (const o of [world.player, world.npcs.get('gangamchan').mesh]) o.position.y += (Math.max(bankHeight(o.position.x, o.position.z), guju.visible ? hillHeight(o.position.x, o.position.z) : 0) - o.position.y) * Math.min(1, dt * 14);
     hides.forEach((h, i) => { if (!h.taken) h.mesh.rotation.y = Math.sin(t + i) * 0.2; });
   });
   scene.setFlags(false);
