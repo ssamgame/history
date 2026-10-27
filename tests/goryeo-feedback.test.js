@@ -5,7 +5,7 @@ import ch3, { DAM_WINDOW, playGujuBattle } from '../chapters/ch3/chapter.js';
 import ch3Script from '../chapters/ch3/script.js';
 import ch4 from '../chapters/ch4/chapter.js';
 import ch4Script from '../chapters/ch4/script.js';
-import ch5, { STATIONS } from '../chapters/ch5/chapter.js';
+import ch5, { MAKING_CARDS } from '../chapters/ch5/chapter.js';
 import ch5Script from '../chapters/ch5/script.js';
 import ch6 from '../chapters/ch6/chapter.js';
 import ch6Script from '../chapters/ch6/script.js';
@@ -58,9 +58,12 @@ test('goryeo4: 압록강 가에서 저고여가 쓰러지는 장면이 있고, �
   } finally { s.done(); }
 });
 
-test('goryeo4: 천도로 도읍을 쉽게 함락시킬 수 없었다고 말한다(도읍 연출 자막)', () => {
+test('goryeo4: 왜 강화도냐는 물음에 상황에 맞는 말로 답하고, 천도로 도읍을 쉽게 함락시킬 수 없었다고 말한다', () => {
+  const right = ch4Script.capital.reason.options.find(o => o.correct);
+  eq(right.text, '몽골군을 상대로 바다와 물에서 싸우면 고려가 유리할 것입니다.');
+  ok(ch4Script.capital.reason.options.every(o => /니다\.$/.test(o.text)), '세 답 모두 관리에게 하는 말');
   const done = ch4Script.capital.done.map(l => l.text).join(' ');
-  ok(done.includes('1232') && done.includes('쉽게') && done.includes('함락'), done);
+  ok(done.includes('1232') && done.includes('함락'), done);
 });
 
 test('goryeo4: 처인성 화살은 멀리서도 보이게 크고 빛나는 꼬리가 있다', () => {
@@ -95,20 +98,25 @@ test('goryeo4: 퀴즈 배경은 강화도 문제에 강화도, 처인성·충주
   } finally { s.done(); }
 });
 
-test('goryeo5: 말을 거는 장인은 한 명이고, 나머지 장인 셋은 제자리에서 일한다', () => {
-  eq(ch5Script.speakers.artisan1.name, '장인');
+test('goryeo5: 장인은 1번~4번이고, 차례보다 먼저 찾아가면 앞 번호 장인부터 들으라고 한다', () => {
+  eq(['artisan1', 'artisan2', 'artisan3', 'artisan4'].map(id => ch5Script.speakers[id].name.slice(0, 5)), ['1번 장인', '2번 장인', '3번 장인', '4번 장인']);
+  ok(ch5Script.tooEarly(1)[0].text.includes('1번 장인'));
   const s = touchSetup(ch5Script.speakers);
   try {
-    const sc = ch5.buildScene(s.w, s.ctx);
-    ok(s.w.npcs.has('artisan1') && !s.w.npcs.has('artisan3'));
-    ok(sc.workers.every(p => p.userData.work), '일하는 동작');
+    ch5.buildScene(s.w, s.ctx);
+    ok(s.w.npcs.get('artisan3').mesh.getObjectByName('numTag'), '머리 위 번호 이름표');
   } finally { s.done(); }
 });
 
-test('goryeo5: 경판 공방 작업대 여섯은 그림이 있는 단추다', () => {
-  eq(STATIONS.length, 6);
-  ok(STATIONS.every(c => c.picture.startsWith('<svg') && !c.picture.includes('<text')), '그림만 있는 SVG');
-  eq(STATIONS.map(c => c.label), ch5Script.making.cards);
+test('goryeo5: 경판 만드는 순서는 그림이 있는 카드로 고른다', async () => {
+  eq(MAKING_CARDS.length, 6);
+  ok(MAKING_CARDS.every(c => c.figure.startsWith('<svg') && !c.figure.includes('<text')), '그림만 있는 SVG');
+  const { orderCards } = await import('../core/minigame.js');
+  const ui = document.createElement('div'); document.body.appendChild(ui);
+  const p = orderCards({ ui }, { title: '경판', cards: MAKING_CARDS });
+  eq(ui.querySelectorAll('.order-card svg').length, 6, '카드마다 그림');
+  for (const c of MAKING_CARDS) [...ui.querySelectorAll('.order-card')].find(b => b.textContent === c.text).click();
+  eq(await p, true); ui.remove();
 });
 
 test('goryeo6: 뒤쫓는 배에는 몽골군이 타 있고, 남은 거리는 바다에 맞는 말로 센다', () => {

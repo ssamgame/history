@@ -24,8 +24,8 @@ test('courses: 조선편은 session 2, 정리는 6줄', () => {
 });
 
 test('courses: 열림 규칙은 같은 편 안에서만 센다', () => {
-  const save = mkSave({ ch1: { stars: 3 }, ch2: { stars: 3 }, ch3: { stars: 3 }, ch7: { stars: 3 }, ch4: { stars: 3 }, ch5: { stars: 3 } });
-  eq(isSessionDone(1, save), true, '옛 ch6 없이도 고려편 끝');
+  const save = mkSave({ ch1: { stars: 3 }, ch2: { stars: 3 }, ch3: { stars: 3 }, ch4: { stars: 3 }, ch5: { stars: 3 }, ch6: { stars: 3 } });
+  eq(isSessionDone(1, save), true);
   eq(isSessionDone(2, save), false, '고려편을 마쳐도 조선편은 끝나지 않음');
   const j1 = { ...JOSEON[0], load: () => null }, j2 = { ...JOSEON[1], load: () => null };
   eq(isUnlocked(j1, save), true, '조선편 1장은 처음부터 열림');
@@ -33,18 +33,4 @@ test('courses: 열림 규칙은 같은 편 안에서만 센다', () => {
   save.data.chapters.j1 = { stars: 1 };
   eq(isUnlocked(j2, save), true);
   eq(isUnlocked({ ...JOSEON[1], load: null }, save), false, '준비 중인 장은 열리지 않음');
-});
-
-test('courses: 준비 중인 장(load 없음)은 건너뛰어 열리고, 결과 카드에서도 세지 않는다', () => {
-  const mk = done => mkSave(Object.fromEntries(done.map(id => [id, { stars: 1 }])));
-  const ch7 = CHAPTERS.find(c => c.id === 'ch7'), ch4 = CHAPTERS.find(c => c.id === 'ch4');
-  eq([ch7.no, ch4.no], [4, 5]);
-  const i = CHAPTERS.indexOf(ch7), saved = CHAPTERS[i];
-  CHAPTERS[i] = { ...ch7, load: null }; ALL_CHAPTERS[ALL_CHAPTERS.indexOf(saved)] = CHAPTERS[i];
-  try {
-    eq(isUnlocked(ch4, mk(['ch1', 'ch2'])), false);
-    eq(isUnlocked(ch4, mk(['ch1', 'ch2', 'ch3'])), true, '4장이 준비 중이면 3장을 마치고 5장이 열린다');
-    eq(isSessionDone(1, mk(['ch1', 'ch2', 'ch3', 'ch4', 'ch5'])), true);
-  } finally { ALL_CHAPTERS[ALL_CHAPTERS.indexOf(CHAPTERS[i])] = saved; CHAPTERS[i] = saved; }
-  eq(isUnlocked(ch4, mk(['ch1', 'ch2', 'ch3'])), false, '4장이 열려 있으면 4장을 마쳐야 5장');
 });

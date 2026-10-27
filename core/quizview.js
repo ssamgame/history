@@ -11,7 +11,7 @@ const squash = t => String(t || '').replace(/[\s·「」『』'"()]/g, '');
 
 // 교과서에 나오는 역사 인물 → 생김새(LOOKS). 장면에 없어도 퀴즈 배경에 세울 수 있다.
 export const FIGURES = {
-  서희: 'seohui', 소손녕: 'sonn', 양규: 'yanggyu', 강감찬: 'gangamchan', 윤관: 'yungwan', 김윤후: 'kimyunhu', 배중손: 'baejungson', 김통정: 'kimtongjeong',
+  서희: 'seohui', 소손녕: 'sonn', 양규: 'yanggyu', 강감찬: 'gangamchan', 김윤후: 'kimyunhu', 배중손: 'baejungson', 김통정: 'kimtongjeong',
   이성계: 'yiseonggye', 세종: 'sejong', 장영실: 'jangyeongsil', 이순신: 'yisunsin', 인조: 'injo', 김상헌: 'kimsangheon', 최명길: 'choemyeonggil',
   정조: 'jeongjo', 정약용: 'jeongyakyong', '흥선 대원군': 'daewongun', 고종: 'gojong', 김옥균: 'kimokgyun', 전봉준: 'jeonbongjun', 서재필: 'seojaepil',
   안중근: 'ahnjunggeun', 안창호: 'ahnchangho', 유관순: 'yugwansun', 김구: 'kimgu', 이승만: 'syngmanrhee', 홍범도: 'hongbeomdo', 김좌진: 'kimjwajin',

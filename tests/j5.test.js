@@ -9,6 +9,7 @@ import { JOSEON } from '../chapters/index.js';
 import { testWorld, touchSetup, touchBot, memSave } from './bot.js';
 
 const answers = new Set(j5Script.quizzes.map(q => q.options[q.answer]));
+const sortPicks = Object.fromEntries(j5Script.sort.cards.map(c => [c.text, c.bin]));
 
 test('j5: script passes validation', () => eq(validateScript(j5Script, SOURCES), []));
 
@@ -35,11 +36,11 @@ test('j5: scene has the fortress people and six braziers that light up', () => {
 
 test('j5: completes with touch-only actions', async () => {
   const s = touchSetup(j5Script.speakers);
-  const bot = touchBot(s, { answers });
+  const bot = touchBot(s, { answers, sortPicks });
   try {
     const r = await runChapter(JOSEON[4], j5, s.ctx, memSave());
     eq(r.quizCorrect, 2);
-    eq(r.firstTryCorrect, 1); eq(r.firstTryTotal, 1, 'one play: 의견 저울');
+    eq(r.firstTryCorrect, 2);
     eq(r.stars, 3);
   } finally { bot.stop(); s.done(); }
 }, { timeout: 150000 });
@@ -54,26 +55,27 @@ test('j5: the two places are labelled only 척화 and 주화', () => {
   eq(j5Script.sort.bins.map(b => b.label), ['척화', '주화']);
 });
 
-test('j5: 의견 저울 — the right plate takes the words, the other bounces with the hint, all placed leaves the beam level', async () => {
-  const { scale } = await import('../chapters/kit/scale.js');
+test('j5: a brazier lights only when the action button is pressed next to it', async () => {
   const s = touchSetup(j5Script.speakers);
   try {
-    const S = j5Script.sort;
-    const p = scale(s.ctx, { bins: S.bins, cards: S.cards, hint: S.fail });
-    const plate = id => s.ui.querySelector(`.scale-pan[data-bin="${id}"] .jp-btn`);
-    const wrong = S.cards[0].bin === 'cheok' ? 'ju' : 'cheok';
-    plate(wrong).click();
-    eq(s.ui.querySelector('.jp-hint').textContent, S.fail);
-    for (const c of S.cards) plate(c.bin).click();
-    const r = await p;
-    eq(r.ok, true); eq(r.wrong, 1);
-    eq(r.counts.cheok, r.counts.ju, 'level: no side wins');
+    const sc = j5.buildScene(s.w, s.ctx);
+    const run = j5.lightFires(s.ctx, false);
+    const f = sc.fires[0];
+    s.w.player.position.set(f.x, 0, f.z + 1.3);
+    for (let i = 0; i < 10; i++) s.w.step(0.05, { x: 0, z: 0 });
+    eq(f.lit, false, 'standing next to it is not enough');
+    ok(!s.hud.talkBtn.disabled, 'button is offered');
+    s.hud.talkBtn.click();
+    s.w.step(0.05, { x: 0, z: 0 });
+    eq(f.lit, true, 'lit by the button');
+    for (const g of sc.fires) { s.w.player.position.set(g.x, 0, g.z + 1.3); s.w.step(0.05, { x: 0, z: 0 }); s.hud.talkBtn.click(); s.w.step(0.05, { x: 0, z: 0 }); }
+    eq(await run, true);
   } finally { s.done(); }
 });
 
 test('j5: 인조 performs three kneelings and nine bows before 청 태종 at 삼전도', async () => {
   const s = touchSetup(j5Script.speakers);
-  const bot = touchBot(s, { answers });
+  const bot = touchBot(s, { answers, sortPicks });
   try {
     j5.buildScene(s.w, s.ctx);
     j5.enterStage(s.ctx, 'minigame');

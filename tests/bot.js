@@ -53,7 +53,6 @@ export function touchBot(s, { answers, wrongFirst = new Set(), noTaps = () => fa
   const zone = hud.joyZone;
   const pe = (type, x, y) => zone.dispatchEvent(new PointerEvent(type, { pointerId: 3, clientX: x, clientY: y, bubbles: true }));
   let dragging = false, stopped = false, taps = 0, earlyPressed = !pressEarlyOnce;
-  let damEarlyUsed = !pressEarlyOnce;
   const release = () => { if (dragging) { pe('pointerup', 100, 100); dragging = false; } };
   // 사람 손가락처럼 누른다: 버튼 한가운데 맨 위에 그 버튼이 있어야 한다(다른 화면이 덮고 있으면 기록해 두었다가 끝에 실패)
   const covered = [];
@@ -132,71 +131,6 @@ export function touchBot(s, { answers, wrongFirst = new Set(), noTaps = () => fa
       tracing = false;
       return;
     }
-    // 작전 지휘판(chapters/kit/ops.js): 병사가 모자란 구역 칸을 누른다(대기 병사가 바로 간다)
-    const opsBoard = !dialogue.isOpen() && ui.querySelector('.ops-board');
-    if (opsBoard && !noTaps()) {
-      const want = [...opsBoard.querySelectorAll('.ops-zone')].find(z => +z.dataset.short > 0);
-      if (want && [...opsBoard.querySelectorAll('.ops-token')].some(t => !t.hidden && !t.disabled)) tap(want);
-    }
-    // 둑 수위 조절(chapters/kit/damflow.js): 놀이가 알려 준 때(testHooks.dam)에 큰 단추를 누르고 있다가 뗀다.
-    // pressEarlyOnce면 처음 한 번은 바로 눌렀다 떼어 일찍 터뜨린다
-    const damBtn = !dialogue.isOpen() && !noTaps() && ui.querySelector('.dam-btn'), dh = ctx.testHooks.dam;
-    if (damBtn && dh) {
-      const pev = type => damBtn.dispatchEvent(new PointerEvent(type, { pointerId: 6, bubbles: true }));
-      if (!damEarlyUsed) { damEarlyUsed = true; tap(damBtn); pev('pointerdown'); pev('pointerup'); }
-      else if (!damBtn.classList.contains('down') && dh.press && !dh.release) pev('pointerdown');
-      else if (damBtn.classList.contains('down') && dh.release) pev('pointerup');
-    }
-    // 말 받아치기(chapters/kit/rally.js): 정답 구슬을 누른다. wrongFirst에 든 정답이면 그 판(소손녕의 말)마다 처음 한 번은 다른 구슬
-    const rallyOrbs = !dialogue.isOpen() && !noTaps() && !ui.querySelector('.rally-board.busy') && [...ui.querySelectorAll('.rally-orb:not([disabled])')];
-    if (rallyOrbs && rallyOrbs.length) {
-      const key = ui.querySelector('.rally-say')?.textContent || '';
-      const right = rallyOrbs.find(o => answers.has(o.dataset.text) || o.dataset.text === ctx.testHooks.rally?.answer);
-      let pick = right;
-      if (right && wrongFirst.has(right.dataset.text) && !wrongUsed.has(key)) { wrongUsed.add(key); pick = rallyOrbs.find(o => o !== right); }
-      if (pick) tap(pick);
-    }
-    // 조선편 놀이 판(chapters/kit/assemble · dial · scale · formation.js): 놀이가 알려 준 답을 누른다. testHooks.wrongOnce면 한 번은 일부러 틀린다
-    const H = ctx.testHooks, wrongOnce = () => { if (!H.wrongOnce) return false; H.wrongOnce = false; return true; };
-    if (H.assemble?.ready) {
-      const right = ui.querySelector(`.asm-tile[data-letter="${H.assemble.answer}"]:not(.used)`);
-      const t = wrongOnce() ? ui.querySelector(`.asm-tile:not(.used):not([data-letter="${H.assemble.answer}"])`) : right;
-      if (t) tap(t); return;
-    }
-    if (H.dial?.ready) {
-      const d = H.dial, off = d.need - d.sun;
-      if (wrongOnce()) { const r = ui.querySelector('.jp-dial [data-act="right"]'); tap(r); tap(r); tap(ui.querySelector('.jp-dial [data-act="check"]')); return; }
-      tap(ui.querySelector(`.jp-dial [data-act="${Math.abs(off) <= d.tol / 2 ? 'check' : off > 0 ? 'right' : 'left'}"]`)); return;
-    }
-    if (H.scale?.ready) {
-      const other = ui.querySelector(`.scale-pan:not([data-bin="${H.scale.answer}"]) .jp-btn`);
-      tap(wrongOnce() ? other : ui.querySelector(`.scale-pan[data-bin="${H.scale.answer}"] .jp-btn`)); return;
-    }
-    if (H.formation?.ready) { const f = H.formation; if (!f.left || !f.right) tap(ui.querySelector(`.form-row [data-side="${f.left ? 'right' : 'left'}"]`)); }
-    // 경판 공방(chapters/kit/conveyor.js): 고른 판의 다음 작업대를 누른다
-    const cv = !dialogue.isOpen() && !noTaps() && ctx.testHooks.conveyor;
-    if (cv && cv.ready) { const st = ui.querySelector(`.conv-st[data-st="${cv.answer}"]:not([disabled])`); if (st) tap(st); }
-    // 노 젓기 박자(chapters/kit/rhythm.js): 박자 순간 가까이에서 알맞은 쪽 노를 누른다
-    const rh = !dialogue.isOpen() && !noTaps() && ctx.testHooks.rhythm;
-    if (rh && Math.abs(rh.dt) < Math.min(0.08, rh.window)) { const rb = ui.querySelector(`.row-btn[data-side="${rh.side}"]`); if (rb) tap(rb); }
-    // 획 새기기(선택)를 묻는 화면: 건너뛴다
-    const skipCarve = ui.querySelector('.screen.carve-ask .skip');
-    if (skipCarve) { tap(skipCarve); return; }
-    // 처인성 당겨 쏘기(chapters/kit/pullshot.js): 활 단추를 눌러 놀이가 알려 준 적 쪽(aim)의 반대로 끝까지 끌었다가, 충분히 당기면 놓는다
-    const ph = !dialogue.isOpen() && !noTaps() && ctx.testHooks.pullshot, pad = ph && ui.querySelector('.pull-pad');
-    if (pad) {
-      const r = pad.getBoundingClientRect(), px = r.left + r.width / 2, py = r.top + r.height / 2;
-      const at = (el, type, x, y) => el.dispatchEvent(new PointerEvent(type, { pointerId: 7, bubbles: true, clientX: x, clientY: y }));
-      const x = px - Math.sin(ph.aim) * 140, y = py + Math.cos(ph.aim) * 140;
-      if (ph.ready) {
-        const top = document.elementFromPoint(px, py);
-        if (!top || !(top === pad || pad.contains(top))) { const m = `"pull pad" is covered by ${top ? (top.className || top.tagName) : 'nothing'}`; if (!covered.includes(m)) covered.push(m); }
-        at(pad, 'pointerdown', px, py);
-      } else if (ph.pulling) { at(window, 'pointermove', x, y); if (ph.held >= ph.minPull + 0.1) at(window, 'pointerup', x, y); }
-    }
-    // 별무반 갈림길(chapters/kit/switch.js): 놀이가 알려 준 맞는 길 단추를 누른다
-    const lh = !dialogue.isOpen() && !noTaps() && ctx.testHooks.lanes;
-    if (lh && lh.ready) { const lb = ui.querySelector(`.switch-lane[data-lane="${lh.answer}"]:not([disabled])`); if (lb) tap(lb); }
     if (dialogue.isOpen()) {
       release();
       if (dialogue.isChoosing()) {

@@ -1,12 +1,12 @@
 # 역사 속으로 걸어가기 — 작업 안내
 
-> **2026-10-26 밤 최신(다른 계정으로 넘김): `docs/HANDOFF-redesign.md` 맨 위 「★ 지금 상태」부터 읽는다.**
+> **2026-10-27 최신: `docs/HANDOFF-2026-10-27.md`부터 읽는다.** (학생 배포판 v65로 되돌린 상태, 되돌린 「다시 만들기」 기록, 다시 시작할 때 여쭐 것)
 
-> 다른 계정에서 이어받았다면 먼저 `docs/HANDOFF-2026-10-26.md`(최신), 그다음 `docs/HANDOFF.md`(인수인계, 사용자 규칙·최근 변경·남은 일)를 읽는다.
+> 그다음 필요하면 `docs/HANDOFF-2026-10-26.md`(v65를 만든 3단계 기록), `docs/HANDOFF.md`(인수인계, 사용자 규칙·최근 변경·남은 일).
 
 초등 5학년 사회의 한국사를 3D로 걸어 다니며 배우는 브라우저 게임이다(사이트 이름 「역사 속으로 걸어가기」). 첫 화면 → 편 고르기 → 그 편의 1~6장. 편마다 6장을 한 흐름으로 이어서 한다(장마다 약 10분).
 
-- 고려편 「고려를 지켜라」(외세의 침입과 고려의 노력): 2026-10-26 다시 만들기 뒤 순서 1 `ch1` 서희 / 2 `ch2` 양규 / 3 `ch3` 강감찬 / 4 `ch7` 윤관·별무반 / 5 `ch4` 몽골·처인성 / 6 `ch5` 팔만대장경·삼별초(장 id는 저장 호환으로 그대로, 번호와 다름). 옛 `ch6`(삼별초)는 목록에서 뺐고 폴더만 남음. 결과 카드 `SESSIONS[1]`. 놀이 부품 `chapters/kit/ops.js`·`rally.js`·`damflow.js`·`signal.js`·`switch.js`·`pullshot.js`·`conveyor.js`·`rhythm.js`.
+- 고려편 「고려를 지켜라」(외세의 침입과 고려의 노력): 장 id `ch1`~`ch6`, 폴더 `chapters/ch1`~`ch6`, 결과 카드 `SESSIONS[1]`.
 - 조선편 「조선을 걷다」(조선의 건국과 발전): 장 id `j1`~`j6`, 폴더 `chapters/joseon/j1`~`j6`, 결과 카드 `SESSIONS[2]`. 설계는 `docs/superpowers/specs/2026-10-22-joseon-course-design.md`.
 - 근대편 「새 나라를 꿈꾸다」(session 3, `k1`~`k6`, `chapters/modern/`), 일제 강점기편 「빼앗긴 나라를 되찾아라」(session 4, `i1`~`i6`, `chapters/colonial/`), 현대편 「대한민국을 세우다」(session 5, `h1`~`h6`, `chapters/present/`). 사실은 교사의 비상 5-2 교과서 98~145쪽(S51)을 따르고, 현대편 6장(4·19~서울 올림픽)은 교과서 밖이라 S58~S61을 따른다. 설계는 `docs/superpowers/specs/2026-10-23-modern-courses-design.md`.
 - 이 세 편은 장 부품 상자 `chapters/kit/`로 만든다: `town.js`의 `buildTown(world, layout)`(배치표로 건물·사람·안내판), `chapter.js`의 `makeKitChapter({ id, mood, player, script, layout, order, parts, spot })`. 장마다 `script.js`(대사·미니게임·퀴즈)와 `chapter.js`(배치표)만 쓴다. 미니게임은 장면 속 상황 놀이(`chapters/kit/play.js`): drive(배·차·전차 몰기, 행진, 걸어서 이정표 따라가기 `showAll`·`post`·`look`, 건네받아 들고 다니기 `give`/`hand`, 정류장에서 손님이 타고 내리기 `alight`·`board`), stops(차례대로 찾아가기), deliver(가져다 놓기), find(찾기), ambush(매복), sneak(몰래 지나가기), collect(빛나는 곳), judge(사람 말을 듣고 맞는지 고르기), build(터에 짓기). 읽기 부분: book(역사책 넘기기, 쪽마다 3D 재현 그림 `chapters/kit/diorama.js`+설계 `chapters/modern/dioramas.js`, 못 찍으면 평면 그림 `chapters/modern/pictures.js`), doc(문서 보기), scene(짧은 장면 `play(ctx, scene)`) — 읽기·장면은 첫 시도 점수에 넣지 않는다. 남은 시간은 화면 위 가운데에 크게 보인다. 마을과 떨어진 무대(arena, x 400)를 따로 세우고 끝나면 치운다. 무대 둘레는 `edge: { style }`로 시대다운 건물·나무를 줄지어 세우고, 무대 가운데는 `center: [...]`에 그 사건다운 소품을 놓는다(길·목표를 막지 않는지 테스트가 검사, 개발용 `tools/arena-gallery.html`). 멀리 있는 덜 중요한 장식은 `userData.minQuality: 'medium'`을 달면 화질 '낮음'에서 숨는다(`world.applyDecor`). 바닥 지도는 `mapSpot`. 카드 놀이(choose·sort·place·order·gauge)는 남아 있지만 새 장에는 쓰지 않는다(2026-10-23 사용자: 카드는 단조롭다). 근대 5장부터 현대 6장까지는 find·stops(찾기·차례 찾아가기)도 쓰지 않고 역사책·문서·이정표 걷기로 본다(2026-10-24 선생님 의견, 테스트가 막음). 고려·조선편의 순서·고르기 카드도 같은 부품으로 바꿨다(그림 읽기·도읍 고르기·학익진 배치판만 남김).

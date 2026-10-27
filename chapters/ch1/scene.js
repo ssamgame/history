@@ -1,13 +1,8 @@
 // 1장 장면: 노을 진 고려 진영, 강, 강 건너 거란 진영, 강동 6주 빛기둥.
-// 2026-10-26 새로 만들기: 담판 카메라(두 얼굴을 크게, 해를 등지고), 길 가운데 안내판을 길 옆으로, 천막 3가지(큰 지휘 천막·작은 천막·말뚝과 줄),
-// 서 있는 고려 병사(굳혀진다)와 털모자·털깃 거란 병사(core/figures.js의 crowdLook)로 두 편 옷이 한눈에 다르게, 6주 기둥이 차례로 올라오게.
 import { makeSign } from '../../core/signs.js';
 import * as THREE from 'three';
 import { backdropMountains, surroundings } from '../kit/terrain.js';
-import { curvedHipRoof, tent, cart, boat, watchtower, spearRack, archeryTarget, straw } from '../kit/buildings.js';
-import { makeFigure, setAction, crowdLook } from '../../core/figures.js';
-import { castleMarker } from '../goryeo/set.js';
-import { flatten } from '../kit/ops.js';
+import { curvedHipRoof, tent, cart, boat, watchtower, spearRack, archeryTarget } from '../kit/buildings.js';
 import { BUILD } from '../kit/town.js';
 import { makeFire } from '../../core/fire.js';
 import { groundMaterial } from '../../core/textures.js';
@@ -133,25 +128,11 @@ export function buildCh1Scene(world) {
     world.addCollider({ x: px - 2, z: pz, r: 3.3 }); world.addCollider({ x: px + 2, z: pz, r: 3.3 });
     flag(px - 4.6, pz + 3.6, 0xb8452f); flag(px + 4.6, pz + 3.6, 0xd9a441);
   }
-  // 천막 3가지(2026-10-26): 큰 지휘 천막(깃발), 보통 천막, 작은 천막. 자리와 부딪힘은 예전 그대로(큰 천막만 조금 넓게)
-  const TENTS = [[10, 3, 1], [15, -4, 1.45], [-3, 8, 0.78], [-17, 11, 1], [17, 13, 0.78], [-21, -1, 0.78], [21, 4, 1]];
-  for (const [x, z, k] of TENTS) {
+  // 천막: 앞뒤가 세모인 맞배 천막(기둥과 줄). 자리와 부딪힘은 예전 그대로
+  for (const [x, z] of [[10, 3], [15, -4], [-3, 8], [-17, 11], [17, 13], [-21, -1], [21, 4]]) {
     const g = new THREE.Group(); g.position.set(x, groundH(x, z), z); g.rotation.y = rand() * 0.6 - 0.3 + (x > 0 ? -0.4 : 0.4); L.add(g);
-    tent(g, { color: k > 1.2 ? 0xd9ccaa : k < 0.9 ? 0xeee5cf : 0xe6dcc3 });
-    g.scale.set(k, k * (k > 1.2 ? 0.95 : 1), k);
-    if (k > 1.2) { flag(x + 0.2, z + 0.1, 0xb8452f, L, 5.6); mk(new THREE.BoxGeometry(2.2, 0.08, 0.5), 0x2f6b5e, x, 3.38, z); } // 지휘 천막: 꼭대기 깃발과 용마루 천
-    world.addCollider({ x, z, r: k > 1.2 ? 2.6 : 1.9 * Math.max(0.85, k) });
-  }
-  // 말뚝과 줄: 말을 매어 두는 줄 말뚝(진영 왼쪽 뒤)과 짚단
-  {
-    const posts = [[-25, -7], [-22.5, -7.4], [-20, -7]];
-    for (const [x, z] of posts) mk(new THREE.CylinderGeometry(0.1, 0.13, 1.5, 5), 0x6b4a32, x, groundH(x, z) + 0.75, z);
-    for (let i = 0; i < posts.length - 1; i++) {
-      const [ax, az] = posts[i], [bx, bz] = posts[i + 1], len = Math.hypot(bx - ax, bz - az);
-      const r = mk(new THREE.CylinderGeometry(0.025, 0.025, len, 3), 0x8a7a62, (ax + bx) / 2, groundH(ax, az) + 1.3, (az + bz) / 2, L, false);
-      r.rotation.z = Math.PI / 2; r.rotation.y = -Math.atan2(bz - az, bx - ax);
-    }
-    world.addCollider({ x: -22.5, z: -7.2, r: 1.6 });
+    tent(g, { color: 0xe6dcc3 });
+    world.addCollider({ x, z, r: 1.9 });
   }
   // 군량과 물자: 쌀가마 더미, 군량 수레, 창걸이(예전 상자 자리)
   const put = (fn, x, z, ry = 0, p = {}) => { const g = new THREE.Group(); g.position.set(x, groundH(x, z), z); g.rotation.y = ry; L.add(g); fn(g, p); return g; };
@@ -159,7 +140,6 @@ export function buildCh1Scene(world) {
   put(cart, -6, 10, 0.8, { load: true }); world.addCollider({ x: -6, z: 10, r: 1.2 });
   put(spearRack, 19, 0, -Math.PI / 2); world.addCollider({ x: 19, z: 0, r: 0.9 });
   put(spearRack, -16, 6, Math.PI / 2); world.addCollider({ x: -16, z: 6, r: 0.9 });
-  put(straw, -24, -4.6, 0.4); world.addCollider({ x: -24, z: -4.6, r: 1 });
   put(archeryTarget, -7, 27, Math.PI); world.addCollider({ x: -7, z: 27, r: 0.6 }); // 궁수가 연습하는 과녁
   // 목책 모서리의 망루(강 건너를 살핀다)
   for (const sx of [-1, 1]) { put(watchtower, sx * 28.5, -12, 0, { h: 4.5 }); world.addCollider({ x: sx * 28.5, z: -12, r: 1.6 }); }
@@ -193,27 +173,25 @@ export function buildCh1Scene(world) {
     mk(new THREE.CylinderGeometry(2.2 * s, 2.2 * s, 1.7 * s, 9), 0x8f7556, x, 0.85 * s, z, khitanGroup);
     mk(new THREE.ConeGeometry(2.5 * s, 1.5 * s, 9), 0x5e432c, x, 2.45 * s, z, khitanGroup);
   };
-  yurt(5, -45, 1.5); // 소손녕의 큰 천막(담판 화면 왼쪽을 덮지 않게 뒤로)
-  // 담판 카메라(서남쪽)가 천막 하나에 가리지 않게 (-9, -37) 천막만 뒤로
-  for (const [x, z] of [[-12, -47], [9, -37], [-16, -44], [16, -44], [-6, -48], [7, -49], [-22, -38], [22, -38], [-13, -52], [14, -53]]) yurt(x, z, 0.9 + rand() * 0.3);
+  yurt(0, -41, 1.5);
+  for (const [x, z] of [[-9, -37], [9, -37], [-16, -44], [16, -44], [-6, -48], [7, -49], [-22, -38], [22, -38], [-13, -52], [14, -53]]) yurt(x, z, 0.9 + rand() * 0.3);
   for (const [x, z] of [[-5, -39.5], [5, -39.5], [-18, -32], [18, -32]]) flag(x, z, 0x2a2a2e, khitanGroup, 4.4); // 담판 화면을 덮지 않게 소손녕 뒤로
   const sonn = makePerson(LOOKS.sonn);
-  sonn.position.set(0, 0, -36); sonn.rotation.y = -0.48; khitanGroup.add(sonn); // 서희 쪽을 보며 담판 카메라(서쪽) 쪽으로 조금 돈다
-  // 강가에 늘어선 거란 병사: 털모자·털깃·방패(고려 병사의 붉은 옷·투구와 한눈에 다르다). 무리와 함께 물러난다
+  sonn.position.set(0, 0, -36); sonn.rotation.y = -0.42; khitanGroup.add(sonn); // 서희 쪽을 보며 담판 카메라(서쪽) 쪽으로 조금 돈다
   for (let i = 0; i < 9; i++) {
-    const k = makeFigure(crowdLook('khitan', i + 1)); setAction(k, 'idle');
+    const k = makePerson(LOOKS.khitan);
     k.position.set(-16 + i * 4, 0, -27 - (i % 2) * 1.5); khitanGroup.add(k);
+    mk(new THREE.CylinderGeometry(0.04, 0.04, 3, 4), 0x3a2c20, 0.62, 1.5, 0.1, k);
   }
 
-  // 강동 6주 성채 표시 (담판 뒤에 하나씩 땅에서 솟아오른다: pillars[i].set(0~1)). 2026-10-26: 속이 빈 빛기둥(멀리서 하얀 줄기로 보임) 대신
-  // 작은 성 한 채(chapters/goryeo/set.js castleMarker)로, 나루터에서 보이게 강 건너 가까이 둔다. 이름표는 다 솟으면 위에 뜬다
+  // 강동 6주 빛기둥 (담판 뒤에 나타남)
   const gangdongPillars = new THREE.Group(); gangdongPillars.visible = false; L.add(gangdongPillars);
-  const pillars = ['흥화진', '용주', '통주', '철주', '귀주', '곽주'].map((name, i) => {
-    const x = -25 + i * 10, z = -31 - (i % 2) * 3.5;
-    const m = flatten(castleMarker({ flagColor: i % 2 ? 0xd9a441 : 0xb8452f })); // 조각을 재질별로 합쳐 가볍게
-    m.position.set(x, groundH(x, z), z); m.rotation.y = (i - 2.5) * 0.08; gangdongPillars.add(m);
-    const label = labelSprite(name); label.position.set(x, groundH(x, z) + 8.2, z); gangdongPillars.add(label);
-    return Object.assign(Object.create(null), { set(k) { m.scale.y = Math.max(0.001, k); m.visible = k > 0.01; label.visible = k >= 1; } });
+  ['흥화진', '용주', '통주', '철주', '귀주', '곽주'].forEach((name, i) => {
+    const x = -25 + i * 10, z = -42 - (i % 2) * 4;
+    const pill = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 14, 10, 1, true),
+      new THREE.MeshBasicMaterial({ color: 0xffd36b, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false }));
+    pill.position.set(x, 7, z); gangdongPillars.add(pill);
+    const label = labelSprite(name); label.position.set(x, 9, z); gangdongPillars.add(label);
   });
 
   // 풀포기·들꽃(진영 안), 바위·덤불(목책 밖). 길과 천막 자리는 비운다.
@@ -235,22 +213,15 @@ export function buildCh1Scene(world) {
   world.addNpc('archer', LOOKS.archer, -7, 20.5, Math.PI);
   world.addNpc('officer', LOOKS.officer, 15.5, 8, -Math.PI * 0.6);
   // 안내판(볼거리): 읽지 않아도 장은 끝난다
-  world.addSpot('signGangdong', makeSign('강동 6주'), -5, 15.5); // 길 한가운데서 화면을 가리지 않게 길 옆으로
-  // 서 있는 고려 병사(붉은 옷·투구, 움직이지 않아 장면 굳히기로 합쳐진다): 성문, 망루 아래, 지휘 천막 앞
-  for (const [x, z, ry, seed] of [[-2.6, 31.2, 0, 1], [2.6, 31.2, 0, 2], [-26.5, -10.2, Math.PI * 0.85, 3], [26.5, -10.2, -Math.PI * 0.85, 4], [12.4, -1.2, 0.5, 2]]) {
-    const f = makeFigure(crowdLook('soldier', seed)); f.position.set(x, groundH(x, z), z); f.rotation.y = ry; setAction(f, 'idle'); L.add(f);
-    world.addCollider({ x, z, r: 0.6 });
-  }
+  world.addSpot('signGangdong', makeSign('강동 6주'), -1.5, 16.5);
   world.addSpot('signSong', makeSign('고려와 송, 거란'), 9.5, 18);
 
-  const scene = { ring, khitanGroup, gangdongPillars, pillars, sonn, emberCount: fire.emberCount, retreating: false,
+  const scene = { ring, khitanGroup, gangdongPillars, sonn, emberCount: fire.emberCount, retreating: false,
     ferry: { x: 8, z: -13.4, r: 1.6 },
     negotiationSpot: {
-      // 노을 해(서쪽 -x·북쪽 -z)를 등지고 서남쪽 위에서 마주 선 두 사람을 본다(역광으로 얼굴이 그늘지지 않게, 두 얼굴이 크게).
-      // 카메라는 cam.target에서 cam.pos 쪽으로 물러나며 points가 화면 안(margin)에 들 때까지 거리를 맞춘다(world.fitFixedCamera).
-      // 학생(서희 곁의 젊은 병사)은 카메라 뒤에 서서 서희를 가리지 않는다
-      seohui: [0, -32.8, Math.PI + 1.05], player: [-17.6, -28.9, Math.PI * 0.6],
-      cam: { pos: [-8.6, 5.8, -31.7], target: [0, 2.0, -34.4], points: [[0, 2.95, -32.8], [0, 2.95, -36], [0, 1.15, -32.8], [0, 1.15, -36]], margin: 0.6 },
+      // 노을 해(서쪽 -x·북쪽 -z)를 등지고 옆(서쪽)에서 두 사람을 본다(역광으로 얼굴이 그늘지지 않게). 학생은 서희 뒤쪽에 비켜 선다
+      seohui: [0, -32.8, Math.PI + 0.42], player: [1.0, -30.2, Math.PI + 0.3],
+      cam: { pos: [-9.5, 4.6, -31.4], target: [0, 0.2, -34.6] }, // 얼굴이 아래 대화창 위쪽에 보이게 조금 내려다본다
     },
   };
 
@@ -268,6 +239,7 @@ export function buildCh1Scene(world) {
       khitanGroup.position.y -= dt * 1.4; khitanGroup.position.z -= dt * 3;
       if (khitanGroup.position.y < -6) khitanGroup.visible = false;
     }
+    if (gangdongPillars.visible) gangdongPillars.children.forEach((c, i) => { if (c.isMesh) c.material.opacity = 0.25 + Math.sin(t * 2 + i) * 0.1; });
   });
   backdropMountains(world.level, { color: 0x6a7a4a, radius: 130 }); // 먼 산줄기(깊이감)
   surroundings(world, { bounds: world.bounds, trees: ['pine'], count: 8, back: false, seed: 11 }); // 걷는 곳 바깥에 그 장소다운 집·나무(깊이감)

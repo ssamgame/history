@@ -3,12 +3,13 @@ import { SOURCES } from '../content/sources.js';
 import { validateScript } from '../core/content.js';
 import j4Script from '../chapters/joseon/j4/script.js';
 import { buildJ4Scene, STRAIT_Z } from '../chapters/joseon/j4/scene.js';
-import j4 from '../chapters/joseon/j4/chapter.js';
+import j4, { WING_BOARD } from '../chapters/joseon/j4/chapter.js';
 import { runChapter } from '../core/flow.js';
 import { JOSEON } from '../chapters/index.js';
 import { testWorld, touchSetup, touchBot, memSave } from './bot.js';
 
 const answers = new Set(j4Script.quizzes.map(q => q.options[q.answer]));
+const places = { '판옥선': ['w1', 'w2', 'w3', 'w4', 'w5'] };
 
 test('j4: script passes validation', () => eq(validateScript(j4Script, SOURCES), []));
 
@@ -19,20 +20,11 @@ test('j4: quiz answers match the spec and the turtle ship leads the wing (S43)',
   ok(j4Script.result[0].src.includes('S35'));
 });
 
-test('j4: 학익진 날개 펴기 — both wing tips in their circles wins; time running out fails', async () => {
-  const { formation } = await import('../chapters/kit/formation.js');
-  const s = touchSetup(j4Script.speakers);
-  try {
-    const p = formation(s.ctx, { seconds: 25 });
-    const wing = side => s.ui.querySelector(`.form-row [data-side="${side}"]`);
-    for (let i = 0; i < 8 && !s.ctx.testHooks.formation.left; i++) wing('left').click();
-    ok(s.ctx.testHooks.formation.left && !s.ctx.testHooks.formation.right, 'left wing folded forward');
-    for (let i = 0; i < 8 && s.ctx.testHooks.formation; i++) wing('right').click();
-    eq((await p).ok, true);
-    const p2 = formation(s.ctx, { seconds: 2 });
-    for (let i = 0; i < 50; i++) s.w.step(0.05, { x: 0, z: 0 });
-    eq((await p2).ok, false, 'not folded in time');
-  } finally { s.done(); }
+test('j4: wing board has five curved spots and three wrong back-row spots', () => {
+  eq(WING_BOARD.slots.filter(s => s.answer === 'ship').length, 5);
+  eq(WING_BOARD.slots.filter(s => s.answer === null).length, 3);
+  const wing = WING_BOARD.slots.filter(s => s.answer === 'ship');
+  ok(wing[2].xy[1] > wing[0].xy[1] && wing[2].xy[1] > wing[4].xy[1], 'middle is lower than the wing tips (a curve)');
 });
 
 test('j4: scene — harbor people, turtle ship, and the fleets move the right way', () => {
@@ -52,11 +44,11 @@ test('j4: scene — harbor people, turtle ship, and the fleets move the right wa
 
 test('j4: completes with touch-only actions', async () => {
   const s = touchSetup(j4Script.speakers);
-  const bot = touchBot(s, { answers });
+  const bot = touchBot(s, { answers, places });
   try {
     const r = await runChapter(JOSEON[3], j4, s.ctx, memSave());
     eq(r.quizCorrect, 2);
-    eq(r.firstTryCorrect, 2); eq(r.firstTryTotal, 2, 'two plays: 미끼 유인 · 학익진 날개 펴기');
+    eq(r.firstTryCorrect, 3);
     eq(r.stars, 3);
   } finally { bot.stop(); s.done(); }
 }, { timeout: 150000 });
@@ -66,13 +58,13 @@ test('j4: turning the lure ships too early gives the early hint', async () => {
   const said = [];
   const say = s.dialogue.say;
   s.dialogue.say = l => { said.push(l.text); return say(l); };
-  const bot = touchBot(s, { answers, pressEarlyOnce: true });
+  const bot = touchBot(s, { answers, places, pressEarlyOnce: true });
   try {
     j4.buildScene(s.w, s.ctx);
     j4.enterStage(s.ctx, 'minigame');
     const r = await j4.minigame(s.ctx);
     ok(said.includes(j4Script.lure.early), 'early hint');
-    eq(r.firstTryCorrect, 1);
+    eq(r.firstTryCorrect, 2);
   } finally { bot.stop(); s.done(); }
 }, { timeout: 150000 });
 

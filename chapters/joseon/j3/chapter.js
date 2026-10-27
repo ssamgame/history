@@ -1,17 +1,23 @@
-// 조선편 3장 「세종 때의 과학 기술」: 한양 탐험(백성·장영실·세자) → 놀이 「해 그림자 맞추기」(chapters/kit/dial.js, 2026-10-27) → 자격루 · 측우기 짧은 장면 → 퀴즈.
+// 조선편 3장 「세종 때의 과학 기술」: 한양 탐험(백성·장영실·세자) → 앙부일구 읽기 → 자격루 차례 → 측우기 눈금 읽기 → 퀴즈.
 import { buildJ3Scene } from './scene.js';
-import { showHowTo } from '../../../core/minigame.js';
-import { dial } from '../../kit/dial.js';
+import { showHowTo, chooseCards } from '../../../core/minigame.js';
+import { PLAY } from '../../kit/play.js';
 import { sayAll, placePlayer, talkInOrder, setTalkStep, tryPart, sumParts } from '../common.js';
 import script from './script.js';
 
-// 자격루 장면에서 장영실이 자격루가 돌아가는 모습을 차례로 설명한다
+// 자격루 마당(마을에서 떨어진 x 400): 커다란 자격루 둘레에 움직임 이름표가 흩어져 있다(차례와 다르게)
+const CLOCKYARD = {
+  origin: [400, 0], ground: 'stone', groundColor: 0xb0a890, bounds: { x0: -16, x1: 16, z0: -10, z1: 14 },
+  props: [{ type: 'landmark', name: 'jagyeongnu', x: 0, z: -7, scale: 1.4, rect: [10, 3] }, { type: 'hanok', x: 0, z: -14, tile: true, scale: 1.6, solid: false }],
+};
+// 움직임을 찾을 때마다 장영실이 자격루가 돌아가는 모습을 설명한다(카드 차례와 같다)
 const CLOCK_TALK = [
   [{ who: 'jangyeongsil', text: '물항아리에서 물이 일정하게 흘러 들어와 차오르지.' }],
   [{ who: 'jangyeongsil', text: '물이 차면 쇠구슬이 굴러 떨어진다네.' }],
   [{ who: 'jangyeongsil', text: '떨어진 구슬이 나무 인형을 움직이지.' }],
   [{ who: 'jangyeongsil', text: '인형이 종과 북을 울려 시간을 알린다! 사람이 손대지 않아도 말이야.' }],
 ];
+const CLOCK_SPOTS = [{ x: 9, z: 1 }, { x: -9, z: 2 }, { x: 4, z: 7 }, { x: -4, z: 8 }];
 
 const ORDER = ['commoner', 'jangyeongsil', 'crownPrince'];
 const SPOT = [-4, -3];
@@ -62,27 +68,43 @@ export default {
     input.enabled = false;
     setTalkStep(ctx, script, ORDER, 3);
     world.setGoal(null);
-    await showHowTo(ctx.ui, script.dial.howto);
-    // 놀이 「해 그림자 맞추기」(2026-10-27, 카드 대신): 해를 옮겨 그림자를 목표 시각 줄에 맞춘다. 세 번 모두 맞히면 성공
-    const D = script.dial;
-    const parts = [await tryPart(ctx, async easy => {
+    await showHowTo(ctx.ui, {
+      title: '시간과 비를 재라',
+      steps: ['앙부일구의 그림자가 가리키는 동물을 세 번 읽어요.', '커다란 자격루 둘레의 이름표를 시간을 알리는 차례대로 찾아가요(대화 버튼).', '측우기에 고인 빗물의 깊이를 두 번 읽어요.'],
+      keyboard: '카드는 마우스로, 걷기는 W A S D 또는 방향키, 고르기는 E', touch: '카드는 손가락으로 누르고, 걷기는 화면 왼쪽을 끌어요',
+    });
+    const parts = [];
+    // 1) 앙부일구: 세 번 모두 맞히면 성공
+    parts.push(await tryPart(ctx, async easy => {
       let missed = false;
-      for (const { h } of DIAL_ROUNDS) {
-        const r = await dial(ctx, { hours: HOURS, target: h, title: D.title, prompt: D.prompt(HOURS[h]), hint: D.fail, easy });
-        if (!r.ok) return false;
-        if (r.wrong) missed = true;
+      for (const { h, opts } of DIAL_ROUNDS) {
+        const cards = opts.map(k => ({ text: `${HOURS[k][1]} ${HOURS[k][0]}`, correct: k === h }));
+        const r = await chooseCards(ctx, { title: script.dial.title, prompt: script.dial.prompt, figure: dialSVG(h), cards, easy, hint: script.dial.fail });
+        if (!r) return false;
+        if (r === 'missed') missed = true;
       }
       return missed ? 'missed' : true;
-    }, D.fail)];
-    await sayAll(dialogue, D.done); dialogue.close();
-    // 자격루(장면): 물이 차고 구슬이 구르고 인형이 종 · 북을 울린다
+    }, script.dial.fail));
+    await sayAll(dialogue, script.dial.done); dialogue.close();
+    // 2) 자격루 차례
+    parts.push(await tryPart(ctx, easy => PLAY.stops(ctx, { arena: CLOCKYARD, from: [0, 12], counter: '찾은 움직임', spots: script.clock.cards.map((label, i) => ({ label, talk: CLOCK_TALK[i], ...CLOCK_SPOTS[i] })) }, easy), script.clock.fail));
     scene.ringClock(); ctx.audio.play('tap');
-    await sayAll(dialogue, [...CLOCK_TALK.flat(), ...script.clock.done]); dialogue.close();
-    // 측우기(장면): 소나기가 지나가고 빗물을 잰다
+    await sayAll(dialogue, script.clock.done); dialogue.close();
+    // 3) 소나기 뒤 측우기 읽기
     scene.setRain(true);
     await sayAll(dialogue, script.rain.shower); dialogue.close();
     await ctx.wait(1500);
     scene.setRain(false);
+    parts.push(await tryPart(ctx, async easy => {
+      let missed = false;
+      for (const { lv, opts } of GAUGE_ROUNDS) {
+        const cards = opts.map(n => ({ text: `눈금 ${n}`, correct: n === lv }));
+        const r = await chooseCards(ctx, { title: script.rain.title, prompt: script.rain.prompt, figure: gaugeSVG(lv), cards, easy, hint: script.rain.fail });
+        if (!r) return false;
+        if (r === 'missed') missed = true;
+      }
+      return missed ? 'missed' : true;
+    }, script.rain.fail));
     await sayAll(dialogue, script.rain.done); dialogue.close();
     placePlayer(world, SPOT);
     ctx.setGoal(script.goals[4]);

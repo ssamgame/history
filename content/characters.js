@@ -25,12 +25,6 @@ export const LOOKS = {
   kimtongjeong: { robe: 0x4a3a2a, hat: 'general', gear: 'sword', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'full' } },
   sambyeolcho: { robe: 0x3a2f2a, hat: 'helmet', gear: 'spear', trim: 0xb8452f, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   mongol: { robe: 0x3e4a5c, hat: 'fur', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
-  // 새 4장(ch7, 2026-10-26) 윤관과 별무반. 윤관은 문신이라 칼 없이 서희와 같은 관모, 여진 병사는 털모자로 머리를 덮고 거란(밤색)과 다른 짙은 청회색 옷,
-  // 별무반에 모이는 마을 사람: 걸어오는 젊은이(머리띠)·말 끄는 사람(머리 수건)
-  yungwan: { robe: 0x3a5a4e, hat: 'official', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'full' } },
-  jurchen: { robe: 0x3f5566, hat: 'fur', gear: 'spear', trim: 0x2b2f36, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
-  draftee: { robe: 0xe2d8c2, hat: 'band', trim: 0x6b4a32, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
-  drafteeLeader: { robe: 0xcfc3a8, hat: 'towel', trim: 0x5a4632, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache', beardColor: '#5a5048' } },
   // 조선편. 임금·세자는 익선관, 양반·학자는 갓, 조선 군사는 전립
   yiseonggye: { robe: 0x7a2a1e, hat: 'general', gear: 'bow', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'full' } },
   joseonSoldier: { robe: 0x3c4c6a, hat: 'jeollip', gear: 'spear', trim: 0xb8452f, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },

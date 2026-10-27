@@ -1,68 +1,152 @@
-// 2장 「양규와 흥화진」(2026-10-26 시범): 출정 카드 → 작전 준비(성안 탐험, 지휘판 연습) → 작전(성벽 지휘판 3파 · 백성 구출 호위)
-// → 지킴 확인(퀴즈) → 도장·지혜 카드. 놀이 뼈대는 chapters/kit/ops.js(다른 장도 데이터만 바꿔 쓴다), 이 파일은 2장 데이터와 순서만.
-import { buildCh2Scene, boardScene, escortScene, raiseFlag } from './scene.js';
+// 2장 「양규와 흥화진」: 성안 탐험 → 성벽 방어 → 백성 구출 → 퀴즈.
+import { buildCh2Scene } from './scene.js';
 import { roam } from '../../core/flow.js';
-import { showHowTo } from '../../core/minigame.js';
-import { GUARDIAN_LOOKS, guardianLook } from '../../core/figures.js';
-import { runRounds, commandBoard, escort, opsGauge, talk, finale, pickGuardian, savedGuardian, usePlayerFigure } from '../kit/ops.js';
+import { showHowTo, runWithRetries, createTapTargets } from '../../core/minigame.js';
 import script from './script.js';
 
-export const GUARDIAN_KEY = 'goryeo-game:guardian'; // 기기 안 저장에 새로 더한 한 항목(지킴이 생김새). 없으면 'a'
-// 성벽 지휘판 3파(2026-10-26 기획 결정: 3파 유지, 1·2파 간격만 줄임): 1파는 한 구역씩 느리게, 2파는 두 구역 동시, 3파는 세 구역 동시(큰 사다리는 병사 둘)
-export const WAVES = [
-  { units: 3, threats: [{ at: 0.5, zone: 0 }, { at: 5.5, zone: 2 }, { at: 10.5, zone: 1 }, { at: 15.5, zone: 0 }], timing: { climb: 6 } },
-  { units: 3, threats: [{ at: 0.5, zone: 0 }, { at: 0.5, zone: 2 }, { at: 8.5, zone: 1 }, { at: 8.5, zone: 0 }, { at: 16.5, zone: 2 }, { at: 16.5, zone: 1 }] },
-  { units: 4, threats: [{ at: 0.5, zone: 0 }, { at: 0.5, zone: 1, need: 2 }, { at: 0.5, zone: 2 }, { at: 10, zone: 2 }, { at: 10, zone: 0, need: 2 }, { at: 10, zone: 1 }] },
-];
-// 호위: 무리 2개(가운데 길 막힘) → 4개(가운데만 열림) → 마지막 큰 무리(가운데 막힘)
-export const ESCORT_WAVES = [{ groups: [0, 1], blocked: [1] }, { groups: [2, 3, 4, 5], blocked: [0, 2] }, { groups: [6], blocked: [1] }];
-
+const EXPLORE_BOUNDS = { x0: -10.5, x1: 10.5, z0: -10.5, z1: 7 };
 let scene = null;
-const anchors = world => ({ soldier: world.npcs.get('soldier')?.mesh, yanggyu: world.npcs.get('yanggyu')?.mesh, villager: world.npcs.get('villager')?.mesh });
-const zones = () => script.wall.zones.map((label, i) => ({ id: i, label, anchor: scene.zones[i] }));
+
+async function sayAll(dialogue, lines) { for (const l of lines) await dialogue.say(l); }
 
 function setStep(ctx, n) {
   const { world } = ctx;
   ctx.setGoal(script.goals[n]);
   world.npcs.get('soldier').mark.visible = n === 0;
   world.npcs.get('yanggyu').mark.visible = n === 1;
-  const t = [world.npcs.get('soldier').mesh.position, world.npcs.get('yanggyu').mesh.position][n];
-  world.setGoal(t ? { x: t.x, z: t.z } : null);
+  scene.ring.visible = n === 2;
+  const targets = [world.npcs.get('soldier').mesh.position, world.npcs.get('yanggyu').mesh.position, scene.stairs];
+  world.setGoal(targets[n] ? { x: targets[n].x, z: targets[n].z } : null);
 }
+
 function placePlayer(world, [x, z], ry = Math.PI) {
   world.player.visible = true;
   world.player.position.set(x, 0, z); world.player.rotation.y = ry;
   world.camMode = 'follow'; world.snapCamera();
 }
-function townPeople(world, on) { for (const id of ['soldier', 'yanggyu', 'villager']) { const n = world.npcs.get(id); if (n) n.mesh.visible = on; } }
-async function wallView(ctx) {
-  const { world } = ctx, f = scene.wallFit;
-  world.player.visible = false; townPeople(world, false);
-  world.fitFixedCamera(f.target, f.dir, f.points, f.margin);
+
+const RAISE_SECONDS = 0.8; // 거란 병사가 사다리를 세우는 시간
+const RAISE_LEAN = 1.1;    // 세우기 전 사다리가 뒤로 눕혀진 각도(라디안)
+
+function resetLadders() {
+  for (const l of scene.ladders) {
+    l.group.visible = false; l.pivot.rotation.x = l.tilt;
+    l.climber.visible = false; l.carrier.visible = false;
+  }
 }
-function showAftermath(ctx) {
-  const { world } = ctx;
-  for (const c of scene.captives) c.root.visible = false;
-  for (const g of scene.guards) g.visible = false;
-  for (const l of scene.ladders) l.group.visible = false;
-  for (const d of scene.defenders) d.visible = false;
-  scene.field.visible = false; scene.khitanCrowd.visible = false;
-  scene.waveFlags.forEach(f => { f.visible = true; f.scale.y = 1; }); // 세 파를 다 막았다
-  townPeople(world, true);
-  world.bounds = scene.explore;
-  placePlayer(world, scene.start);
-  ctx.setGoal(script.goals[5]);
-}
-// 거란군이 물러간다(3파 뒤): 성 밖 무리가 북쪽으로 걸어가며 사라진다
-function retreat(ctx) {
-  const g = scene.khitanCrowd, { world } = ctx;
+
+// 성벽 방어 한 번: 45초 버티면 성공, 사다리 3개가 올라오면 실패. 시간은 월드 시계로 잰다.
+function wallDefense(ctx, easy) {
+  const { world, hud, audio } = ctx;
+  ctx.testHooks.wallAttempts = (ctx.testHooks.wallAttempts || 0) + 1;
+  const spawnEvery = easy ? 3.5 : 2.2, climbTime = easy ? 5.6 : 4, duration = 45;
+  const taps = createTapTargets(ctx);
+  resetLadders();
+  let t = 0, nextSpawn = 0.8, blocked = 0, breaches = 0, slotSeed = 5, done = false;
+  const active = new Map();
   return new Promise(resolve => {
-    let t = 0;
+    const finish = ok => {
+      if (done) return; done = true;
+      off(); taps.dispose(); resetLadders();
+      hud.setTimer(null); hud.setCounter(null);
+      resolve(ok);
+    };
     const off = world.onUpdate(dt => {
-      t += dt; g.position.z -= 3 * dt;
-      if (t >= 1.6) { off(); g.visible = false; g.position.z = 0; resolve(); }
+      if (done) return;
+      t += dt;
+      hud.setTimer(duration - t);
+      hud.setCounter(`막은 사다리 ${blocked} · 올라온 사다리 ${breaches}/3`);
+      if (t >= nextSpawn) {
+        nextSpawn = t + spawnEvery;
+        const free = scene.ladders.filter(l => !active.has(l));
+        if (free.length) {
+          slotSeed = (slotSeed * 16807) % 2147483647;
+          const l = free[slotSeed % free.length];
+          l.group.visible = true; l.carrier.visible = true; l.climber.visible = false;
+          l.pivot.rotation.x = l.tilt - RAISE_LEAN;
+          const a = { t: 0 };
+          a.target = taps.add(l.top, {
+            label: '밀기',
+            onTap() { blocked += 1; audio.play('tap'); active.delete(l); taps.remove(a.target); l.group.visible = false; },
+          });
+          active.set(l, a);
+        }
+      }
+      for (const [l, a] of active) {
+        a.t += dt;
+        if (a.t < RAISE_SECONDS) {
+          // 사다리를 세우는 중: 뒤로 눕혀 있던 사다리가 성벽 쪽으로 일어선다
+          const r = a.t / RAISE_SECONDS;
+          l.pivot.rotation.x = l.tilt - RAISE_LEAN * (1 - r * r * (3 - 2 * r));
+          continue;
+        }
+        l.pivot.rotation.x = l.tilt;
+        l.climber.visible = true;
+        const k = Math.min(1, (a.t - RAISE_SECONDS) / climbTime);
+        l.climber.position.set(0, k * (l.len - 1.2), 0.25);
+        a.target.btn.style.setProperty('--p', k.toFixed(3)); // 버튼 테두리가 올라온 만큼 차오른다
+        if (a.t >= RAISE_SECONDS + climbTime) {
+          breaches += 1; audio.play('wrong');
+          taps.remove(a.target); active.delete(l); l.group.visible = false;
+          if (breaches >= 3) return finish(false);
+        }
+      }
+      if (t >= duration) finish(true);
     });
   });
+}
+
+// 백성 구출 한 번: 90초 안에 네 무리 이상 구하면 성공.
+function rescue(ctx, easy) {
+  const { world, hud, audio } = ctx;
+  const speed = easy ? 0.3 : 0.6, duration = 90, need = 4, f = scene.field;
+  const groups = scene.captives.map(c => {
+    c.group.visible = true; c.escort.visible = true;
+    c.group.position.set(c.start[0], 0, c.start[1]);
+    return { c, state: 'walking', fade: 0 };
+  });
+  world.bounds = f.bounds;
+  placePlayer(world, f.start, Math.PI);
+  let t = 0, saved = 0, done = false;
+  return new Promise(resolve => {
+    const finish = ok => {
+      if (done) return; done = true;
+      off(); hud.setTimer(null); hud.setCounter(null); world.setGoal(null);
+      resolve(ok);
+    };
+    const off = world.onUpdate(dt => {
+      if (done) return;
+      t += dt;
+      hud.setTimer(duration - t);
+      hud.setCounter(`구한 백성 ${saved}/${need}무리`);
+      const p = world.player.position;
+      let nearest = null, nd = Infinity;
+      for (const g of groups) {
+        const gp = g.c.group.position;
+        if (g.state === 'walking') {
+          gp.z -= speed * dt;
+          const d = Math.hypot(p.x - gp.x, p.z - gp.z);
+          if (d < 2.0) { g.state = 'saved'; saved += 1; g.c.escort.visible = false; audio.play('correct'); }
+          else if (gp.z < f.lostZ) { g.state = 'lost'; g.c.group.visible = false; }
+          else if (d < nd) { nd = d; nearest = gp; }
+        } else if (g.state === 'saved') {
+          gp.z += 1.5 * dt; g.fade += dt;
+          if (g.fade > 2.5) { g.state = 'home'; g.c.group.visible = false; }
+        }
+      }
+      world.setGoal(nearest ? { x: nearest.x, z: nearest.z } : null);
+      if (saved >= need) return finish(true);
+      if (t >= duration || !groups.some(g => g.state === 'walking')) finish(false);
+    });
+  });
+}
+
+function showAftermath(ctx) {
+  for (const c of scene.captives) c.group.visible = false;
+  scene.khitan.visible = false;
+  ctx.world.bounds = scene.field.bounds;
+  placePlayer(ctx.world, scene.field.start);
+  ctx.setGoal(script.goals[5]);
 }
 
 export default {
@@ -71,105 +155,72 @@ export default {
   script,
   quizzes: script.quizzes,
 
-  buildScene(world) {
-    scene = buildCh2Scene(world);
-    usePlayerFigure(world, guardianLook(savedGuardian(GUARDIAN_KEY, 'a'), 'soldier'));
-    return scene;
-  },
+  buildScene(world) { scene = buildCh2Scene(world); return scene; },
 
   enterStage(ctx, stage) {
-    if (stage === 'minigame') { ctx.world.bounds = scene.explore; placePlayer(ctx.world, scene.start); }
+    if (stage === 'minigame') { ctx.world.bounds = EXPLORE_BOUNDS; placePlayer(ctx.world, [0, -6]); }
     if (stage === 'quiz') showAftermath(ctx);
   },
 
   async explore(ctx) {
     const { world, dialogue } = ctx;
-    world.bounds = scene.explore;
+    world.bounds = EXPLORE_BOUNDS;
     placePlayer(world, scene.start);
-    // 지킴이 고르기(처음 한 번, 건너뛸 수 있다)
-    if (!savedGuardian(GUARDIAN_KEY, null)) {
-      const id = await pickGuardian(ctx, { key: GUARDIAN_KEY, ...script.guardian,
-        options: Object.entries(GUARDIAN_LOOKS).map(([id, g], i) => ({ id, name: `지킴이 ${'가나다'[i]}`, color: `#${g.sleeve.toString(16).padStart(6, '0')}` })) });
-      usePlayerFigure(world, guardianLook(id, 'soldier'));
-    }
     let step = 0;
     setStep(ctx, 0);
-    await talk(ctx, script.start);
+    await sayAll(dialogue, script.start);
     dialogue.close();
     ctx.input.enabled = true;
-    const a = anchors(world);
     await new Promise(resolve => {
       const stop = roam(ctx, {
         async onTalk(id) {
           const n = script.npc[id];
           if (id === 'soldier') {
-            await talk(ctx, step === 0 ? n.first : n.later, a);
-            if (step === 0) { step = 1; setStep(ctx, 1); }
+            if (step === 0) { await sayAll(dialogue, n.first); step = 1; setStep(ctx, 1); }
+            else await sayAll(dialogue, n.later);
           } else if (id === 'yanggyu') {
-            if (step === 0) await talk(ctx, n.tooEarly, a);
-            else { await talk(ctx, n.first, a); step = 2; stop(); resolve(); }
-          } else await talk(ctx, n.always, a);
+            if (step === 0) await sayAll(dialogue, n.tooEarly);
+            else if (step === 1) { await sayAll(dialogue, n.first); step = 2; setStep(ctx, 2); }
+            else await sayAll(dialogue, n.later);
+          } else await sayAll(dialogue, n.always);
         },
+        zones: [{ ...scene.stairs, active: () => step === 2, onEnter() { stop(); resolve(); } }],
       });
     });
-    // 지휘판 연습: 세 구역에 병사를 하나씩(틀려도 불이익 없음)
-    ctx.input.enabled = false;
-    ctx.setGoal(script.goals[2]); world.setGoal(null);
-    await ctx.fade(true);
-    await wallView(ctx);
-    await ctx.fade(false);
-    await showHowTo(ctx.ui, script.practice.howto);
-    await commandBoard(ctx, { zones: zones(), units: 3, practice: true, scene: boardScene(scene), label: '작전 준비' });
   },
 
   async minigame(ctx) {
     const { world, dialogue, input } = ctx;
     input.enabled = false;
-    ctx.setGoal(script.goals[3]); world.setGoal(null);
+    setStep(ctx, 3);
+    scene.ring.visible = false;
     await ctx.fade(true);
-    await wallView(ctx);
-    scene.khitanCrowd.visible = true;
+    world.player.visible = false;
+    world.fitFixedCamera(scene.wallFit.target, scene.wallFit.dir, scene.wallFit.points); // 어떤 화면 비율에서도 사다리가 다 보이게
+    scene.khitan.visible = false; // 카메라와 성벽 사이의 거란 진영(줄·천막)이 사다리를 가리지 않게
     await ctx.fade(false);
     await showHowTo(ctx.ui, script.wall.howto);
-    const gauge = opsGauge(ctx, { value: 0.5 });
-    ctx.testHooks.wallAttempts = 0; ctx.testHooks.wallEasy = [];
-    const a = await runRounds(ctx, WAVES, (w, { index, easy }) => {
-      ctx.testHooks.wallAttempts += 1; ctx.testHooks.wallEasy.push(easy);
-      return commandBoard(ctx, { zones: zones(), units: w.units, threats: w.threats, timing: w.timing, easy, scene: boardScene(scene), gauge, label: script.wall.waveLabels[index] })
-        .then(ok => { if (ok) { raiseFlag(scene, index, world); ctx.audio?.play('correct'); } return ok; });
-    }, { failHint: script.wall.failHint, easyAfter: 2 });
-    gauge.set(1);
-    await retreat(ctx);
-    await talk(ctx, script.wall.done);
+    const a = await runWithRetries(ctx, easy => wallDefense(ctx, easy), { failHint: script.wall.failHint });
+    await sayAll(dialogue, script.wall.done);
     dialogue.close();
-    gauge.dispose();
 
-    // 백성 구출 호위
     await ctx.fade(true);
-    for (const d of scene.defenders) d.visible = false;
-    scene.field.visible = true;
+    scene.khitan.visible = false;
     ctx.setGoal(script.goals[4]);
-    const f = scene.escortField;
-    world.bounds = f.bounds; placePlayer(world, f.start);
+    placePlayer(world, scene.field.start);
     await ctx.fade(false);
+    await sayAll(dialogue, script.rescue.intro);
+    dialogue.close();
     await showHowTo(ctx.ui, script.rescue.howto);
     input.enabled = true;
-    const b = await runRounds(ctx, [null], (_, { easy }) => {
-      ctx.testHooks.escortEasy = easy;
-      return escort(ctx, { field: f, lanes: scene.guards.map(g => ({ x: g.position.x })), waves: ESCORT_WAVES, groups: scene.captives, guards: scene.guards, need: 4, seconds: 120, easy, scene: escortScene(scene) });
-    }, { failHint: script.rescue.failHint, easyAfter: 2 });
+    const b = await runWithRetries(ctx, easy => rescue(ctx, easy), { failHint: script.rescue.failHint });
     input.enabled = false;
     await ctx.fade(true);
-    showAftermath(ctx); // 들판에 멈춰 선 백성·호위병을 치우고 성안으로(퀴즈 배경)
+    showAftermath(ctx); // 구출이 끝나면 들판에 멈춰 선 백성·거란 병사를 치운다(퀴즈 내내 서 있지 않게)
     await ctx.fade(false);
-    await talk(ctx, script.rescue.done);
-    await talk(ctx, script.result);
+    await sayAll(dialogue, script.rescue.done);
+    await sayAll(dialogue, script.result);
     ctx.setGoal(script.goals[5]);
     return { firstTryCorrect: [a, b].filter(x => x.first).length, firstTryTotal: 2, easyModeUsed: a.easyModeUsed || b.easyModeUsed };
-  },
-
-  // 장 끝(퀴즈 뒤): 도장 쾅과 지혜 카드 한 장. 별은 지금 computeStars 그대로
-  async finale(ctx, result) {
-    await finale(ctx, { stamp: script.finale.stamp, sub: script.finale.sub, stars: result.stars, card: script.wall.done[0] });
   },
 };

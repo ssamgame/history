@@ -1,13 +1,11 @@
 // 고려편 6개 장. load가 null인 장은 지도에 "준비 중"으로 보인다.
-// 2026-10-26 장 구성 변경(docs/superpowers/specs/2026-10-26-ch6-spec.md 5절): 4장에 윤관(ch7)을 넣고, 몽골(ch4)이 5장, 대장경 · 삼별초(ch5)가 6장.
-// 장 id는 저장 호환을 위해 그대로다(번호와 id가 다르다). 옛 삼별초 장(ch6)은 6장에 합쳐 목록에서 뺐다(폴더는 남김).
 export const CHAPTERS = [
   { id: 'ch1', no: 1, session: 1, title: '서희의 외교 담판', years: '993', event: '거란 1차 침입', place: '고려 서북쪽 국경', mapXY: [33, 27], load: () => import('./ch1/chapter.js') },
   { id: 'ch2', no: 2, session: 1, title: '양규와 흥화진', years: '1010', event: '거란 2차 침입', place: '흥화진', mapXY: [20, 17], load: () => import('./ch2/chapter.js') },
   { id: 'ch3', no: 3, session: 1, title: '강감찬과 귀주 대첩', years: '1018~1019', event: '거란 3차 침입', place: '귀주', mapXY: [28, 21], load: () => import('./ch3/chapter.js') },
-  { id: 'ch7', no: 4, session: 1, title: '윤관과 별무반', years: '1104~1109', event: '여진과의 싸움', place: '고려 동북쪽', mapXY: [52, 12], load: () => import('./ch7/chapter.js') },
-  { id: 'ch4', no: 5, session: 1, title: '강화도 천도와 처인성·충주성', years: '1231~1253', event: '몽골 침입', place: '강화도', mapXY: [33, 55], load: () => import('./ch4/chapter.js') },
-  { id: 'ch5', no: 6, session: 1, title: '팔만대장경과 삼별초', years: '1236~1273', event: '대장경과 삼별초 항쟁', place: '해인사 · 진도 · 제주', mapXY: [62, 78], load: () => import('./ch5/chapter.js') },
+  { id: 'ch4', no: 4, session: 1, title: '강화도 천도와 처인성·충주성', years: '1231~1253', event: '몽골 침입', place: '강화도', mapXY: [33, 55], load: () => import('./ch4/chapter.js') },
+  { id: 'ch5', no: 5, session: 1, title: '팔만대장경', years: '1236~1251', event: '몽골 침입', place: '합천 해인사', mapXY: [62, 78], load: () => import('./ch5/chapter.js') },
+  { id: 'ch6', no: 6, session: 1, title: '삼별초의 항쟁', years: '1270~1273', event: '몽골에 맞선 항쟁', place: '진도·제주', mapXY: [32, 85], load: () => import('./ch6/chapter.js') },
 ];
 
 // 조선편 6개 장 (조선편 설계 문서). 장을 완성하면 load를 채운다. 일어난 차례대로: 과학 기구(1434~) 다음에 훈민정음(1443~)
@@ -57,9 +55,9 @@ export const SESSIONS = {
       '서희는 담판으로 강동 6주를 얻었다',
       '양규는 흥화진을 지키고 백성을 구했다',
       '강감찬은 귀주 대첩에서 거란군을 크게 물리쳤다',
-      '윤관은 별무반을 이끌고 여진을 물리쳐 동북 9성을 쌓았다',
       '고려는 강화도로 도읍을 옮겨 몽골에 맞섰고, 김윤후와 백성들은 처인성과 충주성을 지켰다',
-      '고려 사람들은 팔만대장경을 만들었고, 삼별초는 진도와 제주에서 끝까지 싸웠다',
+      '고려 사람들은 부처의 힘으로 나라를 지키려고 팔만대장경을 만들었다',
+      '삼별초는 진도와 제주에서 끝까지 싸웠다',
     ],
   },
   2: {
@@ -126,18 +124,14 @@ export const courseById = id => COURSES.find(c => c.id === id) || COURSES[0];
 export const courseOfChapter = chapterId => COURSES.find(c => c.chapters.some(ch => ch.id === chapterId)) || COURSES[0];
 
 // 장을 열 수 있는지: 각 편의 1장은 언제나, 나머지는 같은 편의 앞 장을 마쳐야 한다.
-// 앞 장이 준비 중(load 없음)이면 그 앞 장을 기준으로 삼는다(준비 중인 장 때문에 뒤 장이 막히지 않게).
 export function isUnlocked(chapter, save) {
   if (!chapter.load) return false;
-  for (let no = chapter.no - 1; no >= 1; no--) {
-    const prev = ALL_CHAPTERS.find(c => c.session === chapter.session && c.no === no);
-    if (!prev) return false;
-    if (prev.load) return !!save.chapterResult(prev.id);
-  }
-  return true;
+  if (chapter.no === 1) return true;
+  const prev = ALL_CHAPTERS.find(c => c.session === chapter.session && c.no === chapter.no - 1);
+  return !!(prev && save.chapterResult(prev.id));
 }
 
-// 결과 카드를 띄울 때: 그 편의 모든 장(준비 중인 장은 빼고)을 마쳤는지
+// 결과 카드를 띄울 때: 그 편의 모든 장을 마쳤는지
 export function isSessionDone(session, save) {
-  return ALL_CHAPTERS.filter(c => c.session === session && c.load).every(c => save.chapterResult(c.id));
+  return ALL_CHAPTERS.filter(c => c.session === session).every(c => save.chapterResult(c.id));
 }

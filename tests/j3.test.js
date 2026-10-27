@@ -9,6 +9,8 @@ import { JOSEON } from '../chapters/index.js';
 import { testWorld, touchSetup, touchBot, memSave } from './bot.js';
 
 const answers = new Set(j3Script.quizzes.map(q => q.options[q.answer]));
+const cardPicks = new Set([...DIAL_ROUNDS.map(r => `${HOURS[r.h][1]} ${HOURS[r.h][0]}`), ...GAUGE_ROUNDS.map(r => `눈금 ${r.lv}`)]);
+const orders = [j3Script.clock.cards];
 
 test('j3: script passes validation', () => eq(validateScript(j3Script, SOURCES), []));
 
@@ -39,29 +41,11 @@ test('j3: scene has the three instruments and people', () => {
 
 test('j3: completes with touch-only actions', async () => {
   const s = touchSetup(j3Script.speakers);
-  const bot = touchBot(s, { answers });
+  const bot = touchBot(s, { answers, cardPicks, orders });
   try {
     const r = await runChapter(JOSEON.find(c => c.id === 'j3'), j3, s.ctx, memSave());
     eq(r.quizCorrect, 2);
-    eq(r.firstTryCorrect, 1); eq(r.firstTryTotal, 1, 'one play: 해 그림자 맞추기');
+    eq(r.firstTryCorrect, 3);
     eq(r.stars, 3);
   } finally { bot.stop(); s.done(); }
 }, { timeout: 150000 });
-
-test('j3: the shadow moves opposite the sun; a wrong check gives the hint, two wrong checks fail the round', async () => {
-  const { dial } = await import('../chapters/kit/dial.js');
-  const s = touchSetup(j3Script.speakers);
-  try {
-    const p = dial(s.ctx, { hours: HOURS, target: 2, hint: j3Script.dial.fail });
-    const h = () => s.ctx.testHooks.dial, b = act => s.ui.querySelector(`.jp-dial [data-act="${act}"]`);
-    eq(h().sun, 4); eq(h().need, 6, '그림자를 용(2번 줄)에 두려면 해는 반대쪽 6');
-    b('left').click(); b('check').click();
-    eq(s.ui.querySelector('.jp-hint').textContent, j3Script.dial.fail);
-    b('left').click(); b('check').click();
-    const r = await p; eq(r, { ok: false, wrong: 2 });
-    const p2 = dial(s.ctx, { hours: HOURS, target: 2 });
-    for (let i = 0; i < 4; i++) b('right').click();
-    b('check').click();
-    eq((await p2).ok, true);
-  } finally { s.done(); }
-});

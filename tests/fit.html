@@ -22,7 +22,9 @@
   else if (kind === 'j3dial') { const [c, s] = await J('j3'); chooseCards({ ui }, { title: s.dial.title, prompt: s.dial.prompt, figure: c.dialSVG(4), cards: [{ text: '🐍 뱀', correct: false }, { text: '🐴 말', correct: true }, { text: '🐑 양', correct: false }] }); }
   else if (kind === 'j3gauge') { const [c, s] = await J('j3'); chooseCards({ ui }, { title: s.rain.title, prompt: s.rain.prompt, figure: c.gaugeSVG(5), cards: [{ text: '눈금 6', correct: false }, { text: '눈금 5', correct: true }, { text: '눈금 4', correct: false }] }); }
   else if (kind === 'j3clock') { const [, s] = await J('j3'); orderCards({ ui }, { title: s.clock.title, cards: s.clock.cards }); }
+  else if (kind === 'j4wing') { const [c, s] = await J('j4'); placeOnBoard({ ui }, { title: s.wing.title, ...c.WING_BOARD }); }
   else if (kind === 'j5sort') { const [, s] = await J('j5'); sortCards({ ui }, { title: s.sort.title, bins: s.sort.bins, cards: s.sort.cards }); }
+  else if (kind === 'j6pulley') { const [c, s] = await J('j6'); chooseCards({ ui }, { title: s.pulley.title, prompt: s.pulley.prompt, figure: c.pulleySVG(), cards: s.pulley.cards }); }
   // 탐험 화면 위 정보(HUD)와 대화창을 가장 긴 글로 한꺼번에 띄운다(세로·가로 화면 배치 검사)
   else if (kind === 'hud') {
     const { createHud } = await import('../core/screens.js');
@@ -43,109 +45,6 @@
     const { COURSES } = await import('../chapters/index.js');
     const save = { data: { chapters: { ch1: { stars: 3 } } }, chapterResult: id => (id === 'ch1' ? { stars: 3 } : null) };
     showTitle(ui, { savedName: '5학년 3반 12번', hasProgress: true, storageOk: true, courses: COURSES, save, course: 'goryeo' });
-  }
-  // 작전 지휘판(chapters/kit/ops.js, 고려 2장 3파): 병사 말 넷·구역 셋과 위 가운데 지킴 게이지
-  else if (kind === 'ops') {
-    const { commandBoard, opsGauge } = await import('../chapters/kit/ops.js');
-    const updates = new Set(); (function loop() { for (const f of updates) f(1 / 60); requestAnimationFrame(loop); })();
-    const { createHud } = await import('../core/screens.js');
-    const hud = createHud(ui, { touch: true });
-    hud.show({ no: 2, years: '1010', event: '거란 2차 침입' }, { name: '흥화진을 지키는 병사' });
-    hud.setGoal('작전: 성벽으로 오는 사다리를 막아 내자', [4, 6]);
-    const ctx = { ui, hud, testHooks: {}, onAction: () => () => {}, world: { onUpdate: f => { updates.add(f); return () => updates.delete(f); } } };
-    const gauge = opsGauge(ctx);
-    commandBoard(ctx, { zones: [{ label: '왼쪽' }, { label: '가운데' }, { label: '오른쪽' }], units: 4, threats: [{ at: 0, zone: 1, need: 2 }], gauge, timing: { warn: 1000 } });
-  }
-  // 말 받아치기(chapters/kit/rally.js, 고려 1장): 가장 긴 소손녕 말(1판)과 가장 긴 대답 구슬(2판), 위 가운데 기세 게이지
-  else if (kind === 'rally') {
-    const { opsGauge } = await import('../chapters/kit/ops.js');
-    const { rally } = await import('../chapters/kit/rally.js');
-    const s = (await import('../chapters/ch1/script.js')).default;
-    const updates = new Set(); (function loop() { for (const f of updates) f(1 / 60); requestAnimationFrame(loop); })();
-    const { createHud } = await import('../core/screens.js');
-    const hud = createHud(ui, { touch: true });
-    hud.show({ no: 1, years: '993', event: '거란 1차 침입' }, { name: '고려의 젊은 병사' });
-    hud.setGoal(s.goals[3], [4, 5]);
-    const ctx = { ui, hud, testHooks: {}, onAction: () => () => {}, world: { onUpdate: f => { updates.add(f); return () => updates.delete(f); } } };
-    const gauge = opsGauge(ctx, { title: s.rally.gauge });
-    rally(ctx, { prompt: s.negotiation.q1.prompt, options: s.negotiation.q2.options, speaker: s.speakers.sonn.name, gauge });
-  }
-  // 둑 수위 조절·귀주 신호(chapters/kit/damflow.js·signal.js, 고려 3장): 큰 단추와 물 높이 막대 / 두 신호 표시와 공격 단추
-  else if (kind === 'damflow' || kind === 'signal') {
-    const s = (await import('../chapters/ch3/script.js')).default;
-    const updates = new Set(); (function loop() { for (const f of updates) f(1 / 60); requestAnimationFrame(loop); })();
-    const { createHud } = await import('../core/screens.js');
-    const hud = createHud(ui, { touch: true });
-    hud.show({ no: 3, years: '1018~1019', event: '거란 3차 침입' }, { name: '강감찬의 군사' });
-    hud.setGoal(s.goals[kind === 'damflow' ? 4 : 5], [kind === 'damflow' ? 5 : 6, 7]);
-    const ctx = { ui, hud, testHooks: {}, onAction: () => () => {}, world: { onUpdate: f => { updates.add(f); return () => updates.delete(f); } } };
-    if (kind === 'damflow') { const { damflow } = await import('../chapters/kit/damflow.js'); damflow(ctx, { window: [0.5, 0.82], crossSeconds: 1000, minLevel: 2 / 3, easy: true, label: s.dam.button }); }
-    else { const { signal } = await import('../chapters/kit/signal.js'); signal(ctx, { lights: s.guju.lights.map((label, i) => ({ label, at: 1000 + i })), open: 3, label: s.guju.button }); }
-  }
-  // 별무반 갈림길(chapters/kit/switch.js, 고려 새 4장 ch7): 길 단추 셋 · 사람 카드(가장 긴 줄 3무리) · 위 가운데 진행 막대
-  else if (kind === 'switch') {
-    const { opsGauge } = await import('../chapters/kit/ops.js');
-    const { switchLanes } = await import('../chapters/kit/switch.js');
-    const s = (await import('../chapters/ch7/script.js')).default;
-    const updates = new Set(); (function loop() { for (const f of updates) f(1 / 60); requestAnimationFrame(loop); })();
-    const { createHud } = await import('../core/screens.js');
-    const hud = createHud(ui, { touch: true });
-    hud.show({ no: 4, years: '1104~1109', event: '여진 정벌' }, { name: '별무반 지킴이' });
-    hud.setGoal(s.goals[1], [2, 4]);
-    const ctx = { ui, hud, testHooks: {}, onAction: () => () => {}, world: { onUpdate: f => { updates.add(f); return () => updates.delete(f); } } };
-    const gauge = opsGauge(ctx, { value: 0.3, ...s.switch.gauge });
-    switchLanes(ctx, { lanes: s.switch.lanes, people: s.switch.waves[2].people, rule: s.switch.rule, hints: s.switch.hints, name: p => p.name });
-  }
-  // 처인성 당겨 쏘기(chapters/kit/pullshot.js, 고려 새 5장 ch4): 활 단추 · 힘 막대 · 위 가운데 지킴 게이지
-  else if (kind === 'pullshot') {
-    const THREE = await import('three');
-    const { opsGauge } = await import('../chapters/kit/ops.js');
-    const { pullshot } = await import('../chapters/kit/pullshot.js');
-    const s = (await import('../chapters/ch4/script.js')).default;
-    const updates = new Set(); (function loop() { for (const f of updates) f(1 / 60); requestAnimationFrame(loop); })();
-    const { createHud } = await import('../core/screens.js');
-    const hud = createHud(ui, { touch: true });
-    hud.show({ no: 5, years: '1231~1253', event: '몽골 침입' }, { name: '처인성 지킴이' });
-    hud.setGoal(s.goals[2], [3, 5]);
-    const ctx = { ui, hud, testHooks: {}, onAction: () => () => {}, world: { level: new THREE.Group(), onUpdate: f => { updates.add(f); return () => updates.delete(f); } } };
-    const gauge = opsGauge(ctx, { value: 0.5, ...s.cheoin.gauge });
-    pullshot(ctx, { field: { center: [0, 0], wallR: 12, spawnR: 34, bow: [0, 1.3, -11] }, lanes: [4.1, 4.71, 5.33], wave: { ...s.cheoin.waves[2], gap: 1000 }, enemies: [], gauge, texts: s.cheoin.texts });
-    ui.querySelector('.pull-hint').hidden = false; ui.querySelector('.pull-hint').textContent = s.cheoin.texts.miss;
-  }
-  // 경판 공방 · 노 젓기 박자(chapters/kit/conveyor.js · rhythm.js, 고려 새 6장 ch5): 벨트 · 작업대 여섯 · 힌트 · 게이지 / 노 단추 둘
-  else if (kind === 'conveyor' || kind === 'rhythm') {
-    const { opsGauge } = await import('../chapters/kit/ops.js');
-    const s = (await import('../chapters/ch5/script.js')).default;
-    const updates = new Set(); (function loop() { for (const f of updates) f(1 / 60); requestAnimationFrame(loop); })();
-    const { createHud } = await import('../core/screens.js');
-    const hud = createHud(ui, { touch: true });
-    hud.show({ no: 6, years: '1236~1273', event: '대장경과 삼별초 항쟁' }, { name: '경판 공방 지킴이' });
-    hud.setGoal(s.goals[kind === 'conveyor' ? 1 : 3], [kind === 'conveyor' ? 2 : 4, 5]);
-    const ctx = { ui, hud, testHooks: {}, onAction: () => () => {}, world: { onUpdate: f => { updates.add(f); return () => updates.delete(f); } } };
-    if (kind === 'conveyor') {
-      const { conveyor } = await import('../chapters/kit/conveyor.js');
-      const { MAKING_PICTURES } = await import('../chapters/ch5/pictures.js');
-      opsGauge(ctx, { value: 0.3, ...s.making.gauge });
-      conveyor(ctx, { stations: s.making.cards.map((label, i) => ({ label, short: s.making.short[i], picture: MAKING_PICTURES[i] })), active: [0, 1, 2, 3, 4, 5], states: s.making.states, colors: s.making.colors, boards: 3, gap: 0.01, beltSeconds: 100000 });
-      await new Promise(r => setTimeout(r, 100));
-      const h = ui.querySelector('.conv-hint'); h.hidden = false; h.textContent = s.making.order;
-    } else {
-      const { rhythm } = await import('../chapters/kit/rhythm.js');
-      rhythm(ctx, { seconds: 100000, texts: s.sambyeolcho.texts });
-      const p = ui.querySelector('.row-pop'); p.hidden = false; p.textContent = s.sambyeolcho.texts.same;
-    }
-  }
-  // 조선편 놀이 판(chapters/kit/panel.js 위: 글자 조립소 · 해 그림자 · 의견 저울 · 학익진, 2026-10-27): kind=jp:이름. 가장 긴 글로
-  else if (kind.startsWith('jp:')) {
-    const name = kind.slice(3);
-    const updates = new Set(); (function loop() { for (const f of updates) f(1 / 60); requestAnimationFrame(loop); })();
-    const ctx = { ui, testHooks: {}, onAction: () => () => {}, world: { onUpdate: f => { updates.add(f); return () => updates.delete(f); } } };
-    if (name === 'assemble') { const s = (await import('../chapters/joseon/j2/script.js')).default; (await import('../chapters/kit/assemble.js')).assemble(ctx, { word: s.words[1].answer, decoys: s.assemble.decoys[1], title: s.words[1].title, prompt: s.assemble.prompt }); }
-    if (name === 'dial') { const s = (await import('../chapters/joseon/j3/script.js')).default; const c = await import('../chapters/joseon/j3/chapter.js'); (await import('../chapters/kit/dial.js')).dial(ctx, { hours: c.HOURS, target: 6, title: s.dial.title, prompt: s.dial.prompt(c.HOURS[6]) }); }
-    if (name === 'scale') { const s = (await import('../chapters/joseon/j5/script.js')).default; (await import('../chapters/kit/scale.js')).scale(ctx, { bins: s.sort.bins, cards: s.sort.cards.slice().sort((a, b) => b.text.length - a.text.length), title: s.sort.title, prompt: s.sort.prompt }); }
-    if (name === 'formation') { const s = (await import('../chapters/joseon/j4/script.js')).default; (await import('../chapters/kit/formation.js')).formation(ctx, { seconds: 100000, title: s.wing.title, prompt: s.wing.prompt }); }
-    await new Promise(r => setTimeout(r, 50));
-    const h = ui.querySelector('.jp-hint'); if (h) h.textContent = '가장 긴 힌트가 들어갈 자리: 학이 날개를 펼친 것처럼 두 날개 끝을 앞으로 굽혀 적을 둘러싸요.';
   }
   // 근대~현대편 카드형 미니게임: kind=kit:h3:0 (장 id: 부분 번호), &fill=1 이면 자리 놓기를 마지막 하나만 남기고 채운다
   else if (kind.startsWith('kit:')) {
