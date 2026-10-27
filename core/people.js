@@ -209,21 +209,53 @@ export function makePerson({ robe, hat, trim = 0x2b241c, face = {}, gear = null,
   return g;
 }
 
-// 걷기: 다리를 앞뒤로 크게 흔들고(옷자락 밑으로 발이 보이게), 팔은 반대로 흔든다
+// 걸음 한 박자(ph)의 자세(D-9 고려 1장 물러나는 거란군 걸음을 모든 인물에, D-11): 다리를 앞뒤로 크게, 무릎이 있는 인물은
+// 앞으로 내딛는 다리의 무릎을 굽히고, 팔은 다리와 반대로 흔든다. k(0~1)는 걸음 세기(멈출 때 줄어든다). 돌려주는 값은 들썩이는 높이.
+// 새 메시는 만들지 않고 관절 몇 개만 돌린다(무릎이 없는 인물은 무릎 없이).
+export function gaitPose(person, ph, k = 1) {
+  const u = person.userData, s = Math.sin(ph) * k, c = Math.cos(ph);
+  u.legs[0].rotation.x = s * 0.75; u.legs[1].rotation.x = -s * 0.75;
+  const k0 = u.legs[0].userData.knee, k1 = u.legs[1].userData.knee;
+  if (k0) k0.rotation.x = (0.1 + Math.max(0, -c) * 1.1) * k;
+  if (k1) k1.rotation.x = (0.1 + Math.max(0, c) * 1.1) * k;
+  if (u.arms) { u.arms[0].rotation.x = -s * 0.65; u.arms[1].rotation.x = s * 0.65; }
+  return Math.abs(c) * 0.08 * k;
+}
+// 네 다리 짐승(말)의 걸음: 대각선 짝(앞왼·뒤오른 / 앞오른·뒤왼)이 번갈아 나가고 머리를 걸음에 맞춰 끄덕인다. 들썩이는 높이를 돌려준다
+export function horseGait(horse, ph) {
+  const s = Math.sin(ph) * 0.6;
+  horse.userData.legs.forEach((l, j) => { l.rotation.x = j === 0 || j === 3 ? s : -s; });
+  if (horse.userData.head) horse.userData.head.rotation.x = Math.sin(ph * 2) * 0.08;
+  return Math.abs(Math.cos(ph)) * 0.05;
+}
+
+// 걷기: gaitPose로 걷는다. 사람마다 박자(ph)와 빠르기가 조금씩 달라 줄지어 걸어도 똑같이 움직이지 않는다.
+// 멈추면 걸음 세기가 부드럽게 줄어 제자리로 돌아온다. 들썩임은 높이에 더했다 빼는 방식이라 장이 높이를 정해도(둑·성벽 위) 쌓이지 않는다.
 export function animateWalk(person, moving, dt) {
   const u = person.userData;
   if (!u.legs) return;
-  if (moving) u.walk += dt * 11;
   u.t = (u.t || 0) + dt;
-  const k = moving ? Math.sin(u.walk) * 0.8 : 0;
+  const was = u.stride || 0;
+  u.stride = was + ((moving ? 1 : 0) - was) * Math.min(1, dt * 8);
+  if (u.stride < 0.002 && !moving) u.stride = 0;
+  if (moving || u.stride > 0) u.walk += dt * 7.5 * (0.92 + ((u.ph * 7.3) % 1) * 0.16);
+  const ph = u.walk + u.ph;
+  const working = !moving && u.work;
+  // 들썩임: 지난 프레임에 더한 값을 빼고 새 값을 더한다(그 사이 장이 높이를 새로 정했으면 그 높이를 바탕으로)
+  const p = person.position, base = u.bobY !== undefined && p.y === u.bobY ? p.y - (u.bob || 0) : p.y;
+  if (u.stride > 0) {
+    if (working) u.bob = 0; // 일하는 동작은 아래에서 따로 움직인다(걸음이 막 끝난 참이면 다리·팔은 그쪽으로 천천히 돌아간다)
+    else u.bob = gaitPose(person, ph, u.stride);
+  } else u.bob = 0;
+  p.y = base + u.bob; u.bobY = p.y;
   const ease = (o, v) => { o.rotation.x += (v - o.rotation.x) * 0.3; };
-  ease(u.legs[0], k); ease(u.legs[1], -k);
-  if (!moving && u.work) { // 일하는 동작: 망치질(오른팔을 들었다 내리기), 나르기(두 팔을 앞으로 모아 들기), 쓸기(두 팔을 함께 흔들기)
+  if (working) { // 일하는 동작: 망치질(오른팔을 들었다 내리기), 나르기(두 팔을 앞으로 모아 들기), 쓸기(두 팔을 함께 흔들기)
+    ease(u.legs[0], 0); ease(u.legs[1], 0);
     const w = u.t * (u.work === 'hammer' ? 5 : 2.2) + u.ph;
     if (u.work === 'hammer') { ease(u.arms[1], -1.6 + Math.max(0, Math.sin(w)) * 1.4); ease(u.arms[0], -0.3); }
     else if (u.work === 'carry') { ease(u.arms[0], -1.1); ease(u.arms[1], -1.1); }
     else { const s = Math.sin(w) * 0.45; ease(u.arms[0], -0.6 + s); ease(u.arms[1], -0.6 + s); }
-  } else { ease(u.arms[0], -k * 0.7); ease(u.arms[1], k * 0.7); }
+  }
   if (u.head) { // 서 있을 때는 천천히 두리번거리고(걸을 때는 앞을 본다)
     const look = moving ? 0 : Math.sin(u.t * 0.45 + u.ph) * 0.35 * Math.max(0, Math.sin(u.t * 0.21 + u.ph * 2));
     u.head.rotation.y += (look - u.head.rotation.y) * Math.min(1, dt * 3);

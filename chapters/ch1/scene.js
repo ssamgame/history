@@ -6,7 +6,7 @@ import { BUILD } from '../kit/town.js';
 import { gateLeaves, nameBoard } from '../kit/gate.js';
 import { makeFire } from '../../core/fire.js';
 import { groundMaterial } from '../../core/textures.js';
-import { mat, makePerson, labelSprite } from '../../core/people.js';
+import { mat, makePerson, labelSprite, gaitPose, horseGait } from '../../core/people.js';
 import { scatter } from '../../core/props.js';
 import { LOOKS, look } from '../../content/characters.js';
 
@@ -62,15 +62,8 @@ function addKnees(person) {
   person.userData.manual = true; // 걷기 자동 움직임(animateWalkers) 대신 아래 marchGait로 움직인다
 }
 
-// 행군 걸음 한 박자(ph): 다리를 앞뒤로 크게, 앞으로 내딛는 다리는 무릎을 굽히고, 팔은 다리와 반대로, 걸음마다 몸이 살짝 들썩인다
-function marchGait(o, ph) {
-  const u = o.userData, s = Math.sin(ph), c = Math.cos(ph);
-  u.legs[0].rotation.x = s * 0.75; u.legs[1].rotation.x = -s * 0.75;
-  u.legs[0].userData.knee.rotation.x = 0.1 + Math.max(0, -c) * 1.1;
-  u.legs[1].userData.knee.rotation.x = 0.1 + Math.max(0, c) * 1.1;
-  u.arms[0].rotation.x = -s * 0.65; u.arms[1].rotation.x = s * 0.65;
-  return Math.abs(c) * 0.08; // 들썩이는 높이
-}
+// 행군 걸음은 모든 인물이 같이 쓰는 core/people.js의 gaitPose·horseGait(D-11에서 이 장의 걸음을 공용으로 옮김)
+const marchGait = (o, ph) => gaitPose(o, ph);
 
 export function buildCh1Scene(world) {
   const L = world.level, q = world.quality, rand = seeded(7);
@@ -339,14 +332,10 @@ export function buildCh1Scene(world) {
         if (e < 1) continue;
         o.position.x += DX * MARCH * dt; o.position.z += DZ * MARCH * dt;
         const ph = marchT * 7.5 + u.ph;
-        o.position.y = Math.max(0, groundH(o.position.x, o.position.z)) + (o === horse ? Math.abs(Math.cos(ph)) * 0.05 : marchGait(o, ph));
+        o.position.y = Math.max(0, groundH(o.position.x, o.position.z)) + (o === horse ? horseGait(horse, ph) : marchGait(o, ph));
         const a = Math.min(1, Math.max(0, (o.position.z - GONE) / (FADE_FROM - GONE)));
         for (const m of u.mats) m.opacity = a;
         if (o.position.z < GONE) { o.visible = false; continue; }
-        if (o === horse) { // 대각선 짝(앞왼·뒤오른 / 앞오른·뒤왼)이 번갈아 나가고, 머리를 걸음에 맞춰 끄덕인다
-          const s = Math.sin(ph) * 0.6; horse.userData.legs.forEach((l, j) => { l.rotation.x = j === 0 || j === 3 ? s : -s; });
-          horse.userData.head.rotation.x = Math.sin(ph * 2) * 0.08;
-        }
         if (o.position.z > FADE_FROM) walking.push(o);
       }
       if (walking.length && dustT > 0.14) { // 발밑 흙먼지

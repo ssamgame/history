@@ -130,3 +130,37 @@ test('faces: 모자·투구·갓을 쓴 모든 인물의 눈썹과 눈이 대화
   for (const [id, look] of Object.entries(LOOKS)) { const b = faceBlockers(look); if (b.length) bad.push(`${id}(${look.hat}): ${b[0]}`); }
   eq(bad.length, 0, bad.join(' | '));
 });
+
+// D-11-1: 모든 인물의 걸음(1장 물러나는 거란군과 같은 걸음): 다리 크게 앞뒤, 팔은 반대로, 걸음마다 몸이 들썩, 사람마다 박자가 다르다
+import { animateWalk, gaitPose } from '../core/people.js';
+test('walk D-11: walking people swing legs wide with arms opposite, bob, and keep their own beat', () => {
+  const a = makePerson(LOOKS.soldier), b = makePerson(LOOKS.villager);
+  let maxLeg = 0, opposite = true, minY = Infinity, maxY = -Infinity, differ = false;
+  for (let i = 0; i < 80; i++) {
+    animateWalk(a, true, 1 / 30); animateWalk(b, true, 1 / 30);
+    const u = a.userData;
+    if (i > 20) {
+      maxLeg = Math.max(maxLeg, Math.abs(u.legs[0].rotation.x));
+      if (Math.abs(u.legs[0].rotation.x) > 0.2 && Math.sign(u.legs[0].rotation.x) === Math.sign(u.arms[0].rotation.x)) opposite = false;
+      minY = Math.min(minY, a.position.y); maxY = Math.max(maxY, a.position.y);
+      if (Math.abs(a.userData.legs[0].rotation.x - b.userData.legs[0].rotation.x) > 0.3) differ = true;
+    }
+  }
+  ok(maxLeg > 0.6, `legs swing wide (${maxLeg.toFixed(2)})`);
+  ok(opposite, 'arm swings against the leg on the same side');
+  ok(maxY - minY > 0.04, `body bobs (${(maxY - minY).toFixed(3)})`);
+  ok(differ, 'two people do not step in lockstep');
+  for (let i = 0; i < 60; i++) animateWalk(a, false, 1 / 30);
+  ok(Math.abs(a.position.y) < 0.005, `bob settles back when stopping (${a.position.y})`);
+  ok(Math.abs(a.userData.legs[0].rotation.x) < 0.05, 'legs settle when stopping');
+});
+test('walk D-11: a chapter that sets the height each frame keeps its height (bob does not pile up)', () => {
+  const a = makePerson(LOOKS.soldier);
+  for (let i = 0; i < 200; i++) { a.position.y = 2; animateWalk(a, true, 1 / 30); ok(Math.abs(a.position.y - 2) < 0.1, `y ${a.position.y}`); }
+});
+test('walk D-11: gaitPose bends knees only on people that have knees', () => {
+  const a = makePerson(LOOKS.soldier);
+  const h = gaitPose(a, 1.2);
+  ok(h >= 0 && h <= 0.081, 'bob height');
+  eq(a.userData.legs[0].rotation.x !== 0, true);
+});
