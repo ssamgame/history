@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { backdropMountains, surroundings } from '../kit/terrain.js';
 import { curvedHipRoof, tent, cart, boat, watchtower, spearRack, archeryTarget } from '../kit/buildings.js';
 import { BUILD } from '../kit/town.js';
+import { gateLeaves, nameBoard } from '../kit/gate.js';
 import { makeFire } from '../../core/fire.js';
 import { groundMaterial } from '../../core/textures.js';
 import { mat, makePerson, labelSprite } from '../../core/people.js';
@@ -91,7 +92,8 @@ export function buildCh1Scene(world) {
     flags.push({ m: f, ph: rand() * 6 });
   };
 
-  // 남쪽 성벽과 성문
+  // 남쪽 성벽과 성문(문짝 두 개는 장 시작 장면에서 열린다), 문 바로 안쪽 길옆에 진영 이름판
+  let gate;
   {
     const wz = 34;
     for (const sx of [-1, 1]) mk(new THREE.BoxGeometry(28.5, 3.2, 1.6), 0x8c8577, sx * 17.75, 1.6, wz);
@@ -102,7 +104,8 @@ export function buildCh1Scene(world) {
     cren.forEach((x, i) => { o.position.set(x, 3.55, wz); o.updateMatrix(); cm.setMatrixAt(i, o.matrix); });
     cm.castShadow = true; L.add(cm);
     for (const sx of [-1, 1]) mk(new THREE.BoxGeometry(2.2, 4, 2.4), 0x7d766a, sx * 4.1, 2, wz);
-    mk(new THREE.BoxGeometry(6, 3, 0.4), 0x6b4a32, 0, 1.5, wz);
+    gate = gateLeaves(L, { x: 0, z: wz, y: groundH(0, wz), width: 6, height: 3 });
+    nameBoard(L, '고려군 진영', -2.2, wz - 5.5, { y: groundH(-2.2, wz - 5.5) }); // 열린 왼쪽 문짝에 가리지 않는 자리
     mk(new THREE.BoxGeometry(10, 0.4, 3.2), 0x8c8577, 0, 4.2, wz);
     for (const sx of [-4, -1.4, 1.4, 4]) mk(new THREE.CylinderGeometry(0.15, 0.15, 1.6, 6), 0xa8392b, sx, 5.2, wz);
     mk(new THREE.BoxGeometry(9.6, 0.25, 3.4), 0x2f6b5e, 0, 6.05, wz);
@@ -216,7 +219,7 @@ export function buildCh1Scene(world) {
   world.addSpot('signGangdong', makeSign('강동 6주'), -1.5, 16.5);
   world.addSpot('signSong', makeSign('고려와 송, 거란'), 9.5, 18);
 
-  const scene = { ring, khitanGroup, gangdongPillars, sonn, emberCount: fire.emberCount, retreating: false,
+  const scene = { gate, ring, khitanGroup, gangdongPillars, sonn, emberCount: fire.emberCount, retreating: false,
     ferry: { x: 8, z: -13.4, r: 1.6 },
     negotiationSpot: {
       // 노을 해(서쪽 -x·북쪽 -z)를 등지고 옆(서쪽)에서 두 사람을 본다(역광으로 얼굴이 그늘지지 않게). 학생은 서희 뒤쪽에 비켜 선다

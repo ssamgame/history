@@ -37,7 +37,7 @@ test('ch1: low quality scene builds with flat water and fewer embers', () => {
 import { SOURCES } from '../content/sources.js';
 import { validateScript } from '../core/content.js';
 import ch1Script from '../chapters/ch1/script.js';
-import ch1, { readTry, introWalk, INTRO_FROM, START } from '../chapters/ch1/chapter.js';
+import ch1, { introWalk, INTRO_FROM, START } from '../chapters/ch1/chapter.js';
 import { runChapter } from '../core/flow.js';
 import { CHAPTERS } from '../chapters/index.js';
 
@@ -79,12 +79,20 @@ test('ch1: wrong first answer gives hint and lowers firstTryCorrect', async () =
   } finally { bot.stop(); s.done(); }
 }, { timeout: 60000 });
 
-// D-4 시험판(?try=1): 낮은 카메라·대화 때 얼굴 크게·장 시작에 걸어 들어오는 장면
-test('ch1: try trial only with ?try=1', () => {
-  eq(readTry('?debug=ch1-explore&try=1'), true);
-  eq(readTry('?try=1'), true);
-  eq(readTry(''), false);
-  eq(readTry('?try=0'), false);
+// D-5: 고려 1장 정식 — 낮은 카메라·정면 대화·문을 열고 들어오는 시작 장면과 장소 이름판
+test('ch1: camp gate has two leaves on the road and a name board just inside (not a spot)', () => {
+  const w = testWorld();
+  const sc = buildCh1Scene(w);
+  ok(sc.gate && sc.gate.leaves.length === 2, 'gate leaves');
+  const gz = sc.gate.z;
+  ok(gz < INTRO_FROM[1] && gz > START[1], 'gate between intro start and start');
+  sc.gate.setOpen(0); eq(sc.gate.leaves.map(l => +l.rotation.y.toFixed(2)), [0, 0]);
+  sc.gate.setOpen(1); ok(sc.gate.leaves.every(l => Math.abs(l.rotation.y) > 1.3), 'opens');
+  const board = w.level.getObjectByName('sign:고려군 진영');
+  ok(board, 'name board');
+  ok(board.position.z < gz && board.position.z > gz - 6 && Math.abs(board.position.x) > 1.5 && Math.abs(board.position.x) < 6, 'beside the road inside the gate');
+  ok(![...w.npcs.values()].some(n => n.mesh === board), 'not a reading spot');
+  w.dispose();
 });
 
 test('ch1: intro walk path from outside the camp is not blocked by colliders', () => {
@@ -112,6 +120,8 @@ test('ch1: intro walk brings the player in 3~5 s with input off, then restores; 
     for (; t < 8 && !done; t += 1 / 30) { s.w.step(1 / 30, { x: 0, z: 0 }); await Promise.resolve(); }
     await p;
     ok(t >= 3 && t <= 5.2, 'took ' + t.toFixed(2) + ' s');
+    const leaves = []; s.w.level.traverse(o => { if (o.name === 'gateLeaf') leaves.push(o); });
+    ok(leaves.length === 2 && leaves.every(l => Math.abs(l.rotation.y) > 1.3), 'gate left open');
     ok(Math.hypot(s.w.player.position.x - START[0], s.w.player.position.z - START[1]) < 0.3, 'at start');
     eq(s.w.bounds, b0); eq(s.w.autoMove, null);
     // 건너뛰기: 키를 누르면 바로 끝난다

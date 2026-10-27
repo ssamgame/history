@@ -168,23 +168,29 @@ test('signs: 모든 안내판 제목이 판 높이의 절반쯤 되는 큰 글�
   }
 });
 
-// D-4 시험판(tryMode): 따라가기 카메라가 낮고(0,6,9), 대화 카메라가 얼굴에 더 다가간다. autoMove는 정해진 걸음.
-test('world: tryMode lowers the follow camera and zooms the talk camera on the face', () => {
+// D-5 가까운 시점(closeView): 따라가기 카메라가 낮고(0,6,9), 대화 때는 인물 얼굴을 정면에서 당겨 보며 학생 몸은 숨긴다. autoMove는 정해진 걸음.
+test('world: closeView lowers the follow camera and faces the talk camera to the npc', () => {
   const w = makeWorld();
   w.player.position.set(0, 0, 0);
   w.snapCamera(); eq([w.camera.position.y, w.camera.position.z], [8.5, 12]);
-  w.tryMode = true; w.snapCamera(); eq([w.camera.position.y, w.camera.position.z], [6, 9]);
-  const npc = makePerson({}); npc.position.set(0, 0, -4); w.level.add(npc);
+  w.closeView = true; w.snapCamera(); eq([w.camera.position.y, w.camera.position.z], [6, 9]);
+  const npc = makePerson({}); npc.position.set(3, 0, -4); w.level.add(npc);
   const talk = () => {
     w.setTalkCamera(npc);
     for (let i = 0; i < 120; i++) w.step(1 / 30, { x: 0, z: 0 });
     return w.camera.fov;
   };
-  ok(talk() < 47, 'try talk zooms in on the face ' + w.camera.fov);
+  ok(talk() < 47, 'close talk zooms in on the face ' + w.camera.fov);
+  // 정면: 카메라가 인물에서 학생 쪽 방향 위에 있다(비스듬하지 않게)
+  const toP = Math.atan2(w.player.position.x - 3, w.player.position.z + 4), toC = Math.atan2(w.camera.position.x - 3, w.camera.position.z + 4);
+  ok(Math.abs(Math.atan2(Math.sin(toC - toP), Math.cos(toC - toP))) < 0.1, 'camera straight in front ' + (toC - toP));
+  ok(!w.player.visible, 'player hidden while talking');
   w.camMode = 'follow'; for (let i = 0; i < 120; i++) w.step(1 / 30, { x: 0, z: 0 });
   ok(Math.abs(w.camera.fov - 50) < 0.5, 'fov back after talk ' + w.camera.fov);
-  w.tryMode = false;
+  ok(w.player.visible, 'player shown again');
+  w.closeView = false;
   eq(talk(), 50);
+  ok(w.player.visible, 'other chapters keep the player visible');
   w.camMode = 'follow';
   w.autoMove = { x: 0, z: -1 };
   for (let i = 0; i < 30; i++) w.step(1 / 30, { x: 0, z: 0 });

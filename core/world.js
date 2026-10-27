@@ -125,8 +125,8 @@ export const MOODS = {
 const SPEED = 6.5;
 const PLAYER_R = 0.4;
 const CAM_OFFSET = new THREE.Vector3(0, 8.5, 12);
-const CAM_LOW = new THREE.Vector3(0, 6, 9); // 시험판(D-4 ㉮): 조금 낮은 카메라
-const FOV = 50; // 시험판(D-4 ㉲): 대화 때는 화각을 좁혀(talkFov) 얼굴을 크게
+const CAM_LOW = new THREE.Vector3(0, 6, 9); // 가까운 시점(D-5): 조금 낮은 카메라
+const FOV = 50; // 가까운 시점: 대화 때는 화각을 좁혀(talkFov) 얼굴을 크게
 const LOOK_AHEAD = -4; // 카메라는 플레이어보다 조금 앞(북쪽)을 본다
 
 // 하늘: 위·지평선·아래 세 색의 그러데이션 + 해 둘레의 빛 + 천천히 흐르는 구름(화질 낮음에서는 구름을 끈다)
@@ -199,7 +199,7 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
   let goal = null, elapsed = 0, fit = null;
   const talkPos = new THREE.Vector3(), talkTarget = new THREE.Vector3(), offsetVec = new THREE.Vector3();
   const projected = new THREE.Vector3();
-  let talkFov = FOV;
+  let talkFov = FOV, hidForTalk = false;
   function applyFit() {
     camera.updateProjectionMatrix();
     for (let d = 8; d <= 160; d += 0.5) {
@@ -222,7 +222,7 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
     colliders: [], npcs: new Map(),
     bounds: { x0: -50, x1: 50, z0: -50, z1: 50 },
     camMode: 'follow',
-    tryMode: false, // 시험판(D-4, ?try=1): 낮은 카메라, 대화 때 얼굴 크게
+    closeView: false, // 가까운 시점(D-5): 낮은 카메라, 대화 때 인물 얼굴을 정면에서 크게(학생 몸은 숨김). 장이 켜고 끈다
     autoMove: null, // 정해진 걸음({x,z}): 있으면 입력 대신 이 방향으로 걷는다(장 시작 장면)
     quality: QUALITY[quality],
     qualityLevel: quality,
@@ -315,10 +315,9 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
       const n = npcMesh.position, p = player.position;
       let dx = p.x - n.x, dz = p.z - n.z;
       const d = Math.hypot(dx, dz) || 1; dx /= d; dz /= d;
-      if (world.tryMode) { // 시험판: 인물 앞에서 35°쯤 비켜(학생 몸에 가리지 않게) 화각을 좁혀 얼굴을 화면 높이의 1/3쯤으로(얼굴은 위쪽, 대화창은 아래)
-        const c = Math.cos(0.6), s = Math.sin(0.6), rx = dx * c + dz * s, rz = dz * c - dx * s;
-        talkPos.set(n.x + rx * 3.4, 2.45, n.z + rz * 3.4);
-        talkTarget.set(n.x + dx * 0.3, 1.95, n.z + dz * 0.3);
+      if (world.closeView) { // 인물 정면(학생 쪽)에서 화각을 좁혀 얼굴을 화면 높이의 1/3쯤으로(얼굴은 위쪽, 대화창은 아래). 학생 몸은 대화 동안 숨긴다
+        talkPos.set(n.x + dx * 3.4, 2.35, n.z + dz * 3.4);
+        talkTarget.set(n.x + dx * 0.3, 2.05, n.z + dz * 0.3);
         talkFov = Math.min(FOV, Math.max(26, 2 * Math.atan(1.35 / talkPos.distanceTo(talkTarget)) * 180 / Math.PI));
       } else {
         talkPos.set(n.x + dx * 3.6 + dz * 1.3, 2.9, n.z + dz * 3.6 - dx * 1.3);
@@ -340,10 +339,10 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
     },
     snapCamera() {
       camera.position.copy(player.position).add(world.camOffset());
-      camTarget.copy(player.position).setY(world.tryMode ? 1.2 : 1); camTarget.z += LOOK_AHEAD; camera.lookAt(camTarget);
+      camTarget.copy(player.position).setY(world.closeView ? 1.2 : 1); camTarget.z += LOOK_AHEAD; camera.lookAt(camTarget);
     },
     // 따로 쓰는 벡터(offsetVec)에 담는다. tmp를 같이 쓰면 'tmp.copy(p).add(camOffset())'가 '오프셋×2'가 되어 카메라가 원점 근처에 머문다.
-    camOffset() { return offsetVec.copy(world.tryMode ? CAM_LOW : CAM_OFFSET).multiplyScalar(camera.aspect < 1 ? Math.min(2.1, 1.15 / camera.aspect) : 1); }, // 세로 화면은 좌우가 좁아 더 멀리서 본다
+    camOffset() { return offsetVec.copy(world.closeView ? CAM_LOW : CAM_OFFSET).multiplyScalar(camera.aspect < 1 ? Math.min(2.1, 1.15 / camera.aspect) : 1); }, // 세로 화면은 좌우가 좁아 더 멀리서 본다
     onUpdate(fn) {
       updaters.push(fn);
       return () => { const i = updaters.indexOf(fn); if (i >= 0) updaters.splice(i, 1); };
@@ -380,17 +379,20 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
       animateWalkers(dt, scene); // 움직인 인물(따라오는 사람·감시원 등)은 다리를 흔든다
       if (world.camMode === 'fixed' && fit && fit.aspect !== camera.aspect) applyFit();
       if (world.camMode === 'talk') {
-        const a = 1 - Math.exp(-dt * (world.tryMode ? 3 : 5)); // 시험판은 더 천천히 다가간다
+        const a = 1 - Math.exp(-dt * (world.closeView ? 3 : 5)); // 가까운 시점은 더 천천히 다가간다
         camera.position.lerp(talkPos, a);
         camTarget.lerp(talkTarget, a);
         camera.lookAt(camTarget);
       }
-      const fov = world.tryMode && world.camMode === 'talk' ? talkFov : FOV; // 시험판: 대화 때 천천히 당겨 본다
+      const closeTalk = world.closeView && world.camMode === 'talk';
+      if (closeTalk) { if (player.visible) { player.visible = false; hidForTalk = true; } }
+      else if (hidForTalk) { player.visible = true; hidForTalk = false; }
+      const fov = closeTalk ? talkFov : FOV; // 가까운 시점: 대화 때 천천히 당겨 본다
       if (camera.fov !== fov) { const d = fov - camera.fov; camera.fov = Math.abs(d) < 0.05 ? fov : camera.fov + d * Math.min(1, dt * 3); camera.updateProjectionMatrix(); }
       if (world.camMode === 'follow') {
         const a = 1 - Math.exp(-dt * 4);
         camera.position.lerp(tmp.copy(p).add(world.camOffset()), a);
-        camTarget.lerp(tmp.copy(p).setY(world.tryMode ? 1.2 : 1).setZ(p.z + LOOK_AHEAD), a);
+        camTarget.lerp(tmp.copy(p).setY(world.closeView ? 1.2 : 1).setZ(p.z + LOOK_AHEAD), a);
         camera.lookAt(camTarget);
       }
       placeSun();
@@ -403,7 +405,7 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
         o.traverse(c => { if (c.geometry) c.geometry.dispose(); });
       }
       world.colliders.length = 0; world.npcs.clear(); updaters.length = 0; goal = null;
-      world.tryMode = false; world.autoMove = null; camera.fov = FOV; camera.updateProjectionMatrix();
+      world.closeView = false; world.autoMove = null; if (hidForTalk) { player.visible = true; hidForTalk = false; } camera.fov = FOV; camera.updateProjectionMatrix();
     },
     render() { renderer.render(scene, camera); },
     dispose() {
