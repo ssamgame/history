@@ -317,3 +317,27 @@ test('ch1 D-9: retreating soldiers swing legs, knees and arms with a bob; the ho
     ok(nod.size > 5, 'horse head nods');
   } finally { w.dispose(); }
 });
+
+// D-9: 물러나는 병사·말·소손녕은 걸어가는 쪽을 바라본다(고려 쪽에서는 뒷모습). 뒷걸음질하지 않는다
+test('ch1 D-9: retreating army faces the way it walks', () => {
+  const w = testWorld();
+  try {
+    const sc = buildCh1Scene(w);
+    const army = sc.startRetreat();
+    for (let i = 0; i < 60; i++) w.step(0.05, { x: 0, z: 0 });
+    const before = army.map(o => o.getWorldPosition(new THREE.Vector3()));
+    for (let i = 0; i < 10; i++) w.step(0.05, { x: 0, z: 0 });
+    const fwd = new THREE.Vector3(), head = new THREE.Vector3();
+    army.forEach((o, i) => {
+      if (!o.visible) return;
+      const mv = o.getWorldPosition(new THREE.Vector3()).sub(before[i]).setY(0).normalize();
+      o.getWorldDirection(fwd).setY(0).normalize();
+      ok(fwd.dot(mv) > 0.9, `unit ${i} faces where it walks (${fwd.dot(mv).toFixed(2)})`);
+      const hg = o.getObjectByName('headGroup');
+      if (hg) { hg.getWorldDirection(head).setY(0).normalize(); ok(head.dot(mv) > 0.8, `unit ${i} head looks ahead (${head.dot(mv).toFixed(2)})`); }
+    });
+    const sonnHead = sc.sonn.getObjectByName('headGroup').getWorldDirection(head).setY(0).normalize();
+    const hm = sc.horse.getWorldDirection(fwd).setY(0).normalize();
+    ok(sonnHead.dot(hm) > 0.8, 'Sonn looks the same way as his horse');
+  } finally { w.dispose(); }
+});
