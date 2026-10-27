@@ -1,5 +1,5 @@
 import { test, eq, ok } from './harness.js';
-import { showTitle, askName, showMap, showSessionCard } from '../core/screens.js';
+import { showTitle, askName, showMap, showSessionCard, showMenu, showChapterResult } from '../core/screens.js';
 import { CHAPTERS, SESSIONS } from '../chapters/index.js';
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -298,4 +298,18 @@ test('screens: intro card and hud show no "이번 장의 나" box or "나:" line
   hud.show(CHAPTERS[0], role);
   ok(![...r.querySelectorAll('.hud *')].some(e => !e.hidden && e.children.length === 0 && e.textContent.startsWith('나:')), 'no 나: line');
   r.remove();
+});
+
+// D-9: 역사 수첩은 학생 화면 어디에도 없다(메뉴·장 결과 카드)
+test('screens D-9: no 역사 수첩 in the menu or on the chapter result card', async () => {
+  const r = root();
+  try {
+    showMenu(r, { muted: false, quality: 'medium', notebook: true }, () => {});
+    await sleep(10);
+    ok(!r.textContent.includes('수첩'), 'menu has no notebook button');
+    btn(r, '닫기').click(); await sleep(10);
+    showChapterResult(r, { no: 1, title: '서희의 외교 담판' }, { stars: 3, quizCorrect: 2, quizTotal: 2, firstTryCorrect: 1, firstTryTotal: 1, seconds: 300 }, [{ kind: 'event', lines: [{ text: 'x', src: ['S1'] }] }]);
+    await sleep(10);
+    ok(!r.textContent.includes('수첩'), 'result card has no notebook button');
+  } finally { r.remove(); }
 });

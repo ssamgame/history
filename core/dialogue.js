@@ -4,7 +4,7 @@ import { portraitURL } from './faces.js';
 const NARR = { name: '해설', mark: '史', color: '#5a5248' };
 const CLICK_GUARD_MS = 250; // 선택지가 열린 직후의 탭은 앞 대사를 넘기려던 탭이므로 무시
 
-// onSay(line): 대사가 나올 때마다 부른다(역사 수첩이 사실을 적는다)
+// onSay(line): 대사가 나올 때마다 부른다
 export function createDialogue(root, speakers, { typeMs = 26, reduceMotion = false, onSay = null } = {}) {
   const all = { narr: NARR, ...speakers };
   const el = document.createElement('div');

@@ -8,8 +8,7 @@ import { createDialogue } from './dialogue.js';
 import { createQualityController, guessInitialQuality } from './quality.js';
 import { runChapter } from './flow.js';
 import { createMusic } from './music.js';
-import { showTitle, askName, showCourses, showMap, showIntroCard, showChapterResult, showSessionCard, showMenu, showMessage, createHud, showNotebook } from './screens.js';
-import { createNotebook } from './notebook.js';
+import { showTitle, askName, showCourses, showMap, showIntroCard, showChapterResult, showSessionCard, showMenu, showMessage, createHud } from './screens.js';
 import { perfEnabled, createPerfStats, createPerfPanel } from './perf.js';
 import { ALL_CHAPTERS, COURSES, courseById, courseOfChapter, isSessionDone } from '../chapters/index.js';
 import { LOOKS } from '../content/characters.js';
@@ -60,7 +59,6 @@ function boot() {
   const actionHandlers = new Set();
   let dialogue = null;
   let role = null; // 지금 장에서 학생이 맡은 역할(content/roles.js)
-  const notebook = createNotebook(); // 역사 수첩: 이 장에서 들은 사실
   let curMeta = null, curGoals = []; // 이 장의 목표 목록(미션 진행 표시)
   input.onAction(() => {
     if (dialogue && dialogue.isOpen()) { if (!dialogue.isChoosing()) dialogue.advance(); return; }
@@ -71,13 +69,12 @@ function boot() {
   const openMenu = async () => {
     if (!inChapter) return;
     world.paused = true; // 메뉴를 보는 동안 미니게임 시간이 흐르지 않게
-    const choice = await showMenu(ui, { muted: audio.muted, music: musicOn, quality: quality.level, storageOk: storage.available, notebook: !!curMeta }, change => {
+    const choice = await showMenu(ui, { muted: audio.muted, music: musicOn, quality: quality.level, storageOk: storage.available }, change => {
       if ('muted' in change) { audio.setMuted(change.muted); storage.set(PREF_MUTED, change.muted); }
       if ('music' in change) { musicOn = change.music; storage.set(PREF_MUSIC, change.music); }
       applyMusic();
       if (change.quality) { quality.set(change.quality); storage.set(PREF_QUALITY, change.quality); }
     });
-    if (choice === 'notebook') await showNotebook(ui, curMeta, notebook.entries()); // 수첩을 보는 동안에도 멈춰 둔다
     world.paused = false;
     if (choice === 'map') { save.abandonCurrent(); location.reload(); } // 하던 장을 버리고 새로 열면 첫 화면 → 지도
   };
@@ -85,7 +82,7 @@ function boot() {
   hud.menuBtn.addEventListener('click', openMenu);
 
   const ctx = {
-    world, input, audio, music, hud, ui, testHooks: {}, notebook,
+    world, input, audio, music, hud, ui, testHooks: {},
     screens: { showIntroCard: (meta, lines) => showIntroCard(ui, meta, lines) },
     get dialogue() { return dialogue; },
     setGoal: text => { const g = curGoals, i = g.indexOf(text); hud.setGoal(text, i >= 0 ? [i + 1, g.length] : null); },
@@ -119,9 +116,8 @@ function boot() {
     role = ROLES[meta.id] ? { ...ROLES[meta.id], lookOpts: roleLook(meta.id, mod.player) } : null;
     world.setPlayerLook(roleLook(meta.id, mod.player), role ? role.scale : 1); // 장마다 학생 역할(고려 병사, 궁궐 심부름하는 아이 등): 생김새와 키
     curMeta = meta; curGoals = Array.isArray(mod.script.goals) ? mod.script.goals : [];
-    notebook.start(save.notes(meta.id), mod.script.speakers);
     ctx.spotState = { found: new Set(), read: new Set() }; // 새 장: 발견·읽은 안내판을 새로 센다
-    dialogue = createDialogue(ui, mod.script.speakers, { reduceMotion, onSay: l => { if (notebook.record(l)) save.setNotes(meta.id, notebook.entries()); } });
+    dialogue = createDialogue(ui, mod.script.speakers, { reduceMotion });
     hud.show(meta);
     hud.setTouchVisible(true);
     inChapter = true; input.enabled = true;
@@ -133,8 +129,7 @@ function boot() {
     hud.hide();
     dialogue.dispose(); dialogue = null;
     curMeta = null;
-    save.setNotes(meta.id, notebook.entries()); // 퀴즈 해설까지 넣어 저장
-    await showChapterResult(ui, meta, result, notebook.entries());
+    await showChapterResult(ui, meta, result);
     if (isSessionDone(meta.session, save)) await showSessionCard(ui, meta.session, save, ALL_CHAPTERS);
   }
 

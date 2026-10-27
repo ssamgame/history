@@ -69,7 +69,7 @@ test('save: reset clears name, chapters, current', () => {
   save.setName('a'); save.checkpoint('ch1', 'quiz');
   save.finishChapter('ch1', { stars: 2 });
   save.reset();
-  eq(save.data, { name: '', chapters: {}, current: null, course: null, notes: {} });
+  eq(save.data, { name: '', chapters: {}, current: null, course: null });
   const again = createSave(createStorage(backend)); again.load();
   eq(again.data.name, '');
 });
@@ -78,7 +78,7 @@ test('save: corrupt stored data falls back to empty', () => {
   const backend = memoryBackend();
   backend.setItem('goryeo-game:v1', '{not json');
   const save = createSave(createStorage(backend)); save.load();
-  eq(save.data, { name: '', chapters: {}, current: null, course: null, notes: {} });
+  eq(save.data, { name: '', chapters: {}, current: null, course: null });
   ok(true);
 });
 
@@ -133,4 +133,15 @@ test('save: 옛 기록 — 장 사이에서 멈췄어도 고려편, 이름만 �
   backend.setItem('goryeo-game:v1', JSON.stringify({ name: '이름만', chapters: {}, current: null }));
   const b = createSave(createStorage(backend)); b.load();
   eq(b.data.course, null, '아무 장도 안 했으면 편을 고른다');
+});
+
+// D-9: 역사 수첩을 없앴다. 옛 수첩이 저장된 기록도 오류 없이 읽고, 수첩은 버린다
+test('save D-9: old saves with notebook notes load fine and the notes are dropped', () => {
+  const st = createStorage(memoryBackend());
+  st.set('goryeo-game:v1', { name: '가', chapters: { ch1: { stars: 3 } }, current: null, course: 'goryeo', notes: { ch1: [{ kind: 'event', lines: [] }] } });
+  const s = createSave(st);
+  s.load();
+  eq(s.data.name, '가'); eq(s.chapterResult('ch1').stars, 3);
+  ok(!('notes' in s.data), 'notes dropped');
+  eq(typeof s.notes, 'undefined', 'no notes API');
 });

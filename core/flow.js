@@ -52,7 +52,6 @@ export async function runChapter(meta, chapter, ctx, save, { resumeStage = 'intr
     for (const [k, q] of quizzes.entries()) {
       const hide = ctx.world && ctx.ui ? showQuizView(ctx, chapter, q, k) : () => {}; // 3D 장면이 없는 시험용 ctx에서는 배경 없이
       const { correct } = await ctx.dialogue.quiz(q).finally(hide);
-      ctx.notebook?.recordQuiz(q, correct);
       result.quizTotal += 1;
       if (correct) result.quizCorrect += 1;
       else result.wrongQuizzes.push({ question: q.question, answer: q.options[q.answer], explain: q.explain });
@@ -103,9 +102,8 @@ export function roam(ctx, { onTalk, zones = [] }) {
     const p = npc.mesh.position;
     npc.mesh.rotation.y = Math.atan2(world.player.position.x - p.x, world.player.position.z - p.z);
     world.setTalkCamera(npc.mesh); // 대화하는 동안 인물 얼굴 가까이
-    if (npc.spot) { ctx.notebook?.setContext({ kind: 'place', title: npc.mesh.userData.title || '안내판' }); read.add(npc.id); showRead(); }
+    if (npc.spot) { read.add(npc.id); showRead(); }
     try { await onTalk(npc.id); } finally {
-      ctx.notebook?.setContext(null);
       if (world.camMode === 'talk') world.camMode = 'follow';
       dialogue.close();
       busy = false; input.enabled = !stopped;

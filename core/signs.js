@@ -27,7 +27,7 @@ export function signTextLayout(c, title) {
 
 export function makeSign(title) {
   const g = new THREE.Group();
-  g.userData.title = title; // 역사 수첩과 '새 장소 발견'에 쓰는 이름
+  g.userData.title = title; // '새 장소 발견'에 쓰는 이름
   for (const x of [-1.1, 1.1]) {
     const post = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.11, 2.6, 6), mat(0x5a3f2a, 'wood', 'object'));
     post.position.set(x, 1.3, -0.15); post.castShadow = true; g.add(post); // 기둥은 판 뒤에: 글자 양끝을 가리지 않게

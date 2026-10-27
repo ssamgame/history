@@ -508,7 +508,7 @@ export function fitFigures(ctx, { title, figures, circles, easy = false, hint = 
 }
 
 // 역사책 넘기기: 한 쪽마다 왼쪽에 그림, 오른쪽에 제목·해·해설(출처). '다음'을 누르면 책장이 넘어간다. 마지막 쪽에서 '다 읽었어요'.
-// pages: [{ title, year?, figure(SVG 글), lines: [{ who: 'narr', text, src }] }]. 읽은 해설은 역사 수첩에 적는다. 늘 true로 끝난다.
+// pages: [{ title, year?, figure(SVG 글), lines: [{ who: 'narr', text, src }] }]. 늘 true로 끝난다.
 // render(page): 그 쪽의 재현 그림(데이터 주소)을 돌려주면 평면 그림 대신 보여 주고 '재현 그림'이라고 적는다(없거나 실패하면 page.figure).
 // render(page) → 그림 주소(재현 그림). 그림 찍기는 무거울 수 있어서 글을 먼저 보여 주고 곧바로 이어 그리며,
 // 읽는 동안 다음 쪽 그림을 미리 찍어 둔다(넘길 때 멈칫하지 않게). onTiming(이름, ms): 개발용 성능 측정
@@ -545,7 +545,6 @@ export function readBook(ctx, { title, pages, render = null, onTiming = null }) 
       else { pic.replaceChildren(el('span', 'book-wait', '그림을 펼치는 중…')); setTimeout(() => { if (!closed && token === shown) { putPic(k); ahead(k); } }, 30); } // 글이 먼저 화면에 뜨게
       text.replaceChildren(el('h3', null, p.title), ...(p.year ? [el('div', 'book-year', p.year)] : []),
         ...p.lines.map(l => { const q = el('p', null, l.text); if (l.src) q.append(' ', el('span', 'book-src', `[${l.src.join('·')}]`)); return q; }));
-      for (const l of p.lines) ctx.notebook?.record(l);
       page.textContent = `${i + 1} / ${pages.length}`;
       prev.disabled = i === 0;
       next.textContent = i === pages.length - 1 ? '다 읽었어요' : '다음 쪽 ▶';
@@ -557,7 +556,7 @@ export function readBook(ctx, { title, pages, render = null, onTiming = null }) 
   });
 }
 
-// 문서 보기: 한지에 적은 글(요구 사항 등)을 바로 읽는다. items: [{ text, note? }]. 읽은 것은 역사 수첩에 적는다(src가 있으면).
+// 문서 보기: 한지에 적은 글(요구 사항 등)을 바로 읽는다. items: [{ text, note? }].
 export function showDocument(ctx, { title, heading, intro = '', items, src = null, button = '다 읽었어요' }) {
   return new Promise(resolve => {
     const screen = el('section', 'screen order doc');
@@ -569,7 +568,6 @@ export function showDocument(ctx, { title, heading, intro = '', items, src = nul
     const ok = el('button', 'btn primary doc-ok', button); ok.type = 'button';
     card.append(el('div', 'eyebrow', '문서 읽기'), el('h2', null, title), ...(intro ? [el('p', null, intro)] : []), paper, ok);
     screen.append(card); ctx.ui.append(screen);
-    if (src) for (const it of items) ctx.notebook?.record({ who: 'narr', text: `${heading}: ${it.text}`, src });
     ok.addEventListener('click', () => { screen.remove(); resolve(true); });
   });
 }

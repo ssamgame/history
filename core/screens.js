@@ -135,7 +135,7 @@ export function showIntroCard(root, meta, lines) {
   });
 }
 
-export function showChapterResult(root, meta, r, notes = null) {
+export function showChapterResult(root, meta, r) {
   return new Promise(resolve => {
     const el = screen(root, 'result',
       h('div', { class: 'card' },
@@ -147,7 +147,6 @@ export function showChapterResult(root, meta, r, notes = null) {
           r.firstTryTotal > 0 && h('div', {}, h('b', {}, `${r.firstTryCorrect}/${r.firstTryTotal}`), h('span', {}, '놀이 한 번에')),
           h('div', {}, h('b', {}, timeText(r.seconds)), h('span', {}, '걸린 시간'))),
         h('div', { class: 'row' },
-          notes && notes.length > 0 && h('button', { class: 'btn', type: 'button', onclick: () => showNotebook(root, meta, notes) }, '역사 수첩 보기'),
           h('button', { class: 'btn primary', type: 'button', onclick: () => { el.remove(); resolve(); } }, '다음'))));
   });
 }
@@ -181,7 +180,7 @@ export function showSessionCard(root, session, save, chapters) {
 }
 
 const openMenus = new WeakMap(); // root → 열려 있는 메뉴의 약속 (Esc를 여러 번 눌러도 메뉴는 하나)
-export function showMenu(root, { muted, music = null, quality, storageOk = true, notebook = false }, onChange) {
+export function showMenu(root, { muted, music = null, quality, storageOk = true }, onChange) { // 역사 수첩 단추는 2026-10-27(D-9) 뺐다
   if (openMenus.has(root)) return openMenus.get(root);
   const p = new Promise(resolve => {
     const close = v => { el.remove(); openMenus.delete(root); resolve(v); };
@@ -199,7 +198,6 @@ export function showMenu(root, { muted, music = null, quality, storageOk = true,
           music !== null && h('button', { class: 'btn', type: 'button', onclick: () => { onChange({ music: !music }); close('close'); } }, music ? '음악 끄기' : '음악 켜기')),
         h('p', {}, '화질'),
         h('div', { class: 'row' }, qb('low', '낮음'), qb('medium', '보통'), qb('high', '높음')),
-        notebook && h('div', { class: 'row' }, h('button', { class: 'btn', type: 'button', onclick: () => close('notebook') }, '역사 수첩')),
         h('div', { class: 'row' },
           h('button', { class: 'btn', type: 'button', onclick: () => (storageOk ? close('map') : (leave.hidden = false)) }, '장 선택으로'),
           h('button', { class: 'btn primary', type: 'button', onclick: () => close('close') }, '닫기')),
@@ -207,35 +205,6 @@ export function showMenu(root, { muted, music = null, quality, storageOk = true,
   });
   openMenus.set(root, p);
   return p;
-}
-
-// 역사 수첩: 이 장에서 알게 된 것. 살펴본 곳·만난 사람·사건 해설·확인 문제로 나누고, 문장마다 출처 번호를 단다.
-const NB_SECTIONS = [
-  ['place', '살펴본 곳', null],
-  ['person', '만난 사람', null],
-  ['event', '사건 해설', null],
-  ['quiz', '확인 문제', null],
-];
-export function showNotebook(root, meta, entries) {
-  return new Promise(resolve => {
-    const src = l => l.src && l.src.length ? h('span', { class: 'nb-src' }, `출처 ${l.src.join('·')}`) : null;
-    const sections = NB_SECTIONS.map(([kind, label, note]) => {
-      const list = entries.filter(e => e.kind === kind);
-      if (!list.length) return null;
-      return h('section', { class: `nb-sec nb-${kind}` }, h('h3', {}, label), note && h('p', { class: 'nb-note' }, note),
-        list.map(e => h('div', { class: 'nb-entry' },
-          kind !== 'event' && kind !== 'quiz' && h('h4', {}, e.title),
-          h('ul', {}, e.lines.map(l => kind === 'quiz'
-            ? h('li', {}, h('b', {}, l.text), ' → ', h('span', { class: 'nb-answer' }, l.answer), l.correct ? ' ○' : ' (다시 풀어서 맞힘)', h('div', { class: 'nb-explain' }, l.explain), src(l))
-            : h('li', {}, l.quote && h('span', { class: 'nb-quote' }, '기록에 남은 말 '), l.text, ' ', src(l)))))));
-    }).filter(Boolean);
-    const el = screen(root, 'notebook',
-      h('div', { class: 'card' },
-        h('div', { class: 'eyebrow' }, `역사 수첩 · ${meta.no}장`),
-        h('h2', {}, meta.title),
-        h('div', { class: 'nb-body' }, sections.length ? sections : h('p', { class: 'nb-empty' }, '아직 적은 것이 없어요. 안내판을 읽고 사람들과 이야기해 보세요.')),
-        h('button', { class: 'btn primary', type: 'button', onclick: () => { el.remove(); resolve(); } }, '닫기')));
-  });
 }
 
 export function showMessage(root, title, text) {
