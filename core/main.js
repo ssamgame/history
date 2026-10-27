@@ -86,7 +86,7 @@ function boot() {
 
   const ctx = {
     world, input, audio, music, hud, ui, testHooks: {}, notebook,
-    screens: { showIntroCard: (meta, lines) => showIntroCard(ui, meta, lines, role) },
+    screens: { showIntroCard: (meta, lines) => showIntroCard(ui, meta, lines) },
     get dialogue() { return dialogue; },
     setGoal: text => { const g = curGoals, i = g.indexOf(text); hud.setGoal(text, i >= 0 ? [i + 1, g.length] : null); },
     wait: ms => new Promise(r => setTimeout(r, ms)),
@@ -122,7 +122,7 @@ function boot() {
     notebook.start(save.notes(meta.id), mod.script.speakers);
     ctx.spotState = { found: new Set(), read: new Set() }; // 새 장: 발견·읽은 안내판을 새로 센다
     dialogue = createDialogue(ui, mod.script.speakers, { reduceMotion, onSay: l => { if (notebook.record(l)) save.setNotes(meta.id, notebook.entries()); } });
-    hud.show(meta, role);
+    hud.show(meta);
     hud.setTouchVisible(true);
     inChapter = true; input.enabled = true;
     music.play(meta.id);

@@ -1,6 +1,5 @@
 // 게임 화면들: 첫 화면, 이름, 편 고르기, 장 선택 지도, 해설 카드, 장 결과, 결과 카드, 메뉴, HUD.
 import { SESSIONS, isUnlocked } from '../chapters/index.js';
-import { portraitURL } from './faces.js';
 
 const h = (tag, attrs = {}, ...kids) => {
   const el = document.createElement(tag);
@@ -124,17 +123,14 @@ export function showMap(root, chapters, save, { onSessionCard, onCourses, headin
   });
 }
 
-// role: 이번 장에서 학생이 맡은 역할 { name, does, lookOpts } — 얼굴 그림과 함께 "이번 장의 나"로 보여 준다
-export function showIntroCard(root, meta, lines, role = null) {
+// 장 시작 해설 카드: 줄거리와 시작하기 단추. "이번 장의 나" 상자는 2026-10-27 선생님 말씀으로 뺐다
+export function showIntroCard(root, meta, lines) {
   return new Promise(resolve => {
     const el = screen(root, 'intro',
       h('div', { class: 'card' },
         h('div', { class: 'eyebrow' }, `${meta.no}장 · ${meta.years} · ${meta.event}`),
         h('h2', {}, meta.title),
         ...lines.map(l => h('p', {}, l.text)),
-        role && h('div', { class: 'role-card' },
-          role.lookOpts && h('img', { class: 'role-face', alt: '', src: portraitURL(role.lookOpts) }),
-          h('div', {}, h('span', { class: 'role-tag' }, '이번 장의 나'), h('b', { class: 'role-name' }, role.name), role.does && h('p', {}, role.does))),
         h('button', { class: 'btn primary', type: 'button', onclick: () => { el.remove(); resolve(); } }, '시작하기')));
   });
 }
@@ -251,11 +247,10 @@ export function createHud(root, { touch }) {
   const goal = h('span', { class: 'goal-text' });
   const goalStep = h('span', { class: 'goal-step', hidden: true });
   const chapter = h('div', { class: 'hud-chapter' });
-  const roleEl = h('div', { class: 'hud-role', hidden: true });
   const timer = h('div', { class: 'hud-timer', hidden: true });
   const counter = h('div', { class: 'hud-counter', hidden: true });
   const found = h('div', { class: 'hud-found', hidden: true });
-  const box = h('div', { class: 'hud', hidden: true }, chapter, roleEl, h('div', { class: 'hud-goal' }, h('span', { class: 'seal' }, '목표'), goal, goalStep), found, h('div', { class: 'hud-row' }, timer, counter));
+  const box = h('div', { class: 'hud', hidden: true }, chapter, h('div', { class: 'hud-goal' }, h('span', { class: 'seal' }, '목표'), goal, goalStep), found, h('div', { class: 'hud-row' }, timer, counter));
   const notice = h('div', { class: 'hud-notice', hidden: true, role: 'status' });
   const bigTimer = h('div', { class: 'hud-bigtimer', hidden: true, 'aria-live': 'off' }); // 남은 시간: 화면 위 가운데에 크게
   const bigWait = h('div', { class: 'hud-bigwait', hidden: true, 'aria-live': 'off' }); // 기다리는 동안 남은 초(정류장 등): 큰 시간 바로 아래
@@ -270,9 +265,8 @@ export function createHud(root, { touch }) {
   return {
     joyZone, talkBtn, menuBtn,
     attachCamera(c) { camera = c; },
-    show(meta, role = null) {
+    show(meta) { // 화면 위 "나: …" 줄은 2026-10-27 선생님 말씀으로 뺐다
       chapter.textContent = `${meta.no}장 · ${meta.years} ${meta.event}`;
-      roleEl.hidden = !role; if (role) roleEl.textContent = `나: ${role.name}`;
       box.hidden = false; menuBtn.hidden = false; joyZone.hidden = talkBtn.hidden = !touch; },
     hide() { box.hidden = true; menuBtn.hidden = true; prompt.hidden = true; joyZone.hidden = talkBtn.hidden = true; notice.hidden = true; found.hidden = true; bigTimer.hidden = true; bigWait.hidden = true; },
     // 잠깐 뜨는 알림(새 장소 발견 등): 화면 위 가운데, 누르지 않아도 사라진다

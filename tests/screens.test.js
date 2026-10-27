@@ -284,3 +284,18 @@ test('portrait: 휴대폰 세로로 들어도 「가로로 돌려 주세요」 �
   const css = await (await fetch('../styles.css', { cache: 'no-store' })).text();
   ok(!css.includes('#rotate'), 'no rotate rule');
 });
+
+// 2026-10-27 선생님: 장 시작 카드의 "이번 장의 나" 상자와 화면 위 "나: …" 줄을 모든 장에서 뺀다
+test('screens: intro card and hud show no "이번 장의 나" box or "나:" line', async () => {
+  const { showIntroCard, createHud } = await import('../core/screens.js');
+  const r = root();
+  const role = { name: '고려의 젊은 병사', does: '진영을 둘러본다', lookOpts: 'soldier' };
+  const done = showIntroCard(r, CHAPTERS[0], [{ text: '줄거리 한 문단.' }], role);
+  ok(!r.querySelector('.role-card') && !r.textContent.includes('이번 장의 나'), 'no role box');
+  eq(r.querySelectorAll('.intro p').length, 1);
+  btn(r, '시작하기').click(); await done;
+  const hud = createHud(r, { touch: true });
+  hud.show(CHAPTERS[0], role);
+  ok(![...r.querySelectorAll('.hud *')].some(e => !e.hidden && e.children.length === 0 && e.textContent.startsWith('나:')), 'no 나: line');
+  r.remove();
+});

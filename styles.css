@@ -153,14 +153,6 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
   background: rgba(27,31,29,.82); border: 1px solid rgba(217,164,65,.45); border-radius: 6px; padding: 10px 14px; display: grid; gap: 4px; }
 .hud[hidden] { display: none; }
 .hud-chapter { font-size: 13px; color: var(--gold); }
-.hud-role { font-size: 13px; color: var(--hanji); opacity: .85; }
-.hud-role[hidden] { display: none; }
-.role-card { display: flex; gap: 12px; align-items: center; margin: 10px 0 14px; padding: 10px 12px; border: 1px solid rgba(217,164,65,.55); border-radius: 8px; background: rgba(217,164,65,.12); text-align: left; }
-.role-face { flex: none; width: 64px; height: 64px; border-radius: 50%; border: 2px solid var(--gold); }
-.role-card > div { min-width: 0; display: grid; gap: 2px; }
-.role-tag { font-size: 12px; letter-spacing: .08em; color: var(--gold); }
-.role-name { font-size: 18px; }
-.role-card p { margin: 0; font-size: 15px; line-height: 1.45; }
 .hud-goal { display: flex; gap: 8px; align-items: center; font-size: 16px; line-height: 1.4; }
 .seal { flex: none; background: var(--dan-red); color: var(--hanji); font-family: var(--font-display); font-size: 13px; padding: 2px 6px; border-radius: 2px; }
 .menubtn { position: fixed; z-index: 10; top: calc(12px + env(safe-area-inset-top, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); min-height: 48px; padding: 0 16px; font-size: 16px; border-radius: 4px; border: 1px solid rgba(242,234,217,.5); background: rgba(27,31,29,.82); color: var(--hanji); }
@@ -414,5 +406,5 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 }
 /* 좁거나 낮은 화면에서 대화하는 동안은 목표 상자를 목표 한 줄로 줄인다(대화창과 겹치지 않게) */
 @media (max-width: 640px), (max-height: 520px) {
-  .hud:has(~ .dlg:not([hidden])) :is(.hud-chapter, .hud-role, .hud-found, .hud-row) { display: none; }
+  .hud:has(~ .dlg:not([hidden])) :is(.hud-chapter, .hud-found, .hud-row) { display: none; }
 }

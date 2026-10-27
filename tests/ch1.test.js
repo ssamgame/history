@@ -242,3 +242,9 @@ test('ch1 D-6: a wrong answer gets a short hint from Seohui', async () => {
     ok(said.some(l => l.who === 'seohui' && hints.includes(l.text)), 'hint said by Seohui');
   } finally { bot.stop(); s.done(); }
 }, { timeout: 60000 });
+
+test('ch1: the story card is one short paragraph (S16)', () => {
+  eq(ch1Script.intro.length, 1);
+  eq(ch1Script.intro[0].text, '993년, 거란 장수 소손녕이 "80만 대군"을 이끌고 쳐들어와 고려에 항복하라고 했어요.');
+  eq(ch1Script.intro[0].src, ['S16']);
+});
