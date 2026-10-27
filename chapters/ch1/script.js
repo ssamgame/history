@@ -20,14 +20,21 @@ export default {
     { who: 'guide', text: '진영 분위기가 어수선해. 머리 위에 노란 느낌표가 뜬 병사에게 무슨 일인지 물어보자.' },
   ],
 
-  goals: ['진영의 병사에게 말을 걸어 보자', '지휘소에 있는 서희를 찾아가자', '강가의 나루터(빛나는 원)로 가자', '서희와 함께 담판을 지켜보자', '배운 내용을 확인해 보자'],
+  goals: ['진영 사람들의 이야기를 들어 보자', '지휘소에 있는 서희를 찾아가자', '서희를 따라 소손녕에게 가자', '서희 곁에서 소손녕에게 대답하자', '배운 내용을 확인해 보자'],
+
+  // 한 사람의 이야기를 처음 다 들은 뒤, 다음에 찾아갈 사람을 알려 주는 진행 안내(병사 → 관리 → 궁수 → 서희)
+  next: {
+    officer: { who: 'guide', text: '이번에는 군량 더미 옆의 나이 든 관리에게 가 보자.' },
+    archer: { who: 'guide', text: '과녁 앞의 궁수에게도 이야기를 들어 보자.' },
+    seohui: { who: 'guide', text: '이제 왼쪽 지휘소에 있는 서희를 찾아가자.' },
+  },
+  follow: [{ who: 'guide', text: '서희가 앞장서서 걸어가. 놓치지 말고 뒤따라가자.' }],
 
   npc: {
     soldier: {
       first: [
         { who: 'soldier', text: '거란 장수 소손녕이 항복하라고 한대.', src: ['S16'] },
         { who: 'soldier', text: '80만 대군이라고 큰소리를 친대.', src: ['S16'] },
-        { who: 'soldier', text: '서희 님이 너를 찾으셔. 왼쪽 지휘소로 가 봐!' },
       ],
       later: [{ who: 'soldier', text: '서희 님은 왼쪽 지휘소에 계셔. 오늘따라 말씀이 적으셔서 다들 숨죽이고 있어.' }],
     },
@@ -49,11 +56,15 @@ export default {
     ] },
     seohui: {
       tooEarly: [{ who: 'seohui', text: '먼저 진영의 병사에게 지금 상황을 들어 보아라.' }],
-      first: [
-        { who: 'seohui', text: '왔구나. 땅을 떼어 주고 달랠 수는 없다.', src: ['S17'] },
-        { who: 'seohui', text: '내가 직접 소손녕을 만나 담판을 짓겠다. 강가 나루터로 오너라.' },
-      ],
-      later: [{ who: 'seohui', text: '강가 나루터에서 기다리마. 마음을 단단히 먹고 오너라.' }],
+      // 첫 말: greet → 들은 사람의 말(heard, 병사·관리·궁수 차례) → land → go. 듣지 않은 사람의 말은 빠진다
+      greet: [{ who: 'seohui', text: '왔구나. 진영에서 이야기를 듣고 왔느냐?' }],
+      heard: {
+        soldier: { who: 'seohui', text: '소손녕이 80만 대군이라며 항복하라고 한다는 말을 들었겠지.', src: ['S16'] },
+        officer: { who: 'seohui', text: '조정에서 땅을 떼어 주고 거란을 달래자는 말까지 나왔다는 것도 들었구나.', src: ['S17'] },
+        archer: { who: 'seohui', text: '거란이 송나라와 다투고 있어서 송과 가까운 고려를 경계한다는 것도 알았구나.', src: ['S19'] },
+      },
+      land: [{ who: 'seohui', text: '하지만 땅을 떼어 주고 달랠 수는 없다. 땅을 내줄 수는 없다는 것이 내 뜻이다.', src: ['S17'] }],
+      go: [{ who: 'seohui', text: '내가 직접 소손녕을 만나 담판을 짓겠다. 나를 따라오너라.' }],
     },
   },
 
@@ -62,21 +73,21 @@ export default {
       { who: 'narr', text: '소손녕이 절을 하라고 하자, 서희는 대신끼리는 절할 수 없다며 당당히 맞섰어요.', src: ['S16'] },
     ],
     q1: {
-      kind: 'choice', who: 'sonn', src: ['S18'],
+      kind: 'choice', who: 'sonn', src: ['S18'], hintWho: 'seohui',
       prompt: { who: 'sonn', text: '고려는 신라 땅에서 일어났다. 고구려의 옛 땅은 거란의 것인데 왜 너희가 차지하고 있느냐?', src: ['S18'] },
       options: [
         { text: '고려는 고구려를 이은 나라이다.', correct: true, reply: { who: 'seohui', text: '그래서 나라 이름도 \'고려\'라고 하였다.', src: ['S18'] }, hint: null },
-        { text: '고구려의 옛 땅을 모두 거란에 돌려주겠다.', correct: false, reply: null, hint: '땅을 내주면 고려가 작아져요. 고려가 어느 나라를 이었는지 떠올려 보세요.' },
-        { text: '우리 군사가 더 많으니 돌아가라.', correct: false, reply: null, hint: '힘보다 말과 논리로 설득해야 해요.' },
+        { text: '고구려의 옛 땅을 모두 거란에 돌려주겠다.', correct: false, reply: null, hint: '땅을 내주면 고려가 작아진다. 고려가 어느 나라를 이었는지 떠올려 보아라.' },
+        { text: '우리 군사가 더 많으니 돌아가라.', correct: false, reply: null, hint: '힘보다 말과 논리로 설득해야 한다.' },
       ],
     },
     q2: {
-      kind: 'choice', who: 'sonn', src: ['S17'],
+      kind: 'choice', who: 'sonn', src: ['S17'], hintWho: 'seohui',
       prompt: { who: 'sonn', text: '고려는 왜 가까운 거란과 친하게 지내지 않느냐?', src: ['S17'] },
       options: [
-        { text: '송나라가 더 좋아서 그렇다.', correct: false, reply: null, hint: '거란과 친하게 지내지 못한 \'까닭\'을 말해 보세요.' },
+        { text: '송나라가 더 좋아서 그렇다.', correct: false, reply: null, hint: '거란과 친하게 지내지 못한 \'까닭\'을 말해 보아라.' },
         { text: '여진이 길을 막고 있어서 거란과 교류를 할 수 없다.', correct: true, reply: { who: 'seohui', text: '여진을 몰아내고 그 땅을 되찾으면 거란과 교류할 수 있다.', src: ['S17'] }, hint: null },
-        { text: '거란과는 절대 친하게 지내지 않겠다.', correct: false, reply: null, hint: '그러면 전쟁이 이어져요. 조건을 걸어 보세요.' },
+        { text: '거란과는 절대 친하게 지내지 않겠다.', correct: false, reply: null, hint: '그러면 전쟁이 이어진다. 조건을 걸어 보아라.' },
       ],
     },
     closing: [

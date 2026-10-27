@@ -100,7 +100,7 @@ export function createDialogue(root, speakers, { typeMs = 26, reduceMotion = fal
         return { firstTry };
       }
       firstTry = false;
-      await say({ who: 'narr', text: opt.hint || '다시 골라 보세요.' });
+      await dialogue.say({ who: choice.hintWho || 'narr', text: opt.hint || '다시 골라 보세요.' }); // hintWho: 힌트를 말하는 사람(없으면 해설)
     }
   }
 

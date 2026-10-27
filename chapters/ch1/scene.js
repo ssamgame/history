@@ -166,9 +166,13 @@ export function buildCh1Scene(world) {
   // 나루터와 배, 빛나는 원
   mk(new THREE.BoxGeometry(2.4, 0.2, 5), 0x8a6a45, 8, 0.05, -16.6);
   for (const dx of [-1.1, 1.1]) for (const dz of [-14.6, -18.6]) mk(new THREE.CylinderGeometry(0.12, 0.12, 1.6, 5), 0x5a3f2a, 8 + dx, -0.3, dz);
-  { const g = new THREE.Group(); g.position.set(8, -0.55, -20.8); L.add(g); boat(g, { len: 4.4 }); } // 나루터에 매어 둔 나룻배
+  { const g = new THREE.Group(); g.position.set(11.6, -0.55, -20.4); L.add(g); boat(g, { len: 4.4 }); } // 나루터 옆에 매어 둔 나룻배
+  // 나루터에서 강 건너로 이은 널다리: 서희를 따라 이 다리로만 강을 건넌다(D-6)
+  mk(new THREE.BoxGeometry(2.4, 0.2, 7), 0x8a6a45, 8, 0.05, -22.5);
+  for (let z = -19.5; z >= -26; z -= 0.9) mk(new THREE.BoxGeometry(2.6, 0.06, 0.12), 0x6b5236, 8, 0.17, z, L, false);
+  for (const dx of [-1.25, 1.25]) for (const dz of [-20.6, -23.4, -25.6]) mk(new THREE.CylinderGeometry(0.12, 0.12, 2.2, 5), 0x5a3f2a, 8 + dx, -0.4, dz);
   const ring = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.25, 28), new THREE.MeshBasicMaterial({ color: 0xd9a441, transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
-  ring.rotation.x = -Math.PI / 2; ring.position.set(8, 0.1, -13.4); ring.visible = false; L.add(ring);
+  ring.rotation.x = -Math.PI / 2; ring.position.set(1.1, 0.1, -33.2); ring.visible = false; L.add(ring); // 담판 때 학생이 설 자리
 
   // 거란 진영 (강 건너편)
   const khitanGroup = new THREE.Group(); L.add(khitanGroup);
@@ -177,15 +181,15 @@ export function buildCh1Scene(world) {
     mk(new THREE.ConeGeometry(2.5 * s, 1.5 * s, 9), 0x5e432c, x, 2.45 * s, z, khitanGroup);
   };
   yurt(0, -41, 1.5);
-  for (const [x, z] of [[-9, -37], [9, -37], [-16, -44], [16, -44], [-6, -48], [7, -49], [-22, -38], [22, -38], [-13, -52], [14, -53]]) yurt(x, z, 0.9 + rand() * 0.3);
+  for (const [x, z, s] of [[-14, -40, 0.75], [9, -37], [-16, -44], [16, -44], [-6, -48], [7, -49], [-22, -38], [22, -38], [-13, -52], [14, -53]]) yurt(x, z, s || 0.9 + rand() * 0.3); // 왼쪽 앞 큰 천막은 담판을 가리지 않게 뒤로 옮기고 작게(D-6)
   for (const [x, z] of [[-5, -39.5], [5, -39.5], [-18, -32], [18, -32]]) flag(x, z, 0x2a2a2e, khitanGroup, 4.4); // 담판 화면을 덮지 않게 소손녕 뒤로
   const sonn = makePerson(LOOKS.sonn);
-  sonn.position.set(0, 0, -36); sonn.rotation.y = -0.42; khitanGroup.add(sonn); // 서희 쪽을 보며 담판 카메라(서쪽) 쪽으로 조금 돈다
-  for (let i = 0; i < 9; i++) {
+  sonn.position.set(0, 0, -36); sonn.rotation.y = 0; khitanGroup.add(sonn); // 강 쪽(서희와 학생이 다가오는 쪽)을 바로 본다
+  [-20, -16, -12, -8, -4, 13, 17, 21, 25].forEach((x, i) => { // 다리에서 소손녕 앞으로 가는 길은 비워 둔다
     const k = makePerson(LOOKS.khitan);
-    k.position.set(-16 + i * 4, 0, -27 - (i % 2) * 1.5); khitanGroup.add(k);
+    k.position.set(x, 0, -27 - (i % 2) * 1.5); khitanGroup.add(k);
     mk(new THREE.CylinderGeometry(0.04, 0.04, 3, 4), 0x3a2c20, 0.62, 1.5, 0.1, k);
-  }
+  });
 
   // 강동 6주 빛기둥 (담판 뒤에 나타남)
   const gangdongPillars = new THREE.Group(); gangdongPillars.visible = false; L.add(gangdongPillars);
@@ -220,11 +224,14 @@ export function buildCh1Scene(world) {
   world.addSpot('signSong', makeSign('고려와 송, 거란'), 9.5, 18);
 
   const scene = { gate, ring, khitanGroup, gangdongPillars, sonn, emberCount: fire.emberCount, retreating: false,
-    ferry: { x: 8, z: -13.4, r: 1.6 },
+    campBounds: { ...world.bounds },
+    // 서희가 앞장서 걷는 길(D-6): 지휘소 앞 → 흙길 → 나루터 → 널다리 → 소손녕 앞
+    leadPath: [[-6, 2.8], [1.5, 2.8], [1.5, -6], [8, -12], [8, -25.8], [4.5, -29.5], [-1.1, -33.2]],
+    bridge: { x: 8, half: 1.1, z1: -26 }, // 널다리(가운데 x, 반폭, 건너편 끝 z)
     negotiationSpot: {
-      // 노을 해(서쪽 -x·북쪽 -z)를 등지고 옆(서쪽)에서 두 사람을 본다(역광으로 얼굴이 그늘지지 않게). 학생은 서희 뒤쪽에 비켜 선다
-      seohui: [0, -32.8, Math.PI + 0.42], player: [1.0, -30.2, Math.PI + 0.3],
-      cam: { pos: [-9.5, 4.6, -31.4], target: [0, 0.2, -34.6] }, // 얼굴이 아래 대화창 위쪽에 보이게 조금 내려다본다
+      // 서희와 학생이 나란히 서서 소손녕과 마주한다. 카메라는 두 사람 뒤에서 소손녕 얼굴을 정면으로 본다
+      seohui: [-1.1, -33.2, Math.PI], player: [1.1, -33.2, Math.PI],
+      cam: { pos: [0, 3.9, -29.4], target: [0, 0.3, -36] }, // 높이서 내려다봐 소손녕 얼굴이 두 사람 머리 위·대화창 위에 보이게
     },
   };
 
