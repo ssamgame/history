@@ -26,7 +26,7 @@ import { validateScript } from '../core/content.js';
 import ch1Script from '../chapters/ch1/script.js';
 import ch1, { introWalk, INTRO_FROM, START, seohuiTalk, followSeohui } from '../chapters/ch1/chapter.js';
 import * as THREE from 'three';
-import { runChapter } from '../core/flow.js';
+import { runChapter, roam } from '../core/flow.js';
 import { CHAPTERS } from '../chapters/index.js';
 
 const answers = new Set([
@@ -204,13 +204,19 @@ test('ch1 D-6: negotiation stays in the same scene and faces Sonn from the front
   const events = []; let shot = null;
   const fade0 = s.ctx.fade; s.ctx.fade = async v => { events.push('fade'); return fade0(v); };
   const ask0 = s.dialogue.ask;
-  s.dialogue.ask = c => { events.push('ask'); if (!shot) { for (let i = 0; i < 60; i++) s.w.step(1 / 30, { x: 0, z: 0 }); shot = s.w.camera.position.clone(); } return ask0(c); };
+  let sc = null; const checks = [];
+  // 소손녕이 묻는 그 순간의 구도를 검사한다(담판 뒤 소손녕은 말을 타고 물러난다, D-7)
+  s.dialogue.ask = c => { events.push('ask'); if (!shot) { for (let i = 0; i < 60; i++) s.w.step(1 / 30, { x: 0, z: 0 }); shot = s.w.camera.position.clone(); checks.push(lookCheck()); } return ask0(c); };
   const answers = new Set([ch1Script.negotiation.q1, ch1Script.negotiation.q2].map(c => c.options.find(o => o.correct).text));
   const bot = touchBot(s, { answers });
   try {
-    const sc = ch1.buildScene(s.w, s.ctx);
+    sc = ch1.buildScene(s.w, s.ctx);
     await ch1.minigame(s.ctx);
     ok(events.indexOf('fade') === -1 || events.indexOf('fade') > events.lastIndexOf('ask'), 'no fade before the answers: ' + events.join(','));
+    eq(checks.length, 1);
+    checks[0]();
+  } finally { bot.stop(); s.done(); }
+  function lookCheck() {
     const sonn = sc.sonn, cam = s.w.camera;
     const face = new THREE.Vector3(Math.sin(sonn.rotation.y), 0, Math.cos(sonn.rotation.y));
     const to = shot.clone().sub(sonn.position).setY(0).normalize();
@@ -227,7 +233,8 @@ test('ch1 D-6: negotiation stays in the same scene and faces Sonn from the front
       const hits = rc.intersectObjects(s.w.level.children, true).filter(h => vis(h.object) && !inside(h.object) && !h.object.isSprite);
       eq(hits.map(h => h.object.name || h.object.type), [], who + ' blocked');
     }
-  } finally { bot.stop(); s.done(); }
+    return () => {};
+  }
 }, { timeout: 60000 });
 
 test('ch1 D-6: a wrong answer gets a short hint from Seohui', async () => {
@@ -247,4 +254,37 @@ test('ch1: the story card is one short paragraph (S16)', () => {
   eq(ch1Script.intro.length, 1);
   eq(ch1Script.intro[0].text, '993년, 거란 장수 소손녕이 "80만 대군"을 이끌고 쳐들어와 고려에 항복하라고 했어요.');
   eq(ch1Script.intro[0].src, ['S16']);
+});
+
+test('ch1 D-7: no reading signs (the camp name board stays) and the sign counter is hidden', () => {
+  const w = testWorld(); buildCh1Scene(w);
+  eq([...w.npcs.values()].filter(n => n.spot).length, 0);
+  ok(w.level.getObjectByName('sign:고려군 진영'), 'camp name board stays');
+  ok(!ch1Script.npc.signGangdong && !ch1Script.npc.signSong, 'no sign lines left');
+  let shown = 'unset';
+  const stop = roam({ world: w, input: {}, dialogue: {}, onAction: () => () => {}, hud: { setFound: v => { shown = v; }, setPrompt() {}, setTalkEnabled() {} } }, { onTalk() {} });
+  eq(shown, null);
+  stop?.(); w.dispose();
+});
+
+test('ch1 D-7: the Khitan army turns and marches away in a column (flag first, Sonn on horseback), never sinking', () => {
+  const w = testWorld(); const s = buildCh1Scene(w);
+  const army = s.startRetreat();
+  ok(army.length >= 8, `${army.length} units`);
+  eq(army[0].name, 'flagBearer');
+  eq(s.sonn.parent, army[1], 'Sonn rides the horse');
+  eq(army[1].name, 'horse');
+  const wp = new THREE.Vector3(), z0 = army.map(o => o.getWorldPosition(wp).z);
+  for (let i = 0; i < 60; i++) {
+    w.step(0.1, { x: 0, z: 0 });
+    for (const o of army) if (o.visible) ok(o.getWorldPosition(wp).y >= -0.001, `${o.name} y ${wp.y}`);
+  }
+  eq(s.khitanGroup.position.y, 0);
+  army.forEach((o, i) => {
+    ok(o.getWorldPosition(wp).z < z0[i] - 5, `${o.name} moved away ${z0[i]} -> ${wp.z}`);
+    ok(Math.cos(o.rotation.y) < -0.85, `${o.name} faces away`);
+  });
+  for (let i = 0; i < 300; i++) w.step(0.1, { x: 0, z: 0 });
+  ok(army.every(o => !o.visible), 'gone into the distance');
+  w.dispose();
 });

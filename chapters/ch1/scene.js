@@ -1,5 +1,4 @@
 // 1장 장면: 노을 진 고려 진영, 강, 강 건너 거란 진영, 강동 6주 빛기둥.
-import { makeSign } from '../../core/signs.js';
 import * as THREE from 'three';
 import { backdropMountains, surroundings } from '../kit/terrain.js';
 import { curvedHipRoof, tent, cart, boat, watchtower, spearRack, archeryTarget } from '../kit/buildings.js';
@@ -23,6 +22,29 @@ function groundH(x, z) {
   return h;
 }
 function seeded(s) { return () => (s = (s * 16807) % 2147483647) / 2147483647; }
+
+// 소손녕이 타는 말(로우폴리). 머리가 +z 쪽, 다리 넷은 걸을 때 흔든다(D-7)
+function makeHorse() {
+  const g = new THREE.Group(); g.name = 'horse';
+  const p = (geo, color, x, y, z, parent = g) => { const m = new THREE.Mesh(geo, mat(color)); m.position.set(x, y, z); m.castShadow = true; parent.add(m); return m; };
+  const coat = 0x6b4a32, dark = 0x2e2219;
+  p(new THREE.BoxGeometry(0.62, 0.62, 1.6), coat, 0, 1.08, 0); // 몸통
+  p(new THREE.BoxGeometry(0.34, 0.85, 0.4), coat, 0, 1.55, 0.78).rotation.x = 0.5; // 목
+  p(new THREE.BoxGeometry(0.12, 0.75, 0.14), dark, 0, 1.68, 0.6).rotation.x = 0.5; // 갈기
+  p(new THREE.BoxGeometry(0.3, 0.32, 0.64), coat, 0, 1.92, 1.12); // 머리
+  for (const sx of [-0.09, 0.09]) p(new THREE.ConeGeometry(0.05, 0.16, 4), dark, sx, 2.13, 0.92);
+  p(new THREE.BoxGeometry(0.12, 0.7, 0.12), dark, 0, 1.0, -0.88).rotation.x = -0.35; // 꼬리
+  p(new THREE.BoxGeometry(0.66, 0.1, 0.62), 0x7a2a22, 0, 1.43, 0); // 안장
+  const legs = [];
+  for (const [x, z] of [[-0.2, 0.62], [0.2, 0.62], [-0.2, -0.62], [0.2, -0.62]]) {
+    const piv = new THREE.Group(); piv.position.set(x, 0.85, z); g.add(piv);
+    p(new THREE.BoxGeometry(0.16, 0.78, 0.18), coat, 0, -0.39, 0, piv);
+    p(new THREE.BoxGeometry(0.18, 0.1, 0.2), dark, 0, -0.8, 0, piv);
+    legs.push(piv);
+  }
+  g.userData.legs = legs;
+  return g;
+}
 
 export function buildCh1Scene(world) {
   const L = world.level, q = world.quality, rand = seeded(7);
@@ -176,19 +198,25 @@ export function buildCh1Scene(world) {
 
   // 거란 진영 (강 건너편)
   const khitanGroup = new THREE.Group(); L.add(khitanGroup);
+  const khitanCamp = new THREE.Group(); khitanGroup.add(khitanCamp); // 천막·깃발: 군대를 물릴 때 진영을 걷는다(D-7)
   const yurt = (x, z, s = 1) => {
-    mk(new THREE.CylinderGeometry(2.2 * s, 2.2 * s, 1.7 * s, 9), 0x8f7556, x, 0.85 * s, z, khitanGroup);
-    mk(new THREE.ConeGeometry(2.5 * s, 1.5 * s, 9), 0x5e432c, x, 2.45 * s, z, khitanGroup);
+    mk(new THREE.CylinderGeometry(2.2 * s, 2.2 * s, 1.7 * s, 9), 0x8f7556, x, 0.85 * s, z, khitanCamp);
+    mk(new THREE.ConeGeometry(2.5 * s, 1.5 * s, 9), 0x5e432c, x, 2.45 * s, z, khitanCamp);
   };
   yurt(0, -41, 1.5);
   for (const [x, z, s] of [[-14, -40, 0.75], [9, -37], [-16, -44], [16, -44], [-6, -48], [7, -49], [-22, -38], [22, -38], [-13, -52], [14, -53]]) yurt(x, z, s || 0.9 + rand() * 0.3); // 왼쪽 앞 큰 천막은 담판을 가리지 않게 뒤로 옮기고 작게(D-6)
-  for (const [x, z] of [[-5, -39.5], [5, -39.5], [-18, -32], [18, -32]]) flag(x, z, 0x2a2a2e, khitanGroup, 4.4); // 담판 화면을 덮지 않게 소손녕 뒤로
+  for (const [x, z] of [[-5, -39.5], [5, -39.5], [-18, -32], [18, -32]]) flag(x, z, 0x2a2a2e, khitanCamp, 4.4); // 담판 화면을 덮지 않게 소손녕 뒤로
   const sonn = makePerson(LOOKS.sonn);
   sonn.position.set(0, 0, -36); sonn.rotation.y = 0; khitanGroup.add(sonn); // 강 쪽(서희와 학생이 다가오는 쪽)을 바로 본다
+  // 소손녕의 말: 천막 옆에 매어 두었다가 군대를 물릴 때 올라탄다(D-7)
+  const horse = makeHorse(); horse.position.set(-2.8, 0, -37.6); horse.rotation.y = 0.5; khitanGroup.add(horse);
+  const guards = [];
   [-20, -16, -12, -8, -4, 13, 17, 21, 25].forEach((x, i) => { // 다리에서 소손녕 앞으로 가는 길은 비워 둔다
     const k = makePerson(LOOKS.khitan);
     k.position.set(x, 0, -27 - (i % 2) * 1.5); khitanGroup.add(k);
-    mk(new THREE.CylinderGeometry(0.04, 0.04, 3, 4), 0x3a2c20, 0.62, 1.5, 0.1, k);
+    if (i === 0) { k.name = 'flagBearer'; flag(0.62, 0.1, 0x2a2a2e, k, 3.6); } // 물러날 때 맨 앞에 서는 깃발 병사
+    else mk(new THREE.CylinderGeometry(0.04, 0.04, 3, 4), 0x3a2c20, 0.62, 1.5, 0.1, k);
+    guards.push(k);
   });
 
   // 강동 6주 빛기둥 (담판 뒤에 나타남)
@@ -219,11 +247,9 @@ export function buildCh1Scene(world) {
   world.addNpc('seohui', LOOKS.seohui, -11, 1.3, 0.15);
   world.addNpc('archer', LOOKS.archer, -7, 20.5, Math.PI);
   world.addNpc('officer', LOOKS.officer, 15.5, 8, -Math.PI * 0.6);
-  // 안내판(볼거리): 읽지 않아도 장은 끝난다
-  world.addSpot('signGangdong', makeSign('강동 6주'), -1.5, 16.5);
-  world.addSpot('signSong', makeSign('고려와 송, 거란'), 9.5, 18);
+  // 안내판(볼거리)은 두지 않는다(D-7: 안내판은 문화유산·특정 건물 옆에만. 1장에는 그런 대상이 없다)
 
-  const scene = { gate, ring, khitanGroup, gangdongPillars, sonn, emberCount: fire.emberCount, retreating: false,
+  const scene = { gate, ring, khitanGroup, gangdongPillars, sonn, horse /* 다리를 흔들어야 하므로 굳히지 않는다 */, emberCount: fire.emberCount, retreating: false,
     campBounds: { ...world.bounds },
     // 서희가 앞장서 걷는 길(D-6): 지휘소 앞 → 흙길 → 나루터 → 널다리 → 소손녕 앞
     leadPath: [[-6, 2.8], [1.5, 2.8], [1.5, -6], [8, -12], [8, -25.8], [4.5, -29.5], [-1.1, -33.2]],
@@ -233,6 +259,37 @@ export function buildCh1Scene(world) {
       seohui: [-1.1, -33.2, Math.PI], player: [1.1, -33.2, Math.PI],
       cam: { pos: [0, 3.9, -29.4], target: [0, 0.3, -36] }, // 높이서 내려다봐 소손녕 얼굴이 두 사람 머리 위·대화창 위에 보이게
     },
+  };
+
+  // 거란군이 물러나는 모습(D-7): 진영을 걷고, 깃발 병사가 맨 앞, 말 탄 소손녕, 그 뒤로 두 줄.
+  // 앞줄부터 차례로 몸을 돌려 걸어가며 흙먼지를 일으키고, 멀어지면 흐려져 사라진다(땅속으로 꺼지지 않는다).
+  const MARCH = 2.6, FADE_FROM = -58, GONE = -80;
+  const DX = -0.41, DZ = -0.912, FACE = Math.atan2(DX, DZ); // 북쪽으로 조금 왼쪽(서쪽)으로 비스듬히 물러난다: 뒤에서 보아도 대열이 겹치지 않게
+  const march = [], dust = [];
+  let marchT = 0, dustT = 0;
+  scene.army = march.map(u => u.o);
+  scene.startRetreat = () => {
+    if (march.length) return scene.army;
+    khitanCamp.visible = false;
+    horse.add(sonn); sonn.position.set(0, 0.88, 0); sonn.rotation.y = 0;
+    sonn.userData.noWalk = true; sonn.userData.legs.forEach((l, i) => { l.rotation.set(0, 0, i ? -0.75 : 0.75); });
+    [guards[0], horse, ...guards.slice(1)].forEach((o, i) => {
+      const row = i < 2 ? i : 2 + Math.floor((i - 2) / 2);
+      const side = i < 2 ? 0 : ((i - 2) % 2 ? 0.9 : -0.9), along = i === 0 ? 5 : i === 1 ? 2.5 : -(row - 2) * 1.6;
+      const x = DX * along - DZ * side, z = -41 + DZ * along + DX * side;
+      o.position.set(x, Math.max(0, groundH(x, z)), z); o.rotation.y = 0; o.visible = true; // 처음에는 고려 쪽을 보고 서 있다
+      const mats = [];
+      o.traverse(m => { if (m.isMesh) { m.material = m.material.clone(); m.material.transparent = true; mats.push(m.material); } });
+      march.push({ o, delay: 0.4 + row * 0.35, mats });
+    });
+    const n = Math.round(6 + 8 * Math.min(1, q.particles));
+    for (let i = 0; i < n; i++) {
+      const d = new THREE.Mesh(new THREE.IcosahedronGeometry(0.45, 0), new THREE.MeshLambertMaterial({ color: 0xc9ad84, transparent: true, opacity: 0, depthWrite: false, flatShading: true }));
+      d.visible = false; d.userData.age = 9; L.add(d); dust.push(d);
+    }
+    scene.army = march.map(u => u.o);
+    scene.retreating = true;
+    return scene.army;
   };
 
   // 움직임: 깃발, 화톳불, 물결, 빛나는 원, 거란군 철수, 빛기둥
@@ -246,8 +303,32 @@ export function buildCh1Scene(world) {
     }
     if (ring.visible) ring.material.opacity = 0.55 + Math.sin(t * 4) * 0.3;
     if (scene.retreating && khitanGroup.visible) {
-      khitanGroup.position.y -= dt * 1.4; khitanGroup.position.z -= dt * 3;
-      if (khitanGroup.position.y < -6) khitanGroup.visible = false;
+      marchT += dt; dustT += dt;
+      const walking = [];
+      for (const u of march) {
+        const o = u.o, k = marchT - u.delay;
+        if (k < 0 || !o.visible) continue;
+        const e = Math.min(1, k / 0.55); o.rotation.y = FACE * e * e * (3 - 2 * e); // 몸을 돌린다
+        if (e < 1) continue;
+        o.position.x += DX * MARCH * dt; o.position.z += DZ * MARCH * dt;
+        o.position.y = Math.max(0, groundH(o.position.x, o.position.z));
+        const a = Math.min(1, Math.max(0, (o.position.z - GONE) / (FADE_FROM - GONE)));
+        for (const m of u.mats) m.opacity = a;
+        if (o.position.z < GONE) { o.visible = false; continue; }
+        if (o === horse) { const s = Math.sin(marchT * 9) * 0.5; horse.userData.legs.forEach((l, j) => { l.rotation.x = j === 0 || j === 3 ? s : -s; }); }
+        if (o.position.z > FADE_FROM) walking.push(o);
+      }
+      if (walking.length && dustT > 0.14) { // 발밑 흙먼지
+        dustT = 0;
+        const d = dust.find(p => p.userData.age > 1.4), w = walking[Math.floor(Math.random() * walking.length)];
+        if (d) { d.userData.age = 0; d.visible = true; d.position.set(w.position.x + (Math.random() - 0.5) * 0.8, 0.25, w.position.z + 0.6); }
+      }
+    }
+    for (const d of dust) {
+      if (!d.visible) continue;
+      const a = (d.userData.age += dt);
+      if (a > 1.4) { d.visible = false; continue; }
+      d.scale.setScalar(0.6 + a * 1.3); d.position.y += dt * 0.35; d.material.opacity = 0.45 * (1 - a / 1.4);
     }
     if (gangdongPillars.visible) gangdongPillars.children.forEach((c, i) => { if (c.isMesh) c.material.opacity = 0.25 + Math.sin(t * 2 + i) * 0.1; });
   });

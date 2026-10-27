@@ -174,14 +174,16 @@ export default {
     await sayAll(dialogue, script.negotiation.closing);
     dialogue.close();
 
+    // 거란군이 진영을 걷고 줄지어 물러난다(D-7). 서희와 학생은 다리 건너편에 나란히 서서 그 뒷모습을 바라본다
     await ctx.fade(true);
-    world.bounds = { ...scene.campBounds };
-    world.moveNpc('seohui', ...SEOHUI_HOME);
-    placePlayer(world, FERRY_RETURN);
-    scene.retreating = true;
+    world.bounds = { ...scene.campBounds, z0: -34.5 };
+    world.moveNpc('seohui', -1.5, -30, Math.PI);
+    world.player.position.set(1.5, 0, -30); world.player.rotation.y = Math.PI;
+    scene.startRetreat();
+    world.setFixedCamera([-5.5, 4.6, -23.5], [2.5, 1, -45]); // 두 사람 뒤 조금 왼쪽 위에서 비스듬히 물러가는 대열을 내려다본다(깃발·말 탄 소손녕이 보이게)
     await ctx.fade(false);
     ctx.audio.play('whoosh');
-    await ctx.wait(1800);
+    await ctx.wait(3200);
     scene.gangdongPillars.visible = true;
     await sayAll(dialogue, script.retreat);
     ctx.setGoal(script.goals[4]);

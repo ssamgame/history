@@ -46,13 +46,6 @@ export default {
     archer: {
       always: [{ who: 'archer', text: '거란은 송나라와 다투고 있어서, 송과 가까운 고려를 경계한대.', src: ['S19'] }],
     },
-    signGangdong: { always: [
-      { who: 'narr', text: '서희의 담판 뒤 고려는 압록강 동쪽에 흥화진, 용주, 통주, 철주, 귀주, 곽주를 쌓았어요.', src: ['S1'] },
-      { who: 'narr', text: '이 여섯 고을을 강동 6주라고 해요.', src: ['S1'] },
-    ] },
-    signSong: { always: [
-      { who: 'narr', text: '거란은 송나라와 다투고 있어서, 송과 가까이 지내는 고려를 경계했어요.', src: ['S19'] },
-    ] },
     seohui: {
       tooEarly: [{ who: 'seohui', text: '먼저 진영의 병사에게 지금 상황을 들어 보아라.' }],
       // 첫 말: greet → 들은 사람의 말(heard, 병사·관리·궁수 차례) → land → go. 듣지 않은 사람의 말은 빠진다
