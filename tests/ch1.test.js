@@ -288,3 +288,32 @@ test('ch1 D-7: the Khitan army turns and marches away in a column (flag first, S
   ok(army.every(o => !o.visible), 'gone into the distance');
   w.dispose();
 });
+
+// D-9: 물러나는 거란군은 걸음에 맞춰 다리(허벅지·무릎)와 반대쪽 팔을 크게 흔들고, 걸음마다 몸이 들썩이며, 사람마다 박자가 다르다. 말은 대각선 다리를 번갈아, 머리를 끄덕인다
+test('ch1 D-9: retreating soldiers swing legs, knees and arms with a bob; the horse nods', () => {
+  const w = testWorld();
+  try {
+    const sc = buildCh1Scene(w);
+    const army = sc.startRetreat();
+    const feet = army.filter(o => o !== sc.horse);
+    const a = feet[1], b = feet[2];
+    let maxLeg = 0, maxKnee = 0, opposite = 0, samples = 0, ys = new Set(), phaseDiff = 0, nod = new Set();
+    for (let i = 0; i < 160; i++) {
+      w.step(0.03, { x: 0, z: 0 });
+      if (i < 80) continue;
+      const u = a.userData, L = u.legs[0].rotation.x;
+      maxLeg = Math.max(maxLeg, Math.abs(L));
+      maxKnee = Math.max(maxKnee, u.legs[0].userData.knee ? u.legs[0].userData.knee.rotation.x : 0, u.legs[1].userData.knee ? u.legs[1].userData.knee.rotation.x : 0);
+      if (Math.abs(L) > 0.2) { samples += 1; if (Math.sign(u.arms[0].rotation.x) === -Math.sign(L)) opposite += 1; }
+      ys.add((a.position.y - Math.max(0, 0)).toFixed(3));
+      phaseDiff = Math.max(phaseDiff, Math.abs(L - b.userData.legs[0].rotation.x));
+      nod.add(sc.horse.userData.head.rotation.x.toFixed(3));
+    }
+    ok(maxLeg > 0.6, `legs swing wide (${maxLeg.toFixed(2)})`);
+    ok(maxKnee > 0.5, `knees bend (${maxKnee.toFixed(2)})`);
+    ok(samples > 5 && opposite === samples, `arms swing opposite to legs (${opposite}/${samples})`);
+    ok(ys.size > 5, 'body bobs up and down');
+    ok(phaseDiff > 0.2, 'soldiers are not in lockstep');
+    ok(nod.size > 5, 'horse head nods');
+  } finally { w.dispose(); }
+});

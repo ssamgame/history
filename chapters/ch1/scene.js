@@ -29,10 +29,12 @@ function makeHorse() {
   const p = (geo, color, x, y, z, parent = g) => { const m = new THREE.Mesh(geo, mat(color)); m.position.set(x, y, z); m.castShadow = true; parent.add(m); return m; };
   const coat = 0x6b4a32, dark = 0x2e2219;
   p(new THREE.BoxGeometry(0.62, 0.62, 1.6), coat, 0, 1.08, 0); // 몸통
-  p(new THREE.BoxGeometry(0.34, 0.85, 0.4), coat, 0, 1.55, 0.78).rotation.x = 0.5; // 목
-  p(new THREE.BoxGeometry(0.12, 0.75, 0.14), dark, 0, 1.68, 0.6).rotation.x = 0.5; // 갈기
-  p(new THREE.BoxGeometry(0.3, 0.32, 0.64), coat, 0, 1.92, 1.12); // 머리
-  for (const sx of [-0.09, 0.09]) p(new THREE.ConeGeometry(0.05, 0.16, 4), dark, sx, 2.13, 0.92);
+  // 목·갈기·머리·귀는 목 밑동(0, 1.3, 0.62)을 축으로 묶는다: 걸을 때 머리를 살짝 끄덕인다(D-9)
+  const head = new THREE.Group(); head.position.set(0, 1.3, 0.62); g.add(head);
+  p(new THREE.BoxGeometry(0.34, 0.85, 0.4), coat, 0, 0.25, 0.16, head).rotation.x = 0.5; // 목
+  p(new THREE.BoxGeometry(0.12, 0.75, 0.14), dark, 0, 0.38, -0.02, head).rotation.x = 0.5; // 갈기
+  p(new THREE.BoxGeometry(0.3, 0.32, 0.64), coat, 0, 0.62, 0.5, head); // 머리
+  for (const sx of [-0.09, 0.09]) p(new THREE.ConeGeometry(0.05, 0.16, 4), dark, sx, 0.83, 0.3, head);
   p(new THREE.BoxGeometry(0.12, 0.7, 0.12), dark, 0, 1.0, -0.88).rotation.x = -0.35; // 꼬리
   p(new THREE.BoxGeometry(0.66, 0.1, 0.62), 0x7a2a22, 0, 1.43, 0); // 안장
   const legs = [];
@@ -42,8 +44,32 @@ function makeHorse() {
     p(new THREE.BoxGeometry(0.18, 0.1, 0.2), dark, 0, -0.8, 0, piv);
     legs.push(piv);
   }
-  g.userData.legs = legs;
+  g.userData.legs = legs; g.userData.head = head;
   return g;
+}
+
+// 물러나는 거란 병사 다리에 무릎을 단다(D-9, 1장만): 다리 한 토막을 허벅지와 정강이로 나누고 신발은 정강이에
+function addKnees(person) {
+  const box = (w, h, d, color, y, z, parent) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color)); m.position.set(0, y, z); m.castShadow = true; parent.add(m); return m; };
+  for (const leg of person.userData.legs) {
+    for (const c of leg.children) c.visible = false; // 굳히기로 합쳐졌을 수도 있는 원래 다리 토막은 숨기고 새로 단다
+    box(0.2, 0.29, 0.22, 0x2b241c, -0.14, 0, leg); // 허벅지
+    const knee = new THREE.Group(); knee.position.y = -0.275; leg.add(knee);
+    box(0.2, 0.29, 0.22, 0x2b241c, -0.14, 0, knee); // 정강이
+    box(0.24, 0.12, 0.34, 0x1e1a16, -0.225, 0.05, knee); // 신발
+    leg.userData.knee = knee;
+  }
+  person.userData.manual = true; // 걷기 자동 움직임(animateWalkers) 대신 아래 marchGait로 움직인다
+}
+
+// 행군 걸음 한 박자(ph): 다리를 앞뒤로 크게, 앞으로 내딛는 다리는 무릎을 굽히고, 팔은 다리와 반대로, 걸음마다 몸이 살짝 들썩인다
+function marchGait(o, ph) {
+  const u = o.userData, s = Math.sin(ph), c = Math.cos(ph);
+  u.legs[0].rotation.x = s * 0.75; u.legs[1].rotation.x = -s * 0.75;
+  u.legs[0].userData.knee.rotation.x = 0.1 + Math.max(0, -c) * 1.1;
+  u.legs[1].userData.knee.rotation.x = 0.1 + Math.max(0, c) * 1.1;
+  u.arms[0].rotation.x = -s * 0.65; u.arms[1].rotation.x = s * 0.65;
+  return Math.abs(c) * 0.08; // 들썩이는 높이
 }
 
 export function buildCh1Scene(world) {
@@ -278,9 +304,10 @@ export function buildCh1Scene(world) {
       const side = i < 2 ? 0 : ((i - 2) % 2 ? 0.9 : -0.9), along = i === 0 ? 5 : i === 1 ? 2.5 : -(row - 2) * 1.6;
       const x = DX * along - DZ * side, z = -41 + DZ * along + DX * side;
       o.position.set(x, Math.max(0, groundH(x, z)), z); o.rotation.y = 0; o.visible = true; // 처음에는 고려 쪽을 보고 서 있다
+      if (o !== horse) addKnees(o);
       const mats = [];
       o.traverse(m => { if (m.isMesh) { m.material = m.material.clone(); m.material.transparent = true; mats.push(m.material); } });
-      march.push({ o, delay: 0.4 + row * 0.35, mats });
+      march.push({ o, delay: 0.4 + row * 0.35, mats, ph: i * 2.3 + (i % 3) * 0.7 }); // ph: 사람마다 걸음 박자를 조금씩 어긋나게
     });
     const n = Math.round(6 + 8 * Math.min(1, q.particles));
     for (let i = 0; i < n; i++) {
@@ -311,11 +338,15 @@ export function buildCh1Scene(world) {
         const e = Math.min(1, k / 0.55); o.rotation.y = FACE * e * e * (3 - 2 * e); // 몸을 돌린다
         if (e < 1) continue;
         o.position.x += DX * MARCH * dt; o.position.z += DZ * MARCH * dt;
-        o.position.y = Math.max(0, groundH(o.position.x, o.position.z));
+        const ph = marchT * 7.5 + u.ph;
+        o.position.y = Math.max(0, groundH(o.position.x, o.position.z)) + (o === horse ? Math.abs(Math.cos(ph)) * 0.05 : marchGait(o, ph));
         const a = Math.min(1, Math.max(0, (o.position.z - GONE) / (FADE_FROM - GONE)));
         for (const m of u.mats) m.opacity = a;
         if (o.position.z < GONE) { o.visible = false; continue; }
-        if (o === horse) { const s = Math.sin(marchT * 9) * 0.5; horse.userData.legs.forEach((l, j) => { l.rotation.x = j === 0 || j === 3 ? s : -s; }); }
+        if (o === horse) { // 대각선 짝(앞왼·뒤오른 / 앞오른·뒤왼)이 번갈아 나가고, 머리를 걸음에 맞춰 끄덕인다
+          const s = Math.sin(ph) * 0.6; horse.userData.legs.forEach((l, j) => { l.rotation.x = j === 0 || j === 3 ? s : -s; });
+          horse.userData.head.rotation.x = Math.sin(ph * 2) * 0.08;
+        }
         if (o.position.z > FADE_FROM) walking.push(o);
       }
       if (walking.length && dustT > 0.14) { // 발밑 흙먼지

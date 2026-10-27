@@ -88,6 +88,7 @@ export function animateWalkers(dt, root) {
     let top = g; while (top.parent) top = top.parent;
     if (top !== root) { if (g.userData.seen) walkers.delete(g); continue; } // 장면에서 치운 인물은 놓아준다
     const u = g.userData; u.seen = true;
+    if (u.manual) continue; // 장이 직접 걸음 동작을 맡은 인물(고려 1장 물러나는 거란군)
     g.getWorldPosition(wp);
     const moved = u.last ? Math.hypot(wp.x - u.last.x, wp.z - u.last.z) / dt : 0;
     if (!u.last) u.last = new THREE.Vector3();
