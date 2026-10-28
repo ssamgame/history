@@ -1,6 +1,6 @@
 # 역사 속으로 걸어가기 — 작업 안내
 
-> **2026-10-27 최신: `docs/HANDOFF-2026-10-27.md`부터 읽는다.** 그다음 팀 방식(기획 담당 `.claude/agents/planner.md`, 개발·검토 담당 `.claude/agents/developer.md`, 결정 기록 `docs/team/decisions.md`, 테스트 기록 `docs/team/tested.md`, 장마다 넣는 상시 규칙)을 본다. (학생 배포판 v65로 되돌린 상태, 되돌린 「다시 만들기」 기록, 다시 시작할 때 여쭐 것)
+> **2026-10-28 최신: `docs/HANDOFF-2026-10-28.md`부터 읽는다(결정된 것·상시 규칙·안 정해진 것·다음 할 일).** 그다음 `docs/HANDOFF-2026-10-27.md`. 그다음 팀 방식(기획 담당 `.claude/agents/planner.md`, 개발·검토 담당 `.claude/agents/developer.md`, 결정 기록 `docs/team/decisions.md`, 테스트 기록 `docs/team/tested.md`, 장마다 넣는 상시 규칙)을 본다. (학생 배포판 v65로 되돌린 상태, 되돌린 「다시 만들기」 기록, 다시 시작할 때 여쭐 것)
 
 > 그다음 필요하면 `docs/HANDOFF-2026-10-26.md`(v65를 만든 3단계 기록), `docs/HANDOFF.md`(인수인계, 사용자 규칙·최근 변경·남은 일).
 
