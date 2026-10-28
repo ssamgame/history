@@ -1,14 +1,15 @@
 // 6장 「삼별초의 항쟁」(D-19): 포구 문으로 들어와 관리·병사·백성의 말 → 배중손의 결심 → 배중손을 따라 부두로 →
-// 바닷길(진도) → 내려서 용장성의 김통정에게 → 바닷길(제주) → 항파두리의 김통정에게 → 바닷가의 고려 사람들을 만나기 → 퀴즈.
+// 바닷길(진도) → 내려서 용장성의 김통정에게 → 바닷길(제주) → 항파두리의 김통정에게 → 퀴즈. (편 복습 퀴즈는 6장 뒤 core/review.js)
 import { buildCh6Scene } from './scene.js';
 import { roam } from '../../core/flow.js';
 import { showHowTo, runWithRetries } from '../../core/minigame.js';
 import { enterThroughGate } from '../kit/gate.js';
 import { leadWalk } from '../kit/lead.js';
+import * as THREE from 'three';
 import script from './script.js';
 
 const PEOPLE = ['minister', 'sambyeolcho', 'villager'];
-const MEET_START = [2, 4, 0, 3, 1]; // 인물이 처음 서 있는 자리(표지판 차례와 섞어 둔다)
+const SAIL_CAM = { offset: [0, 2.9, 5.4], lookY: 1.3 }; // 배 바로 뒤 낮은 눈높이(1인칭 같은 3인칭, D-20)
 
 const CATCH_R = 2.4;
 const CHASE_DELAY = 2.5;
@@ -22,16 +23,12 @@ function placePlayer(world, [x, z], ry = Math.PI) {
   world.camMode = 'follow'; world.snapCamera();
 }
 
-// 바닷길 한 구간: 도착 원에 닿으면 성공, 추격선에 잡히면 실패. 뒤쫓는 배가 보이도록 바다에서만 조금 높은 카메라(상시 규칙 예외)
+// 바닷길 한 구간: 도착 원에 닿으면 성공, 몽골 배에 잡히면 실패. 배 바로 뒤 낮은 카메라, 몽골 배는 앞쪽 양옆에서 다가온다(D-20)
 export function sailLeg(ctx, leg, easy) {
   const { world, hud, audio, input } = ctx;
   const speed = easy ? 2.2 : 3.6;
   let t = 0; // 출발 뒤 CHASE_DELAY초 동안은 추격선이 기다린다
-  world.bounds = scene.seaBounds;
-  world.closeView = false;
-  scene.setSailing(true);
-  placePlayer(world, leg.from);
-  world.player.visible = false;
+  toSea(ctx, leg);
   scene.ring.position.set(leg.to.x, 0.1, leg.to.z); scene.ring.visible = true;
   world.setGoal({ x: leg.to.x, z: leg.to.z });
   scene.pursuers.forEach((p, i) => { p.visible = true; p.position.set(leg.chasers[i][0], -0.3, leg.chasers[i][1]); });
@@ -41,6 +38,7 @@ export function sailLeg(ctx, leg, easy) {
     const finish = ok => {
       if (done) return; done = true;
       off(); input.enabled = false; input.releaseJoystick?.();
+      world.followOffset = null; world.followLookY = null;
       scene.ring.visible = false; scene.pursuers.forEach(p => { p.visible = false; });
       world.setGoal(null); hud.setCounter(null);
       resolve(ok);
@@ -67,6 +65,7 @@ export function sailLeg(ctx, leg, easy) {
 function toSea(ctx, leg) {
   const { world } = ctx;
   world.closeView = false; world.bounds = scene.seaBounds;
+  world.followOffset = new THREE.Vector3(...SAIL_CAM.offset); world.followLookY = SAIL_CAM.lookY;
   scene.setSailing(true); placePlayer(world, leg.from); world.player.visible = false;
 }
 
@@ -75,7 +74,7 @@ export function landAt(ctx, id) {
   const { world } = ctx;
   const A = scene.lands[id];
   scene.setSailing(false);
-  world.closeView = true;
+  world.closeView = true; world.followOffset = null; world.followLookY = null;
   world.bounds = A.bounds;
   world.moveNpc('kimtongjeong', A.kim[0], A.kim[1], 0);
   world.npcs.get('kimtongjeong').mesh.visible = true;
@@ -101,62 +100,15 @@ function talkToKim(ctx, lines) {
   });
 }
 
-// 마무리(D-19): 바닷가의 다섯 인물을 아무 차례로 만나면 한 줄을 말하고 자기 사건 표지판 옆으로 걸어가 선다
-export function meetPeople(ctx) {
-  const { world, dialogue, hud } = ctx;
-  const A = scene.lands.jeju, M = script.meet.people;
-  world.npcs.get('kimtongjeong').mesh.visible = false;
-  M.forEach((p, i) => {
-    const [x, z] = A.people[MEET_START[i]];
-    world.moveNpc(p.id, x, z, 0);
-    const n = world.npcs.get(p.id); n.mesh.visible = true; n.mark.visible = true;
-  });
-  const met = new Set(), walking = new Map();
-  const next = () => {
-    const p = M.find(q => !met.has(q.id));
-    const m = p && world.npcs.get(p.id).mesh.position;
-    world.setGoal(m ? { x: m.x, z: m.z } : null);
-    hud.setCounter(`만난 사람 ${met.size}/${M.length}`);
-  };
-  next();
-  ctx.input.enabled = true;
-  const offWalk = world.onUpdate(dt => { // 표지판으로 걸어간다
-    for (const [id, b] of walking) {
-      const m = world.npcs.get(id).mesh.position, dx = b.x - m.x, dz = b.z - m.z, d = Math.hypot(dx, dz), step = 2.4 * dt;
-      if (d <= step) { world.moveNpc(id, b.x, b.z, 0); walking.delete(id); }
-      else world.moveNpc(id, m.x + dx / d * step, m.z + dz / d * step, Math.atan2(dx, dz));
-    }
-  });
-  return new Promise(resolve => {
-    const stop = roam(ctx, {
-      async onTalk(id) {
-        const p = M.find(q => q.id === id);
-        if (!p) return;
-        await dialogue.say(p.line);
-        if (met.has(id)) return;
-        met.add(id); world.npcs.get(id).mark.visible = false;
-        walking.set(id, scene.boards[id]);
-        next();
-        if (met.size === M.length) {
-          stop();
-          const wait = world.onUpdate(() => { if (walking.size) return; wait(); offWalk(); hud.setCounter(null); resolve(); });
-        }
-      },
-    });
-  });
-}
-
 function showAftermath(ctx) {
   landAt(ctx, 'jeju');
-  ctx.world.npcs.get('kimtongjeong').mesh.visible = false;
-  script.meet.people.forEach(p => { const b = scene.boards[p.id], n = ctx.world.npcs.get(p.id); ctx.world.moveNpc(p.id, b.x, b.z, 0); n.mesh.visible = true; n.mark.visible = false; });
-  ctx.setGoal(script.goals[7]);
+  ctx.setGoal(script.goals[script.goals.length - 1]);
 }
 
 let devWorld = null;
 export const devScene = () => scene; // 개발용(사진 찍기·콘솔)
 export const devLand = id => landAt({ world: devWorld }, id);
-export const devMeet = () => showAftermath({ world: devWorld, setGoal() {} });
+export const devSail = () => { const leg = scene.legs[0]; toSea({ world: devWorld }, leg); scene.pursuers.forEach((p, i) => { p.visible = true; p.position.set(leg.chasers[i][0] * 0.5, -0.3, leg.from[1] - 22 - i * 6); p.rotation.y = Math.PI / 2 * (i % 2 ? -1 : 1); }); };
 
 export default {
   id: 'ch6',
@@ -252,14 +204,8 @@ export default {
     await sayAll(dialogue, script.jeju.arrive);
     dialogue.close();
     await talkToKim(ctx, script.jeju.talk);
-    // 6. 바닷가의 고려 사람들을 만나기
-    ctx.setGoal(G[6]);
-    await sayAll(dialogue, script.meet.intro);
-    dialogue.close();
-    await meetPeople(ctx);
     input.enabled = false;
-    await sayAll(dialogue, script.meet.done); dialogue.close();
-    ctx.setGoal(G[7]);
+    ctx.setGoal(G[6]);
     return { firstTryCorrect: [a, b].filter(x => x.first).length, firstTryTotal: 2, easyModeUsed: a.easyModeUsed || b.easyModeUsed };
   },
 };

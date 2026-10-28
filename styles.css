@@ -396,3 +396,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 @media (max-width: 640px), (max-height: 520px) {
   .hud:has(~ .dlg:not([hidden])) :is(.hud-chapter, .hud-found, .hud-row) { display: none; }
 }
+
+/* 편 복습 퀴즈(D-21) */
+.review-opts { display: grid; gap: 8px; margin: .6rem 0; }
+.review-opt { text-align: left; min-height: 48px; }
+.review-opt.right { border-color: #2f6b5e; background: #e3f1ec; color: #1d3f37; }
+.review-opt.wrong { border-color: var(--dan-red); background: #fbeee9; color: #5a2a20; }

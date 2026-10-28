@@ -151,13 +151,42 @@ export function showChapterResult(root, meta, r) {
   });
 }
 
+// 편 복습 퀴즈(D-21): 6장을 마치면 결과 카드 전에 장마다 한 문제씩. 고르면 맞았는지와 해설을 보여 주고 '다음'.
+// 처음 고른 답으로 센다. { correct, total, wrong: [{ question, answer, explain }] }으로 끝난다
+export function showReviewQuiz(root, session, questions) {
+  return new Promise(resolve => {
+    let k = 0, correct = 0;
+    const wrong = [];
+    const card = h('div', { class: 'card review-quiz' });
+    const el = screen(root, 'review', card);
+    const show = () => {
+      const q = questions[k];
+      const why = h('p', { class: 'card-why', hidden: true, role: 'status' });
+      const next = h('button', { class: 'btn primary', type: 'button', hidden: true, onclick: () => { k += 1; if (k < questions.length) show(); else { el.remove(); resolve({ correct, total: questions.length, wrong }); } } }, k + 1 < questions.length ? '다음' : '결과 보기');
+      const opts = q.options.map((o, i) => h('button', { class: 'btn review-opt', type: 'button', 'data-i': i, onclick: () => {
+        opts.forEach(b => { b.disabled = true; });
+        opts[q.answer].classList.add('right');
+        if (i === q.answer) { correct += 1; why.textContent = `맞았어요! ${q.explain}`; }
+        else { opts[i].classList.add('wrong'); wrong.push({ question: q.question, answer: q.options[q.answer], explain: q.explain }); why.textContent = `정답은 '${q.options[q.answer]}'이에요. ${q.explain}`; }
+        why.hidden = false; next.hidden = false;
+      } }, o));
+      card.replaceChildren(
+        h('div', { class: 'eyebrow' }, `복습 퀴즈 · ${SESSIONS[session].title} · ${k + 1}/${questions.length}`),
+        h('h2', {}, q.question),
+        h('div', { class: 'review-opts' }, opts), why, h('div', { class: 'row' }, next));
+    };
+    show();
+  });
+}
+
 export function showSessionCard(root, session, save, chapters) {
   return new Promise(resolve => {
     const list = chapters.filter(c => c.session === session);
     const results = list.map(c => save.chapterResult(c.id)).filter(Boolean);
     const qc = results.reduce((a, r) => a + r.quizCorrect, 0), qt = results.reduce((a, r) => a + r.quizTotal, 0);
     const secs = results.reduce((a, r) => a + r.seconds, 0);
-    const wrong = results.flatMap(r => r.wrongQuizzes || []);
+    const rv = save.review ? save.review(session) : null; // 편 복습 퀴즈(D-21)
+    const wrong = [...results.flatMap(r => r.wrongQuizzes || []), ...(rv?.wrong || [])];
     const today = new Date();
     const el = screen(root, 'session',
       h('div', { class: 'card wide' },
@@ -170,6 +199,7 @@ export function showSessionCard(root, session, save, chapters) {
         })),
         h('div', { class: 'stats' },
           h('div', {}, h('b', {}, `${qc}/${qt}`), h('span', {}, '퀴즈 정답')),
+          rv && h('div', {}, h('b', {}, `${rv.correct}/${rv.total}`), h('span', {}, '복습 퀴즈')),
           h('div', {}, h('b', {}, timeText(secs)), h('span', {}, '걸린 시간'))),
         h('div', { class: 'points' }, h('b', {}, '핵심 정리'), h('ol', {}, SESSIONS[session].points.map(p => h('li', {}, p)))),
         wrong.length > 0 && h('div', { class: 'review' }, h('b', {}, '다시 보기'),

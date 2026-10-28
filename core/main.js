@@ -8,7 +8,8 @@ import { createDialogue } from './dialogue.js';
 import { createQualityController, guessInitialQuality } from './quality.js';
 import { runChapter } from './flow.js';
 import { createMusic } from './music.js';
-import { showTitle, askName, showCourses, showMap, showIntroCard, showChapterResult, showSessionCard, showMenu, showMessage, createHud } from './screens.js';
+import { REVIEW } from '../content/review.js';
+import { showTitle, askName, showCourses, showMap, showIntroCard, showChapterResult, showSessionCard, showReviewQuiz, showMenu, showMessage, createHud } from './screens.js';
 import { perfEnabled, createPerfStats, createPerfPanel } from './perf.js';
 import { ALL_CHAPTERS, COURSES, courseById, courseOfChapter, isSessionDone } from '../chapters/index.js';
 import { LOOKS } from '../content/characters.js';
@@ -130,7 +131,12 @@ function boot() {
     dialogue.dispose(); dialogue = null;
     curMeta = null;
     await showChapterResult(ui, meta, result);
-    if (isSessionDone(meta.session, save)) await showSessionCard(ui, meta.session, save, ALL_CHAPTERS);
+    if (isSessionDone(meta.session, save)) {
+      // 편 복습 퀴즈(D-21): 마지막 장(6장)을 마쳤을 때, 또는 아직 한 번도 안 풀었을 때 결과 카드 전에
+      const qs = REVIEW[meta.session];
+      if (qs && (meta.no === 6 || !save.review(meta.session))) save.setReview(meta.session, await showReviewQuiz(ui, meta.session, qs));
+      await showSessionCard(ui, meta.session, save, ALL_CHAPTERS);
+    }
   }
 
   // 편 고르기 → 그 편의 지도 → 장. 고른 편은 저장해 두어 다음에 열면 그 편 지도부터 보인다.

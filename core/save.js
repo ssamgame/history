@@ -18,7 +18,7 @@ export function createSave(storage) {
       const valid = d && typeof d === 'object' && typeof d.name === 'string' && d.chapters && typeof d.chapters === 'object';
       // 편이 생기기 전의 옛 기록: 고려편 장을 하나라도 했으면 고려편으로 본다(이어하기가 고려편 지도로 바로 간다)
       const oldGoryeo = valid && (Object.keys(d.chapters).some(id => /^ch\d$/.test(id)) || /^ch\d$/.test(d.current?.id || ''));
-      save.data = valid ? { name: d.name, chapters: d.chapters, current: d.current || null, course: typeof d.course === 'string' ? d.course : oldGoryeo ? 'goryeo' : null } : empty(); // 옛 기록의 역사 수첩(notes)은 버린다(D-9)
+      save.data = valid ? { name: d.name, chapters: d.chapters, current: d.current || null, course: typeof d.course === 'string' ? d.course : oldGoryeo ? 'goryeo' : null, reviews: d.reviews && typeof d.reviews === 'object' ? d.reviews : {} } : empty(); // 옛 기록의 역사 수첩(notes)은 버린다(D-9)
       return save.data;
     },
     persist() { return storage.set(KEY, save.data); },
@@ -34,6 +34,9 @@ export function createSave(storage) {
       save.persist();
     },
     chapterResult(id) { return save.data.chapters[id] || null; },
+    // 편 복습 퀴즈 결과(D-21): { correct, total }
+    setReview(session, r) { (save.data.reviews ||= {})[session] = r; save.persist(); },
+    review(session) { return (save.data.reviews || {})[session] || null; },
     // 메뉴에서 장 선택으로 나갈 때: 하던 장을 버려서 다음에는 지도부터 보이게 한다
     abandonCurrent() { save.data.current = null; save.persist(); },
   };

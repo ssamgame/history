@@ -7,7 +7,7 @@ import { CHAPTERS } from '../chapters/index.js';
 import ch6Script from '../chapters/ch6/script.js';
 import ch6 from '../chapters/ch6/chapter.js';
 import { buildCh6Scene } from '../chapters/ch6/scene.js';
-import { sailLeg, landAt, meetPeople } from '../chapters/ch6/chapter.js';
+import { sailLeg } from '../chapters/ch6/chapter.js';
 import { testWorld, touchSetup, touchBot, memSave } from './bot.js';
 import * as THREE from 'three';
 
@@ -17,8 +17,7 @@ test('ch6: script passes validation', () => {
   eq(validateScript(ch6Script, SOURCES), []);
   for (const [id, sp] of Object.entries(ch6Script.speakers)) if (id !== 'guide') ok(LOOKS[sp.look], id);
   eq(ch6Script.quizzes.map(q => q.options[q.answer]), ['고려 조정이 몽골과 싸움을 멈추고 개경으로 돌아가는 데 반대해서', '강화도 → 진도 → 제주도']); // 까닭(1270) → 옮겨 간 순서(1270~1273)
-  eq(ch6Script.meet.people.map(p => p.id), ['seohui', 'yanggyu', 'gangamchan', 'kimyunhu', 'baejungson']);
-  ok(ch6Script.meet.people.every(p => p.line.src && p.line.src.length && ch6Script.speakers[p.id]), 'every person has a sourced line');
+  ok(!('meet' in ch6Script) && !('fit' in ch6Script), 'no meeting of all the people (D-20: 편 복습 퀴즈로)');
 });
 
 test('ch6: destinations start ahead of the boat', () => {
@@ -105,19 +104,21 @@ test('ch6 D-19: port gate and 강화도 board, one-paragraph intro, people talk 
   ok(!JSON.stringify(ch6Script).includes('배중손 장군'));
 });
 
-test('ch6 D-19: meeting the five people — each says a line and walks to the board of their event', async () => {
+test('ch6 D-20: sailing — low camera just behind the boat, oars row while moving, 몽골 배 start ahead on the sides', async () => {
   const s = touchSetup(ch6Script.speakers);
-  const bot = touchBot(s, { answers });
   try {
     const sc = ch6.buildScene(s.w, s.ctx);
-    landAt(s.ctx, 'jeju');
-    await meetPeople(s.ctx);
-    for (const p of ch6Script.meet.people) {
-      const n = s.w.npcs.get(p.id).mesh.position, b = sc.boards[p.id];
-      ok(Math.hypot(n.x - b.x, n.z - b.z) < 2, `${p.id} beside ${p.board}`);
-    }
-  } finally { bot.stop(); s.done(); }
-}, { timeout: 90000 });
+    ch6.enterStage(s.ctx, 'minigame');
+    for (const leg of sc.legs) ok(leg.chasers.every(([x, z]) => z < leg.from[1] - 10 && Math.abs(x - leg.from[0]) > 12), 'ahead and to the side');
+    sailLeg(s.ctx, sc.legs[0], false);
+    ok(s.w.followOffset && s.w.followOffset.y < 3.5 && s.w.followOffset.z < 7, 'low camera behind the boat');
+    const oar = sc.boat.userData.oars[0], r0 = oar.rotation.y;
+    for (let i = 0; i < 6; i++) s.w.step(0.05, { x: 0, z: -1 });
+    ok(Math.abs(oar.rotation.y - r0) > 0.05, 'oars move while rowing');
+    const arms = sc.boat.children.find(c => c.userData.arms)?.userData.arms;
+    ok(arms && arms[0].rotation.x < -0.4, 'the rower pulls the oar');
+  } finally { s.done(); }
+});
 
 test('ch6 D-19: full run uses no cards, low camera on land, sailing camera only at sea', async () => {
   const s = touchSetup(ch6Script.speakers);

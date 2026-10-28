@@ -2,7 +2,7 @@
 export const CACHE = 'goryeo-v65'; // 배포할 때마다 올린다 (학생 기기에 새 판이 반영되도록)
 
 export const PRECACHE = [
-  'index.html', 'styles.css', 'vendor/three.module.min.js', 'content/sources.js',
+  'index.html', 'styles.css', 'vendor/three.module.min.js', 'content/sources.js', 'content/review.js',
   'core/main.js', 'core/bake.js', 'core/perf.js', 'core/fire.js', 'core/storage.js', 'core/save.js', 'core/content.js', 'core/dialogue.js', 'core/input.js',
   'core/quality.js', 'core/audio.js', 'core/world.js', 'core/people.js', 'core/screens.js', 'core/flow.js',
   'core/precache.js',

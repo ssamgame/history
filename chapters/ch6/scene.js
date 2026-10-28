@@ -14,6 +14,14 @@ const JL = [130, 0], EL = [-130, 0];
 
 function seeded(s) { return () => (s = (s * 16807) % 2147483647) / 2147483647; }
 
+// 노 젓기: ph(박자)에 맞춰 노를 앞뒤로 젓고 물에서 들었다 담근다. k는 세기(0이면 쉬는 자세)
+export function rowBoat(boat, ph, k = 1) {
+  for (const pv of boat.userData.oars) {
+    pv.rotation.y = pv.userData.side * Math.sin(ph) * 0.5 * k;
+    pv.rotation.z = pv.userData.side * Math.max(0, Math.cos(ph)) * 0.22 * k;
+  }
+}
+
 // 고려 배: 바닥이 평평한 몸통, 비스듬한 뱃머리판(앞 +z), 노, 돛대와 대나무 살을 댄 네모 돛
 function makeBoat(mk, hull, sail, parent) {
   const g = new THREE.Group(); parent.add(g);
@@ -22,11 +30,19 @@ function makeBoat(mk, hull, sail, parent) {
   mk(new THREE.BoxGeometry(1.8, 0.75, 0.14), hull, 0, 0.25, 2.12, g).rotation.x = -0.5;
   mk(new THREE.BoxGeometry(1.7, 0.7, 0.14), hull, 0, 0.25, -2.1, g).rotation.x = 0.4;
   mk(new THREE.BoxGeometry(1.6, 0.08, 3.8), 0x8a6a45, 0, 0.42, 0, g);
-  for (const sx of [-1, 1]) for (const z of [-0.8, 0.6]) { const o = mk(new THREE.BoxGeometry(0.05, 0.05, 1.6), 0x6b4a32, sx * 1.3, 0.2, z, g); o.rotation.set(0, Math.PI / 2, sx * 0.4); }
-  mk(new THREE.CylinderGeometry(0.07, 0.09, 3.6, 6), 0x5a3f2a, 0, 2.2, 0.2, g);
+  // 노: 뱃전의 받침(pivot)에서 바깥 아래로 뻗는다. 저을 때 앞뒤로 젓고(y) 물에서 들었다 담근다(z) — rowBoat가 움직인다
+  g.userData.oars = [];
+  for (const sx of [-1, 1]) for (const z of [-0.8, 0.6]) {
+    const pv = new THREE.Group(); pv.position.set(sx * 0.85, 0.42, z); g.add(pv);
+    const o = mk(new THREE.BoxGeometry(2.3, 0.07, 0.07), 0x6b4a32, sx * 1.05, 0, 0, pv); o.rotation.z = sx * -0.42;
+    mk(new THREE.BoxGeometry(0.5, 0.04, 0.22), 0x6b4a32, sx * 2.05, -0.44, 0, pv).rotation.z = sx * -0.42; // 노깃
+    pv.userData.side = sx; g.userData.oars.push(pv);
+  }
+  const rig = new THREE.Group(); rig.name = 'rig'; g.add(rig); // 돛대와 돛(노를 저을 때는 내린다)
+  mk(new THREE.CylinderGeometry(0.07, 0.09, 3.6, 6), 0x5a3f2a, 0, 2.2, 0.2, rig);
   const s = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 2.2), new THREE.MeshLambertMaterial({ color: sail, side: THREE.DoubleSide }));
-  s.position.set(0, 2.5, 0.25); g.add(s);
-  for (let i = 0; i < 5; i++) mk(new THREE.BoxGeometry(1.9, 0.04, 0.04), 0x7a6a4a, 0, 1.5 + i * 0.5, 0.27, g); // 돛에 댄 대나무 살
+  s.position.set(0, 2.5, 0.25); rig.add(s);
+  for (let i = 0; i < 5; i++) mk(new THREE.BoxGeometry(1.9, 0.04, 0.04), 0x7a6a4a, 0, 1.5 + i * 0.5, 0.27, rig); // 돛에 댄 대나무 살
   return g;
 }
 
@@ -100,7 +116,8 @@ export function buildCh6Scene(world) {
 
   // 플레이어가 탄 배 (항해 중에만 보인다)
   const boat = makeBoat(mk, 0x6b4a32, 0xe8e2d6, L); boat.visible = false;
-  const crew = makePerson(LOOKS.sambyeolcho); crew.scale.setScalar(0.8); crew.position.set(0, 0.4, -1.1); crew.userData.noWalk = true; boat.add(crew); // 배에 탄 사람은 걷지 않는다
+  boat.getObjectByName('rig').visible = false; // 학생 배는 돛을 내리고 노를 젓는다(낮은 시점에서 앞을 가리지 않게)
+  const crew = makePerson(LOOKS.sambyeolcho); crew.scale.setScalar(0.8); crew.position.set(0, 0.0, 0.5); crew.userData.noWalk = true; crew.userData.manual = true; boat.add(crew); // 배 안에 앉아(다리는 뱃전 아래) 걷지 않고 노를 젓는다
   // 뒤쫓는 배 3척
   // 뒤쫓는 배에는 몽골 군사 두 명이 타고 있다(창을 든 병사)
   const pursuers = [0, 1, 2].map(() => {
@@ -158,27 +175,18 @@ export function buildCh6Scene(world) {
     mk(new THREE.BoxGeometry(4.2, 2.2, 2.6), 0x8a7356, x, 1.0, EL[1] - 9 + Math.abs(i - 4) * 0.6).rotation.y = (i - 4) * 0.05;
     world.addCollider({ x, z: EL[1] - 9 + Math.abs(i - 4) * 0.6, r: 1.6 });
   }
-  nameBoard(L, '항파두리', EL[0] + 15.5, EL[1] + 8); // S13 (사건 표지판 줄과 겹치지 않게 해안 옆)
+  nameBoard(L, '항파두리', EL[0] + 4, EL[1] + 5); // S13
 
-  // 마무리: 제주 바닷가에 다섯 사건 표지판, 그 앞에 1~6장 인물(처음엔 숨김)
-  const MEET = ['seohui', 'yanggyu', 'gangamchan', 'kimyunhu'];
-  const EVENTS = [['seohui', '외교 담판 (993)'], ['yanggyu', '흥화진 (1010)'], ['gangamchan', '귀주 대첩 (1019)'], ['kimyunhu', '처인성·충주성'], ['baejungson', '삼별초 (1270~1273)']];
-  const boards = {};
-  EVENTS.forEach(([id, label], i) => {
-    const x = EL[0] - 12 + i * 6, z = EL[1] + 3;
-    nameBoard(L, label, x, z); boards[id] = { x: x + 1.5, z: z + 0.8 }; // 인물이 와서 서는 곳(표지판 오른쪽 앞)
-  });
-  MEET.forEach(id => { world.addNpc(id, LOOKS[id], 0, 0, Math.PI); world.npcs.get(id).mesh.visible = false; });
   world.addNpc('kimtongjeong', LOOKS.kimtongjeong, JL[0], JL[1] - 5, 0);
   world.npcs.get('kimtongjeong').mesh.visible = false;
   const lands = {
     jindo: { name: '용장성', ground: jg, shore: [JL[0], JL[1] + 9], kim: [JL[0], JL[1] - 5], bounds: { x0: JL[0] - 18, x1: JL[0] + 18, z0: JL[1] - 7, z1: JL[1] + 11 } },
-    jeju: { name: '항파두리', ground: eg, shore: [EL[0], EL[1] + 9], kim: [EL[0] + 8, EL[1] - 4.5], bounds: { x0: EL[0] - 18, x1: EL[0] + 18, z0: EL[1] - 6, z1: EL[1] + 11 },
-      people: [[EL[0] - 12, EL[1] - 3], [EL[0] - 6, EL[1] - 2], [EL[0], EL[1] - 3], [EL[0] + 6, EL[1] - 2], [EL[0] + 12, EL[1] - 3]] }, // 처음 서 있는 곳(토성 앞)
+    jeju: { name: '항파두리', ground: eg, shore: [EL[0], EL[1] + 9], kim: [EL[0] + 8, EL[1] - 4.5], bounds: { x0: EL[0] - 18, x1: EL[0] + 18, z0: EL[1] - 6, z1: EL[1] + 11 } },
   };
 
   const sp = seaGeo.attributes.position;
   let sailing = false;
+  const row = { ph: 0, k: 0 };
   world.onUpdate((dt, t) => {
     if (world.quality.water === 'waves') {
       for (let i = 0; i < sp.count; i++) sp.setY(i, Math.sin(sp.getX(i) * 0.15 + t * 1.2) * 0.18 + Math.cos(sp.getZ(i) * 0.2 + t) * 0.12);
@@ -186,19 +194,26 @@ export function buildCh6Scene(world) {
     }
     if (ring.visible) ring.material.opacity = 0.55 + Math.sin(t * 4) * 0.3;
     if (sailing) {
-      boat.position.set(world.player.position.x, -0.3 + Math.sin(t * 2) * 0.08, world.player.position.z);
+      const p = world.player.position, moved = Math.hypot(p.x - boat.position.x, p.z - boat.position.z) > 0.001;
+      row.k += ((moved ? 1 : 0) - row.k) * Math.min(1, dt * 4); // 움직일 때만 힘껏 젓는다
+      row.ph += dt * 5 * row.k;
+      world.player.visible = false; // 배를 타는 동안 학생 몸은 늘 숨긴다(대화 뒤 되살아나지 않게)
+      boat.position.set(p.x, -0.3 + Math.sin(t * 2) * 0.08, p.z);
       boat.rotation.y = world.player.rotation.y;
+      rowBoat(boat, row.ph, row.k);
+      const a = crew.userData.arms; if (a) for (const arm of a) arm.rotation.x = -1.0 + Math.sin(row.ph) * 0.45 * row.k; // 노 젓는 팔
     }
+    pursuers.forEach((b, i) => { if (b.visible) rowBoat(b, t * 5 + i * 1.3); });
   });
 
   return {
-    boat, pursuers, ring, jindo, jeju, docks, gate, lands, boards, standRing, introFrom: [0, 91], leadPath: [[0, 68], [0, 65]], leadStand: [0, 67.6],
+    boat, pursuers, ring, jindo, jeju, docks, gate, lands, standRing, introFrom: [0, 91], leadPath: [[0, 68], [0, 65]], leadStand: [0, 67.6],
     setSailing(b) { sailing = b; boat.visible = b; world.player.visible = !b; },
     portBounds: { x0: -18, x1: 18, z0: 64, z1: 86 },
     seaBounds: { x0: -40, x1: 40, z0: -84, z1: 66 },
     legs: [
-      { name: '진도', from: [0, 61], to: { x: JINDO[0], z: JINDO[1], r: 2.4 }, chasers: [[-22, 58], [22, 56], [-26, 40]] },
-      { name: '제주', from: [JINDO[0], -4], to: { x: JEJU[0], z: JEJU[1], r: 2.4 }, chasers: [[-26, -6], [20, -10], [-28, -30]] },
+      { name: '진도', from: [0, 61], to: { x: JINDO[0], z: JINDO[1], r: 2.4 }, chasers: [[-26, 42], [22, 34], [-28, 20]] }, // 몽골 배는 앞쪽 양옆에서 다가온다(낮은 시점에서도 보이게)
+      { name: '제주', from: [JINDO[0], -4], to: { x: JEJU[0], z: JEJU[1], r: 2.4 }, chasers: [[-30, -24], [26, -34], [-26, -52]] },
     ],
     start: [0, 80],
   };
