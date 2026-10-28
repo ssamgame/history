@@ -68,7 +68,7 @@ export default {
       { label: '3일 만에 끝남', talk: [
         { who: 'kimokgyun', text: '청의 군사를 막을 수가 없구려. 몸을 피해야 하오.' },
         { who: 'narr', text: '갑신정변은 청이 군사를 동원하면서 3일 만에 끝났어요(1884년).', src: ['S51'] },
-      ] },
+      ], after: [{ who: 'narr', text: '김옥균 등은 일본으로 몸을 피했어요.', src: ['S51'] }] }, // 김옥균이 골목으로 걸어간 뒤 그 자리에서
     ],
   },
   parts: {
@@ -87,7 +87,7 @@ export default {
       fail: '개화 세력은 청에서 벗어나고, 백성이 평등하고, 나라 살림이 넉넉해지기를 바랐어요.',
     },
   },
-  result: [{ who: 'narr', text: '김옥균 등은 일본으로 몸을 피했고, 그 뒤 청의 간섭은 더욱 심해졌어요.', src: ['S51'] }],
+  result: [{ who: 'narr', text: '갑신정변 뒤 청의 간섭은 더욱 심해졌어요.', src: ['S51'] }],
   quizzes: [
     { kind: 'quiz', year: 1884, question: '갑신정변을 일으킨 개화 세력의 인물은?', options: ['전봉준', '김옥균', '서재필'], answer: 1, explain: '김옥균 등 개화 세력이 1884년 갑신정변을 일으켰어요.', src: ['S51'] },
     { kind: 'quiz', year: 1884, question: '갑신정변은 며칠 만에 끝났나요?', options: ['3일', '30일', '3년'], answer: 0, explain: '청이 군사를 동원하면서 3일 만에 끝났어요.', src: ['S51'] },

@@ -15,6 +15,7 @@ test('k2 D-29: 거리 사람은 아무 차례로, 김옥균 앞에서 학생의 
 test('k2 D-29: 놀이는 김옥균 따라 밤길(장면)과 방 붙이기, 이정표·팻말 찾기 없음', () => {
   eq(k2.parts.map(p => p.type), ['scene', 'deliver']);
   eq(script.night.stops.length, 5);
+  ok(script.night.stops[4].after.some(l => l.text.includes('일본으로 몸을 피했')), '몸을 피한 뒤 그 자리에서 해설');
   ok(script.night.stops.every(s => s.talk.length));
   const reform = k2.parts[1];
   ok(reform.cards.every(c => c.carry === 'notice'));

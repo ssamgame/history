@@ -104,7 +104,8 @@ export async function nightWalk(ctx) {
   await ctx.fade?.(false);
   // 3에서 솟는 게시판, 4에서 몰려오는 청 군사
   const board = new THREE.Group(); BUILD.noticeBoard(board, {}); board.position.set(-6, -3, -4); board.visible = false; g.add(board);
-  const qing = [0, 1, 2, 3, 4, 5].map(i => { const p = makePerson(LOOKS.qingSoldier); p.position.set((i % 3 - 1) * 1.6, 0, -26 - Math.floor(i / 3) * 1.6); p.visible = false; g.add(p); return p; });
+  const QING = 15, row = j => Math.floor(j / 5); // 다섯 줄 세 겹, 줄마다 조금씩 엇갈려 몰려온다
+  const qing = Array.from({ length: QING }, (_, i) => { const p = makePerson(LOOKS.qingSoldier); p.position.set((i % 5 - 2) * 1.25 + (row(i) % 2) * 0.4, 0, -26 - row(i) * 1.5); p.visible = false; g.add(p); return p; });
   try {
     for (const [i, st] of NIGHT_STOPS.entries()) {
       ctx.hud.setCounter(`${i + 1}/${NIGHT_STOPS.length} ${N.stops[i].label}`);
@@ -113,7 +114,7 @@ export async function nightWalk(ctx) {
       if (i === 2) { board.visible = true; await wait(world, 1.2, k => { board.position.y = -3 * (1 - k) * (1 - k); }); }
       if (i === 3) { // 청 군사들이 북쪽에서 걸어 내려온다
         qing.forEach(p => { p.visible = true; });
-        await wait(world, 3, (k, dt) => qing.forEach((p, j) => { p.position.z = -26 - Math.floor(j / 3) * 1.6 + 12 * k; animateWalk(p, k < 1, dt); }));
+        await wait(world, 3, (k, dt) => qing.forEach((p, j) => { p.position.z = -26 - row(j) * 1.5 + 12 * k; animateWalk(p, k < 1, dt); }));
       }
       if (i !== 3) { // 김옥균이 학생 쪽으로 돌아서서 정면으로 말한다
         const m = kim.mesh.position, pp = world.player.position;
@@ -126,6 +127,7 @@ export async function nightWalk(ctx) {
         const p0 = kim.mesh.position.clone(), to = a.at(16, -11);
         await wait(world, 2.2, (k, dt) => { world.moveNpc('kimokgyun', p0.x + (to.x - p0.x) * k, p0.z + (to.z - p0.z) * k, Math.PI / 2); animateWalk(kim.mesh, k < 1, dt); });
       }
+      if (N.stops[i].after) { await sayAll(dialogue, N.stops[i].after); dialogue.close(); }
     }
   } finally {
     ctx.hud.setCounter(null);
