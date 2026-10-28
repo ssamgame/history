@@ -4,7 +4,7 @@ import { buildCh5Scene } from './scene.js';
 import { roam } from '../../core/flow.js';
 import { traceGlyph, showHowTo } from '../../core/minigame.js';
 import { labelSprite, setCarry } from '../../core/people.js';
-import { enterThroughGate } from '../kit/gate.js';
+import { enterThroughGate, closeGate } from '../kit/gate.js';
 import script from './script.js';
 
 const ARTISANS = ['artisan1', 'artisan2', 'artisan3', 'artisan4'];
@@ -115,12 +115,6 @@ export async function carveAndShelve(ctx) {
   ctx.audio.play('correct');
 }
 
-// 들어온 뒤 문을 천천히 닫는다(열린 문짝이 낮은 카메라 앞을 가리지 않게)
-function closeGate(world) {
-  let k = 1;
-  const off = world.onUpdate(dt => { k = Math.max(0, k - dt / 0.8); scene.gate.setOpen(k); if (!k) off(); });
-}
-
 export const devScene = () => scene; // 개발용(사진 찍기·콘솔): 지은 장면
 
 // 새긴 경판을 서가 맨 위 칸 빈자리에 세워 꽂는다
@@ -157,7 +151,7 @@ export default {
     world.closeView = true;
     placePlayer(world, scene.introFrom);
     await enterThroughGate(ctx, { from: scene.introFrom, to: scene.start, gate: scene.gate, speed: 1 });
-    closeGate(world);
+    closeGate(world, scene.gate);
     const heard = new Set();
     let monk = false;
     const mark = () => {

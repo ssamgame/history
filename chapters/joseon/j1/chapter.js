@@ -1,9 +1,12 @@
-// 조선편 1장 「위화도 회군과 조선 건국」: 위화도 진영 탐험 → 4불가론 카드 고르기 → 회군 장면 → 한양 배치 → 퀴즈.
+// 조선편 1장 「위화도 회군과 조선 건국」(D-22): 목책 문으로 들어와 군사들의 걱정(아무 차례) → 이성계 → 4불가론 고르기 →
+// 이성계의 결심 → 회군 지도 장면 → 관리를 따라 한양 터 둘러보기 → 궁궐·종묘·사직단 짓기 → 퀴즈.
 import { buildJ1Scene } from './scene.js';
 import { roam } from '../../../core/flow.js';
 import { showHowTo, runWithRetries } from '../../../core/minigame.js';
 import { PLAY, buildArena, mapSpot, labelSprite } from '../../kit/play.js';
 import { makePerson } from '../../../core/people.js';
+import { enterThroughGate, closeGate } from '../../kit/gate.js';
+import { leadWalk } from '../../kit/lead.js';
 import { LOOKS } from '../../../content/characters.js';
 import { geunjeongjeon, jongmyo, sajikdan } from '../landmarks.js';
 import * as THREE from 'three';
@@ -30,21 +33,52 @@ export const MARCH = { wihwa: MP(15, 18), mid: MP(27, 31), gaegyeong: MP(37, 46)
 // 3) 새 도읍 한양 터: 북쪽에 백악(산). 학생은 남쪽에서 들어온다(카메라와 학생 사이를 가리는 것이 없게 남쪽 담은 두지 않는다)
 export const HANYANG_SITE = {
   origin: [400, 0], ground: 'grass', groundColor: 0x6a8a4c, bounds: { x0: -20, x1: 20, z0: -18, z1: 16 },
-  props: [{ type: 'island', x: 0, z: -30, r: 12, color: 0x4f6a3e, sand: 0x6a7a4c }],
+  props: [{ type: 'island', x: 0, z: -30, r: 12, color: 0x4f6a3e, sand: 0x6a7a4c, peak: 11 }], // 북쪽 산 백악(둘러볼 때 보인다)
 };
 const SITES = [{ id: 'north', label: '북쪽 터', x: 0, z: -11 }, { id: 'east', label: '동쪽 터', x: 12, z: -1 }, { id: 'west', label: '서쪽 터', x: -12, z: -1 }, { id: 'south', label: '남쪽 터', x: 0, z: 9 }];
 
-const NPC_ORDER = ['archer', 'soldier', 'yiseonggye'];
+const PEOPLE = ['archer', 'soldier'];
 let scene = null;
 
 async function sayAll(dialogue, lines) { for (const l of lines) await dialogue.say(l); }
 
-function setStep(ctx, n) {
-  const { world } = ctx;
-  ctx.setGoal(script.goals[n]);
-  NPC_ORDER.forEach((id, i) => { world.npcs.get(id).mark.visible = n === i; });
-  const t = NPC_ORDER[n] && world.npcs.get(NPC_ORDER[n]).mesh.position;
-  world.setGoal(t ? { x: t.x, z: t.z } : null);
+// 탐험 표시: 아직 안 들은 군사에게 느낌표, 한 명이라도 들었으면 이성계에게도. 화살표는 다음 사람
+function markCamp(ctx, heard) {
+  const { world, hud } = ctx;
+  PEOPLE.forEach(id => { world.npcs.get(id).mark.visible = !heard.has(id); });
+  world.npcs.get('yiseonggye').mark.visible = heard.size > 0;
+  const next = world.npcs.get(PEOPLE.find(id => !heard.has(id)) || 'yiseonggye').mesh.position;
+  world.setGoal({ x: next.x, z: next.z });
+  ctx.setGoal(script.goals[heard.size === PEOPLE.length ? 1 : 0]);
+  hud.setCounter(`들은 걱정 ${heard.size}/${PEOPLE.length}`);
+}
+
+// 군사의 말: 다른 군사 말을 먼저 들었으면 그 말을 받아 잇는 한 줄로 시작한다
+export function campTalk(id, heard) {
+  const n = script.npc[id];
+  if (heard.has(id)) return n.later;
+  const other = PEOPLE.some(k => k !== id && heard.has(k));
+  return other ? [n.bridge, ...n.first] : n.first;
+}
+
+// 한양 터 둘러보기(D-22): 관리가 앞장서 북쪽(백악) → 동쪽 → 서쪽으로 걷고, 자리마다 한 줄씩 말한다. 짓기 무대 안에서 한다
+export const TOUR = { start: [0, 9], stops: [{ at: [0, -5], stand: [0, -2.5], key: 'north', face: Math.PI }, { at: [6.5, -1], stand: [4, 0.5], key: 'east', face: -Math.PI / 2 }, { at: [-6.5, -1], stand: [-4, 0.5], key: 'west', face: Math.PI / 2 }] };
+export async function tourHanyang(ctx, s) {
+  const { world, dialogue } = ctx;
+  const T = script.hanyang.tour, at = (x, z) => s.at(x, z);
+  const p0 = at(...TOUR.start);
+  if (!world.npcs.has('minister')) world.addNpc('minister', LOOKS.minister, p0.x, p0.z, Math.PI);
+  const m = world.npcs.get('minister');
+  m.mesh.visible = true; world.moveNpc('minister', p0.x, p0.z + 0, Math.PI);
+  ctx.setGoal(script.goals[3]);
+  await sayAll(dialogue, T.start); dialogue.close();
+  for (const st of TOUR.stops) {
+    const a = at(...st.at), b = at(...st.stand);
+    await leadWalk(ctx, { id: 'minister', path: [[a.x, a.z]], stand: [b.x, b.z], face: st.face });
+    await sayAll(dialogue, T[st.key]); dialogue.close();
+  }
+  m.mesh.visible = false; m.collider.r = 0; m.mark.visible = false;
+  ctx.setGoal(script.goals[4]);
 }
 
 function placePlayer(world, [x, z], ry = Math.PI) {
@@ -144,32 +178,44 @@ export default {
   script,
   quizzes: script.quizzes,
 
-  buildScene(world) { scene = buildJ1Scene(world); return scene; },
+  buildScene(world) {
+    scene = buildJ1Scene(world);
+    world.closeView = true; // 낮은 카메라·정면 대화(상시 규칙)
+    return scene;
+  },
 
   enterStage(ctx, stage) {
-    if (stage === 'minigame') placePlayer(ctx.world, [0, 1.5]);
+    if (stage === 'minigame') { scene.gate.setOpen(0); placePlayer(ctx.world, [0, 1.5]); }
     if (stage === 'quiz') { scene.setTurn(1); placePlayer(ctx.world, [0, 1.5]); ctx.setGoal(script.goals[5]); }
   },
 
   async explore(ctx) {
-    const { world, dialogue } = ctx;
-    placePlayer(world, scene.start);
-    let step = 0;
-    setStep(ctx, 0);
+    const { world, dialogue, hud } = ctx;
+    world.closeView = true;
+    placePlayer(world, scene.introFrom);
+    await enterThroughGate(ctx, { from: scene.introFrom, to: scene.start, gate: scene.gate, speed: 1 });
+    closeGate(world, scene.gate);
+    const heard = new Set();
+    markCamp(ctx, heard);
     await sayAll(dialogue, script.start);
     dialogue.close();
     ctx.input.enabled = true;
     await new Promise(resolve => {
       const stop = roam(ctx, {
         async onTalk(id) {
-          const n = script.npc[id], idx = NPC_ORDER.indexOf(id);
-          if (idx === step) {
-            await sayAll(dialogue, n.first);
-            step += 1;
-            if (step === NPC_ORDER.length) { stop(); resolve(); return; }
-            setStep(ctx, step);
-          } else if (idx > step) await sayAll(dialogue, n.tooEarly);
-          else await sayAll(dialogue, n.later || n.first.slice(-1));
+          if (PEOPLE.includes(id)) {
+            const isNew = !heard.has(id);
+            await sayAll(dialogue, campTalk(id, heard));
+            heard.add(id); markCamp(ctx, heard);
+            if (isNew && heard.size < PEOPLE.length) await dialogue.say(script.npc.more);
+            return;
+          }
+          if (id !== 'yiseonggye') return;
+          if (!heard.size) { await sayAll(dialogue, script.npc.yiseonggye.wait); return; }
+          await sayAll(dialogue, script.npc.yiseonggye.first);
+          [...PEOPLE, 'yiseonggye'].forEach(k => { world.npcs.get(k).mark.visible = false; });
+          world.setGoal(null); hud.setCounter(null);
+          stop(); setTimeout(resolve, 0);
         },
       });
     });
@@ -178,15 +224,13 @@ export default {
   async minigame(ctx) {
     const { world, dialogue, input } = ctx;
     input.enabled = false;
-    setStep(ctx, 3);
+    world.closeView = true;
+    ctx.setGoal(script.goals[2]);
+    [...PEOPLE, 'yiseonggye'].forEach(k => { world.npcs.get(k).mark.visible = false; });
     world.setGoal(null);
     // 1) 병사들이 전해 주는 이성계의 말을 듣고, 이성계가 든 까닭인지 고르기
     let tries = 0, firstTryCorrect = 0;
-    await showHowTo(ctx.ui, {
-      title: '이성계가 반대한 까닭',
-      steps: ['비 내리는 진영의 병사 여섯 명에게 차례로 가서 대화 버튼을 눌러요.', '병사가 전해 주는 말을 듣고, 이성계가 요동 정벌에 반대하며 든 까닭인지 골라요.', '틀리게 고르면 해설을 듣고 다시 골라요.'],
-      keyboard: 'W A S D 또는 방향키로 걷고, E로 말을 걸어요', touch: '화면 왼쪽을 끌어 걷고, 대화 버튼으로 말을 걸어요',
-    });
+    await showHowTo(ctx.ui, { title: '이성계가 반대한 까닭', steps: ['비 내리는 진영의 병사 여섯 명에게 가서 이야기를 들어요.', '이성계가 든 까닭인지 골라요. 틀리면 해설을 듣고 다시 골라요.'] });
     const R = script.reasons;
     const a = await runWithRetries(ctx, async easy => {
       tries += 1;
@@ -195,16 +239,15 @@ export default {
       return ok;
     }, { failHint: R.fail });
     await sayAll(dialogue, R.done);
+    await sayAll(dialogue, script.npc.yiseonggye.turn); // 이성계의 결심
     dialogue.close();
 
     // 2) 위화도 회군: 큰 지도 위에서 이성계의 군대가 위화도에서 개경으로 돌아오고, 고려가 물러나 조선이 선다
     await marchOnMap(ctx);
 
     // 3) 새 도읍 한양 짓기: 알맞은 터에서 버튼을 누르면 그 자리에 지어진다
-    setStep(ctx, 4);
     world.setGoal(null);
-    await sayAll(dialogue, script.hanyang.howto);
-    dialogue.close();
+    await showHowTo(ctx.ui, script.hanyang.howto);
     tries = 0;
     ctx.testHooks.built = [];
     const BUILDS = [
@@ -212,9 +255,9 @@ export default {
       { id: 'jongmyo', text: '종묘', site: 'east', make: () => scaled(jongmyo(9), 0.3) },
       { id: 'sajik', text: '사직단', site: 'west', make: () => scaled(sajikdan(), 0.42) },
     ];
-    const b = await runWithRetries(ctx, async easy => {
+    const b = await runWithRetries(ctx, async easy => { // 관리를 따라 터를 둘러보는 것은 처음 한 번만
       tries += 1; ctx.testHooks.built = [];
-      const ok = await PLAY.build(ctx, { arena: HANYANG_SITE, from: [0, 13], fail: script.hanyang.fail, sites: SITES, builds: BUILDS.map(x => ({ ...x, make: () => { ctx.testHooks.built.push(x.id); return x.make(); } })) }, easy);
+      const ok = await PLAY.build(ctx, { arena: HANYANG_SITE, from: [0, 13], fail: script.hanyang.fail, sites: SITES, before: tries === 1 ? sv => tourHanyang(ctx, sv) : null, builds: BUILDS.map(x => ({ ...x, make: () => { ctx.testHooks.built.push(x.id); return x.make(); } })) }, easy);
       if (ok === true && tries === 1) firstTryCorrect += 1;
       return ok;
     }, { failHint: script.hanyang.fail });

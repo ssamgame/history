@@ -67,3 +67,9 @@ export function enterThroughGate(ctx, { from, to, gate, openTime = 0.6, speed = 
     addEventListener('keydown', end, true); addEventListener('pointerdown', end, true);
   });
 }
+
+// 들어온 뒤 문을 천천히 닫는다(열린 문짝이 낮은 카메라 앞을 가리지 않게, D-17·D-22)
+export function closeGate(world, gate, seconds = 0.8) {
+  let k = 1;
+  const off = world.onUpdate(dt => { k = Math.max(0, k - dt / seconds); gate.setOpen(k); if (!k) off(); });
+}

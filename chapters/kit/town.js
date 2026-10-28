@@ -137,6 +137,7 @@ export const BUILD = {
     const r = p.r || 4;
     add(g, new THREE.CylinderGeometry(r, r * 1.1, 0.6, 20), p.sand || 0xcdbb8a, 0, 0.1, 0);
     add(g, new THREE.CylinderGeometry(r * 0.75, r * 0.9, 1.4, 16), p.color || 0x6a8a4c, 0, 0.6, 0);
+    if (p.peak) add(g, new THREE.ConeGeometry(r * 0.8, p.peak, 9), p.color || 0x6a8a4c, 0, 1.2 + p.peak / 2, 0); // 산(예: 한양 터의 백악)
     return r;
   },
   // 조선편 유물 모형(자격루·앙부일구·측우기 등): name은 landmarks.js의 함수 이름, r 부딪힘 반지름

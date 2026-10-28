@@ -8,8 +8,8 @@ import { groundMaterial } from '../../../core/textures.js';
 import { mat, makePerson } from '../../../core/people.js';
 import { scatter } from '../../../core/props.js';
 import { LOOKS, look } from '../../../content/characters.js';
+import { gateLeaves, nameBoard } from '../../kit/gate.js';
 import { createWeather } from '../../../core/weather.js';
-import { addSigns } from '../common.js';
 
 const ISLAND = { rx: 30, rz: 17 }; // 섬 크기(타원 반지름)
 const SOUTH_Z = 22;                // 남쪽 물길 가운데 (회군 때 건너는 곳)
@@ -117,10 +117,13 @@ export function buildJ1Scene(world) {
   const rain = createWeather(world, 'rain', { count: 900 });
   rain.setWind(1.5);
 
-  addSigns(world, [
-    { id: 'signIsland', title: '위화도', x: -2.5, z: 6.8 },
-    { id: 'signArmy', title: '요동 정벌군', x: -16, z: -1.5, ry: Math.PI / 2 },
-  ]);
+  // 진영 목책 문(시작 장면, D-22): 서쪽으로만 목책을 둘러 회군 때 동쪽 통로(x 2.5~12)를 가리지 않는다. 읽기 안내판은 두지 않는다
+  const GATE_Z = 13.2;
+  for (let k = 0; k < 7; k++) mk(new THREE.CylinderGeometry(0.16, 0.18, 1.6, 6), 0x6b4a32, -2.4 - k * 1.8, 0.7, GATE_Z);
+  mk(new THREE.BoxGeometry(12.8, 0.14, 0.12), 0x5a3f2a, -8.4, 1.1, GATE_Z);
+  for (const sx of [-1, 1]) mk(new THREE.BoxGeometry(0.34, 2.4, 0.34), 0x5a3f2a, sx * 2.05, 1.1, GATE_Z);
+  const gate = gateLeaves(L, { x: 0, z: GATE_Z, y: -0.1, width: 3.7, height: 2, color: 0x6b4a32, inward: 1 });
+  nameBoard(L, '위화도', 2.8, 11); // S23
 
   world.addNpc('archer', LOOKS.archer, -8, 3, Math.PI * 0.25);
   world.addNpc('soldier', look('soldier', { robe: 0x6b3a2e }), 14, -9, -Math.PI * 0.7);
@@ -132,8 +135,8 @@ export function buildJ1Scene(world) {
 
   backdropMountains(world.level, { color: 0x5a6e4a, radius: 130 }); // 먼 산줄기(깊이감)
   return {
-    army, setTurn, rain, flags,
-    start: [0, 9],
+    army, setTurn, rain, flags, gate,
+    start: [0, 9], introFrom: [0, 16.5],
     turnCam: { pos: [26, 12, 16], target: [6, 0, 2] },
     turnTarget: [0, 0, 6],
   };

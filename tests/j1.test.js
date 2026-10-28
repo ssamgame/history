@@ -85,3 +85,48 @@ test('j1: resume at quiz shows the army already gone south', () => {
     ok(sc.army.position.z > 20, 'army crossed');
   } finally { s.done(); }
 });
+
+// ---- D-22 ----
+import { campTalk, TOUR } from '../chapters/joseon/j1/chapter.js';
+
+test('j1 D-22: camp gate and 위화도 board, no reading signs, one-paragraph intro, two-line how-to', () => {
+  const w = testWorld();
+  try {
+    const sc = buildJ1Scene(w);
+    ok(sc.gate && sc.gate.leaves.length === 2, 'gate');
+    ok(sc.introFrom[1] > sc.start[1], 'comes in through the gate');
+    let board = false; w.level.traverse(o => { if (o.userData && o.userData.title === '위화도') board = true; });
+    ok(board, '위화도 board');
+    eq([...w.npcs.values()].filter(n => n.spot).length, 0, 'no reading signs');
+  } finally { w.dispose(); }
+  eq(j1Script.intro.length, 1); ok(!j1Script.intro[0].text.includes('\n'));
+  eq(j1Script.hanyang.howto.steps.length, 2);
+  ok(j1Script.npc.archer.first.some(l => l.text.includes('압록강에 있는 섬')), 'island fact moved into a person');
+  ok(j1Script.npc.soldier.first.some(l => l.text.includes('5만여 명')), 'army fact moved into a person');
+});
+
+test('j1 D-22: soldiers talk in any order and pick up from each other; 이성계 waits only until someone was heard', () => {
+  eq(campTalk('soldier', new Set()), j1Script.npc.soldier.first, 'soldier first');
+  eq(campTalk('archer', new Set(['soldier']))[0], j1Script.npc.archer.bridge, 'archer picks up from the soldier');
+  ok(!('tooEarly' in j1Script.npc.soldier), 'soldier never blocks');
+  ok(j1Script.npc.yiseonggye.turn[0].text.includes('군사를 돌려'), '이성계 decides to turn back');
+  ok(j1Script.npc.yiseonggye.turn[0].src.includes('S23'));
+});
+
+test('j1 D-22: before building, the 관리 leads a walk north, east and west of the Hanyang site, one sourced line at each', async () => {
+  const s = touchSetup(j1Script.speakers);
+  const said = [];
+  const say = s.dialogue.say; s.dialogue.say = l => { said.push(l); return say(l); };
+  const bot = touchBot(s, { answers });
+  try {
+    j1.buildScene(s.w, s.ctx);
+    j1.enterStage(s.ctx, 'minigame');
+    await j1.minigame(s.ctx);
+    const T = j1Script.hanyang.tour;
+    const at = ['north', 'east', 'west'].map(k => said.findIndex(l => l === T[k][0]));
+    ok(at.every(i => i >= 0) && at[0] < at[1] && at[1] < at[2], `tour lines in order ${at}`);
+    ok(['north', 'east', 'west'].every(k => T[k][0].src), 'sourced');
+    eq(TOUR.stops.length, 3);
+    eq(s.ctx.testHooks.built, ['palace', 'jongmyo', 'sajik']);
+  } finally { bot.stop(); s.done(); }
+}, { timeout: 150000 });

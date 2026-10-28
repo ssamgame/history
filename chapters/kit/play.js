@@ -792,6 +792,8 @@ export function build(ctx, part, easy) {
     ctx.testHooks.walkTo = t ? t.pos : null;
     world.setGoal((easy || missedNow) && t ? t.pos : null);
   };
+  // part.before(s): 짓기 전에 무대 안에서 먼저 할 일(예: 인물을 따라 터 둘러보기, D-22). 그동안 시간과 짓기는 멈춘다
+  const start = () => {
   show();
   toast(ctx, `${part.builds[0].text}을(를) 지을 터를 찾아 대화 버튼을 눌러요.`);
   pickWithButton(ctx, s, () => sites.filter(x => !x.built), st => {
@@ -811,6 +813,9 @@ export function build(ctx, part, easy) {
     if (part.builds[i]) setTimeout(() => toast(ctx, `이번에는 ${part.builds[i].text}을(를) 지을 터를 찾아요.`), 1800);
     s.say(b.talk, () => { if (i === part.builds.length) setTimeout(() => s.finish(true), 1800); });
   }, 2.6);
+  };
+  if (part.before) s.run(() => part.before(s)).then(() => { if (!s.done) start(); });
+  else start();
   return s.promise;
 }
 
