@@ -4,7 +4,7 @@ export const CACHE = 'goryeo-v65'; // 배포할 때마다 올린다 (학생 기�
 export const PRECACHE = [
   'index.html', 'styles.css', 'vendor/three.module.min.js', 'content/sources.js', 'content/review.js',
   'core/main.js', 'core/bake.js', 'core/perf.js', 'core/fire.js', 'core/storage.js', 'core/save.js', 'core/content.js', 'core/dialogue.js', 'core/input.js',
-  'core/quality.js', 'core/audio.js', 'core/world.js', 'core/people.js', 'core/screens.js', 'core/flow.js',
+  'core/quality.js', 'core/audio.js', 'core/world.js', 'core/people.js', 'core/screens.js', 'core/flow.js', 'core/portal.js', 'core/intro.js',
   'core/precache.js',
   'core/minigame.js', 'core/weather.js', 'core/faces.js', 'core/music.js', 'core/textures.js', 'core/props.js', 'content/characters.js', 'content/glyphs.js',
   'core/quizview.js', 'content/roles.js', 'chapters/ch5/pictures.js',
@@ -20,7 +20,7 @@ export const PRECACHE = [
   'chapters/joseon/j3/chapter.js', 'chapters/joseon/j3/scene.js', 'chapters/joseon/j3/script.js',
   'chapters/joseon/j4/chapter.js', 'chapters/joseon/j4/scene.js', 'chapters/joseon/j4/script.js',
   'chapters/joseon/j5/chapter.js', 'chapters/joseon/j5/scene.js', 'chapters/joseon/j5/script.js',
-  'chapters/joseon/j6/chapter.js', 'chapters/joseon/j6/scene.js', 'chapters/joseon/j6/script.js',
+  'chapters/joseon/j6/chapter.js', 'chapters/joseon/j6/scene.js', 'chapters/joseon/j6/script.js', 'chapters/joseon/j6/hold.js',
   'chapters/kit/chapter.js', 'chapters/kit/town.js', 'chapters/kit/play.js', 'chapters/kit/buildings.js', 'chapters/kit/terrain.js', 'chapters/kit/gate.js', 'chapters/kit/lead.js', 'chapters/kit/fire.js', 'chapters/kit/diorama.js', 'chapters/joseon/ships.js', 'chapters/joseon/j2/pictures.js', 'chapters/modern/pictures.js', 'chapters/modern/dioramas.js',
   'chapters/modern/k1/chapter.js', 'chapters/modern/k1/script.js',
   'chapters/modern/k2/chapter.js', 'chapters/modern/k2/script.js',
