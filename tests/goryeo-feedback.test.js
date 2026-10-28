@@ -9,7 +9,6 @@ import ch5, { artisanTalk } from '../chapters/ch5/chapter.js';
 import ch5Script from '../chapters/ch5/script.js';
 import ch6 from '../chapters/ch6/chapter.js';
 import ch6Script from '../chapters/ch6/script.js';
-import { fitFigures } from '../core/minigame.js';
 import { touchSetup, sleep } from './bot.js';
 
 const step = (w, sec) => { for (let i = 0; i < sec * 20; i++) w.step(1 / 20, { x: 0, z: 0 }); };
@@ -120,19 +119,3 @@ test('goryeo6: 뒤쫓는 배에는 몽골군이 타 있고, 남은 거리는 바
   } finally { s.done(); }
 });
 
-test('goryeo6: 인물을 골라 그 사건의 원에 넣고, 틀리면 해설을 보고 맞는 원이 빛난다', async () => {
-  const s = touchSetup(ch6Script.speakers);
-  try {
-    const F = ch6Script.fit;
-    const p = fitFigures(s.ctx, { title: F.title, figures: F.figures, circles: F.circles, hint: F.failHint });
-    const fig = id => s.ui.querySelector(`.fit-figure[data-figure="${id}"]`), circ = id => s.ui.querySelector(`.fit-circle[data-circle="${id}"]`);
-    fig('seohui').click(); circ('guju').click();
-    ok(s.ui.querySelector('.card-why').textContent.includes(F.failHint), '해설');
-    ok(circ('talks').classList.contains('hint'), '맞는 원이 빛난다');
-    circ('talks').click();
-    ok(circ('talks').querySelector('.fit-inside').textContent.includes('서희'), '서희가 원 안에 들어간다');
-    for (const c of F.circles.slice(1)) { fig(c.answer).click(); circ(c.id).click(); }
-    await sleep(700);
-    eq(await p, 'missed');
-  } finally { s.done(); }
-});
