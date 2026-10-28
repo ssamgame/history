@@ -10,6 +10,7 @@ import { mat, makePerson } from '../../core/people.js';
 import { scatter } from '../../core/props.js';
 import { LOOKS, look } from '../../content/characters.js';
 import { createWeather } from '../../core/weather.js';
+import { burning } from '../kit/fire.js';
 
 const HALF = 12;          // 성 안쪽 반 너비
 const WALL_H = 4.2;
@@ -98,6 +99,8 @@ export function buildCh2Scene(world) {
     mk(new THREE.CylinderGeometry(2.1, 2.1, 1.7, 9), 0x8f7556, x, 0.85, z, khitan);
     mk(new THREE.ConeGeometry(2.4, 1.5, 9), 0x5e432c, x, 2.45, z, khitan);
   }
+  // 성 밖 거란 진영의 천막 두 채가 타며 연기가 오른다(D-16, 공용 불 부품). 성벽 앞 싸움 자리와 떨어진 곳
+  const campFires = [[-4, -40], [16, -42]].map(([x, z]) => burning(world, { parent: khitan, x: x + 0.6, y: 0.3, z: z + 1.9, size: 1.6 }).group);
   const khitanFront = new THREE.Group(); khitan.add(khitanFront); // 성벽 앞 거란군 줄 (성벽 방어 때는 치운다)
   for (let i = 0; i < 10; i++) {
     const k = makePerson(LOOKS.khitan);
@@ -157,7 +160,7 @@ export function buildCh2Scene(world) {
 
   backdropMountains(world.level, { color: 0xc8ccd0, radius: 130 }); // 먼 산줄기(깊이감)
   return {
-    ring, gate, wallRings, stairs: { x: 0, z: -6, r: 1.6 }, ladders, captives, khitan, khitanFront,
+    ring, gate, wallRings, stairs: { x: 0, z: -6, r: 1.6 }, ladders, captives, khitan, khitanFront, campFires,
     field: { bounds: { x0: -24, x1: 24, z0: 20, z1: 72 }, start: [0, 68], lostZ: 21 }, // 플레이어는 남쪽에서 북쪽(화면 위)으로 쫓아간다
     start: [0, 6],
   };

@@ -248,3 +248,21 @@ test('ch3 D-12: the flood is water (teal, see-through, white foam), pushes the K
     eq(sc.flood.group.visible, false);
   } finally { s.done(); }
 });
+
+test('ch3 D-16: Khitan camp tents behind their line catch fire during the Guju charge, away from the hill where the student stands', async () => {
+  const { default: ch3, playGujuBattle } = await import('../chapters/ch3/chapter.js');
+  const s = touchSetup(ch3Script.speakers);
+  try {
+    const sc = ch3.buildScene(s.w, s.ctx);
+    ok(sc.gujuFires.length >= 2, 'fires');
+    ok(sc.gujuFires.every(f => !f.group.visible), 'no fire before the charge');
+    sc.guju.visible = true;
+    const p = playGujuBattle(s.ctx);
+    for (let i = 0; i < 100; i++) s.w.step(0.05, { x: 0, z: 0 });
+    ok(sc.gujuFires.every(f => f.group.visible && f.level() > 0.5), 'tents burn');
+    const b = sc.gujuBounds;
+    for (const f of sc.gujuFires) ok(f.group.position.z < b.z0 - 15, 'far from the student');
+    for (let i = 0; i < 60; i++) s.w.step(0.05, { x: 0, z: 0 });
+    await p;
+  } finally { s.done(); }
+});

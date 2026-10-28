@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { backdropMountains } from '../kit/terrain.js';
 import { tent, tree, spearRack } from '../kit/buildings.js';
+import { burning } from '../kit/fire.js';
 import { BUILD } from '../kit/town.js';
 import { groundMaterial } from '../../core/textures.js';
 import { mat, makePerson } from '../../core/people.js';
@@ -192,6 +193,14 @@ export function buildCh3Scene(world) {
     const f = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 2.2).translate(0.8, 0, 0), new THREE.MeshLambertMaterial({ color: c, side: THREE.DoubleSide }));
     f.position.set(x, 3.8 + HILL_H, GUJU_Z + 8); guju.add(f); gujuFlags.push(f);
   }
+  // 거란군 진영 천막(D-16): 고려군이 몰아치면 천막 두 채에 불이 붙어 타오르고 연기가 오른다(처음엔 불 없음)
+  const gujuFires = [];
+  for (const [x, burn] of [[-9, true], [-1, false], [7, true]]) {
+    const z = GUJU_Z - 25;
+    mk(new THREE.CylinderGeometry(2.1, 2.1, 1.7, 9), 0x8f7556, x, 0.85, z, guju);
+    mk(new THREE.ConeGeometry(2.4, 1.5, 9), 0x5e432c, x, 2.45, z, guju);
+    if (burn) gujuFires.push(burning(world, { parent: guju, x: x + 0.5, y: 0.3, z: z + 1.9, size: 2.1, level: 0 }));
+  }
   const reinforcements = new THREE.Group(); reinforcements.visible = false; guju.add(reinforcements);
   for (let i = 0; i < 8; i++) {
     const p = makePerson(look('soldier', { robe: 0x3c5a7a })); p.position.set((i % 4) * 2, 0, Math.floor(i / 4) * 2); p.rotation.y = -Math.PI / 2; reinforcements.add(p);
@@ -264,7 +273,7 @@ export function buildCh3Scene(world) {
     gujuStand: [-2.5, GUJU_Z + 11], gangAtGuju: [-4, GUJU_Z + 11],
     // 둑으로 가는 길(쇠가죽을 둔 곳 옆에서 둑 위로), 귀주로 가는 길(남문을 나가 거란군 줄의 서쪽으로 돌아 고려군 뒤로)
     bankPath: [[DAM_X + 3, -1.6], [DAM_X + 3.6, -3.6], [DAM_X + 5, -4.2]],
-    hides, damWall, ring, flood, rain, flagPoles, gujuFlags, gujuKhitan, gujuGoryeo, reinforcements, guju, dust, gujuZ: GUJU_Z,
+    hides, damWall, ring, flood, rain, flagPoles, gujuFlags, gujuKhitan, gujuGoryeo, gujuFires, reinforcements, guju, dust, gujuZ: GUJU_Z,
     dam: { x: DAM_X + 1, z: -1.4, r: 1.6 },
     river: { army, setCross, zNorth, zSouth },
     gujuBounds: { x0: -9, x1: 9, z0: GUJU_Z + 8, z1: GUJU_Z + 14 },

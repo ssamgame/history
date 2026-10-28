@@ -262,6 +262,7 @@ export function playGujuBattle(ctx) {
       scene.reinforcements.position.set(rf.x - e * 10, 0, rf.z - e * 14); // 지원군은 옆에서 들이친다
       scene.reinforcements.children.forEach(p => { p.rotation.y = -Math.PI / 2 - e * 0.6; });
       if (t > 2.2 && !clashed) { clashed = true; audio.play('whoosh'); scene.dust.forEach(d => { d.visible = true; }); }
+      scene.gujuFires.forEach((f, i) => f.setLevel((t - 2.6 - i * 0.6) / 1.4)); // 거란 진영 천막에 불이 붙는다(D-16)
       scene.dust.forEach(d => {
         const k = Math.max(0, Math.min(1, (t - 2.2) / 3));
         d.material.opacity = k > 0 && k < 1 ? Math.sin(Math.PI * k) * 0.55 : 0;
@@ -289,6 +290,7 @@ function showAftermath(ctx) {
   scene.guju.visible = true;
   for (const k of scene.gujuKhitan) k.visible = false;
   scene.reinforcements.visible = true; scene.reinforcements.position.x = 9;
+  scene.gujuFires.forEach(f => f.setLevel(0.6)); // 싸움이 끝난 뒤에도 거란 진영이 타고 있다
   scene.setFlags(true);
   world.moveNpc('gangamchan', scene.gangAtGuju[0], scene.gangAtGuju[1], Math.PI);
   world.bounds = scene.gujuBounds;

@@ -158,10 +158,11 @@ test('ch4 D-14: the slave documents are carried to the pile, then burn with flic
     eq(sc.fire.visible, false, 'no fire before burning');
     sc.burnDocuments();
     for (let i = 0; i < 30; i++) s.w.step(0.05, { x: 0, z: 0 });
-    ok(sc.fire.visible && sc.fire.children.some(f => f.visible && f.material.transparent && f.material.color.r > 0.8 && f.material.color.b < 0.4), 'orange-yellow flames');
-    const h1 = sc.fire.children.map(f => f.scale.y).join();
+    const flames = []; sc.fire.traverse(f => { if (f.isMesh && f.material.transparent && f.material.color.r > 0.8 && f.material.color.b < 0.4) flames.push(f); });
+    ok(sc.fire.visible && flames.some(f => f.visible), 'orange-yellow flames');
+    const h1 = flames.map(f => f.scale.y.toFixed(4)).join();
     s.w.step(0.05, { x: 0, z: 0 }); s.w.step(0.05, { x: 0, z: 0 });
-    ok(sc.fire.children.map(f => f.scale.y).join() !== h1, 'flames flicker');
+    ok(flames.map(f => f.scale.y.toFixed(4)).join() !== h1, 'flames flicker');
     for (let i = 0; i < 140; i++) s.w.step(0.05, { x: 0, z: 0 });
     eq(sc.fire.visible, false, 'fire dies down');
     ok(sc.smoke.visible && sc.ashPile.visible, 'smoke and ash');
@@ -259,3 +260,14 @@ test('ch4: resume at quiz shows Chungju with the slave documents already turned 
   } finally { s.done(); }
 });
 
+
+test('ch4 D-16: the Mongol camp beyond the field burns and the archers shoot fire arrows', () => {
+  const s = touchSetup(ch4Script.speakers);
+  try {
+    const sc = ch4.buildScene(s.w, s.ctx);
+    const A = sc.areas.cheoin;
+    ok(sc.campFires.length >= 2 && sc.campFires.every(f => f.visible), 'camp fires');
+    for (const f of sc.campFires) ok(Math.hypot(f.position.x - A.center[0], f.position.z) > A.spawnR + 8, 'behind where the Mongols appear');
+    ok(sc.arrows.every(a => a.getObjectByName('fireTip')), 'fire arrows');
+  } finally { s.done(); }
+});

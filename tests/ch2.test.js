@@ -250,3 +250,18 @@ test('ch2 D-8: rescued villagers follow the student instead of vanishing', async
     ok(d1 < d0 - 3 && d1 < 4, `walks after the student (${d0.toFixed(1)} -> ${d1.toFixed(1)})`);
   } finally { s.done(); }
 }, { timeout: 120000 });
+
+test('ch2 D-16: two Khitan camp tents outside the fortress burn, far from the wall and the rescue field', () => {
+  const w = testWorld();
+  try {
+    const sc = buildCh2Scene(w);
+    eq(sc.campFires.length, 2);
+    const p = new THREE.Vector3();
+    for (const f of sc.campFires) {
+      ok(f.visible, 'burning');
+      f.getWorldPosition(p);
+      ok(p.z < -30, `well outside the north wall (z ${p.z.toFixed(1)})`);
+      const b = sc.field.bounds; ok(!(p.x > b.x0 && p.x < b.x1 && p.z > b.z0 && p.z < b.z1), 'not in the rescue field');
+    }
+  } finally { w.dispose(); }
+});

@@ -7,6 +7,7 @@ import { mat, makePerson } from '../../core/people.js';
 import { scatter } from '../../core/props.js';
 import { LOOKS } from '../../content/characters.js';
 import { gateLeaves, nameBoard } from '../kit/gate.js';
+import { burning } from '../kit/fire.js';
 
 const JEOGO_X = -78, PALACE_X = 0, GANGHWA_X = 160, CHEOIN_X = 320, CHUNGJU_X = 480;
 const CHEOIN_R = 12;     // 처인성 토성 반지름
@@ -271,6 +272,14 @@ export function buildCh4Scene(world) {
     const a = Math.PI * 1.5 - 0.5 + (i / 7) * 1.0; // D-14: 성 앞 들판(북쪽, -z) 좁은 부채꼴에서만 나온다(성벽 위 카메라에 처음부터 보이게)
     mongols.push({ group: g, top, angle: a });
   }
+  // 몽골군 진영(D-16): 몽골군이 나오는 들판 너머의 둥근 천막. 고려군의 불화살에 두 채가 타고 연기가 오른다(화살·길을 가리지 않는 먼 곳)
+  const campFires = [];
+  for (const [da, r, burn] of [[-0.34, 45, false], [-0.12, 46, true], [0.1, 44, false], [0.3, 46, true]]) {
+    const a = Math.PI * 1.5 + da, x = CHEOIN_X + Math.cos(a) * r, z = Math.sin(a) * r, y = 0.02 * Math.max(0, Math.abs(z) - 45) ** 2;
+    mk(new THREE.CylinderGeometry(2.1, 2.1, 1.7, 9), 0xd8d0bc, x, y + 0.85, z);
+    mk(new THREE.ConeGeometry(2.4, 1.5, 9), 0xb8ab90, x, y + 2.45, z);
+    if (burn) campFires.push(burning(world, { x: x + 0.6, y: y + 0.3, z: z + 1.9, size: 2.6 }).group);
+  }
   // 고려 궁수 5명: 북쪽 성벽 안쪽 발판 위. 싸움이 시작되면 성벽 위로 올라와 활을 쏜다(처음엔 숨김).
   const ARCHER_Y = WALL_TOP;
   const archers = [];
@@ -300,6 +309,7 @@ export function buildCh4Scene(world) {
     const fl = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.2, 0.34), glow(0xd8452f)); fl.position.z = -0.6; g.add(fl);
     const trail = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.02, 2.6, 6, 1, true).rotateX(Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xffd36a, transparent: true, opacity: 0.55, fog: false, depthWrite: false }));
     trail.position.z = -1.9; trail.name = 'trail'; g.add(trail);
+    const fl2 = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.32, 5).rotateX(-Math.PI / 2), glow(0xff8a2a)); fl2.position.z = 0.52; fl2.name = 'fireTip'; g.add(fl2); // 불화살(D-16): 촉 뒤에 붙은 불
     arrows.push(g);
   }
 
@@ -351,20 +361,8 @@ export function buildCh4Scene(world) {
     m.position.set((i % 3 - 1) * 0.75, 0.05 + Math.floor(i / 3) * 0.05, ((i * 7) % 3 - 1) * 0.4); m.rotation.y = ((i * 0.7) % 1.2 - 0.6) * 0.5; m.rotation.x = 0.25; // 카메라 쪽으로 살짝 기울여 글씨가 보이게
     documents.add(m); papers.push({ m, delay: 0.4 + (i % 3) * 0.5 + Math.floor(i / 3) * 0.35, base: m.position.clone() }); // 한쪽부터 차례로 불이 옮겨 붙는다
   }
-  // 불꽃(D-14 선생님: 문서 태우기는 불이 나는 연출): 로우폴리 주황·노랑 반투명 불꽃 조각이 깜박이며 타올랐다가 잦아든다.
-  // 튀어 오르는 불티(무거운 입자)는 화질 '보통·높음'에서만 보인다.
-  const fire = new THREE.Group(); fire.position.set(CHUNGJU_X, 0, -3); fire.visible = false; L.add(fire);
-  const flames = [];
-  for (let i = 0; i < 9; i++) {
-    const big = i < 4, f = new THREE.Mesh(new THREE.ConeGeometry(big ? 0.38 : 0.24, big ? 1.3 : 0.8, 5).translate(0, big ? 0.65 : 0.4, 0),
-      new THREE.MeshBasicMaterial({ color: i % 3 === 0 ? 0xffd04a : i % 3 === 1 ? 0xff8a2a : 0xff6a1a, transparent: true, opacity: 0.8, depthWrite: false }));
-    const a = i * 2.4, r = big ? 0.25 : 0.6;
-    f.position.set(Math.cos(a) * r, 0.05, Math.sin(a) * r * 0.7); f.userData = { ph: i * 1.7, sp: 9 + (i % 4) * 2.3 };
-    fire.add(f); flames.push(f);
-  }
-  const embers = new THREE.Group(); embers.name = 'embers'; fire.add(embers);
-  for (let i = 0; i < 10; i++) { const e = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.06), new THREE.MeshBasicMaterial({ color: 0xffb040 })); e.userData = { ph: i / 10, x: ((i * 7) % 5 - 2) * 0.18, z: ((i * 3) % 5 - 2) * 0.14 }; embers.add(e); }
-  let fireLevel = 0;
+  // 불꽃(D-14 선생님: 문서 태우기는 불이 나는 연출, 공용 불 부품 kit/fire.js): 깜박이며 타올랐다가 잦아든다. 불티는 화질 '보통·높음'에서만.
+  const docFire = burning(world, { x: CHUNGJU_X, z: -3, level: 0 }), fire = docFire.group;
   // 연기와 재: 문서 더미에서 회색 연기가 피어오르고, 다 타면 검은 재가 남는다
   const smoke = new THREE.Group(); smoke.position.set(CHUNGJU_X, 0, -3); smoke.visible = false; L.add(smoke);
   const puffs = [];
@@ -378,7 +376,7 @@ export function buildCh4Scene(world) {
   const burnState = { t: -1 };
   // 문서를 태운다(약 7초): 불꽃이 일어 타오르고, 종이가 갈색 → 검게 그을리며 오그라들어 재가 되고, 불이 잦아들며 연기가 남는다
   const burnDocuments = () => new Promise(resolve => { burnState.t = 0; burnState.resolve = resolve; smoke.visible = true; });
-  const burnt = () => { burnState.t = -1; fire.visible = false; documents.visible = false; smoke.visible = true; ashPile.visible = true; smokeLevel = 0.35; };
+  const burnt = () => { burnState.t = -1; docFire.setLevel(0); documents.visible = false; smoke.visible = true; ashPile.visible = true; smokeLevel = 0.35; };
   // 가져다 놓은 묶음 수(0~3)에 따라 문서 더미가 쌓인다
   const pileUp = n => { papers.forEach((pp, i) => { pp.m.visible = i < 3 + n * 2; }); };
   scatter(world, { kind: 'grass', count: 60, area: { x0: CHUNGJU_X - 14, x1: CHUNGJU_X + 14, z0: -12, z1: 12 }, avoid: [{ x: CHUNGJU_X, z: -3, r: 3 }, { x: CHUNGJU_X + 4, z: 9, r: 3 }], seed: 58, scale: [0.6, 1] });
@@ -396,8 +394,7 @@ export function buildCh4Scene(world) {
       burnState.t += dt;
       const bt = burnState.t;
       smokeLevel = Math.min(1, bt / 1.2) * (bt > 6.2 ? Math.max(0.35, 1 - (bt - 6.2) / 1.2) : 1);
-      fireLevel = bt < 0.3 ? 0 : bt < 1.3 ? (bt - 0.3) : bt < 4.6 ? 1 : Math.max(0, 1 - (bt - 4.6) / 1.6); // 붙고 → 타오르고 → 잦아든다
-      fire.visible = fireLevel > 0.02;
+      docFire.setLevel(bt < 0.3 ? 0 : bt < 1.3 ? (bt - 0.3) : bt < 4.6 ? 1 : Math.max(0, 1 - (bt - 4.6) / 1.6)); // 붙고 → 타오르고 → 잦아든다
       ashPile.visible = bt > 3; ashPile.scale.setScalar(Math.min(1, Math.max(0.2, (bt - 3) / 3)));
       for (const pp of papers) {
         const k = Math.max(0, Math.min(1, (bt - pp.delay) / 3.6)); // 이 종이가 탄 정도
@@ -410,15 +407,6 @@ export function buildCh4Scene(world) {
       }
       if (bt > 6.4) { documents.visible = false; }
       if (bt > 7.4 && burnState.resolve) { const r = burnState.resolve; burnState.resolve = null; burnState.t = -1; smokeLevel = 0.35; r(); }
-    }
-    if (fire.visible) {
-      flames.forEach(f => { // 깜박이는 불꽃: 높이·굵기가 저마다 다른 박자로 흔들린다
-        const u = f.userData, fl = 0.75 + 0.25 * Math.sin(t * u.sp + u.ph) + 0.1 * Math.sin(t * u.sp * 2.3 + u.ph);
-        f.scale.set(fireLevel * (0.85 + 0.15 * Math.cos(t * u.sp * 0.7 + u.ph)), Math.max(0.01, fireLevel * fl), fireLevel * 0.9);
-        f.rotation.y = t * 0.8 + u.ph; f.material.opacity = 0.55 + 0.3 * fireLevel;
-      });
-      embers.visible = (world.quality?.particles ?? 0.9) > 0.5 && fireLevel > 0.3;
-      if (embers.visible) embers.children.forEach(e => { const k = (t * 0.6 + e.userData.ph) % 1; e.position.set(e.userData.x * (1 + k * 2), 0.4 + k * 2.6, e.userData.z * (1 + k * 2)); e.scale.setScalar(1 - k); });
     }
     if (smoke.visible) puffs.forEach(pf => { // 연기: 위로 피어오르며 퍼지고 옅어진다
       const k = (t * 0.22 + pf.userData.ph) % 1;
@@ -445,7 +433,7 @@ export function buildCh4Scene(world) {
         start: [CHUNGJU_X - 1, 11], kimStart: [CHUNGJU_X + 0.6, 9.4], leadPath: [[CHUNGJU_X + 3, 4], [CHUNGJU_X + 6.6, -3.6]], stand: [CHUNGJU_X + 4.6, -3.2], pile: [CHUNGJU_X, -3],
         bounds: { x0: CHUNGJU_X - 13, x1: CHUNGJU_X + 12, z0: -12, z1: 12 } },
     },
-    mongols, archers, arrows, documents, fire, smoke, ashPile, burnDocuments, burnt, jeogo, pileUp, bundles, table: TABLE, people,
+    mongols, archers, arrows, campFires, documents, fire, smoke, ashPile, burnDocuments, burnt, jeogo, pileUp, bundles, table: TABLE, people,
     palaceGate, standRing, spotRing, pileRing, tableRing, cheoinGroup: cheoin,
     start: [PALACE_X, 13],
   };
