@@ -97,7 +97,7 @@ test('ch6 D-19: port gate and 강화도 board, one-paragraph intro, people talk 
   for (const id of ['minister', 'sambyeolcho', 'villager', 'baejungson']) ok(w.npcs.has(id), id);
   eq([...w.npcs.values()].filter(n => n.spot).length, 0, 'no reading signs');
   w.dispose();
-  eq(ch6Script.intro.length, 1); ok(!ch6Script.intro[0].text.includes('\n'));
+  eq(ch6Script.intro.length, 2); ok(ch6Script.intro.every(l => !l.text.includes('\n'))); // D-30: 자막 장면 두 문장
   ok(['minister', 'sambyeolcho', 'villager'].every(id => ch6Script.npc[id].every(l => l.src && l.src.includes('S21'))));
   ok(ch6Script.npc.baejungson.decide[0].text.includes('진도'));
   eq(ch6Script.sail.howto.steps.length, 2);

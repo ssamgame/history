@@ -5,6 +5,11 @@ import { roam } from '../../core/flow.js';
 import { traceGlyph, showHowTo } from '../../core/minigame.js';
 import { labelSprite, setCarry } from '../../core/people.js';
 import { enterThroughGate, closeGate } from '../kit/gate.js';
+import { burning } from '../kit/fire.js';
+import { waitInteract } from '../../core/portal.js';
+import { makePerson } from '../../core/people.js';
+import { LOOKS } from '../../content/characters.js';
+import * as THREE from 'three';
 import script from './script.js';
 
 const ARTISANS = ['artisan1', 'artisan2', 'artisan3', 'artisan4'];
@@ -138,11 +143,41 @@ export default {
     return scene;
   },
 
+  // 장 도입(C-03): ① 몽골 군사들이 옛 대장경 경판 더미를 불태우는 모습 ② 고려 사람들이 작업장에서 다시 만드는 모습
+  introScene(ctx) {
+    const { world } = ctx;
+    const people = [...world.npcs.values()];
+    const g = new THREE.Group(); g.name = 'introBurn'; g.position.set(0, 0, 2);
+    for (let k = 0; k < 14; k++) { // 쌓아 올린 옛 경판
+      const b = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.1, 0.5), new THREE.MeshLambertMaterial({ color: 0x9a7650 }));
+      b.position.set((k % 2) * 0.1, 0.06 + k * 0.11, 0); b.rotation.y = (k % 3 - 1) * 0.1; g.add(b);
+    }
+    const soldiers = [[-3.4, -0.6, -0.5], [3.4, -0.6, 0.5], [-1.5, -2.6, 0.2], [1.7, -2.4, -0.2]].map(([x, z, ry]) => {
+      const m = makePerson(LOOKS.mongol); m.position.set(x, 0, z); m.rotation.y = ry; m.userData.noWalk = true; g.add(m); return m;
+    });
+    const fire = burning(world, { parent: g, x: 0, y: 0.5, z: 0, size: 2.2, level: 0 });
+    let off = null;
+    return {
+      shots: [
+        { cam: [3, 2.4, 7.5], look: [0, 1.8, 0], to: { cam: [-2, 2.4, 6.5], look: [0, 2.0, 0] },
+          act: () => {
+            people.forEach(n => { n.mesh.visible = false; }); world.level.add(g); g.visible = true; let t = 0;
+            off = world.onUpdate(dt => { t += dt; fire.setLevel(Math.min(1, t / 2.5)); });
+          } },
+        { cam: [-9, 3.2, 8], look: [-5, 1.4, -2], to: { cam: [9, 3.2, 8], look: [5, 1.4, -2] },
+          act: () => { off?.(); off = null; g.visible = false; fire.setLevel(0); people.forEach(n => { n.mesh.visible = true; }); } },
+      ],
+      done: () => { off?.(); off = null; fire.setLevel(0); g.removeFromParent(); people.forEach(n => { n.mesh.visible = true; }); },
+    };
+  },
+  // 미니게임 뒤 빛나는 문(C-02): 마당 오른쪽 아래 빈 땅, 학생 쪽(남쪽)을 본다
+  portal: { at: [5.5, 6], ry: 0 },
+
   enterStage(ctx, stage) {
     if (stage === 'minigame') { scene.gate.setOpen(0); placePlayer(ctx.world, scene.start); }
     if (stage === 'quiz') {
       scene.gate.setOpen(0); scene.setStage(6); scene.setCarved(3); scene.library.visible = true; shelve();
-      placePlayer(ctx.world, scene.start); ctx.setGoal(script.goals[4]);
+      placePlayer(ctx.world, scene.start);
     }
   },
 
@@ -157,11 +192,14 @@ export default {
     const mark = () => {
       world.npcs.get('monk').mark.visible = !monk;
       ARTISANS.forEach(id => { world.npcs.get(id).mark.visible = monk && !heard.has(id); });
-      const next = !monk ? 'monk' : ARTISANS.find(id => !heard.has(id));
+      const next = !monk ? 'monk' : ARTISANS.find(id => !heard.has(id)); // 모두 들었으면 아래에서 스님 쪽으로
       const n = next && world.npcs.get(next);
       world.setGoal(n ? { x: n.mesh.position.x, z: n.mesh.position.z } : null);
-      ctx.setGoal(script.goals[monk ? 1 : 0]);
-      hud.setCounter(monk ? `들은 이야기 ${heard.size}/4` : null);
+      const all = monk && heard.size === ARTISANS.length; // 모두 들어야 스님이 이야기를 이어 간다(C-01)
+      world.npcs.get('monk').mark.visible = !monk || all;
+      if (all) { const m = world.npcs.get('monk').mesh.position; world.setGoal({ x: m.x, z: m.z }); }
+      ctx.setGoal(script.goals[!monk ? 0 : all ? 2 : 1]);
+      hud.setCounter(monk && !all ? `들은 이야기 ${heard.size}/4` : null);
     };
     mark();
     await sayAll(dialogue, script.start);
@@ -170,10 +208,15 @@ export default {
     await new Promise(resolve => {
       const stop = roam(ctx, {
         async onTalk(id) {
-          if (id === 'monk') { await sayAll(dialogue, monk ? script.npc.monk.later : script.npc.monk.open); monk = true; }
-          else if (ARTISANS.includes(id)) { await sayAll(dialogue, artisanTalk(id, heard)); heard.add(id); }
+          if (id === 'monk') {
+            if (monk && heard.size === ARTISANS.length) { // 모두 들은 뒤: 스님이 나무판을 건네며 일을 맡긴다
+              await sayAll(dialogue, script.making.give);
+              world.npcs.get('monk').mark.visible = false; world.setGoal(null); hud.setCounter(null);
+              stop(); setTimeout(resolve, 0); return;
+            }
+            await sayAll(dialogue, monk ? script.npc.monk.later : script.npc.monk.open); monk = true;
+          } else if (ARTISANS.includes(id)) { await sayAll(dialogue, artisanTalk(id, heard)); heard.add(id); }
           mark();
-          if (monk && heard.size === ARTISANS.length) { hud.setCounter(null); stop(); setTimeout(resolve, 0); }
         },
       });
     });
@@ -184,21 +227,25 @@ export default {
     world.closeView = true;
     input.enabled = false;
     for (const id of [...ARTISANS, 'monk']) world.npcs.get(id).mark.visible = false;
-    ctx.setGoal(script.goals[2]);
-    await sayAll(dialogue, script.making.give);
+    ctx.setGoal(script.goals[3]);
     dialogue.close();
     await showHowTo(ctx.ui, script.making.howto);
     input.enabled = true;
     const a = await makeBlock(ctx);
     input.enabled = false;
+    // 다음 놀이는 저절로 시작하지 않는다: 스님에게 가서 말을 걸어야 글자 새기기가 시작된다(C-05)
+    const monk = world.npcs.get('monk');
+    monk.mark.visible = true;
+    await waitInteract(ctx, { pos: monk.mesh.position, quest: script.goals[4], label: '스님과 이야기하기', mark: false });
+    monk.mark.visible = false;
+    input.enabled = false;
+    world.setTalkCamera(monk.mesh);
     await sayAll(dialogue, script.making.done);
-    dialogue.close();
-
-    ctx.setGoal(script.goals[3]);
+    dialogue.close(); world.camMode = 'follow';
     await carveAndShelve(ctx);
     input.enabled = false;
     await sayAll(dialogue, script.result);
-    ctx.setGoal(script.goals[4]);
+    dialogue.close();
     return { firstTryCorrect: a.first ? 1 : 0, firstTryTotal: 1, easyModeUsed: false };
   },
 };
