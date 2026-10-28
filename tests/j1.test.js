@@ -131,3 +131,62 @@ test('j1 D-22: before building, the 관리 leads a walk north, east and west of 
     eq(s.ctx.testHooks.built, ['palace', 'jongmyo', 'sajik']);
   } finally { bot.stop(); s.done(); }
 }, { timeout: 150000 });
+
+// ---- D-30 H-01·H-02 ----
+test('j1 H-01: 이성계 explains the four reasons himself (S23) before the camp talk sorts them from rumors', async () => {
+  const Y = j1Script.npc.yiseonggye.reasons;
+  ok(Array.isArray(Y) && Y.every(l => l.who === 'yiseonggye'), '이성계 speaks');
+  const said4 = (Y || []).filter(l => l.src && l.src.includes('S23'));
+  ok(['작은 나라가 큰 나라', '여름', '왜구', '아교'].every(k => said4.some(l => l.text.includes(k))), 'all four reasons in his own words');
+  const s = touchSetup(j1Script.speakers);
+  const said = [];
+  const say = s.dialogue.say; s.dialogue.say = l => { said.push(l); return say(l); };
+  const bot = touchBot(s, { answers });
+  try {
+    j1.buildScene(s.w, s.ctx);
+    j1.enterStage(s.ctx, 'minigame');
+    await j1.minigame(s.ctx);
+    const first = said.findIndex(l => j1Script.reasons.people.some(p => p.talk.includes(l)));
+    const told = said4.map(l => said.indexOf(l));
+    ok(told.length >= 4 && first > 0 && told.every(i => i >= 0 && i < first), `이성계 told all four first ${told} < ${first}`);
+  } finally { bot.stop(); s.done(); }
+}, { timeout: 150000 });
+
+test('j1 H-02: the march has no "나", about 24 marching soldiers with flags, real steps and smooth turns; the camp army walks off too', async () => {
+  const s = touchSetup(j1Script.speakers);
+  const bot = touchBot(s, { answers });
+  const st = { campLeg: 0, campTurn: 0, legs: 0, turn: 0, n: 0, flags: 0, sprites: 0, noWalk: 0 };
+  let lastArmy = null, lastCamp = null;
+  try {
+    const sc = j1.buildScene(s.w, s.ctx);
+    j1.enterStage(s.ctx, 'minigame');
+    const c0 = sc.army.children[0];
+    s.w.onUpdate(() => {
+      const m = s.ctx.testHooks.march;
+      if (!m) {
+        st.campLeg = Math.max(st.campLeg, Math.abs(c0.userData.legs[0].rotation.x));
+        if (lastCamp != null) st.campTurn = Math.max(st.campTurn, Math.abs(c0.rotation.y - lastCamp));
+        lastCamp = c0.rotation.y;
+        return;
+      }
+      const a = m.army; if (!a || m.done) return;
+      const people = a.children.filter(p => p.userData && p.userData.legs);
+      st.n = people.length; st.noWalk = people.filter(p => p.userData.noWalk).length;
+      st.flags = people.filter(p => p.userData.carry).length;
+      let sp = 0; a.traverse(o => { if (o.isSprite) sp += 1; }); st.sprites = sp;
+      for (const p of people) st.legs = Math.max(st.legs, Math.abs(p.userData.legs[0].rotation.x));
+      if (lastArmy != null) st.turn = Math.max(st.turn, Math.abs(a.rotation.y - lastArmy));
+      lastArmy = a.rotation.y;
+    });
+    await j1.minigame(s.ctx);
+    ok(st.n >= 22 && st.n <= 28, `about 24 soldiers (${st.n})`);
+    eq(st.sprites, 0, 'no "나" tag on the army');
+    eq(st.noWalk, 0, 'nobody slides');
+    ok(st.flags >= 2, `flag bearers hold flags (${st.flags})`);
+    ok(st.legs > 0.3, `legs swing on the map (${st.legs.toFixed(2)})`);
+    ok(st.turn < 0.1, `turns smoothly (${st.turn.toFixed(3)} rad per frame)`);
+    ok(st.campLeg > 0.3, `camp army walks off after the decision (${st.campLeg.toFixed(2)})`);
+    ok(st.campTurn < 0.6, `camp soldiers turn around smoothly (${st.campTurn.toFixed(2)})`);
+    ok(sc.army.position.z > 20, 'camp army is gone south afterwards');
+  } finally { bot.stop(); s.done(); }
+}, { timeout: 150000 });

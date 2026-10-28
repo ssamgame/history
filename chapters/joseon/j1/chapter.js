@@ -1,10 +1,10 @@
-// 조선편 1장 「위화도 회군과 조선 건국」(D-22): 목책 문으로 들어와 군사들의 걱정(아무 차례) → 이성계 → 4불가론 고르기 →
+// 조선편 1장 「위화도 회군과 조선 건국」(D-22): 목책 문으로 들어와 군사들의 걱정(아무 차례) → 이성계 → 이성계가 직접 말하는 4불가론, 까닭과 소문 가려내기 →
 // 이성계의 결심 → 회군 지도 장면 → 관리를 따라 한양 터 둘러보기 → 궁궐·종묘·사직단 짓기 → 퀴즈.
 import { buildJ1Scene } from './scene.js';
 import { roam } from '../../../core/flow.js';
 import { showHowTo, runWithRetries } from '../../../core/minigame.js';
 import { PLAY, buildArena, mapSpot, labelSprite } from '../../kit/play.js';
-import { makePerson } from '../../../core/people.js';
+import { makePerson, animateWalk, setCarry, mat } from '../../../core/people.js';
 import { enterThroughGate, closeGate } from '../../kit/gate.js';
 import { leadWalk } from '../../kit/lead.js';
 import { LOOKS } from '../../../content/characters.js';
@@ -104,8 +104,74 @@ export const HANYANG = {
 
 const scaled = (o, k) => { o.scale.setScalar(k); return o; };
 
-// 위화도 회군을 큰 지도 위에서: 군대(맨 앞에 '나')가 위화도에서 개경으로 내려오고, 고려라는 이름이 물러나 조선이 선 뒤 도읍이 한양으로 옮겨진다
-async function marchOnMap(ctx) {
+// 지도 위의 군대(H-02): 6줄 × 4명 = 24명이 다리를 움직여 걷는다. 맨 앞줄만 다 그린 인물이고, 뒤 줄은 몸·머리·투구·팔다리만 있는
+// 간단한 인물(멀리서 작게 보이므로 그리기 수를 줄인다). 깃발 든 사람 셋은 오른손을 들어 깃대를 잡는다(setCarry 'shoulder', D-18).
+// 걸음 박자는 줄마다 조금씩 다르다.
+const simpleGeos = () => ({ // 한 번 회군할 때마다 새로 만든다(무대를 치울 때 함께 버려진다)
+    leg: new THREE.BoxGeometry(0.22, 0.6, 0.24).translate(0, -0.3, 0), body: new THREE.CylinderGeometry(0.38, 0.58, 1.25, 7),
+    arm: new THREE.BoxGeometry(0.18, 0.8, 0.2).translate(0, -0.38, 0), head: new THREE.SphereGeometry(0.42, 10, 8), helmet: new THREE.ConeGeometry(0.5, 0.62, 7),
+});
+function simpleSoldier(look, G) {
+  const g = new THREE.Group(), legs = [], arms = [];
+  const add = (geo, color, x, y, z, parent = g, cast = false) => { const m = new THREE.Mesh(geo, mat(color, 'cloth', 'object')); m.position.set(x, y, z); m.castShadow = cast; parent.add(m); return m; };
+  for (const sx of [-0.16, 0.16]) { const piv = new THREE.Group(); piv.position.set(sx, 0.55, 0); g.add(piv); add(G.leg, 0x2b241c, 0, 0, 0, piv); legs.push(piv); }
+  add(G.body, look.robe, 0, 1.12, 0, g, true);
+  for (const sx of [-0.5, 0.5]) { const piv = new THREE.Group(); piv.position.set(sx, 1.65, 0); g.add(piv); add(G.arm, look.robe, 0, 0, 0, piv); arms.push(piv); }
+  const head = new THREE.Group(); head.position.set(0, 2.1, 0); g.add(head);
+  add(G.head, 0xe8c9a0, 0, 0, 0, head); add(G.helmet, 0x5d5a55, 0, 0.42, -0.04, head).rotation.x = -0.3;
+  g.userData = { legs, arms, walk: 0, head, ph: 0 };
+  return g;
+}
+function marchFlag(color) {
+  const f = new THREE.Group();
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 4.4, 6), mat(0x5a3f2a, 'wood', 'object')); pole.position.y = 0.6; f.add(pole);
+  const cloth = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 1.7).translate(0.65, 0, 0).rotateY(Math.PI / 2), new THREE.MeshLambertMaterial({ color, side: THREE.DoubleSide }));
+  cloth.position.y = 1.9; cloth.name = 'cloth'; f.add(cloth); // 깃폭은 걷는 쪽 뒤로 날린다
+  return f;
+}
+export const MARCH_ROWS = 6, MARCH_COLS = 4;
+function marchArmy() {
+  const army = new THREE.Group(), people = [], flags = [], G = simpleGeos();
+  const FLAGS = { '1:0': 0xb8452f, '3:3': 0xd9a441, '5:1': 0xb8452f };
+  for (let r = 0; r < MARCH_ROWS; r++) for (let c = 0; c < MARCH_COLS; c++) {
+    const look = (r + c) % 3 === 0 ? LOOKS.archer : LOOKS.soldier;
+    const p = r === 0 ? makePerson(look) : simpleSoldier(look, G);
+    p.userData.manual = true; // 걸음은 아래 onUpdate가 맡는다(걷기 자동 움직임에서 뺀다)
+    p.userData.ph = r * 1.15 + c * 0.35 + (r * 7 + c * 3) % 5 * 0.12; // 줄마다, 사람마다 조금씩 다른 박자
+    p.position.set((c - 1.5) * 1.15, 0, -r * 1.35 + 3);
+    const fc = FLAGS[`${r}:${c}`];
+    if (fc) { const f = marchFlag(fc); setCarry(p, f, 'shoulder'); flags.push(f.getObjectByName('cloth')); }
+    army.add(p); people.push(p);
+  }
+  return { army, people, flags };
+}
+const wrapAngle = a => Math.atan2(Math.sin(a), Math.cos(a));
+
+// 회군(진영): 이성계의 결심 뒤 진영의 군대가 줄마다 조금씩 늦게 천천히 돌아서서(북 → 남) 동쪽 통로로 걸어 나간다.
+// 걸음은 걷기 자동 움직임(animateWalkers)이 맡는다. 장면이 끝나면 setTurn(1)이 제자리로 돌려놓는다.
+export async function campTurnBack(ctx) {
+  const { world } = ctx;
+  placePlayer(world, [-3, 1.5]); // 군대가 지나갈 길을 비운다
+  world.setFixedCamera([12, 3.6, 7.5], [6.5, 1.3, -6]); // 카메라 예외: 군대 전체가 돌아서는 모습이 보여야 한다
+  const heading = Math.atan2(0.22, 1); // 남쪽으로, 지휘 천막을 비켜 조금 동쪽으로
+  const men = scene.army.children.map((p, i) => ({ p, delay: Math.floor(i / 6) * 0.35 + (i % 6) * 0.06, from: p.rotation.y }));
+  await new Promise(resolve => {
+    let t = 0;
+    const off = world.onUpdate(dt => {
+      t += dt;
+      for (const m of men) {
+        const k = Math.min(1, Math.max(0, (t - m.delay) / 1.0)), e = k * k * (3 - 2 * k); // 천천히 돌아선다
+        m.p.rotation.y = m.from + wrapAngle(heading - m.from) * e;
+        const w = Math.max(0, t - m.delay - 0.8); // 거의 돌아서면 걷기 시작(처음엔 천천히)
+        if (w > 0) { const v = 1.8 * Math.min(1, w / 0.5); m.p.position.x += Math.sin(heading) * v * dt; m.p.position.z += Math.cos(heading) * v * dt; }
+      }
+      if (t >= 4.6) { off(); resolve(); }
+    });
+  });
+}
+
+// 위화도 회군을 큰 지도 위에서: 군대가 위화도에서 개경으로 내려오고, 고려라는 이름이 물러나 조선이 선 뒤 도읍이 한양으로 옮겨진다
+export async function marchOnMap(ctx) {
   const { world, dialogue } = ctx;
   const T = script.turnback;
   await ctx.fade(true);
@@ -117,20 +183,25 @@ async function marchOnMap(ctx) {
   const tag = (text, p, size = 1.2, opt) => { const s = labelSprite(text, { size, ...opt }); s.position.set(p.x, 2.6, p.z); g.add(s); return s; };
   tag('위화도', MARCH.wihwa);
   const goryeo = tag('고려 (도읍 개경)', MARCH.gaegyeong, 1.4, { color: '#5a2a20' });
-  // 군대: 맨 앞은 '나'(학생 생김새), 뒤로 군사들과 깃발
-  const army = new THREE.Group(); army.scale.setScalar(0.55); g.add(army);
-  const me = world.player.clone(true); me.visible = true; me.scale.setScalar(1); me.position.set(0, 0, 1.5); army.add(me);
-  const meTag = labelSprite('나', { size: 1.2, bg: 'rgba(217,164,65,0.95)' }); meTag.position.set(0, 4.2, 1.5); army.add(meTag);
-  for (let i = 0; i < 8; i++) { const p = makePerson(i % 3 ? LOOKS.soldier : LOOKS.archer); p.position.set((i % 4 - 1.5) * 1.1, 0, -Math.floor(i / 4) * 1.3); p.userData.noWalk = true; army.add(p); }
-  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 4, 6), new THREE.MeshLambertMaterial({ color: 0x5a3f2a })); pole.position.set(1.2, 2, 0.5); army.add(pole);
-  const flag = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.6).translate(0.6, 0, 0), new THREE.MeshLambertMaterial({ color: 0xb8452f, side: THREE.DoubleSide })); flag.position.set(1.2, 3.4, 0.5); army.add(flag);
+  // 군대: 24명(깃발 든 사람 셋). '나' 표시는 없다(H-02)
+  const SCALE = 0.55;
+  const { army, people, flags } = marchArmy(); army.scale.setScalar(SCALE); g.add(army);
   army.position.set(MARCH.wihwa.x, 0, MARCH.wihwa.z);
-  ctx.testHooks.march = { done: false, joseon: false };
+  army.rotation.y = Math.atan2(MARCH.mid.x - MARCH.wihwa.x, MARCH.mid.z - MARCH.wihwa.z);
+  ctx.testHooks.march = { done: false, joseon: false, army };
+  // 걸음: 걷는 동안 다리를 움직이고(빠르기에 맞춰 박자를 조금 빠르게), 방향은 천천히 돌린다. 멈추면 걸음이 잦아든다
+  const mv = { moving: false, gait: 1, heading: army.rotation.y };
+  const offGait = world.onUpdate((dt, t) => {
+    army.rotation.y += wrapAngle(mv.heading - army.rotation.y) * Math.min(1, dt * 2.5);
+    for (const p of people) animateWalk(p, mv.moving, dt * mv.gait);
+    flags.forEach((f, i) => { f.rotation.y = Math.sin(t * 3 + i * 1.7) * 0.25; });
+  });
   await ctx.fade(false);
   ctx.audio.play('whoosh');
   // 길을 따라 걷는다: path의 점들을 seconds 동안
   const walk = (path, seconds) => new Promise(resolve => {
     const lens = path.slice(1).map((p, i) => Math.hypot(p.x - path[i].x, p.z - path[i].z)), total = lens.reduce((x, y) => x + y, 0);
+    mv.gait = Math.min(1.8, Math.max(0.8, total / seconds / SCALE / 1.9)); mv.moving = true; // 1.9: 보통 걸음 한 박자에 나아가는 빠르기
     let t = 0;
     const off = world.onUpdate(dt => {
       t = Math.min(1, t + dt / seconds);
@@ -138,13 +209,13 @@ async function marchOnMap(ctx) {
       while (k < lens.length - 1 && d > lens[k]) { d -= lens[k]; k += 1; }
       const a = path[k], b = path[k + 1], f = Math.min(1, d / lens[k]);
       army.position.set(a.x + (b.x - a.x) * f, 0, a.z + (b.z - a.z) * f);
-      army.rotation.y = Math.atan2(b.x - a.x, b.z - a.z);
-      if (t >= 1) { off(); resolve(); }
+      mv.heading = Math.atan2(b.x - a.x, b.z - a.z);
+      if (t >= 1) { off(); mv.moving = false; resolve(); }
     });
   });
   await dialogue.say(T[0]);
   dialogue.close();
-  await walk([MARCH.wihwa, MARCH.mid, MARCH.gaegyeong], 6);
+  await walk([MARCH.wihwa, MARCH.mid, MARCH.gaegyeong], 7);
   await dialogue.say(T[1]);
   dialogue.close();
   // 고려라는 이름이 흐려지고 그 자리에 조선이 선다
@@ -161,11 +232,12 @@ async function marchOnMap(ctx) {
   await dialogue.say(T[2]);
   dialogue.close();
   tag('한양 (1394)', MARCH.hanyang, 1.3, { color: '#2f4a6b' });
-  await walk([MARCH.gaegyeong, MARCH.hanyang], 2.5);
+  await walk([MARCH.gaegyeong, MARCH.hanyang], 3);
   await dialogue.say(T[3]);
   dialogue.close();
   ctx.testHooks.march.done = true;
   await ctx.fade(true);
+  offGait();
   arena.dispose();
   world.player.visible = was;
   placePlayer(world, [-3, 1.5]);
@@ -246,9 +318,13 @@ export default {
     ctx.setGoal(script.goals[2]);
     [...PEOPLE, 'yiseonggye'].forEach(k => { world.npcs.get(k).mark.visible = false; });
     world.setGoal(null);
-    // 1) 병사들이 전해 주는 이성계의 말을 듣고, 이성계가 든 까닭인지 고르기
+    // 1) 이성계가 반대한 네 까닭을 직접 말하고(H-01), 진영 병사들의 말이 그 까닭인지 소문인지 가려낸다
+    const yi = world.npcs.get('yiseonggye');
+    world.setTalkCamera(yi.mesh);
+    await sayAll(dialogue, script.npc.yiseonggye.reasons);
+    dialogue.close(); world.camMode = 'follow';
     let tries = 0, firstTryCorrect = 0;
-    await showHowTo(ctx.ui, { title: '이성계가 반대한 까닭', steps: ['비 내리는 진영의 병사 여섯 명에게 가서 이야기를 들어요.', '이성계가 든 까닭인지 골라요. 틀리면 해설을 듣고 다시 골라요.'] });
+    await showHowTo(ctx.ui, { title: '까닭과 소문 가려내기', steps: ['비 내리는 진영의 병사 여섯 명에게 가서 이야기를 들어요.', '이성계가 든 까닭인지, 떠도는 소문인지 골라요.'] });
     const R = script.reasons;
     const a = await runWithRetries(ctx, async easy => {
       tries += 1;
@@ -259,13 +335,14 @@ export default {
     await sayAll(dialogue, R.done);
     dialogue.close();
     // 다음 놀이는 저절로 시작하지 않는다: 이성계에게 가서 말을 걸어야 회군이 시작된다(C-05)
-    const yi = world.npcs.get('yiseonggye');
     yi.mark.visible = true;
     await waitInteract(ctx, { pos: yi.mesh.position, quest: script.goals[3], label: '이성계와 이야기하기', mark: false });
     yi.mark.visible = false;
     world.setTalkCamera(yi.mesh);
     await sayAll(dialogue, script.npc.yiseonggye.turn); // 이성계의 결심
-    dialogue.close(); world.camMode = 'follow';
+    dialogue.close();
+    await campTurnBack(ctx); // 진영의 군대가 돌아서서 남쪽으로 걸어 나간다
+    world.camMode = 'follow';
 
     // 2) 위화도 회군: 큰 지도 위에서 이성계의 군대가 위화도에서 개경으로 돌아오고, 고려가 물러나 조선이 선다
     await marchOnMap(ctx);
