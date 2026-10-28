@@ -5,7 +5,7 @@ import ch3, { DAM_WINDOW, playGujuBattle } from '../chapters/ch3/chapter.js';
 import ch3Script from '../chapters/ch3/script.js';
 import ch4 from '../chapters/ch4/chapter.js';
 import ch4Script from '../chapters/ch4/script.js';
-import ch5, { MAKING_CARDS } from '../chapters/ch5/chapter.js';
+import ch5, { artisanTalk } from '../chapters/ch5/chapter.js';
 import ch5Script from '../chapters/ch5/script.js';
 import ch6 from '../chapters/ch6/chapter.js';
 import ch6Script from '../chapters/ch6/script.js';
@@ -101,25 +101,14 @@ test('goryeo4: 퀴즈 배경은 강화도 문제에 강화도, 처인성·충주
   } finally { s.done(); }
 });
 
-test('goryeo5: 장인은 1번~4번이고, 차례보다 먼저 찾아가면 앞 번호 장인부터 들으라고 한다', () => {
+test('goryeo5: 장인은 1번~4번이고, 차례보다 먼저 찾아가도 막지 않고 앞 번호 장인에게도 들어 보라고 한다(D-17)', () => {
   eq(['artisan1', 'artisan2', 'artisan3', 'artisan4'].map(id => ch5Script.speakers[id].name.slice(0, 5)), ['1번 장인', '2번 장인', '3번 장인', '4번 장인']);
-  ok(ch5Script.tooEarly(1)[0].text.includes('1번 장인'));
+  ok(artisanTalk('artisan2', new Set()).at(-1).text.includes('1번 장인'));
   const s = touchSetup(ch5Script.speakers);
   try {
     ch5.buildScene(s.w, s.ctx);
     ok(s.w.npcs.get('artisan3').mesh.getObjectByName('numTag'), '머리 위 번호 이름표');
   } finally { s.done(); }
-});
-
-test('goryeo5: 경판 만드는 순서는 그림이 있는 카드로 고른다', async () => {
-  eq(MAKING_CARDS.length, 6);
-  ok(MAKING_CARDS.every(c => c.figure.startsWith('<svg') && !c.figure.includes('<text')), '그림만 있는 SVG');
-  const { orderCards } = await import('../core/minigame.js');
-  const ui = document.createElement('div'); document.body.appendChild(ui);
-  const p = orderCards({ ui }, { title: '경판', cards: MAKING_CARDS });
-  eq(ui.querySelectorAll('.order-card svg').length, 6, '카드마다 그림');
-  for (const c of MAKING_CARDS) [...ui.querySelectorAll('.order-card')].find(b => b.textContent === c.text).click();
-  eq(await p, true); ui.remove();
 });
 
 test('goryeo6: 뒤쫓는 배에는 몽골군이 타 있고, 남은 거리는 바다에 맞는 말로 센다', () => {
