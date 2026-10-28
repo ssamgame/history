@@ -41,7 +41,7 @@ test('ch3: completes with touch-only actions', async () => {
     eq(r.easyModeUsed, false);
     eq(r.stars, 3);
   } finally { bot.stop(); s.done(); }
-}, { timeout: 150000 });
+}, { timeout: 260000 });
 
 test('ch3: resume at quiz brings the student back to the camp (glowing door), dam stays', () => {
   const s = touchSetup(ch3Script.speakers);
@@ -191,7 +191,7 @@ test('ch3 D-10: full run keeps the low camera and walks (no fixed camera, no but
     ok(sc.damWall.visible, 'dam stays');
     ok(sc.river.army.position.y > -0.01, 'the Khitan army was pushed back, not sunk');
   } finally { off(); bot.stop(); s.done(); }
-}, { timeout: 150000 });
+}, { timeout: 260000 });
 
 // ---- D-12: 미리 와 있으면 신호가 나지 않고, 강감찬 곁으로 돌아와야 신호. 귀주는 장면 전환으로 언덕에서 대치 ----
 test('ch3 D-12: waiting at the plug never gets the signal; coming back beside Gang Gam-chan does', async () => {

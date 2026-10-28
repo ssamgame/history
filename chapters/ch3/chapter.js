@@ -396,7 +396,8 @@ export default {
     await sayAll(dialogue, script.hides.built);
 
     // 2. 둑 터뜨리기: 강감찬에게 말을 걸면 둑 위로 이끈다(C-05). 신호에 맞춰 마개로 걸어간다
-    const gc = world.npcs.get('gangamchan');
+    const gc = world.npcs.get('gangamchan'); gc.collider.r = 0; // 다가가 말을 걸 수 있게(둑 위로 이끌 때도 길을 막지 않는다)
+    dialogue.close();
     gc.mark.visible = true;
     await waitInteract(ctx, { pos: gc.mesh.position, quest: script.goals[4], label: '강감찬과 이야기하기', mark: false });
     gc.mark.visible = false;
@@ -417,6 +418,7 @@ export default {
     await playFlood(ctx);
     await sayAll(dialogue, script.dam.done);
 
+    dialogue.close();
     // 3. 귀주의 바람(D-12): 강감찬에게 말을 걸면(C-05) 짧게 어두워졌다 밝아지며 귀주 언덕으로. 강감찬 곁에서 들판 건너 거란군 진을 내려다본다
     gc.mark.visible = true;
     await waitInteract(ctx, { pos: gc.mesh.position, quest: script.goals[7], label: '강감찬과 이야기하기', mark: false });

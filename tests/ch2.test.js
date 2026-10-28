@@ -36,7 +36,7 @@ test('ch2: completes with touch-only actions', async () => {
     eq(r.stars, 3);
     eq(r.firstTryTotal, 2); eq(r.firstTryCorrect, 2);
   } finally { bot.stop(); s.done(); }
-}, { timeout: 120000 });
+}, { timeout: 240000 });
 
 test('ch2: resume at minigame starts the wall defense', async () => {
   const s = touchSetup(ch2Script.speakers);

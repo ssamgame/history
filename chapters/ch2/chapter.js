@@ -417,6 +417,7 @@ export default {
 
     await ctx.fade(true);
     scene.khitan.visible = false;
+    world.bounds = scene.field.bounds;
     placePlayer(world, scene.field.start);
     // 들판에서 양규가 기다린다: 다가가 말을 걸어야 구출이 시작된다(C-05)
     const yg = world.npcs.get('yanggyu');
@@ -440,6 +441,7 @@ export default {
     await ctx.fade(false);
     await sayAll(dialogue, script.rescue.done);
     await sayAll(dialogue, script.result);
+    dialogue.close();
     return { firstTryCorrect: [a, b].filter(x => x.first).length, firstTryTotal: 2, easyModeUsed: a.easyModeUsed || b.easyModeUsed };
   },
 };
