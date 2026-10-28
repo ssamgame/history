@@ -24,3 +24,5 @@
 | 모든 장 (D-18 물건 들기 setCarry: 3장 쇠가죽·4장 문서·놀이 건네받기·나누기) | 2026-10-28 | 7e2cfbb | carry·ch3·ch4·goryeo·play·kit | 통과 (6·18·18·11·15·59) |
 | ch5 (D-17 스님이 여는 탐험·나무판 들고 경판 만들기·大藏經 새겨 서가에) | 2026-10-28 | b2c1ee7 | ch5·goryeo5·stage3-text·content·sw | 통과 (39 묶음) |
 | ch6 (D-19 포구 말 잇기·배중손 따라 부두·진도·제주 걷기·인물 만나기) | 2026-10-28 | 746336c | ch6·goryeo·content·sw·stage3-text | 통과 (43 묶음) |
+| ch6 (D-20 노 젓기·낮은 배 시점·앞에서 오는 몽골 배·인물 만나기 삭제) | 2026-10-28 | 6fa10cc | ch6·goryeo | 통과 |
+| 모든 편 (D-21 편 복습 퀴즈) | 2026-10-28 | 6fa10cc | review·save·screens·content·sw·flow·smoke | 통과 (63 묶음) |
