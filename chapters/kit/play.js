@@ -398,7 +398,9 @@ export function drive(ctx, part, easy) {
     }
     if (route[next]) { route[next].m.visible = true; if (route[next].lab) route[next].lab.visible = true; }
     show();
-    s.say(r.talk, () => { if (next === total) setTimeout(() => s.finish(true), 400); });
+    const talk = () => s.say(r.talk, () => { if (next === total) setTimeout(() => s.finish(true), 400); });
+    if (r.scene) s.run(() => r.scene(ctx, s, g)).then(() => { if (!s.done) talk(); }); // 그 자리에서 보는 짧은 장면(시간은 멈춘다), 그 뒤 대사
+    else talk();
   };
   s.update((dt, el) => {
     const p = world.player.position;
@@ -496,7 +498,7 @@ export function stops(ctx, part, easy) {
 }
 
 // ── deliver ───────────────────────────────────────────
-// 가져다 놓을 물건 모양(카드의 carry). 들 때는 몸 기준, 내려놓으면 바닥 기준(아랫면이 y 0)
+// 가져다 놓을 물건 모양(카드의 carry: log·sack·scroll·letter). 들 때는 몸 기준, 내려놓으면 바닥 기준(아랫면이 y 0)
 const CARRY_THING = {
   log() { // 나무 기둥: 어깨에 메고(눕혀 들고), 내려놓으면 세운다
     const g = new THREE.Group(), m = add(g, new THREE.CylinderGeometry(0.16, 0.18, 2.6, 8), 0x9a6a3a, 0, 0, 0);
@@ -508,6 +510,13 @@ const CARRY_THING = {
     const g = new THREE.Group();
     add(g, box(0.7, 0.45, 0.5), 0xd8ccb0, 0, 0.23, 0);
     add(g, box(0.74, 0.08, 0.12), 0x8a6a48, 0, 0.46, 0); add(g, new THREE.SphereGeometry(0.11, 8, 6), 0x8a6a48, 0, 0.52, 0);
+    return g;
+  },
+  scroll() { // 둘둘 만 문서: 종이 두루마리와 나무 축
+    const g = new THREE.Group();
+    const r = add(g, new THREE.CylinderGeometry(0.12, 0.12, 0.62, 10), 0xf2ede0, 0, 0.12, 0); r.rotation.z = Math.PI / 2;
+    for (const x of [-0.36, 0.36]) { const k = add(g, new THREE.CylinderGeometry(0.05, 0.05, 0.12, 8), 0x6b4a32, x, 0.12, 0); k.rotation.z = Math.PI / 2; }
+    add(g, box(0.06, 0.26, 0.26), 0xa3262a, 0, 0.12, 0); // 붉은 끈
     return g;
   },
   letter() { // 서양 배가 보낸 편지: 봉투와 붉은 봉인

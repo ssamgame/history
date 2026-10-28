@@ -66,16 +66,18 @@ export default {
         { id: 'palace', label: '경복궁 공사장', look: 'worker' },
         { id: 'tax', label: '세금 거두는 관리', look: 'joseonOfficial' },
         { id: 'regent', label: '흥선 대원군', look: 'daewongun' },
+        { id: 'later', label: '다른 때의 일' },
       ],
       cards: [
         { text: '경복궁에 세울 나무 기둥', carry: 'log', bin: 'palace', talk: [{ who: 'narr', text: '흥선 대원군은 경복궁을 고쳐 지었어요.', src: ['S51'] }] },
+        { text: '강화도 조약 문서', carry: 'scroll', bin: 'later', talk: [{ who: 'narr', text: '강화도 조약은 흥선 대원군이 물러난 뒤인 1876년에 맺었어요.', src: ['S51'] }] },
         { text: '양반 댁에서 낸 세금', carry: 'sack', bin: 'tax', talk: [{ who: 'official', text: '이제는 양반 댁에서도 세금을 낸다.', src: ['S51'] }] },
         { text: '서양 배가 보낸 편지', carry: 'letter', bin: 'regent', talk: [
           { who: 'daewongun', text: '서양 나라와는 교류하지 않겠다. 돌려보내라.' },
           { who: 'narr', text: '흥선 대원군은 서양 나라들의 교류 요구를 거절했어요.', src: ['S51'] },
         ] },
       ],
-      fail: '마을 어르신이 한 이야기를 떠올려 보세요. 궁궐을 고쳐 짓고, 양반에게도 세금을 내게 하고, 서양 나라의 교류 요구를 거절했어요.',
+      fail: '마을 어르신이 한 이야기를 떠올려 보세요. 궁궐을 고쳐 짓고, 양반에게도 세금을 내게 하고, 서양 나라의 교류 요구를 거절했어요. 강화도 조약은 대원군이 물러난 뒤의 일이에요.',
     },
     coast: {
       type: 'drive', src: ['S51'], title: '강화도 해안을 순찰해요', counter: '살핀 곳', seconds: 120,
@@ -91,9 +93,9 @@ export default {
       fail: '빛나는 곳을 따라 해안을 돌아봐요.',
     },
     paper: {
-      type: 'doc', src: ['S51'], title: '일본과 맺은 조약문을 읽어요', heading: '강화도 조약 (1876년) 가운데에서',
+      type: 'doc', src: ['S51'], title: '연무당 탁자 앞에서 조약문을 읽어요', heading: '강화도 조약 (1876년) 가운데에서',
       docIntro: '조선과 일본이 맺은 조약이에요. 무엇이 쓰여 있는지 잘 읽어 두면, 다음에 사람들의 말이 맞는지 가려낼 수 있어요.',
-      intro: [{ who: 'official', text: '이것이 일본과 맺은 조약문이다. 무엇이 쓰여 있는지 똑똑히 읽어 보아라.' }],
+      intro: [{ who: 'official', text: '연무당 탁자 위에 놓인 것이 일본과 맺은 조약문이다. 무엇이 쓰여 있는지 똑똑히 읽어 보아라.' }],
       items: [
         { text: '일본인은 조선의 해안을 자유롭게 측량할 수 있다.', note: '일본만 할 수 있는 일이에요.' },
         { text: '조선에서 죄를 지은 일본인은 일본 관리가 재판한다.', note: '조선 관리는 일본인을 벌줄 수 없어요.' },

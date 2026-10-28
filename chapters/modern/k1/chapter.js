@@ -1,7 +1,9 @@
 // 근대편 1장 「흥선 대원군과 강화도 조약」(D-28): 강화도 바닷가 마을과 관아, 바다 위의 배.
 // 마을 문으로 걸어 들어와 어르신·선비의 이야기를 아무 차례로 듣고(막지 않음), 관아 앞 관리에게 가면 학생의 결심 →
 // 물건을 안고 흥선 대원군이 한 일의 자리로 → 해안 순찰 → 연무당에서 조약문 읽기 → 사람들의 말이 조약과 맞는지 가려내기.
+import * as THREE from 'three';
 import { makeKitChapter } from '../../kit/chapter.js';
+import { BUILD } from '../../kit/town.js';
 import { gateLeaves, nameBoard, enterThroughGate, closeGate } from '../../kit/gate.js';
 import { roam } from '../../../core/flow.js';
 import { sayAll, placePlayer } from '../../joseon/common.js';
@@ -24,7 +26,7 @@ const PALACE = { edge: { style: 'tile', seed: 462 }, center: [{ type: 'woodpile'
 const COAST = { edge: { style: 'thatch', seed: 515 }, center: [{ type: 'cannon', x: -8, z: -8, ry: Math.PI }, { type: 'cannon', x: -2, z: -9, ry: Math.PI }, { type: 'cargo', x: -15, z: -6, kind: 'barrel', n: 3 }, { type: 'firepit', x: 15, z: 4 }, { type: 'cannon', x: -7, z: 16, ry: Math.PI }, { type: 'firepit', x: 9, z: 9 }], // 강화도 해안: 갯벌 길, 망루, 포대, 연무당. 먼바다에 군함
   origin: [400, 0], ground: 'earth', groundColor: 0x8a7a5a, bounds: { x0: -20, x1: 20, z0: -14, z1: 24 },
   props: [
-    { type: 'water', x: 0, z: -40, w: 160, d: 40 }, { type: 'steamship', x: -10, z: -34, ry: Math.PI / 2, solid: false, old: true },
+    { type: 'water', x: 0, z: -40, w: 160, d: 40 }, // 일본 군함은 망루에 오르면 먼바다에서 다가온다(warshipArrives)
     { type: 'pavilion', x: -14, z: 7 }, { type: 'wall', x: 9, z: -6, w: 8, color: 0x8c8577 }, { type: 'rice', x: 13, z: -3, n: 3 },
     { type: 'hanok', x: 10, z: 18, tile: true }, { type: 'tree', x: -16, z: 18, kind: 'pine' }, { type: 'tree', x: 17, z: 8, kind: 'pine' },
     { type: 'boat', x: 8, z: -22, ry: 0.4 }, { type: 'boat', x: 13, z: -24, ry: -0.2, color: 0x6b4a32 },
@@ -38,6 +40,46 @@ const YEONMU = { edge: { style: 'tile', seed: 47 }, center: [{ type: 'papers', x
     { type: 'water', x: 0, z: -40, w: 160, d: 30 }, { type: 'steamship', x: -16, z: -24, ry: Math.PI / 2, solid: false, old: true },
   ],
 };
+
+// 망루에 오르면: 먼바다에서 일본 군함(옛 증기선)이 다가오고, 뱃전에서 대포를 쏘아 번쩍 빛과 흰 연기가 피어오른다(D-28).
+// 카메라는 망루 뒤에서 바다를 내려다본다. 약 7.5초 뒤 따라가기 카메라로 돌아오고, 군함은 그 자리에 머문다
+export function warshipArrives(ctx, s, g) {
+  const { world, audio } = ctx;
+  const ship = new THREE.Group(); BUILD.steamship(ship, { old: true }); ship.position.set(-6, 0.3, -80); g.add(ship);
+  const eye = s.at(-5, 8), look = s.at(-7, -40); // 정자(-14, 7)를 피한 망루 뒤쪽 높은 곳
+  world.setFixedCamera([eye.x, 8, eye.z], [look.x, 2, look.z]);
+  const puffs = [];
+  const shoot = side => { // 뱃전의 대포 한 방: 번쩍 빛 하나와 흰 연기 네 덩이
+    audio.play('boom');
+    const muzzle = new THREE.Vector3(side * 2.8, 2.4, 1 + Math.random() * 3);
+    const flash = new THREE.Mesh(new THREE.SphereGeometry(1, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffc860, transparent: true }));
+    flash.position.copy(muzzle); ship.add(flash); puffs.push({ m: flash, t: 0, flash: true });
+    for (let i = 0; i < 4; i++) {
+      const m = new THREE.Mesh(new THREE.SphereGeometry(1, 8, 6), new THREE.MeshLambertMaterial({ color: 0xe2ddd2, transparent: true, opacity: 0.9, depthWrite: false }));
+      m.position.copy(muzzle).add(new THREE.Vector3(side * (0.6 + i * 0.7), i * 0.3, (Math.random() - 0.5) * 1.2)); m.scale.setScalar(0.5); ship.add(m);
+      puffs.push({ m, t: -i * 0.08, side });
+    }
+  };
+  const shots = [[4.3, 1], [5.0, -1], [5.8, 1]];
+  let t = 0;
+  return new Promise(resolve => {
+    const off = world.onUpdate(dt => {
+      t += dt;
+      const k = Math.min(1, t / 4); ship.position.z = -80 + 46 * (1 - (1 - k) * (1 - k)); // 다가오다 천천히 멈춘다
+      ship.rotation.z = Math.sin(t * 1.3) * 0.02;
+      while (shots.length && t >= shots[0][0]) shoot(shots.shift()[1]);
+      for (let i = puffs.length - 1; i >= 0; i--) {
+        const p = puffs[i]; p.t += dt;
+        if (p.t < 0) continue;
+        if (p.flash) { p.m.material.opacity = Math.max(0, 1 - p.t / 0.25); p.m.scale.setScalar(1 + p.t * 3); }
+        else { const u = p.t / 3.2; p.m.scale.setScalar(0.8 + u * 4.5); p.m.position.y += dt * 0.8; p.m.position.x += p.side * dt * 0.6; p.m.material.opacity = Math.max(0, 0.9 * (1 - u)); }
+        if ((p.flash && p.t > 0.25) || p.t > 3.2) { ship.remove(p.m); puffs.splice(i, 1); }
+      }
+      if (t >= 7.5) { off(); world.camMode = 'follow'; world.snapCamera(); resolve(); }
+    });
+    s.cleanup(() => { off(); });
+  });
+}
 
 const base = makeKitChapter({
   id: 'k1', mood: 'sea', script,
@@ -69,9 +111,9 @@ const base = makeKitChapter({
     scatter: [{ kind: 'grass', count: 60, area: { x0: -15, x1: 15, z0: -8, z1: 12 }, avoid: [{ x: 0, z: 2, r: 3 }], seed: 201 }],
   },
   parts: [
-    { ...script.parts.regent, goal: script.goals[2], arena: PALACE, from: [0, 10], bins: xy(script.parts.regent.bins, [{ x: -11, z: -4 }, { x: 0, z: -5 }, { x: 11, z: -4 }]) },
-    { ...script.parts.coast, goal: script.goals[3], arena: COAST, from: [0, 21], route: xy(script.parts.coast.route, [{ x: -4, z: 12 }, { x: -12, z: 0 }, { x: 6, z: -2 }, { x: 6, z: 14 }]) },
-    { ...script.parts.paper, goal: script.goals[4] },
+    { ...script.parts.regent, goal: script.goals[2], arena: PALACE, from: [0, 10], bins: xy(script.parts.regent.bins, [{ x: -11, z: -4 }, { x: 0, z: -5 }, { x: 11, z: -4 }, { x: 13, z: 7 }]) },
+    { ...script.parts.coast, goal: script.goals[3], arena: COAST, from: [0, 21], route: xy(script.parts.coast.route, [{ x: -4, z: 12 }, { x: -12, z: 0 }, { x: 6, z: -2 }, { x: 6, z: 14 }]).map((r, i) => i === 1 ? { ...r, scene: warshipArrives } : r) },
+    { ...script.parts.paper, goal: script.goals[4], arena: YEONMU, from: [0, -3.6], view: { eye: [2.5, 3.2, -1.2], at: [0, 1, -6.5] } }, // 연무당 탁자 앞에서 읽는다
     { ...script.parts.rumor, goal: script.goals[4], arena: YEONMU, from: [0, 11], items: xy(script.parts.rumor.items, [{ x: -10, z: 4, ry: 0.5 }, { x: -4, z: 8, ry: 0.2 }, { x: 4, z: 8, ry: -0.2 }, { x: 10, z: 4, ry: -0.5 }]) },
   ],
   decorate(world) { // 마을 어귀 나무 문과 「강화도」 이름판(S51). 문짝은 굳히기에 합쳐지지 않게 돌려준다

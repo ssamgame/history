@@ -17,7 +17,8 @@ test('k1 D-28: 마을 사람은 아무 차례로, 두 번째 사람은 이어 �
 test('k1 D-28: 놀이는 물건 나르기·해안 순찰·조약문·말 가려내기(팻말 찾기 없음)', () => {
   eq(k1.parts.map(p => p.type), ['deliver', 'drive', 'doc', 'judge']);
   const regent = k1.parts[0];
-  eq(regent.cards.map(c => c.carry), ['log', 'sack', 'letter']);
+  eq(regent.cards.map(c => c.carry), ['log', 'scroll', 'sack', 'letter']);
+  ok(regent.cards.some(c => c.bin === 'later'), '다른 때의 일이 하나 섞였다');
   for (const c of regent.cards) ok(regent.bins.some(b => b.id === c.bin), c.text);
   const rumor = k1.parts[3];
   eq(rumor.items.filter(x => x.correct).length, 2);
@@ -33,4 +34,12 @@ test('k1 D-28: 마을 어귀 문과 이름판, 문 앞은 걸어 들어올 수 �
     ok(w.closeView, '낮은 카메라');
     for (const c of w.colliders) ok(!(Math.abs(c.x) < 2 + c.r && c.z > 7 && c.z < 16), `문길이 막힘 (${c.x}, ${c.z})`);
   } finally { w.dispose(); }
+});
+
+test('k1 D-28: 조약문은 연무당 무대(탁자 앞)에서 읽고, 망루에서는 일본 군함이 다가온다', () => {
+  const paper = k1.parts[2], coast = k1.parts[1];
+  ok(paper.arena && paper.arena.props.some(p => p.type === 'desk'), '연무당 탁자');
+  ok(Math.hypot(paper.from[0], paper.from[1] + 6) < 3, '탁자 바로 앞');
+  eq(typeof coast.route[1].scene, 'function');
+  ok(!coast.arena.props.some(p => p.type === 'steamship'), '군함은 처음부터 서 있지 않다');
 });

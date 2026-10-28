@@ -15,7 +15,7 @@ import { DIORAMA } from '../modern/dioramas.js';
 import { showHowTo, chooseCards, sortCards, placeOnBoard, orderCards, timingBar, readBook, showDocument } from '../../core/minigame.js';
 import { sayAll, placePlayer, talkInOrder, setTalkStep, tryPart, sumParts } from '../joseon/common.js';
 import { buildTown } from './town.js';
-import { PLAY } from './play.js';
+import { PLAY, buildArena } from './play.js';
 
 const HOWTO = {
   choose: '맞는 카드를 모두 골라요. 틀린 카드를 누르면 해설을 보고 다시 골라요.',
@@ -88,6 +88,21 @@ function collect(ctx, scene, part, easy) {
   });
 }
 
+// 읽기 부분에 arena가 있으면 그 무대(예: 연무당 탁자 앞, part.from)에 서서 읽는다. 다 읽으면 무대를 치우고 원래 자리로
+async function atArena(ctx, part, read) {
+  if (!part.arena) return read();
+  const { world } = ctx, a = buildArena(world, part.arena);
+  const back = { p: world.player.position.clone(), ry: world.player.rotation.y };
+  const at = a.at(...(part.from || [0, 0]));
+  placePlayer(world, [at.x, at.z], part.face ?? Math.PI);
+  if (part.view) { // view: { eye: [x, y, z], at: [x, y, z] } 무대 기준. 그 모습을 잠깐 보여 준 뒤 문서를 연다
+    const e = a.at(part.view.eye[0], part.view.eye[2]), t = a.at(part.view.at[0], part.view.at[2]);
+    world.setFixedCamera([e.x, part.view.eye[1], e.z], [t.x, part.view.at[1], t.z]);
+    await new Promise(r => setTimeout(r, part.view.ms ?? 1600));
+  }
+  try { return await read(); } finally { world.camMode = 'follow'; a.dispose(); world.player.position.copy(back.p); world.player.rotation.y = back.ry; world.snapCamera(); }
+}
+
 function runPart(ctx, scene, part, easy) {
   switch (part.type) {
     case 'choose': return chooseCards(ctx, { title: part.title, prompt: part.prompt, cards: part.cards, figure: part.figure, hint: typeof part.fail === 'string' ? part.fail : undefined, easy });
@@ -98,7 +113,7 @@ function runPart(ctx, scene, part, easy) {
     case 'collect': return collect(ctx, scene, part, easy);
     case 'book': return readBook(ctx, { title: part.title, pages: part.pages.map(p => ({ ...p, scene: p.scene || DIORAMA[p.pic] })), render: p => renderDiorama(p.scene, bookKey(part, p)), onTiming: (label, ms, note) => ctx.world?.perf?.time(label, ms, `${part.title} ${note}`) });
     case 'scene': return part.play(ctx, scene).then(() => true); // 짧은 장면(관아를 차지하는 모습 등)
-    case 'doc': return showDocument(ctx, { title: part.title, heading: part.heading, intro: part.docIntro, items: part.items, src: part.src });
+    case 'doc': return atArena(ctx, part, () => showDocument(ctx, { title: part.title, heading: part.heading, intro: part.docIntro, items: part.items, src: part.src }));
     case 'drive': case 'stops': case 'deliver': case 'find': case 'ambush': case 'sneak': case 'judge': case 'build': return PLAY[part.type](ctx, part, easy);
     default: throw new Error(`unknown part ${part.type}`);
   }
@@ -140,9 +155,9 @@ export function makeKitChapter(def) {
       for (const [k, part] of def.parts.slice(from).entries()) {
         world.perf?.segment(`${def.id} 미니게임 ${from + k + 1}: ${part.title || part.type}`); // 개발용 성능 측정(?perf=1)
         const warm = part.type === 'book' && part.intro ? bookWarmup(part, renderDiorama, 1200, ms => world.perf?.time('역사책 첫 그림(안내 대사 동안 미리)', ms, part.title)) : null;
+        if (part.goal) ctx.setGoal(part.goal); // 부분마다 목표 문장(없으면 앞의 것 그대로)
         if (part.intro) { await sayAll(dialogue, part.intro); dialogue.close(); }
         warm?.();
-        if (part.goal) ctx.setGoal(part.goal); // 부분마다 목표 문장(없으면 앞의 것 그대로)
         if (part.before) part.before(ctx, scene);
         if (['book', 'doc', 'scene'].includes(part.type)) await runPart(ctx, scene, part, false); // 읽기·장면은 첫 시도 점수에 넣지 않는다
         else results.push(await tryPart(ctx, easy => runPart(ctx, scene, part, easy), part.fail));
