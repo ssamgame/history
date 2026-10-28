@@ -1,9 +1,10 @@
 import { test, eq, ok } from './harness.js';
+import * as THREE from 'three';
 import { SOURCES } from '../content/sources.js';
 import { validateScript } from '../core/content.js';
 import j2Script from '../chapters/joseon/j2/script.js';
 import { buildJ2Scene } from '../chapters/joseon/j2/scene.js';
-import j2, { BOARDS, MODELS, LETTER_SPOTS, courtTalk } from '../chapters/joseon/j2/chapter.js';
+import j2, { BOARDS, MODELS, LETTER_SPOTS, courtTalk, markCourt, VOWEL_LABEL_Y } from '../chapters/joseon/j2/chapter.js';
 import { runChapter } from '../core/flow.js';
 import { JOSEON } from '../chapters/index.js';
 import { testWorld, touchSetup, touchBot, memSave } from './bot.js';
@@ -94,3 +95,78 @@ test('j2 D-24: picking places are apart and no card games are left', () => {
   ok(LETTER_SPOTS.length >= 6);
   ok(!JSON.stringify(j2Script.words).includes('options'), 'words are gathered, not chosen on cards');
 });
+
+// ---- D-30 ----
+const fakeCtx = w => ({ world: w, hud: { setCounter() {} }, setGoal() {} });
+test('j2 C-01/C-03: quest list without quiz, everyone first, no road signs (facts moved to people)', () => {
+  ok(!j2Script.goals.some(g => g.includes('확인')), 'no quiz goal');
+  ok(j2Script.npc.sejong.wait[0].text.includes('모두'), 'wait says everyone');
+  ok(j2Script.more.text.includes('모두'), 'more says everyone');
+  for (const k of ['signThrone', 'signJiphyeon', 'signHaerye']) ok(!(k in j2Script.npc), k);
+  ok(j2Script.npc.commoner.first.some(l => l.text.includes('근정전') && l.src.includes('S46')), '근정전 to the commoner');
+  ok(j2Script.npc.scholar.first.some(l => l.text.includes('1420') && l.src.includes('S29')), '집현전 year to the scholar');
+  ok(j2Script.result.some(l => l.text.includes('해례본') && l.src.includes('S49')), '해례본 in the closing lines');
+  ok(j2Script.intro.every(l => !l.text.includes('\n')));
+  const w = testWorld();
+  try {
+    buildJ2Scene(w);
+    eq([...w.npcs.values()].filter(n => n.spot).length, 0, 'no reading signs');
+    const names = w.level.children.map(o => o.name).filter(n => n.startsWith('plaque:')).sort();
+    eq(names, ['plaque:근정전', 'plaque:집현전']);
+    const heard = new Set(['commoner']);
+    markCourt(fakeCtx(w), heard);
+    ok(!w.npcs.get('sejong').mark.visible, '세종 mark hidden until everyone is heard');
+    heard.add('scholar'); markCourt(fakeCtx(w), heard);
+    ok(w.npcs.get('sejong').mark.visible, '세종 mark after everyone');
+  } finally { w.dispose(); }
+});
+
+test('j2 K-01: 세종 sits on the highest dais, above everyone, still reachable', () => {
+  const w = testWorld();
+  try {
+    const sc = buildJ2Scene(w);
+    const sj = w.npcs.get('sejong').mesh;
+    w.level.updateMatrixWorld(true);
+    const headY = m => m.userData.head.getWorldPosition(new THREE.Vector3()).y;
+    ok(sj.userData.seatLift > 0.8, `raised ${sj.userData.seatLift}`);
+    for (const n of w.npcs.values()) if (n.id !== 'sejong') ok(headY(sj) > headY(n.mesh) + 0.8, n.id);
+    ok(sj.userData.seated && sj.userData.legs[0].rotation.x < -1, 'seated');
+    ok(sc.dais && sc.dais.userData.top > 1.4, 'dais higher than the 월대 (1.4)');
+    w.player.position.set(sj.position.x, 0, sj.position.z + 2.1); // 단상 앞(남쪽)에서 대화 거리 안
+    eq(w.nearestNpc(2.8)?.id, 'sejong');
+  } finally { w.dispose(); }
+});
+
+test('j2 C-02/C-03: intro scene and a portal on open ground', () => {
+  const w = testWorld();
+  try {
+    j2.buildScene(w);
+    const sc = j2.introScene({ world: w });
+    ok(sc.shots.length >= j2Script.intro.length);
+    const [px, pz] = j2.portal.at, b = w.bounds;
+    ok(px > b.x0 + 2 && px < b.x1 - 2 && pz > b.z0 + 1 && pz < b.z1 - 1, 'inside');
+    for (const n of w.npcs.values()) ok(Math.hypot(n.mesh.position.x - px, n.mesh.position.z - pz) > 3.5, `clear of ${n.id}`);
+  } finally { w.dispose(); }
+});
+
+test('j2 K-02/K-03: each game starts by talking to 세종; vowel to make is on the floor, not the counter', async () => {
+  const s = touchSetup(j2Script.speakers);
+  const said = [], counters = [];
+  const dist = () => { const a = s.w.player.position, b = s.w.npcs.get('sejong').mesh.position; return Math.hypot(a.x - b.x, a.z - b.z); };
+  const say = s.dialogue.say; s.dialogue.say = l => { said.push({ l, near: dist() }); return say(l); };
+  const setCounter = s.hud.setCounter; s.hud.setCounter = t => { counters.push(t); return setCounter(t); };
+  const bot = touchBot(s, { answers });
+  try {
+    j2.buildScene(s.w, s.ctx);
+    j2.enterStage(s.ctx, 'minigame');
+    await j2.minigame(s.ctx);
+    const S = j2Script.npc.sejong;
+    const at = l => said.findIndex(x => x.l === l);
+    const iC = at(j2Script.consonants.done[0]), iV = at(S.vowelQuest[0]), iVa = said.findIndex(x => x.l.text === j2Script.vowels.ask('ㅡ').text), iW = at(S.wordQuest[0]), iWi = at(j2Script.words[0].intro);
+    ok(iC >= 0 && iC < iV && iV < iVa && iVa < iW && iW < iWi, `order ${[iC, iV, iVa, iW, iWi]}`);
+    ok(said[iV].near < 3.4 && said[iW].near < 3.4, 'talked next to 세종'); // 단상 앞 계단 아래
+    ok(!counters.some(t => t && /「[ㅡㆍㅣ]」/.test(t)), 'letter is not on the counter');
+    eq(s.ctx.testHooks.floorLetters, ['ㅡ', 'ㆍ', 'ㅣ']);
+    ok(VOWEL_LABEL_Y.person > 3.8, 'label above the person model face');
+  } finally { bot.stop(); s.done(); }
+}, { timeout: 150000 });

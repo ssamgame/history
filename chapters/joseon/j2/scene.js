@@ -9,6 +9,17 @@ import { geunjeongjeon } from '../landmarks.js';
 import { addSigns } from '../common.js';
 import { gateLeaves, nameBoard } from '../../kit/gate.js';
 
+// 앉은 자세: 다리를 앞으로 내밀고 팔은 무릎 위에. seat는 앉는 면의 높이(다리 관절이 그 높이에 온다)
+export function sitDown(mesh, seat) {
+  const u = mesh.userData;
+  // 몸만 들어 올린다(인물 자리 높이는 0 그대로 두어, 단상 앞에서 말 걸기 거리가 서 있는 사람과 같다)
+  u.seatLift = seat - 0.55;
+  for (const c of mesh.children) c.position.y += u.seatLift;
+  u.noWalk = true; u.seated = true;
+  for (const l of u.legs) l.rotation.x = -Math.PI / 2;
+  for (const a of u.arms) a.rotation.x = -0.55;
+}
+
 export function buildJ2Scene(world) {
   const L = world.level;
   const mk = (geo, color, x, y, z, parent = L, cast = true) => {
@@ -89,15 +100,60 @@ export function buildJ2Scene(world) {
   scatter(world, { kind: 'pine', count: 20, area: { x0: -60, x1: 60, z0: 20, z1: 50 }, seed: 62, ground: hillH, scale: [1, 1.5] });
   scatter(world, { kind: 'flower', count: 40, area: { x0: -14, x1: 14, z0: 15, z1: 18 }, avoid: [{ x: 0, z: 17, r: 3 }], seed: 63 });
 
+  // 건물 간판(C-03): 이름만 보이고 말 걸 수 없다. 기둥 앞, 처마 바로 아래
   addSigns(world, [
-    { id: 'signThrone', title: '근정전', x: -5.5, z: -6.2 },
-    { id: 'signJiphyeon', title: '집현전', x: 9.5, z: -5.5, ry: -Math.PI / 2 },
-    { id: 'signHaerye', title: '훈민정음 해례본', x: 9, z: 7.5, ry: -Math.PI / 2 },
+    { id: 'signThrone', title: '근정전', x: 0, z: -13.3, plaque: { y: 4.6, back: 0 } },
+    { id: 'signJiphyeon', title: '집현전', x: 11.2, z: 1, ry: -Math.PI / 2, plaque: { y: 3.55, back: 0 } },
   ]);
+
+  // 백성 앞의 방(한자로 쓴 알림 글): 백성은 이 글을 읽지 못한다(도입 장면)
+  {
+    const g = new THREE.Group(); g.position.set(-5, 0, 6.9); L.add(g);
+    for (const sx of [-1, 1]) mk(new THREE.BoxGeometry(0.12, 2.2, 0.12), 0x5a3f2a, sx * 0.75, 1.1, 0, g);
+    mk(new THREE.BoxGeometry(1.7, 1.1, 0.08), 0x6b4a32, 0, 1.6, 0, g);
+    const cv = document.createElement('canvas'); cv.width = 256; cv.height = 160;
+    const c = cv.getContext('2d');
+    if (c) {
+      c.fillStyle = '#efe4c8'; c.fillRect(0, 0, 256, 160);
+      c.fillStyle = '#231c14'; c.font = 'bold 40px serif'; c.textAlign = 'center'; c.fillText('告 示', 128, 46);
+      c.strokeStyle = '#3a3026'; c.lineWidth = 5;
+      for (let k = 0; k < 7; k++) { c.beginPath(); c.moveTo(40 + k * 28, 66); c.lineTo(40 + k * 28, 146); c.setLineDash([9, 6]); c.stroke(); }
+    }
+    const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
+    const paper = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.94), new THREE.MeshLambertMaterial({ map: tex }));
+    paper.position.set(0, 1.6, 0.05); g.add(paper);
+    world.addCollider({ x: -5, z: 6.9, r: 0.8 });
+  }
+
+  // 어좌 단상(K-01): 근정전 앞, 세 단 돌 단상 위의 어좌와 일월오봉도 병풍. 장면에서 가장 높은 단(월대 1.4보다 높다)
+  const SJ = [0, -5.4], TOP = 1.55, SEAT = TOP + 0.42;
+  const dais = new THREE.Group(); dais.position.set(SJ[0], 0, SJ[1]); dais.name = 'throneDais'; L.add(dais);
+  [[3.4, 3.0, 0.5], [2.8, 2.4, 0.5], [2.2, 1.9, 0.55]].reduce((y, [w, d, h]) => { mk(new THREE.BoxGeometry(w, h, d), 0xb3ab99, 0, y + h / 2, 0, dais); return y + h; }, 0);
+  for (let i = 0; i < 3; i++) mk(new THREE.BoxGeometry(1.1, 0.5, 0.45), 0xa59c8a, 0, 0.25 + i * 0.5, 1.75 - i * 0.3, dais, false); // 앞 계단
+  mk(new THREE.BoxGeometry(1.0, 0.42, 0.8), 0xa8392b, 0, TOP + 0.21, -0.1, dais); // 어좌 자리
+  mk(new THREE.BoxGeometry(1.1, 1.0, 0.12), 0xa8392b, 0, SEAT + 0.5, -0.5, dais); // 등받이
+  for (const sx of [-1, 1]) mk(new THREE.BoxGeometry(0.12, 0.35, 0.7), 0xc99a3c, sx * 0.52, SEAT + 0.17, -0.1, dais); // 팔걸이
+  {
+    const cv = document.createElement('canvas'); cv.width = 256; cv.height = 128;
+    const c = cv.getContext('2d');
+    if (c) { // 일월오봉도: 푸른 하늘, 다섯 봉우리, 해와 달
+      c.fillStyle = '#3f6a8a'; c.fillRect(0, 0, 256, 128);
+      c.fillStyle = '#2f6b4e'; for (const [x, hh] of [[40, 70], [88, 54], [128, 90], [168, 54], [216, 70]]) { c.beginPath(); c.moveTo(x - 34, 128); c.lineTo(x, 128 - hh); c.lineTo(x + 34, 128); c.fill(); }
+      c.fillStyle = '#d9412f'; c.beginPath(); c.arc(60, 26, 13, 0, 7); c.fill();
+      c.fillStyle = '#f2efe0'; c.beginPath(); c.arc(196, 26, 13, 0, 7); c.fill();
+    }
+    const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
+    const scr = new THREE.Mesh(new THREE.PlaneGeometry(2.1, 1.05), new THREE.MeshLambertMaterial({ map: tex }));
+    scr.position.set(0, SEAT + 1.15, -0.82); dais.add(scr);
+    mk(new THREE.BoxGeometry(2.2, 1.15, 0.06), 0x6b4a32, 0, SEAT + 1.15, -0.86, dais);
+  }
+  dais.userData.top = TOP;
+  world.addCollider({ x: SJ[0], z: SJ[1], r: 1.55 });
 
   world.addNpc('commoner', LOOKS.commoner, -5, 8.5, Math.PI);
   world.addNpc('scholar', LOOKS.scholar, 8.2, 1, -Math.PI / 2);
-  world.addNpc('sejong', LOOKS.sejong, 0, -5, 0);
+  const sj = world.addNpc('sejong', LOOKS.sejong, SJ[0], SJ[1], 0);
+  sitDown(sj.mesh, SEAT);
 
-  return { start: [0, 8], introFrom: [0, 23], gate, sejongAt: [0, -5] };
+  return { start: [0, 8], introFrom: [0, 23], gate, sejongAt: SJ, dais };
 }
