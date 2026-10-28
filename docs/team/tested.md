@@ -28,3 +28,4 @@
 | 모든 편 (D-21 편 복습 퀴즈) | 2026-10-28 | 6fa10cc | review·save·screens·content·sw·flow·smoke | 통과 (63 묶음) |
 | j1 (D-22 진영 문·말 잇기·이성계 결심·한양 둘러보기) + ch5 closeGate 공용화 | 2026-10-28 | 16b43b6 | j1·ch5·goryeo5·play·kit·content·sw | 통과 (116 묶음) |
 | j3 (D-23 한양 문·말 잇기·앙부일구 그림자·자격루 직접 작동·측우기 눈금) | 2026-10-28 | c7f5ffb | j3·j1·play·kit·content·sw·smoke | 통과 (111 묶음) |
+| j2 (D-24 궁궐 문·말 잇기·세종 결심·그림판 자음·모형 모음·낱자 모으기) + j3 공용 도구 이동 | 2026-10-28 | 90633c1 | j2·j3·j1·play·content·sw·smoke·layout | 통과 (j2·j3 24, 나머지 84 중 layout 2개는 없어진 카드 화면이라 정리 뒤 통과) |
