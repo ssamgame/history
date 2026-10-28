@@ -483,6 +483,7 @@ export function stops(ctx, part, easy) {
       audio.play('correct'); sp.done = true; sp.m.material.color.set(0x2f6b5e);
       sp.lab.material.opacity = 0.55;
       if (sp.say) toast(ctx, sp.say, 'good');
+      if (part.act) part.act(sp.i, s); // 맞는 차례에 닿으면 장면이 움직인다(예: 자격루 물이 차고 구슬이 구름, D-23)
       next += 1; show();
       s.say(sp.talk, () => { if (next === spots.length) setTimeout(() => s.finish(true), 500); });
     } else {

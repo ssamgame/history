@@ -5,6 +5,7 @@ const SOUNDS = {
   wrong: [{ f: 220, d: 0.18, type: 'sawtooth' }],
   whoosh: [{ f: 180, d: 0.35, type: 'sine', to: 60 }],
   water: [{ f: 120, d: 0.6, type: 'sine', to: 40 }],
+  bell: [{ f: 523, d: 0.9, type: 'sine' }, { f: 90, d: 0.3, type: 'triangle', at: 0.45 }], // 자격루의 종과 북(D-23)
 };
 
 export function createAudio() {
