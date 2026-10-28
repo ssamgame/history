@@ -4,9 +4,8 @@
 import * as THREE from 'three';
 import { makeKitChapter } from '../../kit/chapter.js';
 import { BUILD } from '../../kit/town.js';
-import { gateLeaves, nameBoard, enterThroughGate, closeGate } from '../../kit/gate.js';
-import { roam } from '../../../core/flow.js';
-import { sayAll, placePlayer } from '../../joseon/common.js';
+import { gateLeaves, nameBoard } from '../../kit/gate.js';
+import { walkInAndTalk, anyOrderTalk } from '../../kit/talk.js';
 import script from './script.js';
 
 const PEOPLE = ['elder', 'scholar'];
@@ -125,21 +124,8 @@ const base = makeKitChapter({
 });
 
 let scene = null;
-function markVillage(ctx, heard) {
-  const { world, hud } = ctx;
-  PEOPLE.forEach(id => { world.npcs.get(id).mark.visible = !heard.has(id); });
-  world.npcs.get('official').mark.visible = heard.size > 0;
-  const next = world.npcs.get(PEOPLE.find(id => !heard.has(id)) || 'official').mesh.position;
-  world.setGoal({ x: next.x, z: next.z });
-  ctx.setGoal(script.goals[heard.size === PEOPLE.length ? 1 : 0]);
-  hud.setCounter(`들은 이야기 ${heard.size}/${PEOPLE.length}`);
-}
 // 마을 사람 대사: 다른 사람 이야기를 먼저 들었으면 이어 주는 말(bridge)로 시작한다. 다시 말 걸면 later
-export function villageTalk(id, heard) {
-  const n = script.npc[id];
-  if (heard.has(id)) return n.later;
-  return PEOPLE.some(k => k !== id && heard.has(k)) ? [n.bridge, ...n.first] : n.first;
-}
+export const villageTalk = (id, heard) => anyOrderTalk(script, PEOPLE, id, heard);
 
 export const devScene = () => scene; // 개발용(사진 찍기)
 
@@ -148,36 +134,5 @@ export default {
   anyOrder: true, // 마을 사람은 아무 차례로(차례 전 대사 tooEarly가 없다, tests/quest.test.js)
   buildScene(world) { scene = base.buildScene(world); return scene; },
   enterStage(ctx, stage) { scene.gate.setOpen(0); ctx.world.closeView = true; base.enterStage(ctx, stage); },
-  async explore(ctx) {
-    const { world, dialogue, hud } = ctx;
-    world.closeView = true;
-    placePlayer(world, INTRO_FROM);
-    await enterThroughGate(ctx, { from: INTRO_FROM, to: base.layout.start, gate: scene.gate, speed: 1 });
-    closeGate(world, scene.gate);
-    const heard = new Set();
-    markVillage(ctx, heard);
-    await sayAll(dialogue, script.start);
-    dialogue.close();
-    ctx.input.enabled = true;
-    await new Promise(resolve => {
-      const stop = roam(ctx, {
-        async onTalk(id) {
-          const n = script.npc[id];
-          if (PEOPLE.includes(id)) {
-            const isNew = !heard.has(id);
-            await sayAll(dialogue, villageTalk(id, heard));
-            heard.add(id); markVillage(ctx, heard);
-            if (isNew && heard.size < PEOPLE.length) await dialogue.say(script.more);
-            return;
-          }
-          if (id !== 'official') { await sayAll(dialogue, n.always); return; } // 안내판
-          if (!heard.size) { await sayAll(dialogue, n.wait); return; }
-          await sayAll(dialogue, n.first);
-          [...PEOPLE, 'official'].forEach(k => { world.npcs.get(k).mark.visible = false; });
-          world.setGoal(null); hud.setCounter(null);
-          stop(); setTimeout(resolve, 0);
-        },
-      });
-    });
-  },
+  explore(ctx) { return walkInAndTalk(ctx, script, { people: PEOPLE, final: 'official', gate: scene.gate, from: INTRO_FROM, to: base.layout.start }); },
 };

@@ -498,7 +498,7 @@ export function stops(ctx, part, easy) {
 }
 
 // ── deliver ───────────────────────────────────────────
-// 가져다 놓을 물건 모양(카드의 carry: log·sack·scroll·letter). 들 때는 몸 기준, 내려놓으면 바닥 기준(아랫면이 y 0)
+// 가져다 놓을 물건 모양(카드의 carry: log·sack·scroll·notice·letter). 들 때는 몸 기준, 내려놓으면 바닥 기준(아랫면이 y 0)
 const CARRY_THING = {
   log() { // 나무 기둥: 어깨에 메고(눕혀 들고), 내려놓으면 세운다
     const g = new THREE.Group(), m = add(g, new THREE.CylinderGeometry(0.16, 0.18, 2.6, 8), 0x9a6a3a, 0, 0, 0);
@@ -517,6 +517,12 @@ const CARRY_THING = {
     const r = add(g, new THREE.CylinderGeometry(0.12, 0.12, 0.62, 10), 0xf2ede0, 0, 0.12, 0); r.rotation.z = Math.PI / 2;
     for (const x of [-0.36, 0.36]) { const k = add(g, new THREE.CylinderGeometry(0.05, 0.05, 0.12, 8), 0x6b4a32, x, 0.12, 0); k.rotation.z = Math.PI / 2; }
     add(g, box(0.06, 0.26, 0.26), 0xa3262a, 0, 0.12, 0); // 붉은 끈
+    return g;
+  },
+  notice() { // 방(벽보): 세워 든 종이에 먹 글씨 줄
+    const g = new THREE.Group();
+    add(g, box(0.62, 0.8, 0.02), 0xf0e9d8, 0, 0, 0);
+    for (let i = 0; i < 4; i++) add(g, box(0.06, 0.6 - (i % 2) * 0.15, 0.01), 0x2a2420, 0.2 - i * 0.13, 0.02, 0.015);
     return g;
   },
   letter() { // 서양 배가 보낸 편지: 봉투와 붉은 봉인
@@ -576,7 +582,13 @@ export function deliver(ctx, part, easy) {
     stay = -1; b.disc.material.opacity = 0.35; // 같은 원 안에서는 한 번만
     if (b.id === c.bin) {
       audio.play('correct'); toast(ctx, `○ ${c.text} → ${b.label}`, 'good');
-      if (c.carry) { const o = thing(c); setCarry(world.player, null); o.rotation.set(0, 0, 0); o.position.set(b.x + 1.2, c.carry === 'log' ? 1.3 : 0, b.z - 1.4); g.add(o); } // 가져간 것은 그 자리에 내려놓는다(기둥은 세운다)
+      if (c.carry) { // 가져간 것은 그 자리에 내려놓는다(기둥은 세우고, 방은 칸의 drop: [x, y, z, 옆 간격] 자리에 붙이거나 바닥에 눕힌다)
+        const o = thing(c), k = b.placed = (b.placed || 0) + 1;
+        setCarry(world.player, null); o.rotation.set(0, 0, 0);
+        if (b.drop) o.position.set(b.x + b.drop[0] + (k - 1) * (b.drop[3] || 0), b.drop[1], b.z + b.drop[2]);
+        else { o.position.set(b.x + 1.2 + (k - 1) * 0.5, c.carry === 'log' ? 1.3 : 0.02, b.z - 1.4); if (c.carry === 'notice') o.rotation.x = -Math.PI / 2; }
+        g.add(o);
+      }
       i += 1; home(); hold();
       s.say(c.talk, () => { if (i === part.cards.length) setTimeout(() => s.finish(true), 500); });
     } else {

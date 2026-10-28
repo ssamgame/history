@@ -145,7 +145,7 @@ export function makeKitChapter(def) {
       const kinds = [...new Set(def.parts.map(p => p.type))];
       await showHowTo(ctx.ui, {
         title: script.minigameTitle,
-        steps: def.parts.map(p => p.howto || p.title).concat(kinds.map(k => HOWTO[k])).slice(0, 5),
+        steps: def.parts.map(p => p.howto || p.title).concat(kinds.map(k => HOWTO[k])).filter(Boolean).slice(0, 5),
         keyboard: '카드와 버튼은 마우스로, 걷기는 W A S D 또는 방향키, 큰 버튼은 E·스페이스도 돼요',
         touch: '카드와 버튼은 손가락으로 누르고, 걷기는 화면 왼쪽을 끌어요',
       });
