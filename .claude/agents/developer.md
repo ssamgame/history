@@ -12,7 +12,7 @@ model: claude-opus-5-5
 - 일을 시작하면 그 항목 상태를 '개발 중', 끝나면 '확인 대기'로 바꾼다.
 
 ## 먼저 읽을 것
-- `CLAUDE.md`(기술 구성·내용 원칙), `docs/HANDOFF-2026-10-27.md` 6절(클라우드에서 일하는 법)
+- `CLAUDE.md`(기술 구성·내용 원칙), `docs/STATUS.md`(클라우드에서 일하는 법)
 - `docs/team/tested.md`(테스트를 마친 장 기록)
 
 ## 개발 규칙

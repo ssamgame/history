@@ -123,12 +123,12 @@ export function buildJ6Scene(world) {
   });
 
   // 거중기 물레(D-27): 거중기 왼쪽 기둥 곁. 손잡이를 돌리면 매단 돌이 올라간다
-  const winch = new THREE.Group(); winch.position.set(TRACK[0] - 1.6, 0, WALL_Z + 3.2); L.add(winch);
+  const winch = new THREE.Group(); winch.position.set(3, 0, WALL_Z + 2.8); L.add(winch); // 빈자리 둘 사이, 앞을 가리는 건물이 없는 곳
   for (const sx of [-0.7, 0.7]) mk(new THREE.BoxGeometry(0.16, 1.2, 0.16), 0x7a5a3c, sx, 0.6, 0, winch);
   const drum = new THREE.Group(); drum.position.y = 1.1; winch.add(drum);
   { const d = mk(new THREE.CylinderGeometry(0.28, 0.28, 1.3, 10), 0x8a6a45, 0, 0, 0, drum); d.rotation.z = Math.PI / 2;
     for (let k = 0; k < 4; k++) { const sp = mk(new THREE.BoxGeometry(0.08, 1.3, 0.08), 0x5a3f2a, 0.72, 0, 0, drum); sp.rotation.x = k * Math.PI / 4; } } // 손잡이 살(돌리는 막대)
-  world.addCollider({ x: TRACK[0] - 1.6, z: WALL_Z + 3.2, r: 0.8 });
+  world.addCollider({ x: 3, z: WALL_Z + 2.8, r: 0.8 });
 
   world.addNpc('official', LOOKS.joseonOfficial, -6, 7, Math.PI);
   world.addNpc('worker', LOOKS.worker, 7, 4.5, -Math.PI / 2);
@@ -145,7 +145,7 @@ export function buildJ6Scene(world) {
 
   surroundings(world, { bounds: world.bounds, houses: 'thatch', trees: ['pine', 'tree'], count: 10, gap: 8, seed: 19 }); // 걷는 곳 바깥에 그 장소다운 집·나무(깊이감)
   return {
-    start: [0, 8.5], introFrom: [0, 15], yardGate, pulleys: PULLEYS, winch: { x: TRACK[0] - 1.6, z: WALL_Z + 4.6 }, fillers, gapGlow, trolley, stone, setLift, gate, slideTo: x => slideTo(x), liftTo: h => liftTo(h), PICK_H, GAP_H,
+    start: [0, 8.5], introFrom: [0, 15], yardGate, pulleys: PULLEYS, winch: { x: 3, z: WALL_Z + 4.2 }, fillers, gapGlow, trolley, stone, setLift, gate, slideTo: x => slideTo(x), liftTo: h => liftTo(h), PICK_H, GAP_H,
     // 물레를 한 번 돌린다(손잡이가 돌고 돌이 조금 올라간다)
     turnWinch(h) { const a0 = drum.rotation.x; return Promise.all([anim(0.6, t => { drum.rotation.x = a0 + ease(t) * Math.PI / 2; }), liftTo(h)]); },
     // 돌을 옆으로 옮김: 0 = 왼쪽 끝, 1 = 오른쪽 끝

@@ -121,10 +121,15 @@ export async function hwaseongTour(ctx) {
   GAPS.forEach((_, i) => scene.fill(i, true));
   const jj = world.npcs.get('jeongjo');
   world.moveNpc('jeongjo', -16.4, WALL_Z, Math.PI); jj.mesh.position.y = WALL_H; jj.collider.r = 0;
-  const me = world.player.clone(true); me.position.set(-15, WALL_H, WALL_Z + 0.2); me.rotation.y = Math.PI; me.visible = true; world.level.add(me);
+  const me = world.player.clone(true); me.position.set(-15, WALL_H, WALL_Z + 0.2); me.rotation.y = 0; me.visible = true; world.level.add(me);
   world.player.visible = false;
+  // 높은 곳에서 성벽·장안문·거중기를 한눈에(학생과 정조 뒤에서 내려다보며 천천히 옆으로). 둘은 같은 곳(성 밖 북쪽)을 바라본다
   let t = 0;
-  const off = world.onUpdate(dt => { t += dt; const a = -0.6 + Math.min(1, t / 14) * 1.5; world.setFixedCamera([-16 + Math.sin(a) * 13, 7.5, WALL_Z + Math.cos(a) * 13], [-17, 2.5, WALL_Z - 1]); });
+  const off = world.onUpdate(dt => {
+    t += dt; const a = -0.25 + Math.min(1, t / 16) * 0.5;
+    jj.mesh.rotation.y = 0; me.rotation.y = 0; // 둘 다 성 밖(북쪽)을 바라본다(카메라는 뒤에서)
+    world.setFixedCamera([-12 + Math.sin(a) * 20, 17, WALL_Z + Math.cos(a) * 20], [-9, 1.5, WALL_Z - 4]);
+  });
   await ctx.fade(false);
   await sayAll(dialogue, script.tour);
   await sayAll(dialogue, script.result);

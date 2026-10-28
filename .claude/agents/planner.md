@@ -28,7 +28,7 @@ tools: Read, Glob, Grep, Write, Edit
 5. 선생님께 드리는 답 끝에는 늘 "지금 정한 것 / 아직 여쭐 것"을 짧게 붙인다.
 
 ## 먼저 읽을 것
-- `docs/HANDOFF-2026-10-27.md` (지금 상태, 되돌린 다시 만들기, 여쭐 것)
+- `docs/STATUS.md` (지금 상태, 계획/진행/남은 것)
 - `CLAUDE.md` '내용 원칙'·'정한 것과 뺀 것'
 - `docs/team/decisions.md` (지금까지 정한 것)
 
