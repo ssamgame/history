@@ -7,10 +7,12 @@ import { mat } from '../../../core/people.js';
 import { scatter } from '../../../core/props.js';
 import { LOOKS } from '../../../content/characters.js';
 import { createWeather } from '../../../core/weather.js';
-import { angbuilgu, jagyeongnu, cheugugi, jongmyo } from '../landmarks.js';
+import { angbuilgu, jagyeongnu, cheugugi, jongmyo, hourAngle, bowlPoint, ANGBU_HOURS } from '../landmarks.js';
 import { addSigns } from '../common.js';
 import { gateLeaves, nameBoard } from '../../kit/gate.js';
 import { labelSprite } from '../../kit/play.js';
+
+const HOUR_NAMES = ['묘시', '진시', '사시', '오시', '미시', '신시', '유시'];
 
 export function buildJ3Scene(world) {
   const L = world.level;
@@ -33,10 +35,27 @@ export function buildJ3Scene(world) {
   // 1) 길가의 앙부일구 (종묘 앞 길가에 두었다): 두 단 돌받침, 십자 받침, 네 다리, 시각선을 새긴 청동 그릇
   // 크게 만든 앙부일구(D-23): 그릇 안에 그림자 바늘의 그림자(검은 줄)가 시각선을 따라 움직인다
   const DIAL = [-8, 5];
-  const dial = angbuilgu(); dial.position.set(DIAL[0], 0, DIAL[1]); dial.scale.setScalar(2); L.add(dial);
-  world.addCollider({ x: DIAL[0], z: DIAL[1], r: 2.4 });
-  const shadow = new THREE.Group(); shadow.position.set(0, 1.62, 0); dial.add(shadow);
-  { const m = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.02, 0.72), new THREE.MeshBasicMaterial({ color: 0x0c0a08, transparent: true, opacity: 0.9 })); m.position.z = 0.38; m.rotation.x = -0.5; shadow.add(m); } // 바깥쪽 끝이 그릇 벽을 따라 올라간다
+  const dial = angbuilgu(); dial.position.set(DIAL[0], 0, DIAL[1]); dial.scale.setScalar(2.6); L.add(dial); // D-30 S-01: 더 크게
+  world.addCollider({ x: DIAL[0], z: DIAL[1], r: 3 });
+  // 그릇 테두리 안쪽의 시각 이름(묘시~유시). 시각 칸을 누르는 동안에는 숨기고 누르는 단추가 그 자리에 뜬다
+  const hourTags = [];
+  for (let k = 0; k < ANGBU_HOURS; k++) {
+    const t = labelSprite(HOUR_NAMES[k], { size: 0.2 }); t.material.depthTest = true;
+    const q = bowlPoint(hourAngle(k), 0.28); t.position.set(q.x * 0.86, q.y + 0.1, q.z * 0.86); dial.add(t); hourTags.push(t);
+  }
+  // 그림자: 그릇 바닥 가운데에서 안쪽 벽을 따라 테두리 가까이까지 뻗는 검은 띠(그룹을 돌리면 그 방위각 쪽으로). 끝으로 갈수록 넓어진다
+  const shadow = new THREE.Group(); dial.add(shadow);
+  { const pos = [], idx = [], N = 14;
+    for (let i = 0; i <= N; i++) {
+      const e = Math.PI / 2 - 0.08 - (Math.PI / 2 - 0.08 - 0.3) * (i / N), p = bowlPoint(0, e).multiplyScalar(1), half = 0.04 + 0.07 * (i / N);
+      const r = 0.97; // 그릇 면보다 살짝 안쪽
+      const x = p.x * r, y = 2.25 + (p.y - 2.25) * r, z = p.z * r;
+      pos.push(x - half, y, z, x + half, y, z);
+      if (i) { const k = i * 2; idx.push(k - 2, k - 1, k, k - 1, k + 1, k); }
+    }
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setIndex(idx);
+    const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0x0c0a08, transparent: true, opacity: 0.7, side: THREE.DoubleSide, depthWrite: false }));
+    shadow.add(m); }
 
   // 2) 보루각과 자격루: 물항아리 계단, 나무 인형 상자, 종과 북
   const hallG = new THREE.Group(); hallG.position.set(9, 0, -4); L.add(hallG);
@@ -53,15 +72,23 @@ export function buildJ3Scene(world) {
   const gauge = cheugugi(); gauge.position.set(GAUGE[0], 0, GAUGE[1]); L.add(gauge);
   world.addCollider({ x: GAUGE[0], z: GAUGE[1], r: 1.6 });
   // 측우기 크게 보기(D-23): 쇠 원통을 비쳐 보이게 하고, 안에 고이는 빗물과 옆의 자(눈금 1~6)를 보인다
-  const water = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 1, 16), new THREE.MeshLambertMaterial({ color: 0x7cc3ea }));
-  water.position.set(0, 1.0, 0); water.scale.y = 0.001; water.visible = false; gauge.add(water);
-  const ruler = new THREE.Group(); ruler.visible = false; ruler.position.set(0.34, 0, 0); gauge.add(ruler);
-  { const st = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.8, 0.03), new THREE.MeshLambertMaterial({ color: 0xd8c9a0 })); st.position.y = 1.38; ruler.add(st);
-    for (let n = 1; n <= 6; n++) {
-      const tk = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.012, 0.035), new THREE.MeshBasicMaterial({ color: 0x3a3028 })); tk.position.set(-0.02, 1.0 + n * 0.12, 0.01); ruler.add(tk);
-      const lab = labelSprite(String(n), { size: 0.13 }); lab.position.set(0.13, 1.0 + n * 0.12, 0.02); ruler.add(lab);
+  // D-30 S-04: 측우기 속 크게 보기 — 앞쪽 반을 잘라 낸 쇠 원통(단면), 안쪽 벽의 눈금 1~6, 차오르는 빗물
+  const section = new THREE.Group(); section.visible = false; gauge.add(section);
+  const ironM = new THREE.MeshLambertMaterial({ color: 0x4a4a48, side: THREE.DoubleSide });
+  { const shell = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.72, 24, 1, true, Math.PI / 2, Math.PI), ironM); shell.position.y = 1.35; section.add(shell);
+    const inside = new THREE.Mesh(new THREE.CylinderGeometry(0.185, 0.185, 0.72, 24, 1, true, Math.PI / 2, Math.PI), new THREE.MeshLambertMaterial({ color: 0xbdb6a6, side: THREE.BackSide })); inside.position.y = 1.35; section.add(inside); // 밝은 안쪽 벽(눈금이 잘 보이게)
+    for (const sx of [-1, 1]) { const cut = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.72, 0.02), ironM); cut.position.set(sx * 0.2, 1.35, 0); section.add(cut); } // 잘린 가장자리
+    const bottom = new THREE.Mesh(new THREE.CircleGeometry(0.2, 24, Math.PI, Math.PI), ironM); bottom.rotation.x = -Math.PI / 2; bottom.position.y = 0.995; section.add(bottom);
+    for (let n = 1; n <= 6; n++) { // 눈금: 안쪽 뒷벽에 가로줄
+      const tk = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.012, 0.01), new THREE.MeshBasicMaterial({ color: 0x2a221a })); tk.position.set(0, 1.0 + n * 0.12, -0.17); section.add(tk);
+      for (const sx of [-1, 1]) { const e = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.016, 0.03), new THREE.MeshBasicMaterial({ color: 0xf4ead2 })); e.position.set(sx * 0.215, 1.0 + n * 0.12, 0.012); section.add(e); } // 잘린 가장자리에도 눈금(물 앞에서도 보이게)
     } }
-  const ironMats = new Map();
+  const water = new THREE.Group(); water.visible = false; gauge.add(water);
+  { const wm = new THREE.MeshLambertMaterial({ color: 0x6fb6e4, transparent: true, opacity: 0.5, depthWrite: false, side: THREE.DoubleSide });
+    const half = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 1, 24, 1, false, Math.PI / 2, Math.PI), wm); half.position.y = 0.5; water.add(half);
+    const face = new THREE.Mesh(new THREE.PlaneGeometry(0.36, 1), wm); face.position.y = 0.5; water.add(face); }
+  water.position.y = 1.0; water.scale.y = 0.001;
+  const ironHidden = [];
   mk(new THREE.BoxGeometry(3, 2.4, 3), 0x8c8577, -12, 1.2, -10);
   for (let i = 0; i < 4; i++) { const h = 0.6 * (i + 1); mk(new THREE.BoxGeometry(0.9, h, 0.6), 0xa59c8a, -10.1, h / 2, -7.3 - i * 0.6); } // 오르는 돌계단
   world.addCollider({ x: -12, z: -10, r: 2 });
@@ -81,13 +108,8 @@ export function buildJ3Scene(world) {
   for (let x = -25; x <= -17; x += 2) world.addCollider({ x, z: -2, r: 1.2 });
   scatter(world, { kind: 'pine', count: 30, area: { x0: -80, x1: -50, z0: -40, z1: 40 }, seed: 73, ground: hillH, scale: [1.1, 1.7] });
 
-  // 안내판(볼거리)
-  addSigns(world, [
-    { id: 'signJongmyo', title: '종묘', x: -21, z: 1.5 },
-    { id: 'signDial', title: '앙부일구', x: -11.5, z: 7.5 },
-    { id: 'signClock', title: '자격루', x: 2.5, z: -6.5 },
-    { id: 'signGauge', title: '측우기', x: -1, z: -10 },
-  ]);
+  // 건물 간판(C-03): 길 위 안내판은 없애고, 보루각 처마 아래에 이름만(기둥 앞, 낮은 카메라에서 보이게)
+  addSigns(world, [{ id: 'plaqueBorugak', title: '보루각', x: 9, z: 0.6, ry: 0, plaque: { y: 3.75, back: 1.12 } }]);
 
   // 남쪽 문(시작 장면): 짧은 담 사이 나무 문, 길옆 「한양」 이름판
   const GATE_Z = 12.2;
@@ -117,29 +139,36 @@ export function buildJ3Scene(world) {
   // 부드럽게 바꾸기: seconds 동안 f(k)를 0→1로 부르고 끝나면 풀리는 약속
   const tween = (seconds, f) => new Promise(resolve => { let k = 0; const off = world.onUpdate(dt => { k = Math.min(1, k + dt / seconds); f(k); if (k >= 1) { off(); resolve(); } }); });
   return {
-    start: [0, 9], introFrom: [0, 15], gate, dial, gauge, clock, shadow,
-    dialAt: DIAL, gaugeAt: GAUGE, gaugeStand: [GAUGE[0], GAUGE[1] + 7],
+    start: [0, 9], introFrom: [0, 15], gate, dial, gauge, clock, shadow, rain, tween,
+    dialAt: DIAL, gaugeAt: GAUGE, gaugeStand: [GAUGE[0], GAUGE[1] + 4],
+    // 다가가 살펴보는 자리(C-05): 앙부일구·보루각·측우기 바로 앞(학생 쪽)
+    dialFront: { x: DIAL[0], z: DIAL[1] + 3.6 }, dialStand: [DIAL[0], DIAL[1] + 3.8],
+    clockFront: { x: 9, z: 1.8 }, gaugeFront: { x: GAUGE[0], z: GAUGE[1] + 2.4 },
     setRain(on) { rain.points.visible = on; },
     ringClock() { ring = 3; },
-    // 해가 움직여 그림자가 tile(동물 자리) 쪽을 가리키게 된다
-    moveShadow(tile) {
-      const a0 = shadow.rotation.y, a1 = Math.atan2(tile.x - DIAL[0], tile.z - DIAL[1]);
-      shadow.userData.target = a1;
-      return tween(1.2, k => { shadow.rotation.y = a0 + (a1 - a0) * k * k * (3 - 2 * k); });
+    showHourTags(on) { hourTags.forEach(t => { t.visible = on; }); },
+    // 시각 칸 k를 누르는 단추 자리(테두리 바로 안쪽, 세계 좌표)
+    hourPoint(k) { dial.updateWorldMatrix(true, false); return dial.localToWorld(bowlPoint(hourAngle(k), 0.16)); },
+    // 해가 움직여 그림자가 시각 칸 k를 가리키게 된다
+    moveShadow(k) {
+      const a0 = shadow.rotation.y, a1 = hourAngle(k);
+      shadow.userData.hour = k;
+      return tween(1.2, f => { shadow.rotation.y = a0 + (a1 - a0) * f * f * (3 - 2 * f); });
     },
+    // 측우기 속 크게 보기: 커지고, 앞쪽 반을 잘라 낸 단면과 눈금이 보인다
     showGauge(on) {
-      gauge.scale.setScalar(on ? 3 : 1); water.visible = ruler.visible = on;
-      if (!on) water.scale.y = 0.001;
-      gauge.traverse(o => {
-        if (!o.isMesh || o === water || o.parent === ruler || o.parent?.parent === ruler || o.position.y < 1) return;
-        if (on && !ironMats.has(o)) { ironMats.set(o, o.material); o.material = o.material.clone(); o.material.transparent = true; o.material.opacity = 0.5; }
-        if (!on && ironMats.has(o)) { o.material = ironMats.get(o); ironMats.delete(o); }
-      });
+      gauge.scale.setScalar(on ? 3 : 1); section.visible = water.visible = on;
+      if (!on) { water.scale.y = 0.001; gauge.userData.level = 0; }
+      if (on) gauge.children.forEach(o => { if (o.isMesh && o.position.y >= 0.99 && o.visible) { o.visible = false; ironHidden.push(o); } });
+      else ironHidden.splice(0).forEach(o => { o.visible = true; });
     },
+    // 눈금 n 옆 단추 자리(세계 좌표)
+    tickPoint(n) { gauge.updateWorldMatrix(true, false); return gauge.localToWorld(new THREE.Vector3(0.42, 1.0 + n * 0.12, 0)); },
     // 빗물이 lv 눈금까지 차오른다(처음부터)
-    fillGauge(lv) {
-      gauge.userData.level = lv;
-      return tween(2, k => { const h = Math.max(0.001, lv * 0.12 * k); water.scale.y = h; water.position.y = 1.0 + h / 2; });
+    async fillGauge(lv) {
+      gauge.userData.level = lv; gauge.userData.filling = true;
+      await tween(2.2, k => { water.scale.y = Math.max(0.001, lv * 0.12 * k); });
+      gauge.userData.filling = false;
     },
   };
 }
