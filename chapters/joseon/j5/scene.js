@@ -21,6 +21,49 @@ export function groundH(x, z) {
   return -Math.min(9, (e - 1.05) * 14);
 }
 
+// 관절 넣기(D-30 N-03·N-05): 기본 인물의 한 덩어리 다리·팔을 허벅지-무릎-종아리, 위팔-팔꿈치-아래팔로 나눈다(재질·손·신발은 그대로 쓴다).
+// 다리.userData.knee, 팔.userData.elbow로 굽힌다. 무릎을 꿇거나 쪼그려 앉는 사람에게만 쓴다
+export function addJoints(person) {
+  const u = person.userData;
+  if (u.jointed) return person;
+  u.legs.forEach(l => {
+    const [box, shoe] = l.children, m = box.material;
+    l.clear();
+    const thigh = new THREE.Mesh(new THREE.BoxGeometry(0.21, 0.3, 0.23), m); thigh.position.y = -0.15; thigh.castShadow = true; l.add(thigh);
+    const knee = new THREE.Group(); knee.position.y = -0.28; l.add(knee);
+    const shin = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.28, 0.22), m); shin.position.y = -0.13; shin.castShadow = true; knee.add(shin);
+    if (shoe) { shoe.position.set(0, -0.22, 0.05); knee.add(shoe); }
+    l.userData.knee = knee;
+  });
+  u.arms.forEach(a => {
+    const [box, cuff, ...rest] = a.children, hand = a.children.find(c => c.name === 'hand');
+    const keep = rest.filter(c => c !== hand); // 손에 든 것(창 등)은 그대로 둔다
+    a.clear();
+    const upper = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.38, 0.2), box.material); upper.position.y = -0.18; upper.castShadow = true; a.add(upper);
+    const elbow = new THREE.Group(); elbow.position.y = -0.36; a.add(elbow);
+    const fore = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.34, 0.19), box.material); fore.position.y = -0.15; fore.castShadow = true; elbow.add(fore);
+    cuff.position.set(0, -0.3, 0); elbow.add(cuff);
+    if (hand) { hand.position.set(0, -0.42, 0); elbow.add(hand); }
+    keep.forEach(c => a.add(c));
+    a.userData.elbow = elbow;
+  });
+  u.jointed = true;
+  return person;
+}
+// 추위에 웅크린 자세(N-03): 무릎을 세워 쪼그려 앉고, 두 팔로 무릎을 감싸 안고, 고개를 숙인다. 떨림은 장면이 매 프레임 준다
+export function huddlePose(person) {
+  addJoints(person);
+  const u = person.userData;
+  u.manual = true; u.noWalk = true;
+  // 땅에 주저앉아 무릎을 세우고(허벅지는 앞으로 조금 들리고 종아리는 아래로), 몸을 앞으로 웅크린다.
+  // 몸 숙임은 자기 방향 기준이 되게 회전 순서를 YXZ로(moveNpc는 rotation.y만 바꾼다)
+  person.rotation.order = 'YXZ'; person.rotation.x = 0.3;
+  u.legs.forEach((l, i) => { l.rotation.set(-1.85 - 0.3, 0, (i ? -1 : 1) * 0.1); l.userData.knee.rotation.x = 1.75; });
+  u.arms.forEach((a, i) => { a.rotation.set(-1.25, 0, (i ? 1 : -1) * 0.35); a.userData.elbow.rotation.x = -1.3; });
+  u.head.rotation.x = 0.45;
+  return 0.43; // 내려앉는 높이(엉덩이가 땅 가까이)
+}
+
 function seeded(s) { return () => (s = (s * 16807) % 2147483647) / 2147483647; }
 
 export function buildJ5Scene(world) {
@@ -117,11 +160,27 @@ export function buildJ5Scene(world) {
   scatter(world, { kind: 'pine', count: 60, area: { x0: -80, x1: 80, z0: -80, z1: 80 }, avoid: [{ x: 0, z: 0, r: 26 }, { x: 0, z: 52, r: 30 }], seed: 91, ground: groundH, scale: [1, 1.6], color: 0x41604a });
   createWeather(world, 'snow', { count: 700 });
 
+  // 길 위 안내판 대신 건물 간판(C-03): 행궁 처마 아래, 서문 인방 위(성안 쪽). 해설은 사람 대사로 옮겼다
   addSigns(world, [
-    { id: 'signFortress', title: '남한산성', x: 5, z: 4 },
-    { id: 'signHaenggung', title: '행궁', x: 8, z: -8 },
-    { id: 'signWestGate', title: '서문', x: -14, z: -3.6, ry: Math.PI / 2 },
+    { id: 'plaqueHaenggung', title: '행궁', x: 0, z: -8.6, ry: 0, plaque: { y: 3.0, back: 0.8 } },
+    { id: 'plaqueWestGate', title: '서문', x: -18.2, z: 0, ry: Math.PI / 2, plaque: { y: 3.0, back: 0.92 } },
   ]);
+
+  // 추위에 떠는 백성(N-03): 꺼진 화톳불 곁에 웅크려 앉아 떤다. 곁의 아이도 함께
+  const folk = world.addNpc('coldfolk', LOOKS.peasant, -3.4, 8.3, Math.atan2(2.4, 1.7));
+  const drop = huddlePose(folk.mesh); folk.mesh.position.y = -drop; folk.mark.position.y = 3.0;
+  const kid = makePerson(LOOKS.villager); kid.scale.setScalar(0.72); kid.position.set(-4.3, -drop * 0.72, 8.9); kid.rotation.y = Math.atan2(3.3, 1.1); huddlePose(kid); L.add(kid);
+  // 도입 장면(C-03)에만 쓰는 무리: ① 벌판에서 산성 쪽으로 올라오는 청나라 군대 ② 서문 밖에서 걸어 들어오는 인조와 세자·신하
+  const introQing = new THREE.Group(); introQing.visible = false; L.add(introQing);
+  for (let i = 0; i < 12; i++) { const q = makePerson(LOOKS.qingSoldier); q.position.set(-4 + (i % 4) * 2.2, 0, 40 + Math.floor(i / 4) * 2.4); q.rotation.y = Math.PI; introQing.add(q); }
+  for (const x of [-5.4, 4.4]) { const f = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 1.8).translate(0.7, 0, 0), new THREE.MeshLambertMaterial({ color: x < 0 ? 0xd9a441 : 0x3c5a7a, side: THREE.DoubleSide })); f.position.set(x, 3.2, 40); f.userData.dy = 3.2; introQing.add(f);
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 4.2, 5), mat(0x5a3f2a)); pole.position.set(x, 2.1, 40); pole.userData.dy = 2.1; introQing.add(pole); }
+  const introKing = new THREE.Group(); introKing.visible = false; L.add(introKing);
+  [[LOOKS.injo, 0, 0], [{ ...LOOKS.injo, robe: 0x4a6a58, hat: 'official' }, -1.6, -1.1], [LOOKS.joseonOfficial, -1.6, 1.1], [LOOKS.joseonSoldier, -3.2, -0.9], [LOOKS.joseonSoldier, -3.2, 0.9]]
+    .forEach(([look, x, z]) => { const p = makePerson(look); p.position.set(x, 0, z); p.rotation.y = Math.PI / 2; introKing.add(p); });
+  introKing.position.set(-22.5, 0, 0); // 서문 바로 밖(더 멀면 비탈 아래로 숨는다)
+  const groundAll = g => g.children.forEach(c => { c.position.y = groundH(g.position.x + c.position.x, g.position.z + c.position.z) + (c.userData.dy || 0); });
+  groundAll(introQing); groundAll(introKing);
 
   world.addNpc('soldier', LOOKS.joseonSoldier, -9, 6, Math.PI * 0.7);
   world.addNpc('keeper', LOOKS.worker, 9, -2, -Math.PI / 2);
@@ -131,12 +190,17 @@ export function buildJ5Scene(world) {
 
   world.onUpdate((dt, t) => {
     for (const f of fires) f.fx.update(dt, t);
+    // 추위에 떠는 몸: 빠르고 잘게 좌우로 떨고, 이따금 더 세게 떤다(사람마다 박자가 다르다)
+    if (folk.mesh.visible) folk.mesh.rotation.z = Math.sin(t * 37) * 0.022 * (1 + 0.6 * Math.max(0, Math.sin(t * 0.9)));
+    kid.rotation.z = Math.sin(t * 41 + 1.3) * 0.025;
+    if (introQing.visible) groundAll(introQing);
+    if (introKing.visible) groundAll(introKing);
   });
 
   backdropMountains(world.level, { color: 0xc8ccd0, radius: 130 }); // 먼 산줄기(깊이감)
   surroundings(world, { bounds: world.bounds, trees: ['pine', 'bare'], count: 10, snow: true, gap: 8, seed: 17 }); // 걷는 곳 바깥에 그 장소다운 집·나무(깊이감)
   return {
-    start: [-12, 1], introFrom: [-26, 0], gate, fires, wood: { x: 1.6, z: 9.2 }, westGate: [-WALL.rx, 0],
+    start: [-12, 1], introFrom: [-26, 0], gate, fires, introQing, introKing, coldKid: kid, wood: { x: 1.6, z: 9.2 }, westGate: [-WALL.rx, 0],
     resetFires() { fires.forEach(f => setFire(f, false)); },
     light(f) { setFire(f, true); },
     allLit() { fires.forEach(f => setFire(f, true)); },

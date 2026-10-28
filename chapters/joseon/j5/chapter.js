@@ -1,8 +1,9 @@
 // 조선편 5장 「병자호란과 남한산성」(D-26): 서문으로 들어와 병사·창고지기 이야기(아무 차례) → 행궁 앞 김상헌·최명길의 의논 →
 // 신하를 같은 생각의 대신 곁으로 데려가기 → 장작을 들고 화톳불 켜기 → 인조를 따라 서문을 나서 삼전도까지 → 삼궤구고두례 → 퀴즈.
-import { buildJ5Scene } from './scene.js';
+import { buildJ5Scene, addJoints } from './scene.js';
 import { showHowTo } from '../../../core/minigame.js';
-import { PLAY, buildArena } from '../../kit/play.js';
+import { PLAY, buildArena, labelSprite } from '../../kit/play.js';
+import { waitInteract } from '../../../core/portal.js';
 import * as THREE from 'three';
 import { mat, makePerson, setCarry } from '../../../core/people.js';
 import { roam } from '../../../core/flow.js';
@@ -24,8 +25,9 @@ const HALL = {
 export const SIDES = { cheok: { x: -10, z: -5 }, ju: { x: 10, z: -5 } };
 const OFFICIAL_SPOTS = [{ x: -5, z: 5 }, { x: 6, z: 7 }, { x: -12, z: 8 }, { x: 13, z: 3 }];
 
-const PEOPLE = ['soldier', 'keeper'], MINISTERS = ['kimsangheon', 'choemyeonggil'];
-const SPOT = [0, -3];
+export const PEOPLE = ['soldier', 'keeper'];
+const MINISTERS = ['kimsangheon', 'choemyeonggil'];
+const SPOT = [0, -3], END = [0, 5.5]; // END: 미니게임이 끝나 마을로 돌아온 자리(앞에 빛나는 문)
 let scene = null;
 
 export const PLAYER = { robe: 0x4a556a, hat: 'jeollip', gear: 'spear', trim: 0xd8d0bc, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } };
@@ -40,11 +42,11 @@ function woodBundle() {
 
 // 화톳불 켜기 한 번: 시간 안에 여섯 개 모두 켜면 성공. 꺼진 불 가까이(2.2 안)에서 대화 버튼을 누르면 켜진다.
 // 화살표는 가장 가까운 꺼진 불을 가리킨다.
-function lightFires(ctx, easy) {
+function lightFires(ctx, easy, { stay = false } = {}) {
   const { world, hud, audio } = ctx;
   const duration = easy ? 110 : 75;
   scene.resetFires();
-  placePlayer(world, SPOT);
+  if (!stay) placePlayer(world, SPOT);
   ctx.input.enabled = true;
   let t = 0, done = false, near = null, carrying = false, atWood = false;
   const bundle = woodBundle();
@@ -97,28 +99,55 @@ async function followInjo(ctx) {
   const { world, dialogue } = ctx;
   const n = world.npcs.get('injo'), [gx, gz] = scene.westGate;
   n.mesh.visible = true; n.collider.r = 0.5; world.moveNpc('injo', 0, -7.6, 0);
-  ctx.setGoal(script.goals[4]);
+  // 다가가서 말을 걸어야 떠난다(C-05): 출발 전 인조의 하소연(N-04)
+  n.mark.visible = true;
+  await waitInteract(ctx, { pos: n.mesh.position, quest: script.goals[5], label: '인조와 이야기하기', mark: false });
+  n.mark.visible = false;
+  ctx.input.enabled = false;
+  world.setTalkCamera(n.mesh);
+  await sayAll(dialogue, script.npc.injo.first);
+  world.camMode = 'follow';
+  ctx.setGoal(script.goals[6]);
   await sayAll(dialogue, script.walk.start); dialogue.close();
   const b0 = world.bounds; world.bounds = { ...b0, x0: gx - 6 }; // 서문 밖까지 걸을 수 있게
   scene.gate.setOpen(1);
+  ctx.testHooks.ledBy = 'injo';
   await leadWalk(ctx, { id: 'injo', path: [[-4, -3], [-12, 0], [gx + 1, 0], [gx - 4, 0]], stand: [gx + 1.5, 0], face: -Math.PI / 2 });
   world.bounds = b0;
 }
 
-// 무릎 꿇고 머리를 조아리는 몸짓(D-26 선생님: 자연스럽게). k: 무릎 꿇기 0~1, b: 머리 조아리기 0~1.
-// 몸이 내려가며 다리(종아리)가 뒤로 접혀 땅에 닿고, 두 손은 무릎 위에 있다가 조아릴 때 앞으로 땅을 짚는다.
-// 몸은 엉덩이(다리 시작점, 높이 0.55)를 축으로 앞으로 숙이고, 다리는 그만큼 되돌려 늘 땅에 붙어 있다
+// 무릎 꿇고 머리를 조아리는 몸짓(D-26, D-30 N-05 선생님: 관절과 고개를 자연스럽게, 순서 있게). k: 무릎 꿇기 0~1, b: 머리 조아리기 0~1.
+// 무릎 꿇기: 먼저 무릎을 굽혀 몸을 낮추고(쪼그림), 무릎이 땅에 닿으면 종아리를 뒤로 눕혀 발뒤꿈치 위에 앉는다. 두 손은 허벅지 위.
+// 조아리기: 손이 먼저 앞으로 나가 땅을 짚고, 이어 허리가 굽고, 마지막에 고개가 숙여진다(일어날 때는 거꾸로).
+// 몸은 엉덩이(다리 시작점, 높이 0.55)를 축으로 숙이고, 다리는 그만큼 되돌려 늘 땅에 붙어 있다
 const ease = t => t * t * (3 - 2 * t);
+const ss = (a, b, x) => ease(Math.min(1, Math.max(0, (x - a) / (b - a))));
 const HIP = 0.55;
 export function kowtowPose(holder, k, b) {
   const p = holder.userData.body, u = p.userData;
-  const lean = 0.06 * k + 0.45 * b; // 넓은 도포가 엎드린 것처럼 눕지 않게 몸은 조금만 숙이고 고개와 팔로 조아린다
+  addJoints(p);
+  const k1 = ss(0, 0.55, k), k2 = ss(0.45, 1, k);          // 쪼그려 내려가기 → 무릎 대고 뒤로 앉기
+  const ba = ss(0, 0.6, b), bb = ss(0.15, 0.85, b), bh = ss(0.4, 1, b); // 손 → 허리 → 고개
+  const lean = 0.12 * k1 - 0.07 * k2 + 0.7 * bb;
+  const drop = 0.25 * k1 + 0.06 * k2;
   p.rotation.x = lean;
-  p.position.set(0, -0.5 * k + HIP * (1 - Math.cos(lean)), -HIP * Math.sin(lean)); // 도포 끝자락이 땅에 닿게 앉는다
-  if (u.legs) u.legs.forEach(l => { l.rotation.x = 1.45 * k - lean; const kn = l.userData.knee; if (kn) kn.rotation.x = 0; });
-  if (u.arms) u.arms.forEach((a, i) => { a.rotation.x = -0.4 * k - 1.0 * b; a.rotation.z = (i ? -1 : 1) * 0.1 * b; });
-  if (u.head) u.head.rotation.x = 0.7 * b; // 이마가 땅 쪽으로
+  p.position.set(0, -drop + HIP * (1 - Math.cos(lean)), -HIP * Math.sin(lean)); // 도포 끝자락이 땅에 닿게 앉는다
+  const thigh = 1.0 * k1 + 0.5 * k2, knee = 2.0 * k1 + 1.05 * k2;
+  u.legs.forEach(l => { l.rotation.x = -thigh - lean; l.userData.knee.rotation.x = knee; });
+  u.arms.forEach((a, i) => {
+    a.rotation.x = -0.5 * k - 1.25 * ba;                   // 허벅지 위 → 앞으로 뻗어 땅 짚기
+    a.rotation.z = (i ? -1 : 1) * 0.12 * ba;
+    a.userData.elbow.rotation.x = -0.55 * k + 0.45 * ba;   // 허벅지 위에서는 굽히고, 땅을 짚을 때 편다
+  });
+  u.head.rotation.x = 0.15 * k + 0.65 * bh;                 // 이마가 땅 쪽으로
 }
+
+// 삼전도의 옷 색(N-05): 인조는 짙은 남색 옷으로 세자(짙은 초록)·신하(회갈색)와 뚜렷이 다르게
+export const BOW_LOOKS = {
+  king: { ...LOOKS.injo, robe: 0x1f2f86, trim: 0xd9a441 },
+  prince: { ...LOOKS.injo, robe: 0x4a6a58, trim: 0x2b241c, hat: 'official' },
+  official: { ...LOOKS.joseonOfficial, robe: 0x6b5d4f },
+};
 
 // 삼전도: 수항단 위의 청 태종, 단 아래로 걸어 나온 인조가 세 번 무릎 꿇고 아홉 번 머리를 조아린다(뒤의 세자·신하들도 함께)
 const SAMJEON = {
@@ -173,8 +202,8 @@ async function samjeondo(ctx) {
   }
   // 인조(쪽빛 옷)와 뒤따르는 세자·신하들: 사람마다 바깥 묶음(자리·방향) 안에 몸을 두고, 몸이 엉덩이를 축으로 숙인다
   const holder = (look, off) => { const h = new THREE.Group(); h.rotation.y = Math.PI; h.userData.off = off; const p = makePerson(look); p.userData.noWalk = true; p.userData.manual = true; h.add(p); h.userData.body = p; g.add(h); return h; };
-  const injo = holder({ ...LOOKS.injo, robe: 0x3c4a6a }, [0, 0]);
-  const follow = [[-1.4, 2.2], [1.4, 2.2], [-2.6, 3.6], [0, 3.6], [2.6, 3.6]].map(([x, z], i) => holder(i === 0 ? { ...LOOKS.injo, robe: 0x4a556a, hat: 'official' } : LOOKS.joseonOfficial, [x, z]));
+  const injo = holder(BOW_LOOKS.king, [0, 0]);
+  const follow = [[-1.4, 2.2], [1.4, 2.2], [-2.6, 3.6], [0, 3.6], [2.6, 3.6]].map(([x, z], i) => holder(i === 0 ? BOW_LOOKS.prince : BOW_LOOKS.official, [x, z]));
   const bowers = [injo, ...follow];
   const place = z => bowers.forEach(h => h.position.set(h.userData.off[0], 0, z + h.userData.off[1]));
   place(12);
@@ -190,20 +219,21 @@ async function samjeondo(ctx) {
   await anim(3.2, k => place(12 - k * 10));
   world.autoMove = null; world.speedScale = 1;
   bowers.forEach(h => { const b = h.userData.body; b.userData.manual = true; b.userData.noWalk = true; });
-  world.setFixedCamera([O.x - 7.6, 2.8, O.z + 5], [O.x + 0.4, 0.8, O.z + 2.2]); // 왼쪽 옆에서 낮게 보아 몸짓이 잘 보이게(뒤따르는 학생이 가리지 않게)
+  world.setFixedCamera([O.x - 7.2, 3.0, O.z - 3.2], [O.x + 0.5, 0.6, O.z + 3.4]); // 카메라 예외: 앞 왼쪽에서 비스듬히 보아 맨 앞 인조와 뒤 세자·신하들의 몸짓이 함께 보이게(D-30 N-05)
   await dialogue.say(L[1]); dialogue.close();
   await dialogue.say(L[2]); dialogue.close();
-  // 세 번 무릎 꿇고, 꿇을 때마다 세 번 머리를 조아린다. 사람마다 0.08초씩 늦게 따라 해 한 몸처럼 딱딱하지 않게
+  // 세 번 무릎 꿇고, 꿇을 때마다 세 번 머리를 조아린다. 인조가 먼저 하고 세자·신하들이 0.25초 뒤부터 0.08초씩 늦게 따라 한다(N-05 순서)
   const done = { kneels: 0, bows: 0 };
-  const all = (sec, f) => anim(sec + 0.08 * bowers.length, t => bowers.forEach((h, i) => { const lt = Math.min(1, Math.max(0, (t * (sec + 0.08 * bowers.length) - 0.08 * i) / sec)); f(h, ease(lt)); }));
+  const lag = bowers.map((_, i) => (i ? 0.25 + 0.08 * (i - 1) : 0)), tail = lag[lag.length - 1];
+  const all = (sec, f) => anim(sec + tail, t => bowers.forEach((h, i) => f(h, Math.min(1, Math.max(0, (t * (sec + tail) - lag[i]) / sec)))));
   for (let k = 0; k < 3; k++) {
-    await all(0.9, (h, e) => kowtowPose(h, e, 0)); done.kneels += 1;                // 천천히 무릎을 꿇는다
+    await all(1.4, (h, e) => kowtowPose(h, e, 0)); done.kneels += 1;                 // 천천히 무릎을 꿇는다
     for (let b = 0; b < 3; b++) {
-      await all(0.55, (h, e) => kowtowPose(h, 1, e));                                // 두 손을 짚으며 머리를 땅에 조아리고
-      await ctx.wait(150);
-      await all(0.5, (h, e) => kowtowPose(h, 1, 1 - e)); done.bows += 1;             // 다시 몸을 든다
+      await all(0.9, (h, e) => kowtowPose(h, 1, e));                                 // 손을 짚고, 허리를 굽히고, 머리를 조아린다
+      await ctx.wait(200);
+      await all(0.8, (h, e) => kowtowPose(h, 1, 1 - e)); done.bows += 1;              // 다시 몸을 든다
     }
-    await all(0.8, (h, e) => kowtowPose(h, 1 - e, 0));                                // 일어선다
+    await all(1.2, (h, e) => kowtowPose(h, 1 - e, 0));                                 // 일어선다
   }
   ctx.testHooks.samjeondo = done;
   await ctx.wait(500);
@@ -223,6 +253,8 @@ async function escortOfficials(ctx, easy) {
   const p0 = at(0, 11); placePlayer(world, [p0.x, p0.z]);
   const sides = Object.fromEntries(Object.entries(SIDES).map(([k, v]) => [k, at(v.x, v.z)]));
   const rings = Object.values(sides).map(v => { const r = new THREE.Mesh(new THREE.RingGeometry(1.9, 2.4, 28), new THREE.MeshBasicMaterial({ color: 0xd9a441, transparent: true, opacity: 0.8, side: THREE.DoubleSide })); r.rotation.x = -Math.PI / 2; r.position.set(v.x, 0.1, v.z); world.level.add(r); return r; });
+  // 두 대신의 이름을 머리 위에(N-02)
+  for (const [name, x] of [['김상헌', -10], ['최명길', 10]]) { const t = labelSprite(name, { size: 1.6 }); t.name = `name:${name}`; t.position.set(x, 3.3, -8.5); arena.group.add(t); }
   const officials = S.use.map((ci, i) => {
     const id = `official${i + 1}`, pos = at(OFFICIAL_SPOTS[i].x, OFFICIAL_SPOTS[i].z);
     if (!world.npcs.has(id)) world.addNpc(id, LOOKS.joseonOfficial, pos.x, pos.z, 0);
@@ -288,14 +320,25 @@ async function escortOfficials(ctx, easy) {
 
 export const devScene = () => scene; // 개발용(사진 찍기)
 
-function markFort(ctx, heard) {
+// 탐험 표시: 아직 안 들은 사람에게 느낌표. 모두 들어야(C-01) 아직 안 들은 대신에게 느낌표(N-01: 두 대신 모두 들어야 진행)
+function markFort(ctx, heard, said) {
   const { world, hud } = ctx;
+  const all = heard.size === PEOPLE.length;
   PEOPLE.forEach(id => { world.npcs.get(id).mark.visible = !heard.has(id); });
-  MINISTERS.forEach(id => { world.npcs.get(id).mark.visible = heard.size > 0; });
-  const next = world.npcs.get(PEOPLE.find(id => !heard.has(id)) || 'kimsangheon').mesh.position;
+  MINISTERS.forEach(id => { world.npcs.get(id).mark.visible = all && !said.has(id); });
+  const nextId = PEOPLE.find(id => !heard.has(id)) || MINISTERS.find(id => !said.has(id)) || 'kimsangheon';
+  const next = world.npcs.get(nextId).mesh.position;
   world.setGoal({ x: next.x, z: next.z });
-  ctx.setGoal(script.goals[heard.size === PEOPLE.length ? 1 : 0]);
-  hud.setCounter(`들은 이야기 ${heard.size}/${PEOPLE.length}`);
+  ctx.setGoal(script.goals[all ? 1 : 0]);
+  hud.setCounter(all ? `들은 생각 ${said.size}/${MINISTERS.length}` : `들은 이야기 ${heard.size}/${PEOPLE.length}`);
+}
+// 대신의 말(N-01): 성안 사람들을 모두 듣기 전에는 기다리라 하고, 처음이면 자기 생각을, 다른 대신을 먼저 들었으면 끝에 정리 한 줄
+export function ministerTalk(id, heard, said) {
+  const n = script.npc[id];
+  if (heard.size < PEOPLE.length) return n.wait;
+  if (said.has(id)) return n.later;
+  const other = MINISTERS.some(k => k !== id && said.has(k));
+  return [...n.first, other ? script.closing : script.ministerMore];
 }
 export function fortTalk(id, heard) {
   const n = script.npc[id];
@@ -319,10 +362,29 @@ export default {
     return scene;
   },
 
+  // 장 도입(C-03): ① 벌판에서 청나라 군대가 산성 쪽으로 올라온다 ② 서문이 열리고 인조와 세자·신하들이 성안으로 걸어 들어온다
+  introScene(ctx) {
+    const { world } = ctx, Q = scene.introQing, K = scene.introKing;
+    const q0 = Q.position.clone(), k0 = K.position.clone();
+    let off = null;
+    const stopMove = () => { off?.(); off = null; };
+    return {
+      shots: [
+        { cam: [10, -1.5, 24], look: [0, -7.5, 40], to: { cam: [6, -2.2, 26], look: [0, -7.8, 37] },
+          act: () => { stopMove(); Q.visible = true; off = world.onUpdate(dt => { Q.position.z -= dt * 1.2; }); } },
+        { cam: [-10.5, 2.4, -3.5], look: [-20, 1.2, 0], to: { cam: [-12, 2.2, -2.6], look: [-17, 1.2, 0] }, // 이름판(남한산성)의 반대쪽에서 서문을 본다
+          act: () => { stopMove(); Q.visible = false; K.visible = true; scene.gate.setOpen(1); off = world.onUpdate(dt => { K.position.x = Math.min(-14, K.position.x + dt * 1.3); }); } },
+      ],
+      done: () => { stopMove(); Q.visible = false; K.visible = false; Q.position.copy(q0); K.position.copy(k0); scene.gate.setOpen(0); },
+    };
+  },
+  // 미니게임 뒤 빛나는 문(C-02): 성안 가운데 빈 땅, 남쪽(돌아온 학생 쪽)을 본다
+  portal: { at: [0, 1.2], ry: 0 },
+
   enterStage(ctx, stage) {
     scene.gate.setOpen(0);
-    if (stage === 'minigame' || stage === 'quiz') placePlayer(ctx.world, SPOT);
-    if (stage === 'quiz') { scene.allLit(); ctx.setGoal(script.goals[5]); }
+    if (stage === 'minigame') placePlayer(ctx.world, SPOT);
+    if (stage === 'quiz') { scene.allLit(); placePlayer(ctx.world, END); }
   },
 
   async explore(ctx) {
@@ -331,8 +393,9 @@ export default {
     placePlayer(world, scene.introFrom, -Math.PI / 2);
     await enterThroughGate(ctx, { from: scene.introFrom, to: scene.start, gate: scene.gate, speed: 1 });
     closeGate(world, scene.gate);
-    const heard = new Set();
-    markFort(ctx, heard);
+    const heard = new Set(), said = new Set();
+    ctx.testHooks.ministers = said;
+    markFort(ctx, heard, said);
     await sayAll(dialogue, script.start);
     dialogue.close();
     ctx.input.enabled = true;
@@ -343,20 +406,19 @@ export default {
           if (PEOPLE.includes(id)) {
             const isNew = !heard.has(id);
             await sayAll(dialogue, fortTalk(id, heard));
-            heard.add(id); markFort(ctx, heard);
+            heard.add(id); markFort(ctx, heard, said);
             if (isNew && heard.size < PEOPLE.length) await dialogue.say(script.more);
             return;
           }
-          if (!MINISTERS.includes(id)) { await sayAll(dialogue, n.always); return; } // 유적 옆 안내판
-          if (!heard.size) { await sayAll(dialogue, script.npc.kimsangheon.wait); return; }
-          // 행궁 앞의 의논: 김상헌과 최명길이 차례로 말한다
+          if (!MINISTERS.includes(id)) { if (n && n.always) await sayAll(dialogue, n.always); return; } // 추위에 떠는 백성 등
+          // 행궁 앞의 의논: 김상헌과 최명길에게 저마다 말을 걸어 두 생각을 모두 듣는다(아무 차례)
+          const lines = ministerTalk(id, heard, said);
+          await sayAll(dialogue, lines);
+          if (lines === script.npc[id].wait || said.has(id)) return;
+          said.add(id); markFort(ctx, heard, said);
+          if (said.size < MINISTERS.length) return;
           [...PEOPLE, ...MINISTERS].forEach(k => { world.npcs.get(k).mark.visible = false; });
           world.setGoal(null); hud.setCounter(null);
-          ctx.setGoal(script.goals[1]);
-          world.setTalkCamera(world.npcs.get('kimsangheon').mesh);
-          await sayAll(dialogue, script.npc.kimsangheon.first);
-          world.setTalkCamera(world.npcs.get('choemyeonggil').mesh);
-          await sayAll(dialogue, script.npc.choemyeonggil.first);
           stop(); setTimeout(resolve, 0);
         },
       });
@@ -375,21 +437,28 @@ export default {
     await showHowTo(ctx.ui, script.sort.howto);
     await ctx.fade(true);
     parts.push(await tryPart(ctx, async easy => { const p = escortOfficials(ctx, easy); await ctx.fade(false); return p; }, script.sort.fail));
-    // 2) 장작을 들고 화톳불 켜기
-    ctx.setGoal(script.goals[3]);
+    // 2) 성안으로 돌아와 추위에 떠는 백성에게 가서 이야기를 들어야 화톳불 켜기가 시작된다(N-03, C-05)
     await ctx.fade(true); placePlayer(world, SPOT); await ctx.fade(false);
+    const folk = world.npcs.get('coldfolk');
+    folk.mark.visible = true;
+    await waitInteract(ctx, { pos: folk.mesh.position, quest: script.goals[3], label: '백성과 이야기하기', mark: false });
+    folk.mark.visible = false;
+    ctx.input.enabled = false;
+    world.setTalkCamera(folk.mesh);
+    await sayAll(dialogue, script.npc.coldfolk.first);
+    world.camMode = 'follow';
+    ctx.setGoal(script.goals[4]);
     await sayAll(dialogue, script.fires.howto); dialogue.close();
     await showHowTo(ctx.ui, script.fires.card);
-    parts.push(await tryPart(ctx, easy => lightFires(ctx, easy), script.fires.fail));
-    await sayAll(dialogue, script.fires.done);
-    await sayAll(dialogue, script.result.slice(0, 1)); dialogue.close(); // 강화도 함락 → 항복하기로
-    // 3) 인조를 따라 서문을 나서 삼전도로(삼궤구고두례)
+    let firstFire = true;
+    parts.push(await tryPart(ctx, easy => { const r = lightFires(ctx, easy, { stay: firstFire }); firstFire = false; return r; }, script.fires.fail));
+    await sayAll(dialogue, script.fires.done); dialogue.close();
+    // 3) 행궁 앞의 인조에게 가서 하소연을 듣고(N-04), 인조를 따라 서문을 나서 삼전도로(삼궤구고두례)
     await followInjo(ctx);
     await samjeondo(ctx);
     await sayAll(dialogue, script.result.slice(2)); // 볼모
     dialogue.close();
-    placePlayer(world, SPOT);
-    ctx.setGoal(script.goals[5]);
+    placePlayer(world, END);
     return sumParts(parts);
   },
 };
