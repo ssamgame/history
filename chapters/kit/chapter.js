@@ -113,7 +113,7 @@ function runPart(ctx, scene, part, easy) {
     case 'collect': return collect(ctx, scene, part, easy);
     case 'book': return readBook(ctx, { title: part.title, pages: part.pages.map(p => ({ ...p, scene: p.scene || DIORAMA[p.pic] })), render: p => renderDiorama(p.scene, bookKey(part, p)), onTiming: (label, ms, note) => ctx.world?.perf?.time(label, ms, `${part.title} ${note}`) });
     case 'scene': return part.play(ctx, scene).then(() => true); // 짧은 장면(관아를 차지하는 모습 등)
-    case 'doc': return atArena(ctx, part, () => showDocument(ctx, { title: part.title, heading: part.heading, intro: part.docIntro, items: part.items, src: part.src }));
+    case 'doc': return atArena(ctx, part, () => showDocument(ctx, { title: part.title, heading: part.heading, intro: part.docIntro, items: part.items, src: part.src, scroll: part.scroll }));
     case 'drive': case 'stops': case 'deliver': case 'find': case 'ambush': case 'sneak': case 'judge': case 'build': return PLAY[part.type](ctx, part, easy);
     default: throw new Error(`unknown part ${part.type}`);
   }
