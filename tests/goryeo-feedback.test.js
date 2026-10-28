@@ -51,7 +51,7 @@ test('goryeo4: 압록강 가에서 저고여가 쓰러지는 장면이 있고, �
   try {
     const sc = ch4.buildScene(s.w, s.ctx);
     const J = sc.areas.jeogo;
-    const done = J.play(); step(s.w, 7); await done;
+    const done = J.play(); step(s.w, 11); await done;
     const fallen = s.w.level.children.some(o => o.userData && o.userData.legs && o.rotation.x < -1.2);
     ok(fallen, '사신이 쓰러진다');
     ok(ch4Script.jeogo.after.some(l => l.text.includes('밝혀지지 않았') && l.src.includes('S22')));
@@ -74,7 +74,7 @@ test('goryeo4: 처인성 화살은 멀리서도 보이게 크고 빛나는 꼬�
   } finally { s.done(); }
 });
 
-test('goryeo4: 노비 문서는 글씨가 있는 종이이고, 연기를 내며 검게 그을리다 재가 된다(D-13: 불길 없이)', async () => {
+test('goryeo4: 노비 문서는 글씨가 있는 종이이고, 불꽃이 일며 검게 그을리다 불이 잦아들고 연기·재가 남는다(D-14)', async () => {
   const s = touchSetup(ch4Script.speakers);
   try {
     const sc = ch4.buildScene(s.w, s.ctx);
@@ -83,7 +83,9 @@ test('goryeo4: 노비 문서는 글씨가 있는 종이이고, 연기를 내며 
     const burn = sc.burnDocuments();
     step(s.w, 2);
     ok(sc.smoke.visible && paper.material.color.r < 0.9, '연기가 나고 종이 색이 변한다');
+    ok(sc.fire.visible, '불꽃이 인다');
     step(s.w, 6.5); await burn;
+    eq(sc.fire.visible, false, '불이 잦아든다');
     eq(sc.documents.visible, false, '다 타서 사라진다');
     ok(sc.ashPile.visible, '재가 남는다');
   } finally { s.done(); }

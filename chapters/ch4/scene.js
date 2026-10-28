@@ -71,43 +71,109 @@ export function buildCh4Scene(world) {
     river.position.set(JEOGO_X, 0.06, -10); L.add(river);
     mk(new THREE.BoxGeometry(60, 0.04, 3), 0x8f7556, JEOGO_X, 0.03, 2, L, false); // 강가 길
     scatter(world, { kind: 'grass', count: 90, area: { x0: JEOGO_X - 28, x1: JEOGO_X + 28, z0: -4.5, z1: -1 }, seed: 61, scale: [1.1, 1.8], color: 0x7a8a50 }); // 갈대(카메라 앞을 가리지 않게 키를 낮춤)
-    scatter(world, { kind: 'pine', count: 14, area: { x0: JEOGO_X - 30, x1: JEOGO_X + 30, z0: 8, z1: 24 }, seed: 62, scale: [1, 1.4] });
+    scatter(world, { kind: 'pine', count: 14, area: { x0: JEOGO_X - 30, x1: JEOGO_X + 30, z0: 12.5, z1: 26 }, seed: 62, scale: [1, 1.4] });
     // 강둑의 버드나무와 바위, 강 건너 솔숲과 먼 산(국경의 강가)
     for (const [x, z] of [[-26, -3.6], [-12, -3.4], [14, -3.5], [24, -3.7], [-20, -17], [-4, -17.5], [10, -17], [26, -17.3]]) { const g = new THREE.Group(); g.position.set(JEOGO_X + x, 0, z); g.rotation.y = rand() * 3; L.add(g); tree(g, { kind: 'willow', x, z }); }
     scatter(world, { kind: 'rock', count: 16, area: { x0: JEOGO_X - 30, x1: JEOGO_X + 30, z0: -18, z1: -15 }, seed: 63, scale: [0.6, 1.4] });
     scatter(world, { kind: 'pine', count: 26, area: { x0: JEOGO_X - 40, x1: JEOGO_X + 40, z0: -40, z1: -20 }, seed: 64, scale: [1, 1.6] });
     backdropMountains(L, { center: [JEOGO_X, 0], radius: 75, color: 0x5f7050, seed: 3, skip: [Math.PI * 0.2, Math.PI * 0.8] }); // 동쪽(개경 궁궐 쪽)은 비운다: 산이 궁궐 마당을 지나지 않게
+    // D-14: 사신 저고여와 수행원이 강가 길을 걸어가다가, 길 건너 덤불 뒤에 숨어 있던 복면 쓴 병사가 활을 쏘고, 저고여가 쓰러진다.
+    // 복면 병사는 어느 나라 사람인지 알 수 있는 표시(깃발·나라별 모자·옷 색)가 없다: 누가 죽였는지는 끝내 밝혀지지 않았다(S22).
     const ENVOY = { robe: 0x8a6a2a, hat: 'fur', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache' } };
-    const SHADOW = { robe: 0x2a2622, hat: 'topknot', trim: 0x1e1a16, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } };
-    const envoy = makePerson(ENVOY), aide = makePerson(LOOKS.mongol);
-    envoy.rotation.order = aide.rotation.order = 'YXZ';
-    const shadows = [0, 1, 2].map(() => { const m = makePerson(SHADOW); m.visible = false; L.add(m); return m; });
-    L.add(envoy, aide);
+    const MASKED = { robe: 0x4a4740, trim: 0x3a3732, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } };
+    const envoy = makePerson(ENVOY), aide = makePerson(LOOKS.mongol), archer = makePerson(MASKED);
+    envoy.rotation.order = aide.rotation.order = archer.rotation.order = 'YXZ';
+    { // 두건과 복면(같은 어두운 천)
+      const hg = archer.userData.head, cloth = mat(0x2e2c29);
+      const hood = new THREE.Group(); hood.name = 'hood'; hg.add(hood);
+      hood.add(new THREE.Mesh(new THREE.SphereGeometry(0.345, 14, 8, Math.PI / 2 + 0.95, Math.PI * 2 - 1.9, 0, Math.PI * 0.62), cloth)); // 얼굴만 트인 두건
+      hood.add(new THREE.Mesh(new THREE.SphereGeometry(0.348, 14, 6, 0, Math.PI * 2, 0, 0.95), cloth)); // 이마 덮개
+      const mask = new THREE.Mesh(new THREE.SphereGeometry(0.34, 14, 6, Math.PI / 2 - 1.05, 2.1, 1.6, 0.95), cloth); mask.name = 'mask'; hg.add(mask); // 코 아래를 가린 복면
+      const nose = hg.getObjectByName('nose'); if (nose) nose.visible = false;
+      // 왼손에 든 활: 팔을 앞으로 뻗으면 활대가 위아래로 선다
+      const bow = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.04, 4, 14, Math.PI), mat(0x5a3f2a));
+      bow.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, -1, 0), new THREE.Vector3(1, 0, 0)));
+      bow.position.set(0, -0.16, 0); bow.name = 'bowHeld'; archer.userData.arms[0].add(bow);
+    }
+    const arrow = new THREE.Group(); arrow.visible = false; arrow.scale.setScalar(1.5); L.add(arrow);
+    { const m = c => new THREE.MeshLambertMaterial({ color: c });
+      const sh = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.0, 5).rotateX(Math.PI / 2), m(0xd9c9a0)); arrow.add(sh);
+      const tp = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.18, 5).rotateX(Math.PI / 2), m(0x3a3a3a)); tp.position.z = 0.56; arrow.add(tp);
+      const fl = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.12, 0.22), m(0xe8e2d4)); fl.position.z = -0.42; arrow.add(fl); }
+    L.add(envoy, aide, archer);
+    // 길 건너(강 쪽) 숨는 덤불과 바위, 병사가 물러나 숨는 강가 덤불숲·버드나무
+    const bushAt = (x, z, k = 1) => { for (const [dx, dy, dz, r] of [[0, 0.7, 0, 0.95], [-0.8, 0.55, 0.15, 0.75], [0.8, 0.6, -0.1, 0.8], [0.1, 1.35, -0.1, 0.7]]) mk(new THREE.IcosahedronGeometry(r * k, 0), 0x46663c, JEOGO_X + x + dx * k, dy * k, z + dz * k); };
+    const HIDE = [3, -2.3];
+    bushAt(HIDE[0], -0.9, 1.15); mk(new THREE.DodecahedronGeometry(0.75, 0), 0x8a8478, JEOGO_X + HIDE[0] + 1.3, 0.45, -0.7);
+    for (const [x, k] of [[8.6, 1.2], [10.2, 1.3], [11.8, 1.1]]) bushAt(x, -1.1, k);
+    { const g = new THREE.Group(); g.position.set(JEOGO_X + 10.5, 0, -3.3); L.add(g); tree(g, { kind: 'willow', x: 10.5, z: -3.3 }); }
+    const camAt = f => ({ pos: [f + 0.6, 3.3, 11], target: [f, 1.0, 0.6] });
     const reset = () => {
-      envoy.position.set(JEOGO_X - 16, 0, 2); envoy.rotation.set(0, Math.PI / 2, 0);
-      aide.position.set(JEOGO_X - 18, 0, 2.6); aide.rotation.set(0, Math.PI / 2, 0); aide.visible = true;
-      shadows.forEach((m, i) => { m.visible = false; m.position.set(JEOGO_X + 2 + i * 1.3, 0, -3.5); });
+      envoy.position.set(JEOGO_X - 14.5, 0, 2); envoy.rotation.set(0, Math.PI / 2, 0);
+      aide.position.set(JEOGO_X - 16.4, 0, 2.6); aide.rotation.set(0, Math.PI / 2, 0); aide.visible = true;
+      archer.position.set(JEOGO_X + HIDE[0], 0, HIDE[1]); archer.rotation.set(0.75, Math.PI * 0.85, 0); archer.visible = true; // 덤불 뒤에 웅크려 숨어 있다
+      archer.userData.manual = true; for (const a of archer.userData.arms) a.rotation.set(0, 0, 0);
+      arrow.visible = false;
     };
     reset();
-    jeogo.cam = { pos: [JEOGO_X + 2, 5.5, 13], target: [JEOGO_X - 2, 1, -1] };
+    jeogo.cam = camAt(JEOGO_X - 11.5);
     jeogo.start = [JEOGO_X, 6];
-    // 장면 한 번(약 7초): 사신이 강가 길을 걷다가, 갈대숲에서 나온 사람들에게 쓰러지고, 그 사람들은 사라진다
+    jeogo.envoy = envoy; jeogo.aide = aide; jeogo.archer = archer; jeogo.arrow = arrow;
+    // 장면 한 번(약 10초): 걷기 → 복면 병사가 일어나 덤불 밖으로 나와 활을 쏜다 → 저고여가 쓰러진다 → 병사는 강가 덤불숲으로 물러나 사라진다.
+    // 카메라는 길을 따라가다 사신과 병사가 함께 보이는 곳에서 멈춘다.
+    const WALK = 1.75, SHOOT = 5.2, FLY = 0.4;
     jeogo.play = () => new Promise(resolve => {
       reset();
-      let t = 0;
+      let t = 0, hitT = -1, focus = envoy.position.x + 3;
+      const from = new THREE.Vector3(), to = new THREE.Vector3(), ahead = new THREE.Vector3();
+      const ease = (o, v, k) => { o.rotation.x += (v - o.rotation.x) * k; };
       const off = world.onUpdate(dt => {
         t += dt;
-        if (t < 3.2) { envoy.position.x += dt * 3.4; aide.position.x += dt * 3.4; }
-        if (t >= 2.2 && t < 3.6) shadows.forEach((m, i) => { // 갈대숲에서 뛰어나온다
-          m.visible = true;
-          const tx = envoy.position.x + 1.2 - i * 1.1, tz = 0.6 + i * 0.4;
-          m.position.x += (tx - m.position.x) * Math.min(1, dt * 4); m.position.z += (tz - m.position.z) * Math.min(1, dt * 4);
-          m.rotation.y = Math.atan2(envoy.position.x - m.position.x, envoy.position.z - m.position.z);
-        });
-        if (t >= 2.4 && t < 4) { aide.position.x -= dt * 7; aide.rotation.y = -Math.PI / 2; if (t > 3.6) aide.visible = false; } // 수행원은 달아난다
-        if (t >= 3.6) envoy.rotation.x = -1.45 * Math.min(1, (t - 3.6) / 0.6); // 사신이 쓰러진다
-        if (t >= 4.4) shadows.forEach(m => { m.rotation.y = 0; m.position.z -= dt * 6; if (m.position.z < -4) m.visible = false; }); // 갈대숲으로 사라진다
-        if (t >= 6.5) { off(); resolve(); }
+        const k = Math.min(1, dt * 6);
+        if (hitT < 0) { envoy.position.x += dt * WALK; aide.position.x += dt * WALK; }
+        // 복면 병사: 일어나고(3.8~4.6초), 덤불 옆으로 나와(4.6~5초) 활을 겨눠 쏘고(5.2초), 활을 내리고 강가 덤불숲으로 물러난다(6.6초~)
+        const A = archer.userData;
+        if (t >= 3.8 && t < 6.6) {
+          archer.rotation.x += (0 - archer.rotation.x) * k;
+          if (t >= 4.6) {
+            const sx = JEOGO_X + 1.6, sz = -1.7, d = Math.hypot(sx - archer.position.x, sz - archer.position.z), st = Math.min(d, dt * 3.2);
+            if (d > 0.01) { archer.position.x += (sx - archer.position.x) / d * st; archer.position.z += (sz - archer.position.z) / d * st; }
+            archer.rotation.y = Math.atan2(envoy.position.x - archer.position.x, envoy.position.z - archer.position.z);
+            ease(A.arms[0], -Math.PI / 2, k); ease(A.arms[1], -1.35, k); // 활을 든 팔은 앞으로, 다른 팔은 시위를 당긴다
+          }
+        }
+        if (t >= SHOOT && hitT < 0) { // 화살이 날아간다
+          if (!arrow.visible) { arrow.visible = true; from.set(archer.position.x, 1.7, archer.position.z); }
+          const q = Math.min(1, (t - SHOOT) / FLY);
+          to.set(envoy.position.x, 1.5, envoy.position.z);
+          arrow.position.lerpVectors(from, to, q); ahead.lerpVectors(from, to, Math.min(1, q + 0.05)); arrow.lookAt(ahead);
+          if (q >= 1) { hitT = t; arrow.visible = false; }
+        }
+        if (hitT >= 0) { // 맞은 저고여가 휘청하다 뒤로 쓰러진다(피 없이)
+          const h = t - hitT;
+          envoy.rotation.x = h < 0.3 ? -0.25 * h / 0.3 : -0.25 - 1.2 * Math.min(1, (h - 0.3) / 0.6);
+          // 수행원은 멈춰 놀라 병사 쪽을 보았다가, 저고여 곁으로 가 몸을 숙인다
+          if (h < 1.6) aide.rotation.y += (Math.atan2(archer.position.x - aide.position.x, archer.position.z - aide.position.z) - aide.rotation.y) * k;
+          else {
+            const tx = envoy.position.x - 1.1, tz = 2.9, d = Math.hypot(tx - aide.position.x, tz - aide.position.z);
+            if (d > 0.05) { const st = Math.min(d, dt * 2); aide.position.x += (tx - aide.position.x) / d * st; aide.position.z += (tz - aide.position.z) / d * st; aide.rotation.y = Math.atan2(tx - aide.position.x, tz - aide.position.z); }
+            else { aide.rotation.y += (Math.atan2(envoy.position.x - aide.position.x, envoy.position.z - aide.position.z) - aide.rotation.y) * k; aide.rotation.x += (0.4 - aide.rotation.x) * k; }
+          }
+        }
+        if (t >= 6.6 && archer.visible) { // 물러난다: 걸어서 강가 덤불숲 뒤로(땅 위로만 움직인다)
+          ease(A.arms[0], 0, k); ease(A.arms[1], 0, k);
+          if (t >= 7) {
+            A.manual = false;
+            const tx = JEOGO_X + 13.5, tz = -2.7, dx = tx - archer.position.x, dz = tz - archer.position.z, d = Math.hypot(dx, dz);
+            archer.position.x += dx / d * dt * 3.3; archer.position.z += dz / d * dt * 3.3; archer.rotation.y = Math.atan2(dx, dz);
+            if (archer.position.x > JEOGO_X + 10.4) archer.visible = false; // 덤불숲 뒤로 사라진다
+          }
+        }
+        archer.position.y = 0;
+        // 카메라: 길을 따라가다가 사신과 병사가 함께 보이는 곳에서 멈춘다
+        focus += (Math.min(envoy.position.x + 3, JEOGO_X - 1.7) - focus) * Math.min(1, dt * 3);
+        const c = camAt(focus); world.setFixedCamera(c.pos, c.target);
+        if (t >= 10) { off(); resolve(); }
       });
     });
   }
@@ -202,7 +268,7 @@ export function buildCh4Scene(world) {
     mk(new THREE.CylinderGeometry(0.05, 0.05, 3.4, 4), 0x3a2c20, 0.6, 1.7, 0, g);
     const f = mk(new THREE.PlaneGeometry(0.9, 0.7), 0x2a3550, 1.05, 3.1, 0, g); f.material = new THREE.MeshLambertMaterial({ color: 0x2a3550, side: THREE.DoubleSide });
     const top = new THREE.Object3D(); top.position.set(0, 3.6, 0); g.add(top);
-    const a = Math.PI + 0.55 + (i / 7) * (Math.PI - 1.1); // 성 앞쪽(북쪽, -z) 부채꼴
+    const a = Math.PI * 1.5 - 0.5 + (i / 7) * 1.0; // D-14: 성 앞 들판(북쪽, -z) 좁은 부채꼴에서만 나온다(성벽 위 카메라에 처음부터 보이게)
     mongols.push({ group: g, top, angle: a });
   }
   // 고려 궁수 5명: 북쪽 성벽 안쪽 발판 위. 싸움이 시작되면 성벽 위로 올라와 활을 쏜다(처음엔 숨김).
@@ -285,7 +351,21 @@ export function buildCh4Scene(world) {
     m.position.set((i % 3 - 1) * 0.75, 0.05 + Math.floor(i / 3) * 0.05, ((i * 7) % 3 - 1) * 0.4); m.rotation.y = ((i * 0.7) % 1.2 - 0.6) * 0.5; m.rotation.x = 0.25; // 카메라 쪽으로 살짝 기울여 글씨가 보이게
     documents.add(m); papers.push({ m, delay: 0.4 + (i % 3) * 0.5 + Math.floor(i / 3) * 0.35, base: m.position.clone() }); // 한쪽부터 차례로 불이 옮겨 붙는다
   }
-  // 연기와 재(D-13: 불길 없이): 문서 더미에서 회색 연기가 피어오르고, 다 타면 검은 재가 남는다
+  // 불꽃(D-14 선생님: 문서 태우기는 불이 나는 연출): 로우폴리 주황·노랑 반투명 불꽃 조각이 깜박이며 타올랐다가 잦아든다.
+  // 튀어 오르는 불티(무거운 입자)는 화질 '보통·높음'에서만 보인다.
+  const fire = new THREE.Group(); fire.position.set(CHUNGJU_X, 0, -3); fire.visible = false; L.add(fire);
+  const flames = [];
+  for (let i = 0; i < 9; i++) {
+    const big = i < 4, f = new THREE.Mesh(new THREE.ConeGeometry(big ? 0.38 : 0.24, big ? 1.3 : 0.8, 5).translate(0, big ? 0.65 : 0.4, 0),
+      new THREE.MeshBasicMaterial({ color: i % 3 === 0 ? 0xffd04a : i % 3 === 1 ? 0xff8a2a : 0xff6a1a, transparent: true, opacity: 0.8, depthWrite: false }));
+    const a = i * 2.4, r = big ? 0.25 : 0.6;
+    f.position.set(Math.cos(a) * r, 0.05, Math.sin(a) * r * 0.7); f.userData = { ph: i * 1.7, sp: 9 + (i % 4) * 2.3 };
+    fire.add(f); flames.push(f);
+  }
+  const embers = new THREE.Group(); embers.name = 'embers'; fire.add(embers);
+  for (let i = 0; i < 10; i++) { const e = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.06), new THREE.MeshBasicMaterial({ color: 0xffb040 })); e.userData = { ph: i / 10, x: ((i * 7) % 5 - 2) * 0.18, z: ((i * 3) % 5 - 2) * 0.14 }; embers.add(e); }
+  let fireLevel = 0;
+  // 연기와 재: 문서 더미에서 회색 연기가 피어오르고, 다 타면 검은 재가 남는다
   const smoke = new THREE.Group(); smoke.position.set(CHUNGJU_X, 0, -3); smoke.visible = false; L.add(smoke);
   const puffs = [];
   for (let i = 0; i < 12; i++) {
@@ -296,9 +376,9 @@ export function buildCh4Scene(world) {
   ashPile.position.set(CHUNGJU_X, 0.08, -3); ashPile.visible = false; L.add(ashPile);
   let smokeLevel = 0; // 0 없음 ~ 1 짙음
   const burnState = { t: -1 };
-  // 문서를 태운다(약 7초, 불길은 보이지 않는다): 종이가 갈색 → 검게 그을리며 오그라들고 재가 되며, 연기가 피어오른다
+  // 문서를 태운다(약 7초): 불꽃이 일어 타오르고, 종이가 갈색 → 검게 그을리며 오그라들어 재가 되고, 불이 잦아들며 연기가 남는다
   const burnDocuments = () => new Promise(resolve => { burnState.t = 0; burnState.resolve = resolve; smoke.visible = true; });
-  const burnt = () => { burnState.t = -1; documents.visible = false; smoke.visible = true; ashPile.visible = true; smokeLevel = 0.35; };
+  const burnt = () => { burnState.t = -1; fire.visible = false; documents.visible = false; smoke.visible = true; ashPile.visible = true; smokeLevel = 0.35; };
   // 가져다 놓은 묶음 수(0~3)에 따라 문서 더미가 쌓인다
   const pileUp = n => { papers.forEach((pp, i) => { pp.m.visible = i < 3 + n * 2; }); };
   scatter(world, { kind: 'grass', count: 60, area: { x0: CHUNGJU_X - 14, x1: CHUNGJU_X + 14, z0: -12, z1: 12 }, avoid: [{ x: CHUNGJU_X, z: -3, r: 3 }, { x: CHUNGJU_X + 4, z: 9, r: 3 }], seed: 58, scale: [0.6, 1] });
@@ -316,6 +396,8 @@ export function buildCh4Scene(world) {
       burnState.t += dt;
       const bt = burnState.t;
       smokeLevel = Math.min(1, bt / 1.2) * (bt > 6.2 ? Math.max(0.35, 1 - (bt - 6.2) / 1.2) : 1);
+      fireLevel = bt < 0.3 ? 0 : bt < 1.3 ? (bt - 0.3) : bt < 4.6 ? 1 : Math.max(0, 1 - (bt - 4.6) / 1.6); // 붙고 → 타오르고 → 잦아든다
+      fire.visible = fireLevel > 0.02;
       ashPile.visible = bt > 3; ashPile.scale.setScalar(Math.min(1, Math.max(0.2, (bt - 3) / 3)));
       for (const pp of papers) {
         const k = Math.max(0, Math.min(1, (bt - pp.delay) / 3.6)); // 이 종이가 탄 정도
@@ -328,6 +410,15 @@ export function buildCh4Scene(world) {
       }
       if (bt > 6.4) { documents.visible = false; }
       if (bt > 7.4 && burnState.resolve) { const r = burnState.resolve; burnState.resolve = null; burnState.t = -1; smokeLevel = 0.35; r(); }
+    }
+    if (fire.visible) {
+      flames.forEach(f => { // 깜박이는 불꽃: 높이·굵기가 저마다 다른 박자로 흔들린다
+        const u = f.userData, fl = 0.75 + 0.25 * Math.sin(t * u.sp + u.ph) + 0.1 * Math.sin(t * u.sp * 2.3 + u.ph);
+        f.scale.set(fireLevel * (0.85 + 0.15 * Math.cos(t * u.sp * 0.7 + u.ph)), Math.max(0.01, fireLevel * fl), fireLevel * 0.9);
+        f.rotation.y = t * 0.8 + u.ph; f.material.opacity = 0.55 + 0.3 * fireLevel;
+      });
+      embers.visible = (world.quality?.particles ?? 0.9) > 0.5 && fireLevel > 0.3;
+      if (embers.visible) embers.children.forEach(e => { const k = (t * 0.6 + e.userData.ph) % 1; e.position.set(e.userData.x * (1 + k * 2), 0.4 + k * 2.6, e.userData.z * (1 + k * 2)); e.scale.setScalar(1 - k); });
     }
     if (smoke.visible) puffs.forEach(pf => { // 연기: 위로 피어오르며 퍼지고 옅어진다
       const k = (t * 0.22 + pf.userData.ph) % 1;
@@ -349,11 +440,12 @@ export function buildCh4Scene(world) {
         leadPath: [...[0.3, 0.7, 1].map(k => { const al = CHEOIN.ramp0 + (CHEOIN_R - CHEOIN.ramp0) * k; return [CHEOIN_X + Math.cos(CHEOIN.rampA) * al, Math.sin(CHEOIN.rampA) * al]; }),
           ...Array.from({ length: 6 }, (_, i) => { const a = CHEOIN.rampA + (Math.PI * 1.55 - CHEOIN.rampA) * (i + 1) / 6; return [CHEOIN_X + Math.cos(a) * CHEOIN_R, Math.sin(a) * CHEOIN_R]; })],
         stand: (() => { const a = Math.PI * 1.47; return [CHEOIN_X + Math.cos(a) * CHEOIN_R, Math.sin(a) * CHEOIN_R]; })() }, // 학생은 김윤후 조금 앞(서쪽)에 선다
-      chungju: { cam: chungjuCam, burnCam, kimyunhu: [CHUNGJU_X + 1.8, -2.2, Math.PI * 0.85],
+      chungju: { cam: chungjuCam, burnCam, cheerCam: { pos: [CHUNGJU_X + 1.5, 3.4, -9.6], target: [CHUNGJU_X - 0.4, 1.3, 3] }, // 문서 더미 너머로 노비와 백성들의 얼굴이 보인다
+        kimyunhu: [CHUNGJU_X + 1.8, -2.2, Math.PI * 0.85],
         start: [CHUNGJU_X - 1, 11], kimStart: [CHUNGJU_X + 0.6, 9.4], leadPath: [[CHUNGJU_X + 3, 4], [CHUNGJU_X + 6.6, -3.6]], stand: [CHUNGJU_X + 4.6, -3.2], pile: [CHUNGJU_X, -3],
         bounds: { x0: CHUNGJU_X - 13, x1: CHUNGJU_X + 12, z0: -12, z1: 12 } },
     },
-    mongols, archers, arrows, documents, smoke, ashPile, burnDocuments, burnt, jeogo, pileUp, bundles, table: TABLE, people,
+    mongols, archers, arrows, documents, fire, smoke, ashPile, burnDocuments, burnt, jeogo, pileUp, bundles, table: TABLE, people,
     palaceGate, standRing, spotRing, pileRing, tableRing, cheoinGroup: cheoin,
     start: [PALACE_X, 13],
   };

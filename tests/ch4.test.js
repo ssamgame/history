@@ -140,7 +140,7 @@ test('ch4 D-13: villager then minister; minister alone first is never stuck; gat
   w.dispose();
 });
 
-test('ch4 D-13: the slave documents are carried to the pile and burn with smoke only (no flames)', async () => {
+test('ch4 D-14: the slave documents are carried to the pile, then burn with flickering flames that die down to smoke and ash', async () => {
   const { setupChungju, carryDocuments } = await import('../chapters/ch4/chapter.js');
   const s = touchSetup(ch4Script.speakers);
   try {
@@ -155,12 +155,85 @@ test('ch4 D-13: the slave documents are carried to the pile and burn with smoke 
     }
     await sleep(5);
     ok(done, 'all three placed');
-    let flame = false; s.w.level.traverse(o => { if (o.material && o.material.color && o.visible && o.material.color.r > 0.8 && o.material.color.g < 0.6 && o.material.color.b < 0.3 && o.material.isMeshBasicMaterial) flame = true; });
-    ok(!flame, 'no flame-coloured glowing meshes');
+    eq(sc.fire.visible, false, 'no fire before burning');
     sc.burnDocuments();
-    for (let i = 0; i < 160; i++) s.w.step(0.05, { x: 0, z: 0 });
+    for (let i = 0; i < 30; i++) s.w.step(0.05, { x: 0, z: 0 });
+    ok(sc.fire.visible && sc.fire.children.some(f => f.visible && f.material.transparent && f.material.color.r > 0.8 && f.material.color.b < 0.4), 'orange-yellow flames');
+    const h1 = sc.fire.children.map(f => f.scale.y).join();
+    s.w.step(0.05, { x: 0, z: 0 }); s.w.step(0.05, { x: 0, z: 0 });
+    ok(sc.fire.children.map(f => f.scale.y).join() !== h1, 'flames flicker');
+    for (let i = 0; i < 140; i++) s.w.step(0.05, { x: 0, z: 0 });
+    eq(sc.fire.visible, false, 'fire dies down');
     ok(sc.smoke.visible && sc.ashPile.visible, 'smoke and ash');
     eq(sc.documents.visible, false);
+  } finally { s.done(); }
+});
+
+test('ch4 D-14: after the burning, the slaves and people cheer in place, both arms up and down, each with its own beat', async () => {
+  const { cheer } = await import('../chapters/ch4/chapter.js');
+  const s = touchSetup(ch4Script.speakers);
+  try {
+    const sc = ch4.buildScene(s.w, s.ctx);
+    const before = sc.people.map(p => [p.position.x, p.position.z]);
+    const stop = cheer(s.ctx);
+    const hi = sc.people.map(() => 0), lo = sc.people.map(() => 0);
+    let differ = false;
+    for (let i = 0; i < 60; i++) {
+      s.w.step(0.05, { x: 0, z: 0 });
+      sc.people.forEach((p, j) => { const a = p.userData.arms; hi[j] = Math.min(hi[j], a[0].rotation.x, a[1].rotation.x); lo[j] = Math.max(lo[j], a[0].rotation.x); });
+      if (Math.abs(sc.people[0].userData.arms[0].rotation.x - sc.people[1].userData.arms[0].rotation.x) > 0.3) differ = true;
+    }
+    ok(hi.every(v => v < -2.6), 'arms go up over the head');
+    ok(lo.every((v, j) => v - hi[j] > 0.8), 'and come down again');
+    ok(differ, 'not all in the same beat');
+    sc.people.forEach((p, j) => ok(Math.hypot(p.position.x - before[j][0], p.position.z - before[j][1]) < 0.01, 'stays in place'));
+    stop();
+  } finally { s.done(); }
+});
+
+test('ch4 D-14: Mongols come only from the field in front, on screen from the wall camera', async () => {
+  const { putOnCheoinWall } = await import('../chapters/ch4/chapter.js');
+  for (const aspect of [1.33, 1.6, 1.78]) {
+    const s = touchSetup(ch4Script.speakers);
+    try {
+      const sc = ch4.buildScene(s.w, s.ctx);
+      s.w.camera.aspect = aspect; s.w.camera.updateProjectionMatrix();
+      putOnCheoinWall(s.ctx);
+      s.w.camera.updateMatrixWorld();
+      const v = new THREE.Vector3(), A = sc.areas.cheoin;
+      for (const m of sc.mongols) {
+        v.set(A.center[0] + Math.cos(m.angle) * A.spawnR, 2, Math.sin(m.angle) * A.spawnR).project(s.w.camera);
+        ok(Math.abs(v.x) < 0.95 && Math.abs(v.y) < 0.95, `aspect ${aspect}: ${v.x.toFixed(2)},${v.y.toFixed(2)}`);
+      }
+    } finally { s.done(); }
+  }
+});
+
+test('ch4 D-14: a masked soldier with no marks of any country shoots from behind a bush; the envoy walks, is hit and falls; the soldier slips away into the trees', () => {
+  const s = touchSetup(ch4Script.speakers);
+  try {
+    const sc = ch4.buildScene(s.w, s.ctx);
+    const J = sc.areas.jeogo, A = J.archer, E = J.envoy;
+    ok(A.getObjectByName('mask') && A.getObjectByName('hood'), 'masked and hooded');
+    let marks = false; A.traverse(o => { if (/flag|banner|hat:/.test(o.name)) marks = true; });
+    ok(!marks, 'no flag or national hat');
+    J.play();
+    let swing = 0, shot = false, hitBeforeFall = true, minY = 0, camX = new Set(), fellAt = -1;
+    for (let i = 0; i < 230; i++) {
+      s.w.step(0.05, { x: 0, z: 0 });
+      swing = Math.max(swing, Math.abs(E.userData.legs[0].rotation.x));
+      if (J.arrow.visible) shot = true;
+      if (E.rotation.x < -0.5 && fellAt < 0) { fellAt = i; if (!shot) hitBeforeFall = false; }
+      minY = Math.min(minY, A.position.y);
+      camX.add(Math.round(s.w.camera.position.x));
+    }
+    ok(swing > 0.3, 'the envoy walks with swinging legs');
+    ok(shot && hitBeforeFall, 'an arrow flies before he falls');
+    ok(E.rotation.x < -1.2, 'he falls');
+    ok(minY > -0.01, 'the soldier never sinks into the ground');
+    eq(A.visible, false, 'the soldier is gone');
+    ok(camX.size > 2, 'the camera follows the road');
+    ok(ch4Script.jeogo.after[0].text.includes('누가 죽였는지는 끝내 밝혀지지 않았어요.'), 'culprit line kept');
   } finally { s.done(); }
 });
 

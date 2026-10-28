@@ -1,5 +1,5 @@
 // 4장 「강화도 천도와 처인성·충주성」(D-13): 저고여 사건 → 개경 궁궐 앞 문을 열고 들어옴 → 백성·관리 이야기 → 도읍 고르기 → 강화도 →
-// 김윤후를 따라 처인성 성벽에 올라 가리킨 곳으로 걸어가 막기 → 김윤후를 따라 충주성 관청 마당에서 노비 문서를 가져다 놓기(연기·재) → 퀴즈.
+// 김윤후를 따라 처인성 성벽에 올라 가리킨 곳으로 걸어가 막기 → 김윤후를 따라 충주성 관청 마당에서 노비 문서를 가져다 놓기(불꽃·연기·재, 만세, D-14) → 퀴즈.
 import * as THREE from 'three';
 import { buildCh4Scene, cheoinPlace, cheoinHeight, CHEOIN } from './scene.js';
 import { roam } from '../../core/flow.js';
@@ -245,24 +245,29 @@ export function carryDocuments(ctx) {
   });
 }
 
-// 문서가 연기를 내며 재가 된 뒤, 마당의 노비와 백성들이 모여 줄지어 성벽으로 걸어 나간다(약 6초)
-function marchToWall(ctx) {
+// 문서가 다 타면 마당의 노비와 백성들이 제자리에서 두 팔을 위아래로 흔들며 만세한다(D-14, 사람마다 박자가 조금씩 다르다).
+// 멈추는 함수를 돌려준다(팔은 내린 자리로 돌아간다)
+export const devScene = () => scene; // 개발용(사진 찍기·콘솔): 지은 장면
+export function cheer(ctx) {
   const { world } = ctx;
-  const C = scene.areas.chungju, cx = C.pile[0];
-  const plan = scene.people.map((pp, i) => ({ pp, mid: [cx - 3 + (i % 3) * 1.4, 1.6 + Math.floor(i / 3) * 1.4], end: [cx - 7 + i * 2.6, -11.2], delay: i * 0.25 }));
-  return new Promise(resolve => {
-    let t = 0;
-    const off = world.onUpdate(dt => {
-      t += dt;
-      let moving = false;
-      for (const q of plan) {
-        if (t < q.delay) { moving = true; continue; }
-        const to = t < q.delay + 2.4 ? q.mid : q.end, p = q.pp.position, dx = to[0] - p.x, dz = to[1] - p.z, d = Math.hypot(dx, dz);
-        if (d > 0.05) { const st = Math.min(d, 2.6 * dt); p.x += dx / d * st; p.z += dz / d * st; q.pp.rotation.y = Math.atan2(dx, dz); moving = true; }
-      }
-      if ((!moving && t > 3) || t > 9) { off(); resolve(); }
+  const ps = scene.people;
+  ps.forEach(p => { p.userData.manual = true; });
+  let t = 0;
+  const off = world.onUpdate(dt => {
+    t += dt;
+    ps.forEach((p, i) => {
+      const u = p.userData, w = Math.max(0, Math.sin(t * (5.2 + (i % 3) * 0.7) + i * 1.9)); // 0 내림 ~ 1 번쩍 듦
+      const up = Math.min(1, t * 3); // 처음엔 천천히 팔을 든다
+      const ang = -1.1 - 1.9 * w * up;
+      u.arms[0].rotation.x = ang; u.arms[1].rotation.x = ang;
+      u.arms[0].rotation.z = -0.25 * w; u.arms[1].rotation.z = 0.25 * w;
+      u.legs[0].rotation.x = u.legs[1].rotation.x = 0;
     });
   });
+  return () => {
+    off();
+    ps.forEach(p => { const u = p.userData; for (const a of u.arms) a.rotation.set(0, 0, 0); u.manual = false; });
+  };
 }
 
 function showChungju(ctx) {
@@ -304,7 +309,7 @@ export default {
     const { world, dialogue } = ctx;
     const P = scene.areas.palace;
     world.closeView = true;
-    // 저고여 사건: 압록강 가 길을 걷던 몽골 사신이 쓰러진다(고정 화면, 그대로)
+    // 저고여 사건(D-14): 압록강 가 길을 걷던 사신이 덤불 뒤 복면 병사의 화살에 쓰러진다(카메라가 길을 따라간다)
     const J = scene.areas.jeogo;
     world.player.visible = false;
     world.setFixedCamera(J.cam.pos, J.cam.target);
@@ -390,7 +395,7 @@ export default {
     await sayAll(dialogue, script.cheoin.done);
     dialogue.close();
 
-    // 3. 충주성: 짧은 장면 전환 뒤 김윤후를 따라 관청 마당으로, 노비 문서를 가져다 놓는다(실패 없음, 불길 없이 연기·재)
+    // 3. 충주성: 짧은 장면 전환 뒤 김윤후를 따라 관청 마당으로, 노비 문서를 가져다 놓는다(실패 없음). 문서가 불타고 노비와 백성들이 만세한다(D-14)
     await ctx.fade(true);
     setupChungju(ctx);
     ctx.setGoal(G[5]);
@@ -408,12 +413,18 @@ export default {
     input.enabled = true;
     await carryDocuments(ctx);
     input.enabled = false;
+    // 문서 더미 너머로 노비와 백성들이 보이는 곳에서 본다(학생은 잠깐 숨겨 앞을 가리지 않게)
+    world.player.visible = false;
+    world.setFixedCamera(C.cheerCam.pos, C.cheerCam.target);
     ctx.audio.play('whoosh');
-    await scene.burnDocuments(); // 문서 더미에서 연기가 피어오르고 재가 된다(불길 없음)
+    await scene.burnDocuments(); // 불꽃이 일어 문서가 타오르고, 불이 잦아들며 연기·재가 남는다(D-14)
     await sayAll(dialogue, script.chungju.burn);
     dialogue.close();
-    await marchToWall(ctx); // 노비와 백성들이 모여 줄지어 성벽으로 나간다
+    const stopCheer = cheer(ctx); // 노비와 백성들이 제자리에서 만세
+    await new Promise(r => setTimeout(r, 900));
     await sayAll(dialogue, script.chungju.done);
+    stopCheer();
+    world.player.visible = true;
     ctx.setGoal(G[G.length - 1]);
     return { firstTryCorrect: (a.firstTry ? 1 : 0) + (b.first ? 1 : 0), firstTryTotal: 2, easyModeUsed: b.easyModeUsed };
   },
