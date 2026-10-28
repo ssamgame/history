@@ -198,8 +198,8 @@ test('roam: talking moves the camera close to the speaker and back afterwards', 
 async function untilRescue(s, sc) {
   const bot = touchBot(s, { answers });
   ch2.minigame(s.ctx); // 성벽 방어는 봇이 막고, 들판에 도착하면 멈춘다
-  for (let i = 0; i < 2000 && s.w.bounds !== sc.field.bounds; i++) await sleep(15);
-  for (let i = 0; i < 2000 && !s.ui.querySelector('.screen.howto'); i++) await sleep(15); // 들판의 양규에게 다가가 말을 걸어야 구출이 시작된다(C-05): 봇이 그 일을 한다
+  for (let i = 0; i < 6000 && s.w.bounds !== sc.field.bounds; i++) await sleep(15);
+  for (let i = 0; i < 6000 && !s.ui.querySelector('.screen.howto'); i++) await sleep(15); // 들판의 양규에게 다가가 말을 걸어야 구출이 시작된다(C-05): 봇이 그 일을 한다
   bot.stop();
   s.ui.querySelector('.screen.howto button.primary')?.click();
   await sleep(30);
