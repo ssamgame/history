@@ -7,6 +7,7 @@ import { showHowTo, runWithRetries, pickOnMap } from '../../core/minigame.js';
 import { enterThroughGate } from '../kit/gate.js';
 import { labelSprite } from '../kit/play.js';
 import { leadWalk } from '../kit/lead.js';
+import { setCarry } from '../../core/people.js';
 import script from './script.js';
 
 let scene = null;
@@ -232,11 +233,11 @@ export function carryDocuments(ctx) {
       const p = world.player.position;
       if (!carried && Math.hypot(p.x - take[0], p.z - take[1]) < 1.4) { // 김윤후가 두루마리를 건넨다
         carried = scene.bundles[n];
-        const ks = world.player.scale.y || 1;
-        world.player.add(carried); carried.position.set(0.42 / ks, 1.25 / ks, 0.35 / ks); carried.scale.setScalar(1.2 / ks); carried.rotation.set(0, 0, 0);
+        carried.scale.setScalar(1.2); carried.rotation.set(0, 0, 0);
+        setCarry(world.player, carried, 'side'); // 두루마리를 옆구리에 끼고 걷는다(D-18)
         audio.play('tap'); show();
       } else if (carried && Math.hypot(p.x - pr.position.x, p.z - pr.position.z) < 1.4) { // 문서 더미에 놓는다
-        world.player.remove(carried); carried.visible = false; carried = null;
+        setCarry(world.player, null); carried.visible = false; carried = null;
         n += 1; scene.pileUp(n); audio.play('correct');
         if (n >= 3) { done = true; off(); tr.visible = pr.visible = false; hud.setCounter(null); world.setGoal(null); resolve(); return; }
         show();

@@ -24,7 +24,7 @@ import * as THREE from 'three';
 import { BUILD, addFootprint, taegukgiTexture, addNature } from './town.js';
 import { bakeStatic } from './buildings.js';
 import { terrainField, terrainMesh, hillColorFor } from './terrain.js';
-import { mat, makePerson } from '../../core/people.js';
+import { mat, makePerson, setCarry } from '../../core/people.js';
 import { createTapTargets } from '../../core/minigame.js';
 import { MAP_OUTLINE } from '../../core/screens.js';
 import { LOOKS } from '../../content/characters.js';
@@ -352,7 +352,7 @@ export function drive(ctx, part, easy) {
   show();
   // 건네받기: give가 있는 곳에 닿으면 그곳 사람이 꾸러미를 건네고, 학생이 두 손에 들고 다닌다. hand가 있는 곳에서는 하나씩 건넨다
   let carried = null;
-  s.cleanup(() => { if (carried) world.player.remove(carried); });
+  s.cleanup(() => { if (carried) setCarry(world.player, null); });
   const giveBundle = r => {
     const b = new THREE.Group(); for (let k = 0; k < 5; k++) add(b, box(0.7, 0.07, 0.5), k % 2 ? 0xf2ede0 : 0xe6dfcc, 0, k * 0.075, 0); add(b, box(0.08, 0.42, 0.52), 0x8a6a48, 0, 0.18, 0);
     const from = r.person ? r.person.position.clone().add(new THREE.Vector3(0, 1.3, 0)) : new THREE.Vector3(r.x, 1.3, r.z);
@@ -360,9 +360,9 @@ export function drive(ctx, part, easy) {
     const to = new THREE.Vector3(); let k = 0;
     const off = world.onUpdate(dt => { // 사람 손에서 학생 손으로 날아온다
       k = Math.min(1, k + dt / 0.6);
-      world.player.localToWorld(to.set(0.42, 1.35, 0.4)); g.worldToLocal(to);
+      world.player.localToWorld(to.set(0, 1.22, 0.6)); g.worldToLocal(to);
       b.position.lerpVectors(from, to, k); b.position.y += Math.sin(k * Math.PI) * 0.6;
-      if (k >= 1) { off(); g.remove(b); const ks = world.player.scale.y || 1; b.position.set(0.42 / ks, 1.35 / ks, 0.4 / ks); b.scale.setScalar(1.3 / ks); world.player.add(b); carried = b; } // 옆구리에 끼고(뒤에서도 보이게)
+      if (k >= 1) { off(); g.remove(b); b.scale.setScalar(1.3); setCarry(world.player, b, 'arms'); carried = b; } // 두 팔로 안고 다닌다(D-18, 꾸러미가 몸보다 넓어 뒤에서도 보인다)
     });
     s.cleanup(off);
   };
@@ -510,19 +510,21 @@ export function deliver(ctx, part, easy) {
     return { ...b, disc, pos: s.at(b.x, b.z) };
   });
   let i = 0, held = null;
+  const sheet = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.04, 0.44), mat(0xf2ede0)); sheet.rotation.x = -0.5; // 손에 든 종이
   const missedCards = new Set();
   const hold = () => {
     if (held) world.player.remove(held);
     const c = part.cards[i];
     held = c ? labelSprite(c.text, { bg: 'rgba(255,250,240,0.97)', border: '#d9a441' }) : null;
     if (held) { held.position.set(0, 3.1 / (world.player.scale.y || 1), 0); held.scale.divideScalar(world.player.scale.x || 1); world.player.add(held); } // 키가 작아도 글은 같은 크기·높이
+    setCarry(world.player, c ? sheet : null, 'arms'); // 머리 위 글은 읽기용으로 두고, 손에는 종이 한 장을 든다(D-18)
     ctx.hud.setCounter(`${part.counter || '가져다 놓은 것'} ${i}/${part.cards.length}`);
     const target = c && bins.find(b => b.id === c.bin);
     ctx.testHooks.walkTo = target ? target.pos : null;
     world.setGoal((easy || missedCards.has(c)) && target ? target.pos : null); // 한 번 틀린 것은 화살표가 맞는 곳을 알려 준다
   };
   hold();
-  s.cleanup(() => { if (held) world.player.remove(held); });
+  s.cleanup(() => { if (held) world.player.remove(held); setCarry(world.player, null); });
   // 놓은 뒤에는 처음 자리로 돌아가 다음 것을 든다
   const home = () => { if (part.from) { const a = s.at(...part.from); place(world, [a.x, a.z], part.face ?? Math.PI); } };
   // 지나가다 밟은 것은 놓지 않는다: 원 안에서 멈춰 잠깐(DWELL초) 서 있어야 놓인다. 원은 서 있는 동안 점점 밝아진다.

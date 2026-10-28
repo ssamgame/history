@@ -218,8 +218,41 @@ export function gaitPose(person, ph, k = 1) {
   const k0 = u.legs[0].userData.knee, k1 = u.legs[1].userData.knee;
   if (k0) k0.rotation.x = (0.1 + Math.max(0, -c) * 1.1) * k;
   if (k1) k1.rotation.x = (0.1 + Math.max(0, c) * 1.1) * k;
-  if (u.arms) { u.arms[0].rotation.x = -s * 0.65; u.arms[1].rotation.x = s * 0.65; }
+  if (u.carry) carryPose(person, ph, k); // 물건을 들었으면 팔은 물건을 받치고, 물건과 함께 살짝 흔들린다(D-18)
+  else if (u.arms) { u.arms[0].rotation.x = -s * 0.65; u.arms[1].rotation.x = s * 0.65; }
   return Math.abs(c) * 0.08 * k;
+}
+
+// 물건 들기(D-18, 모든 장 공통): 든 물건을 몸에 붙이고 팔이 받치는 자세가 된다. style:
+//   'arms'(두 팔로 가슴 앞에 안기: 꾸러미·판) · 'side'(굽힌 오른팔 위에 얹어 옆구리에 끼기: 두루마리) · 'shoulder'(오른손으로 어깨에 멘 것을 잡기: 쇠가죽 묶음)
+// at: 물건 자리(몸 기준), arms: [왼팔, 오른팔]의 [앞뒤, 안팎] 각도(null이면 걸을 때 흔드는 팔)
+const CARRY = {
+  arms: { at: [0, 1.22, 0.6], arms: [[-1.0, 0.33], [-1.0, -0.33]] },
+  side: { at: [0.56, 1.42, 0.45], arms: [null, [-1.1, 0.05]] },
+  shoulder: { at: [0.48, 2.0, -0.08], arms: [null, [-2.9, -0.15]] },
+};
+export function carryPose(person, ph = 0, k = 0) {
+  const u = person.userData, c = u.carry; if (!c || !u.arms) return;
+  const P = CARRY[c.style] || CARRY.arms, sway = Math.sin(ph * 2) * 0.04 * k;
+  P.arms.forEach((a, i) => {
+    if (a) u.arms[i].rotation.set(a[0] + sway, 0, a[1]);
+    else u.arms[i].rotation.set(-Math.sin(ph) * k * 0.65 * (i ? -1 : 1), 0, 0); // 빈 팔은 걸음에 맞춰 흔든다
+  });
+  c.obj.position.set(P.at[0], P.at[1] + Math.abs(Math.cos(ph)) * 0.035 * k, P.at[2]);
+  c.obj.rotation.z = c.rz + Math.sin(ph) * 0.05 * k;
+}
+// 물건을 든다(obj) / 내려놓는다(null). 들던 것이 있으면 먼저 내려놓는다. 물건은 사람의 자식이 되어 함께 움직인다
+export function setCarry(person, obj, style = 'arms') {
+  const u = person.userData, prev = u.carry;
+  if (prev && prev.obj !== obj && prev.obj.parent === person) person.remove(prev.obj);
+  if (!obj) {
+    u.carry = null;
+    if (u.arms) for (const a of u.arms) a.rotation.set(0, 0, 0);
+    return;
+  }
+  person.add(obj);
+  u.carry = { obj, style, rz: prev && prev.obj === obj ? prev.rz : obj.rotation.z };
+  carryPose(person);
 }
 // 네 다리 짐승(말)의 걸음: 대각선 짝(앞왼·뒤오른 / 앞오른·뒤왼)이 번갈아 나가고 머리를 걸음에 맞춰 끄덕인다. 들썩이는 높이를 돌려준다
 export function horseGait(horse, ph) {

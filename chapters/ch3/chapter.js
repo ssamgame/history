@@ -7,6 +7,8 @@ import { roam } from '../../core/flow.js';
 import { showHowTo, runWithRetries } from '../../core/minigame.js';
 import { enterThroughGate } from '../kit/gate.js';
 import { labelSprite } from '../kit/play.js';
+import { setCarry, mat } from '../../core/people.js';
+import * as THREE from 'three';
 import script from './script.js';
 
 const EXPLORE_BOUNDS = { x0: -28, x1: 28, z0: -3.5, z1: 14 };
@@ -73,9 +75,16 @@ export function introWalk(ctx) {
 }
 
 // 쇠가죽 6개를 주워 둑으로 가져간다. 실패는 없다. 그동안 강감찬은 둑 옆으로 걸어가 기다린다.
-function collectHides(ctx) {
+// 주운 쇠가죽은 접어서 어깨에 메고 다닌다(D-18): 한 장 주울 때마다 묶음이 두툼해진다
+function hideBundle() {
+  const g = new THREE.Group(); g.name = 'hideBundle';
+  for (let k = 0; k < 6; k++) { const m = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.07, 0.5), mat([0x8a5a3a, 0x7a4e32, 0x94643f][k % 3])); m.position.y = k * 0.07; m.rotation.y = (k % 2) * 0.25; m.visible = false; m.castShadow = true; g.add(m); }
+  return g;
+}
+export function collectHides(ctx) {
   const { world, hud, audio } = ctx;
   const gc = world.npcs.get('gangamchan'), m = gc.mesh.position, post = scene.bankPath[0];
+  const bundle = hideBundle();
   return new Promise(resolve => {
     let carrying = false, done = false;
     const off = world.onUpdate(dt => {
@@ -88,7 +97,12 @@ function collectHides(ctx) {
         for (const h of scene.hides) {
           if (h.taken) continue;
           const d = Math.hypot(p.x - h.x, p.z - h.z);
-          if (d < 1.4) { h.taken = true; h.mesh.visible = false; audio.play('tap'); continue; }
+          if (d < 1.4) {
+            h.taken = true; h.mesh.visible = false; audio.play('tap');
+            bundle.children[scene.hides.filter(x => x.taken).length - 1].visible = true;
+            if (world.player.userData.carry?.obj !== bundle) setCarry(world.player, bundle, 'shoulder');
+            continue;
+          }
           left += 1;
           if (d < nd) { nd = d; nearest = h; }
         }
@@ -97,6 +111,7 @@ function collectHides(ctx) {
         else { carrying = true; setStep(ctx, 3); }
       } else if (Math.hypot(p.x - scene.dam.x, p.z - scene.dam.z) < scene.dam.r) {
         done = true; off(); hud.setCounter(null); world.setGoal(null);
+        setCarry(world.player, null); // 둑에 내려놓는다
         world.moveNpc('gangamchan', post[0], post[1], Math.atan2(p.x - post[0], p.z - post[1]));
         scene.ring.visible = false; scene.damWall.visible = true; audio.play('correct');
         resolve();
