@@ -11,23 +11,39 @@ function add(g, geo, color, x, y, z, rx = 0, ry = 0, rz = 0, kind = 'wood') {
 }
 const box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
 
-// 바닥이 평평한 조선 배의 몸통: 바닥판, 양 뱃전(살짝 벌어짐), 뒤로 비스듬한 평평한 뱃머리판과 고물판, 노
-function koreanHull(g, { oars = 6 } = {}) {
+// 바닥이 평평한 조선 배의 몸통: 바닥판, 양 뱃전(살짝 벌어짐), 뒤로 비스듬한 평평한 뱃머리판과 고물판
+function koreanHull(g) {
   add(g, box(2.4, 0.5, 5.6), HULL, 0, 0.05, 0);
   for (const s of [-1, 1]) add(g, box(0.22, 1.1, 6.6), HULL, s * 1.42, 0.55, 0, 0, 0, s * -0.14);
   add(g, box(2.9, 1.2, 0.22), HULL, 0, 0.65, -3.3, 0.5);   // 뱃머리(이물): 평평한 판이 비스듬히
   add(g, box(2.7, 1.1, 0.22), HULL, 0, 0.65, 3.3, -0.4);   // 고물
   for (const s of [-1, 1]) add(g, box(0.1, 0.12, 6.4), DARK, s * 1.56, 0.95, 0);   // 뱃전 띠
-  for (let i = 0; i < oars; i++) for (const s of [-1, 1]) {
-    const z = -2.2 + i * (4.4 / Math.max(1, oars - 1));
-    { const o = add(g, box(0.07, 0.07, 2.3), PLANK, s * 2.1, 0.45, z, 0, 0, 0); o.rotation.set(0, Math.PI / 2, s * 0.45); o.userData.oar = s; (g.userData.oars ||= []).push(o); } // 물에 닿는 노(rowShip이 젓는다)
+}
+
+// 노(D-30 I-01): 배 조각을 합친(bakeStatic) 뒤에 단다. 노마다 뱃전에 박힌 받침(pivot)이 있어 그 점을 중심으로
+// 앞뒤로 젓고(y) 물에 담갔다 든다(z). 노 끝(날)은 userData.tip(받침 기준 자리).
+const OAR_LEN = 2.8;
+function addOars(g, n) {
+  const m = mat(PLANK, 'wood');
+  const shaft = box(OAR_LEN, 0.08, 0.08), blade = box(0.6, 0.04, 0.3);
+  g.userData.oars = [];
+  for (let i = 0; i < n; i++) for (const s of [-1, 1]) {
+    const pivot = new THREE.Group();
+    pivot.position.set(s * 1.5, 0.95, -2.2 + i * (4.4 / Math.max(1, n - 1)));
+    pivot.rotation.order = 'YZX'; // 먼저 기울이고(물에 담금), 그다음 앞뒤로 돈다(젓기)
+    const a = new THREE.Mesh(shaft, m); a.position.x = s * OAR_LEN / 2; a.castShadow = true;
+    const b = new THREE.Mesh(blade, m); b.position.x = s * (OAR_LEN - 0.3); b.castShadow = true;
+    pivot.add(a, b);
+    pivot.userData.oar = s; pivot.userData.tip = [s * (OAR_LEN - 0.2), 0, 0];
+    g.add(pivot); g.userData.oars.push(pivot);
   }
+  rowShip(g, 0, 0);
 }
 
 // 판옥선: 평평한 몸통 위 판옥(위층 갑판)과 포를 쏘는 구멍, 여장(난간), 장대(지휘하는 누각), 돛대 둘과 깃발
 export function panokseon() {
   const g = new THREE.Group();
-  koreanHull(g, { oars: 6 });
+  koreanHull(g);
   add(g, box(3.0, 0.1, 6.2), PLANK, 0, 1.1, 0);
   add(g, box(3.3, 0.95, 5.3), UPPER, 0, 1.62, 0.15);
   for (let i = 0; i < 5; i++) for (const s of [-1, 1]) add(g, box(0.05, 0.26, 0.32), DARK, s * 1.66, 1.65, -1.8 + i * 0.95, 0, 0, 0, 'grain'); // 포혈
@@ -43,6 +59,7 @@ export function panokseon() {
     add(g, new THREE.CylinderGeometry(0.16, 0.16, 1.9, 8), 0xd8cdb0, 0, 2.2 + h * 0.8, z, 0, 0, Math.PI / 2, 'cloth');
   }
   bakeStatic(g);
+  addOars(g, 6);
   const flag = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 1.4).translate(0.55, 0, 0), new THREE.MeshLambertMaterial({ color: 0xb8452f, side: THREE.DoubleSide }));
   flag.position.set(0, 7.2, -1.2); g.add(flag);
   return g;
@@ -51,7 +68,7 @@ export function panokseon() {
 // 거북선: 판옥선 몸통 위를 등딱지 덮개(개판)로 덮고 송곳을 꽂았다. 앞에 용머리, 옆에 포를 쏘는 구멍과 노.
 export function geobukseon() {
   const g = new THREE.Group();
-  koreanHull(g, { oars: 7 });
+  koreanHull(g);
   add(g, box(3.1, 0.75, 6.0), UPPER, 0, 1.45, 0.1);
   for (let i = 0; i < 6; i++) for (const s of [-1, 1]) add(g, box(0.05, 0.24, 0.3), DARK, s * 1.56, 1.5, -2.2 + i * 0.85, 0, 0, 0, 'grain');
   const shell = add(g, new THREE.SphereGeometry(1.7, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), 0x4a5a48, 0, 1.8, 0.2, 0, 0, 0, 'tile');
@@ -73,10 +90,11 @@ export function geobukseon() {
   }
   add(g, new THREE.SphereGeometry(0.12, 6, 4), 0xb8452f, 0, 2.05, -4.66, 0, 0, 0, 'grain');
   bakeStatic(g);
+  addOars(g, 7);
   return g;
 }
 
-// 일본 배(안택선 모양): 높은 뱃전, 갑판 위 누각, 네모 돛 하나(무늬 없이). 공격을 받으면 연기(불길 없이)
+// 일본 배(안택선 모양): 높은 뱃전, 갑판 위 누각, 네모 돛 하나(무늬 없이). 공격을 받으면 연기(불길은 j4 장면이 붙인다)
 export function japaneseShip() {
   const g = new THREE.Group();
   add(g, box(2.4, 1.5, 6.0), 0x3a2c20, 0, 0.45, 0);
@@ -101,11 +119,13 @@ export function japaneseShip() {
 // 판옥선 그림(옆모습, SVG): 학익진 자리 놓기 판에 쓴다
 export const PANOK_ICON = '<svg viewBox="0 0 64 44" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M4 30 L60 30 L54 40 L10 40 Z" fill="#4e3826"/><rect x="10" y="22" width="44" height="8" fill="#7a5a3c"/><g fill="#2b241c"><rect x="15" y="24" width="4" height="3"/><rect x="24" y="24" width="4" height="3"/><rect x="33" y="24" width="4" height="3"/><rect x="42" y="24" width="4" height="3"/></g><path d="M8 22 H56" stroke="#6b4a32" stroke-width="2"/><g fill="#7a5a3c"><rect x="9" y="18" width="3" height="4"/><rect x="17" y="18" width="3" height="4"/><rect x="25" y="18" width="3" height="4"/><rect x="33" y="18" width="3" height="4"/><rect x="41" y="18" width="3" height="4"/><rect x="49" y="18" width="3" height="4"/></g><path d="M38 12 L50 12 L52 15 L36 15 Z" fill="#3d4846"/><path d="M40 15 V20 M48 15 V20" stroke="#8a2f24" stroke-width="1.5"/><path d="M24 4 V20" stroke="#5a3f2a" stroke-width="2"/><path d="M24 4 L34 7 L24 10 Z" fill="#b8452f"/></svg>';
 
-// 노 젓기(D-25): ph 박자에 맞춰 노를 앞뒤로 젓고 들었다 담근다. k는 세기(0이면 쉬는 자세)
+// 노 젓기(D-25, D-30 I-01): 모든 노가 같은 박자(ph)로 젓는다. 노 날이 물에 잠긴 채 뒤(고물 쪽)로 당기고,
+// 물 위로 들어 올린 채 앞으로 돌아온다. k는 세기(0이면 노를 물 위로 든 채 쉰다). 학생 배·함대가 멈추면 k가 천천히 0이 된다.
 export function rowShip(ship, ph, k = 1) {
+  const sweep = Math.sin(ph) * 0.42 * k, dip = 0.3 + k * (0.13 - Math.cos(ph) * 0.15); // cos<0(당기는 때)일 때 깊이 담근다
   for (const o of ship.userData.oars || []) {
     const sd = o.userData.oar;
-    o.rotation.y = Math.PI / 2 + Math.sin(ph) * 0.4 * k;
-    o.rotation.z = sd * (0.45 - Math.max(0, Math.cos(ph)) * 0.2 * k);
+    o.rotation.y = sd * sweep;
+    o.rotation.z = -sd * dip;
   }
 }

@@ -1,17 +1,19 @@
 // 조선편 4장 「임진왜란과 한산도 대첩」(D-25): 포구 문으로 들어와 수군·백성의 이야기(아무 차례) → 이순신의 출전 명령 →
-// 판옥선을 몰아 견내량 입구까지 가서 적을 꾀어내고 넓은 바다로 달아나기 → 펼쳐진 학익진의 빈자리로 배를 몰아 넣기 →
-// 거북선이 앞장서 나서고(S43) 한꺼번에 공격 → 퀴즈.
+// 판옥선을 몰아 견내량 입구까지 가서 적을 꾀어내고 넓은 바다로 달아나기 → 대장선의 이순신에게 배를 몰고 가 말 걸기(D-30 C-05) →
+// 펼쳐진 학익진의 빈자리로 배를 몰아 넣기 → 거북선이 앞장서 나서고(S43) 한꺼번에 공격 → 빛나는 문 → 퀴즈.
 import * as THREE from 'three';
 import { buildJ4Scene, STRAIT_Z } from './scene.js';
 import { roam } from '../../../core/flow.js';
 import { showHowTo } from '../../../core/minigame.js';
 import { LOOKS } from '../../../content/characters.js';
+import { makePerson } from '../../../core/people.js';
+import { waitInteract } from '../../../core/portal.js';
 import { enterThroughGate, closeGate } from '../../kit/gate.js';
 import { sayAll, placePlayer, tryPart, sumParts } from '../common.js';
 import script from './script.js';
 
 const PEOPLE = ['navy', 'commoner'];
-const SPOT = [-8, 7];
+const SPOT = [-5, 7.5];
 const SAIL_CAM = { offset: [0, 6, 11], lookY: 3 }; // 배 바로 뒤 낮은 시점(고려 6장과 같은 방식, 판옥선이 커서 조금 뒤로)
 export const LURE = { start: [0, -30], mouth: { x: 0, z: STRAIT_Z + 4, r: 3.5 }, open: { x: 0, z: -52, r: 4 } };
 const CATCH = 5;
@@ -20,7 +22,7 @@ let scene = null;
 function markPort(ctx, heard) {
   const { world, hud } = ctx;
   PEOPLE.forEach(id => { world.npcs.get(id).mark.visible = !heard.has(id); });
-  world.npcs.get('yisunsin').mark.visible = heard.size > 0;
+  world.npcs.get('yisunsin').mark.visible = heard.size === PEOPLE.length; // 모두 들어야 이순신이 출전 명령을 내린다(C-01)
   const next = world.npcs.get(PEOPLE.find(id => !heard.has(id)) || 'yisunsin').mesh.position;
   world.setGoal({ x: next.x, z: next.z });
   ctx.setGoal(script.goals[heard.size === PEOPLE.length ? 1 : 0]);
@@ -82,12 +84,25 @@ export async function lureEnemy(ctx, easy) {
   return ok;
 }
 
-// 2) 학익진: 우리 배들이 날개 모양으로 펼쳐지고, 학생은 날개의 빈자리로 배를 몬다(곧은 뒷줄 자리는 틀림)
+// 꾀어내기와 학익진 사이(D-30 C-05): 바다에 나타난 대장선으로 배를 몰고 가 이순신에게 말을 걸어야 다음 놀이가 시작된다
+export async function meetFlagship(ctx) {
+  const { dialogue } = ctx;
+  scene.enemy.position.set(0, 0, -74); scene.enemy.rotation.y = Math.PI; // 적은 견내량 입구 밖에서 따라 나오는 중
+  scene.flagship.visible = true;
+  const f = scene.flagship.position;
+  await waitInteract(ctx, { pos: { x: f.x - 4.5, z: f.z + 1 }, quest: script.goals[3], label: '대장선의 이순신과 이야기하기', mark: true, markY: 5.5 });
+  ctx.input.enabled = false; ctx.input.releaseJoystick?.();
+  await sayAll(dialogue, script.wing.call); dialogue.close();
+}
+
+// 2) 학익진: 우리 배들이 날개 모양으로 펼쳐지고, 학생은 날개의 빈자리로 배를 몬다(D-30 I-02: 틀린 뒷줄 자리는 없다)
 export async function fillWing(ctx, easy) {
   const { world, dialogue, audio } = ctx;
+  await ctx.fade(true);
   scene.setStage('wing');
   scene.enemy.position.set(0, 0, -68); scene.enemy.rotation.y = Math.PI;
   board(ctx, [0, -13]);
+  await ctx.fade(false);
   await dialogue.say(script.wing.spread); dialogue.close();
   await scene.spreadFleet(easy ? 2 : 3);
   const rings = [scene.slot, ...scene.decoys].map((s, i) => {
@@ -137,7 +152,7 @@ export async function turtleAndBattle(ctx) {
   await sayAll(dialogue, [script.turtle[1]]); dialogue.close();
   follow();
   await new Promise(resolve => { let k = 0; const off = world.onUpdate(dt => { k = Math.min(1, k + dt / 2.5); scene.setAdvance(k * 0.8); if (k >= 1) { off(); resolve(); } }); }); // 적이 날개 안으로
-  world.fitFixedCamera([0, 0, -38], [0.9, 1.25, 0.45], [[-16, 0, -31], [16, 0, -31], [-6, 0, -49], [6, 0, -49]], 0.9); // 싸움을 옆에서 가까이
+  world.fitFixedCamera([0, 0, -38], [0.9, 1.25, 0.45], [[-20, 0, -32], [20, 0, -32], [-6, 0, -49], [6, 0, -49]], 0.9); // 싸움을 옆에서 가까이(넓어진 날개 양 끝까지)
   ctx.testHooks.sunk = await scene.playBattle(ctx.audio);
   scene.setStage('won');
 }
@@ -157,10 +172,36 @@ export default {
     return scene;
   },
 
+  // 장 도입(C-03): ① 일본 배들이 바다를 건너 포구 쪽으로 몰려온다(부산으로 쳐들어옴) ② 바닷가 길로 임금(선조)과 신하·군사가
+  // 서둘러 떠난다(의주로 피란). 끝나면 배와 사람을 치우고 포구를 처음 모습으로 돌린다.
+  introScene(ctx) {
+    const { world } = ctx, offs = [], temp = [];
+    return {
+      shots: [
+        { cam: [9, 5, 12], look: [0, 1.5, -20], to: { cam: [4, 4, 8], look: [0, 1.5, -28] },
+          act: () => {
+            scene.enemy.visible = true; scene.enemy.position.set(0, 0, -64); scene.enemy.rotation.y = Math.PI; // 뱃머리를 포구(남쪽) 쪽으로
+            offs.push(world.onUpdate(dt => { scene.enemy.position.z = Math.min(-24, scene.enemy.position.z + dt * 4.5); }));
+          } },
+        { cam: [12, 3.2, 13.4], look: [8, 1.5, 8], to: { cam: [3, 3.2, 13.4], look: [0.5, 1.5, 8] }, // 떠나는 임금 일행을 따라간다
+          act: () => {
+            const KING = LOOKS.injo; // 임금 차림(붉은 곤룡포와 익선관)
+            [[KING, 0], [LOOKS.minister, 1.6], [LOOKS.minister, 2.6], [LOOKS.joseonSoldier, -1.6], [LOOKS.joseonSoldier, 3.8]].forEach(([look, dx], i) => {
+              const p = makePerson(look); p.position.set(10 + dx, 0, 8.2 + (i % 2) * 0.7); p.rotation.y = -Math.PI / 2; world.level.add(p); temp.push(p);
+            });
+            offs.push(world.onUpdate(dt => { for (const p of temp) p.position.x -= dt * 1.3; })); // 서둘러 길을 떠난다
+          } },
+      ],
+      done: () => { offs.forEach(f => f()); temp.forEach(p => p.removeFromParent()); scene.setStage('harbor'); },
+    };
+  },
+  // 미니게임 뒤 빛나는 문(C-02): 포구 앞 빈 땅, 학생 쪽(서쪽)을 본다
+  portal: { at: [0.5, 8.5], ry: -Math.PI / 2 },
+
   enterStage(ctx, stage) {
     scene.gate.setOpen(0);
     if (stage === 'minigame') placePlayer(ctx.world, SPOT);
-    if (stage === 'quiz') { scene.setStage('won'); placePlayer(ctx.world, SPOT); ctx.setGoal(script.goals[4]); }
+    if (stage === 'quiz') { scene.setStage('won'); placePlayer(ctx.world, SPOT); }
   },
 
   async explore(ctx) {
@@ -185,8 +226,8 @@ export default {
             if (isNew && heard.size < PEOPLE.length) await dialogue.say(script.more);
             return;
           }
-          if (id !== 'yisunsin') { await sayAll(dialogue, n.always); return; } // 배 옆 안내판
-          if (!heard.size) { await sayAll(dialogue, n.wait); return; }
+          if (id !== 'yisunsin') return;
+          if (heard.size < PEOPLE.length) { await sayAll(dialogue, n.wait); return; } // 모두 들어야 진행(C-01)
           await sayAll(dialogue, n.first);
           [...PEOPLE, 'yisunsin'].forEach(k => { world.npcs.get(k).mark.visible = false; });
           world.setGoal(null); hud.setCounter(null);
@@ -211,8 +252,9 @@ export default {
     await sayAll(dialogue, script.lure.go); dialogue.close();
     parts.push(await tryPart(ctx, easy => lureEnemy(ctx, easy), script.lure.fail));
     await sayAll(dialogue, script.lure.done); dialogue.close();
+    await meetFlagship(ctx); // 다음 놀이는 대장선에 가서 말을 걸어야 시작한다(C-05)
     // 2) 학익진
-    ctx.setGoal(script.goals[3]);
+    ctx.setGoal(script.goals[4]);
     await showHowTo(ctx.ui, script.wing.howto);
     parts.push(await tryPart(ctx, easy => fillWing(ctx, easy), script.wing.fail));
     await sayAll(dialogue, script.wing.done); dialogue.close();
@@ -228,7 +270,6 @@ export default {
     world.bounds = { x0: -16, x1: 16, z0: 4.5, z1: 14 };
     placePlayer(world, SPOT);
     await ctx.fade(false);
-    ctx.setGoal(script.goals[4]);
     return sumParts(parts);
   },
 };
