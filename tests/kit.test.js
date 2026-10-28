@@ -32,7 +32,8 @@ for (const meta of KIT) {
       mod.buildScene(w);
       const people = [...w.npcs.values()].filter(n => !n.spot), signs = [...w.npcs.values()].filter(n => n.spot);
       ok(people.length >= 3, `${meta.id}: ${people.length} people`);
-      ok(signs.length >= 2, `${meta.id}: ${signs.length} signs`);
+      const plaques = (mod.layout?.signs || []).filter(x => x.plaque).length; // D-30 C-03: 건물 간판(이름만, 말 걸 수 없음)도 센다
+      ok(signs.length + plaques >= 2, `${meta.id}: ${signs.length} signs`);
       const b = w.bounds, inside = m => m.position.x >= b.x0 && m.position.x <= b.x1 && m.position.z >= b.z0 && m.position.z <= b.z1;
       for (const n of [...people, ...signs]) {
         ok(inside(n.mesh), `${meta.id}/${n.id} reachable`);

@@ -48,7 +48,7 @@ export function labelSprite(text, { color = '#231c14', bg = 'rgba(239,227,198,0.
   s.renderOrder = 10;
   const k = 0.9 * size;
   s.scale.set((w / h) * k, k, 1);
-  s.userData.setText = null;
+  s.userData.setText = null; s.userData.text = text;
   return s;
 }
 
@@ -434,7 +434,7 @@ export function drive(ctx, part, easy) {
         if (!held && r.holdSay) toast(ctx, r.holdSay);
         if (!held && !r.ridden && (r.alight || r.board)) { r.ridden = true; spawnRiders(r); }
         held += dt; show();
-        ctx.hud.setWait?.(`${r.holdLabel || '기다리는 중'} ${Math.max(1, Math.ceil(r.hold - held))}초`); // 남은 초를 가운데 크게
+        ctx.hud.setWait?.(`${r.holdLabel || '기다리는 중'} ${Math.max(1, Math.ceil(r.hold - held))}초`, r.holdCenter ? { center: true } : undefined); // 남은 초를 가운데 크게(holdCenter: 화면 한가운데에 더 크게, 근대 1장 망루)
         if (held >= r.hold) { ctx.hud.setWait?.(null); reach(r); }
       } else if (inside) reach(r);
       else if (held) { held = 0; ctx.hud.setWait?.(null); toast(ctx, r.holdLeave || '빛나는 곳을 벗어나면 처음부터 다시 기다려요.', 'bad'); show(); }
@@ -784,7 +784,7 @@ export function judge(ctx, part, easy) {
     const post = new THREE.Group(); post.position.set(it.x, 0, it.z); g.add(post);
     const p = standPerson(post, it.look || 'soldier', 0, 0); p.rotation.y = it.ry ?? 0;
     const m = ring(0xd9a441, 0.9, 1.15); m.position.set(0, 0.09, 0); post.add(m);
-    const lab = labelSprite('?', { size: 0.9 }); lab.position.set(0, 3.2, 0); post.add(lab);
+    const lab = labelSprite(part.mark || '?', { size: 0.9 }); lab.position.set(0, 3.2, 0); post.add(lab); // mark: 머리 위 표시(근대 1장은 '!')
     return { ...it, post, m, lab, pos: s.at(it.x, it.z + 1.2), done: false };
   });
   let got = 0;

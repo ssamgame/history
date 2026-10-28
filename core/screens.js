@@ -291,7 +291,7 @@ export function createHud(root, { touch }) {
       if (sec != null) { const n = Math.max(0, Math.ceil(sec)); timer.textContent = `남은 시간 ${n}초`; bigTimer.textContent = `${n}초`; bigTimer.classList.toggle('low', n <= 10); }
     },
     // 기다리기(정류장에서 손님이 내리는 중 등): 화면 위 가운데에 크게 (null이면 숨김)
-    setWait(text) { bigWait.hidden = text == null; if (text != null) bigWait.textContent = text; },
+    setWait(text, { center = false } = {}) { bigWait.hidden = text == null; bigWait.classList.toggle('center', text != null && center); if (text != null) bigWait.textContent = text; }, // center: 화면 한가운데에 크게
     setCounter(text) { counter.hidden = text == null; if (text != null) counter.textContent = text; },
     setTalkEnabled(b) { talkBtn.disabled = !b; },
     setTouchVisible(b) { joyZone.hidden = talkBtn.hidden = !(touch && b); },

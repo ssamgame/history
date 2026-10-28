@@ -556,14 +556,25 @@ export function readBook(ctx, { title, pages, render = null, onTiming = null }) 
 }
 
 // 문서 보기: 한지에 적은 글(요구 사항 등)을 바로 읽는다. items: [{ text, note? }].
-export function showDocument(ctx, { title, heading, intro = '', items, src = null, button = '다 읽었어요' }) {
+// scroll: true면 낡은 종이 두루마리(누렇게 바랜 종이, 양끝에 말린 나무 축, 얼룩) 모양으로 보이고, 조항 아래 작은 글씨(note)는 뺀다(D-30 근대 1장 조약문).
+// 출처(src)는 화면에 쓰지 않고 데이터에만 둔다. scroll이 없으면 예전 문서 모양 그대로.
+export function showDocument(ctx, { title, heading, intro = '', items, src = null, button = '다 읽었어요', scroll = false }) {
   return new Promise(resolve => {
     const screen = el('section', 'screen order doc');
     const card = el('div', 'card wide');
-    const paper = el('div', 'doc-paper');
     const ol = el('ol');
-    for (const it of items) { const li = el('li', null, it.text); if (it.note) li.append(el('small', null, it.note)); ol.append(li); }
-    paper.append(el('h3', null, heading), ol);
+    for (const it of items) { const li = el('li', null, it.text); if (it.note && !scroll) li.append(el('small', null, it.note)); ol.append(li); }
+    let paper;
+    if (scroll) {
+      const sheet = el('div', 'scroll-sheet');
+      for (const k of [1, 2, 3]) sheet.append(el('span', `scroll-stain s${k}`)); // 얼룩(꾸밈, 글 뒤에 깔린다)
+      sheet.append(el('h3', null, heading), ol);
+      paper = el('div', 'doc-scroll');
+      paper.append(el('div', 'scroll-rod left'), sheet, el('div', 'scroll-rod right'));
+    } else {
+      paper = el('div', 'doc-paper');
+      paper.append(el('h3', null, heading), ol);
+    }
     const ok = el('button', 'btn primary doc-ok', button); ok.type = 'button';
     card.append(el('div', 'eyebrow', '문서 읽기'), el('h2', null, title), ...(intro ? [el('p', null, intro)] : []), paper, ok);
     screen.append(card); ctx.ui.append(screen);
