@@ -124,23 +124,38 @@ test('ch1: intro walk brings the player in 3~5 s with input off, then restores; 
 
 // D-6: 서희를 따라 걷는 담판 + 말이 모이는 탐험 + 큰 천막
 test('ch1 D-6: goals walk with Seohui instead of going to the ferry', () => {
-  eq(ch1Script.goals.length, 5);
+  eq(ch1Script.goals.length, 4);
+  ok(!ch1Script.goals.some(g => g.includes('확인')), 'no quiz goal (the glowing door asks instead)');
   ok(ch1Script.goals[0].includes('이야기'), 'people first');
   ok(ch1Script.goals[2].includes('서희를 따라'), 'follow Seohui');
   ok(!ch1Script.goals.join().includes('나루터'), 'no ferry goal');
 });
 
-test('ch1 D-6: Seohui picks up what the student heard and ends with "no land"', () => {
+test('ch1 D-6/D-30: Seohui waits until all three were heard, then picks up what they said and ends with "no land"', () => {
   const sh = ch1Script.npc.seohui;
-  eq(seohuiTalk(new Set()), sh.tooEarly);
+  eq(seohuiTalk(new Set()), sh.wait);
+  eq(seohuiTalk(new Set(['soldier', 'officer'])), sh.wait, 'two of three is not enough');
+  ok(sh.wait[0].text.includes('모두'));
   const all = seohuiTalk(new Set(['archer', 'officer', 'soldier']));
   const at = k => all.indexOf(sh.heard[k]);
   ok(at('soldier') > 0 && at('officer') > at('soldier') && at('archer') > at('officer'), 'heard lines in order');
   const land = all.findIndex(l => l.who === 'seohui' && /땅을/.test(l.text) && /없다/.test(l.text) && (l.src || []).includes('S17'));
   ok(land > at('archer'), 'land line comes after what was heard');
-  const one = seohuiTalk(new Set(['soldier']));
-  ok(one.includes(sh.heard.soldier) && !one.includes(sh.heard.officer) && !one.includes(sh.heard.archer), 'only what was heard');
-  ok(one.some(l => /땅을/.test(l.text)), 'still says no land');
+});
+
+test('ch1 D-30: intro scene shows the Khitan army and Sonn, the glowing door stands on empty ground, no hud notices', async () => {
+  const s = touchSetup(ch1Script.speakers);
+  try {
+    ch1.buildScene(s.w, s.ctx);
+    const film = ch1.introScene(s.ctx);
+    ok(film.shots.length >= ch1Script.intro.length, 'a shot per sentence');
+    ok(film.shots.every(k => k.cam && k.look));
+    ok(ch1.portal && ch1.portal.at.length === 2 && 'ry' in ch1.portal, 'portal spec');
+    const [px, pz] = ch1.portal.at;
+    ok(![...s.w.colliders || []].some(c => Math.hypot(c.x - px, c.z - pz) < c.r + 1.5), 'portal not on a collider');
+    const src = await (await fetch('../chapters/ch1/chapter.js')).text();
+    ok(!/hud\.notice|\.notice\(/.test(src), 'no notice toasts');
+  } finally { s.done(); }
 });
 
 function walkFollow(s, maxT = 90) {

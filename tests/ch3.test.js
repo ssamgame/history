@@ -41,16 +41,16 @@ test('ch3: completes with touch-only actions', async () => {
     eq(r.easyModeUsed, false);
     eq(r.stars, 3);
   } finally { bot.stop(); s.done(); }
-}, { timeout: 150000 });
+}, { timeout: 260000 });
 
-test('ch3: resume at quiz shows guju aftermath', () => {
+test('ch3: resume at quiz brings the student back to the camp (glowing door), dam stays', () => {
   const s = touchSetup(ch3Script.speakers);
   try {
     const sc = ch3.buildScene(s.w, s.ctx);
     ch3.enterStage(s.ctx, 'quiz');
-    eq(s.w.bounds, sc.gujuBounds);
-    eq(sc.reinforcements.visible, true);
+    eq(sc.guju.visible, false);
     eq(sc.damWall.visible, true);
+    ok(s.w.player.position.z < 14 && s.w.player.position.z > -3.5, 'student is in the camp');
   } finally { s.done(); }
 });
 
@@ -70,20 +70,35 @@ test('ch3 D-10: camp gate, 삼교천 진영 name board, scout, no reading signs,
   let board = false; w.level.traverse(o => { if (o.userData && o.userData.title === '삼교천 진영') board = true; });
   ok(board, '삼교천 진영 name board');
   eq([...w.npcs.values()].filter(n => n.spot).length, 0, 'no reading signs');
-  eq(ch3Script.intro.length, 1); ok(!ch3Script.intro[0].text.includes('\n'));
-  ok(ch3Script.intro[0].src.includes('S3'));
+  eq(ch3Script.intro.length, 2); ok(ch3Script.intro.every(l => !l.text.includes('\n') && l.src.includes('S3')));
   ok(sc.guju.visible === false, 'guju armies are hidden until the guju part');
   w.dispose();
 });
 
-test('ch3 D-10: Gang Gam-chan gathers what the soldier and the scout said (any order, never stuck)', () => {
+test('ch3 D-10/D-30: Gang Gam-chan waits until both were heard, then gathers what the soldier and the scout said', () => {
   const n = ch3Script.npc.gangamchan;
-  eq(gangamchanTalk(new Set()), [...n.greet, ...n.tooEarly]);
+  eq(gangamchanTalk(new Set()), n.wait);
+  eq(gangamchanTalk(new Set(['scout'])), n.wait, 'one of two is not enough');
+  ok(n.wait[0].text.includes('모두'));
   const all = gangamchanTalk(new Set(['soldier', 'scout']));
   ok(all.some(l => l.text.includes('쇠가죽')) && all.some(l => l.src && l.src.includes('S5')), 'ends with the cowhide plan (S3, S5)');
   eq(all.filter(l => l === n.heard.soldier || l === n.heard.scout).length, 2);
-  ok(gangamchanTalk(new Set(['scout'])).some(l => l.text.includes('쇠가죽')), 'one person heard is enough');
   ok(ch3Script.npc.scout.first.every(l => l.src && l.src.includes('S3')), 'scout lines are sourced');
+});
+
+test('ch3 D-30: no quiz goal, intro scene, glowing door on empty ground, no hud notices', async () => {
+  ok(!ch3Script.goals.some(g => g.includes('확인')), 'no quiz goal');
+  const s = touchSetup(ch3Script.speakers);
+  try {
+    ch3.buildScene(s.w, s.ctx);
+    const film = ch3.introScene(s.ctx);
+    ok(film.shots.length >= ch3Script.intro.length && film.shots.every(k => k.cam && k.look), 'a shot per sentence');
+    ok(ch3.portal && ch3.portal.at.length === 2, 'portal spec');
+    const [px, pz] = ch3.portal.at;
+    ok(!s.w.colliders.some(c => Math.hypot(c.x - px, c.z - pz) < c.r + 1.5), 'portal not on a collider');
+    const src = await (await fetch('../chapters/ch3/chapter.js')).text();
+    ok(!/hud\.notice|\.notice\(/.test(src), 'no notice toasts');
+  } finally { s.done(); }
 });
 
 function stepUntil(w, cond, max = 600) { for (let i = 0; i < max && !cond(); i++) w.step(0.05, { x: 0, z: 0 }); }
@@ -176,7 +191,7 @@ test('ch3 D-10: full run keeps the low camera and walks (no fixed camera, no but
     ok(sc.damWall.visible, 'dam stays');
     ok(sc.river.army.position.y > -0.01, 'the Khitan army was pushed back, not sunk');
   } finally { off(); bot.stop(); s.done(); }
-}, { timeout: 150000 });
+}, { timeout: 260000 });
 
 // ---- D-12: 미리 와 있으면 신호가 나지 않고, 강감찬 곁으로 돌아와야 신호. 귀주는 장면 전환으로 언덕에서 대치 ----
 test('ch3 D-12: waiting at the plug never gets the signal; coming back beside Gang Gam-chan does', async () => {

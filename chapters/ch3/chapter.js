@@ -6,6 +6,7 @@ import { leadWalk } from '../kit/lead.js';
 import { roam } from '../../core/flow.js';
 import { showHowTo, runWithRetries } from '../../core/minigame.js';
 import { enterThroughGate } from '../kit/gate.js';
+import { waitInteract } from '../../core/portal.js';
 import { labelSprite } from '../kit/play.js';
 import { setCarry, mat } from '../../core/people.js';
 import * as THREE from 'three';
@@ -13,6 +14,7 @@ import script from './script.js';
 
 const EXPLORE_BOUNDS = { x0: -28, x1: 28, z0: -3.5, z1: 14 };
 export const INTRO_FROM = [0, 31]; // 장 시작 장면: 남문 밖 길
+const RETURN_AT = [0, 10];          // 싸움이 끝난 뒤 진영으로 돌아온 학생 자리
 const PEOPLE = ['soldier', 'scout']; // 이야기를 들어 볼 차례(병사 → 척후병), 그다음 강감찬
 const CROSS_SECONDS = { normal: 10, easy: 14 }; // 거란군이 냇물을 다 건너는 시간(쉬운 방식은 더 천천히)
 const LABEL_SECONDS = 1.6;
@@ -27,25 +29,28 @@ function placePlayer(world, [x, z], ry = Math.PI) {
   world.camMode = 'follow'; world.snapCamera();
 }
 
-// 강감찬의 첫 말(D-10): 아무 이야기도 안 들었으면 먼저 들어 보라 하고(막히지 않고 다시 찾아오면 된다),
-// 들었으면 들은 사람의 말을 차례로 이어받아 '쇠가죽으로 물을 막아 두자'로 모은다
+// 강감찬의 첫 말(D-10/D-30): 모두 듣기 전에는 마저 듣고 오라 하고(막히지 않고 다시 찾아오면 된다),
+// 모두 들었으면 들은 사람의 말을 차례로 이어받아 '쇠가죽으로 물을 막아 두자'로 모은다
 export function gangamchanTalk(heard) {
   const n = script.npc.gangamchan;
-  if (!PEOPLE.some(id => heard.has(id))) return [...n.greet, ...n.tooEarly];
+  if (PEOPLE.some(id => !heard.has(id))) return n.wait; // 모두 들어야 진행(D-30)
   return [...n.greet, ...PEOPLE.filter(id => heard.has(id)).map(id => n.heard[id]), ...n.plan, ...n.go];
 }
 
-// 탐험 목표: 아직 이야기를 안 들은 다음 사람에게 느낌표와 화살표, 다 들었으면 강감찬
+// 탐험 목표(D-30): 아직 안 들은 사람 모두에게 느낌표, 화살표는 그중 첫째. 모두 들었으면 강감찬에게만
 function setStep(ctx, n, heard = new Set(PEOPLE)) {
-  const { world } = ctx;
+  const { world, hud } = ctx;
   ctx.setGoal(script.goals[n]);
-  const next = n === 0 ? PEOPLE.find(id => !heard.has(id)) : n === 1 ? 'gangamchan' : null;
-  for (const id of [...PEOPLE, 'gangamchan']) world.npcs.get(id).mark.visible = id === next;
+  const left = PEOPLE.filter(id => !heard.has(id));
+  for (const id of PEOPLE) world.npcs.get(id).mark.visible = n === 0 && left.includes(id);
+  world.npcs.get('gangamchan').mark.visible = n === 1;
+  const next = n === 0 ? left[0] : n === 1 ? 'gangamchan' : null;
   const t = next && world.npcs.get(next).mesh.position;
   if (t) world.setGoal({ x: t.x, z: t.z });
   else if (n === 3) world.setGoal({ x: scene.dam.x, z: scene.dam.z });
   else world.setGoal(null);
   scene.ring.visible = n === 3;
+  hud.setCounter(n === 0 ? `들은 이야기 ${heard.size}/${PEOPLE.length}` : null);
 }
 
 // 강감찬 머리 위 짧은 외침("지금이다!", "아직이다!" 등). 놀이를 멈추지 않는다
@@ -297,20 +302,18 @@ export function playGujuBattle(ctx) {
   });
 }
 
+// 싸움이 끝난 뒤: 학생은 삼교천 진영으로 돌아온다(빛나는 문이 선다). 거란군은 없고 둑 쇠가죽만 남는다
 function showAftermath(ctx) {
   const { world } = ctx;
   for (const h of scene.hides) { h.taken = true; h.mesh.visible = false; }
-  scene.damWall.visible = true;
-  scene.river.army.visible = false; scene.campEdge.visible = false;
-  scene.guju.visible = true;
-  for (const k of scene.gujuKhitan) k.visible = false;
-  scene.reinforcements.visible = true; scene.reinforcements.position.x = 9;
-  scene.gujuFires.forEach(f => f.setLevel(0.6)); // 싸움이 끝난 뒤에도 거란 진영이 타고 있다
-  scene.setFlags(true);
-  world.moveNpc('gangamchan', scene.gangAtGuju[0], scene.gangAtGuju[1], Math.PI);
-  world.bounds = scene.gujuBounds;
-  placePlayer(world, scene.gujuStand);
-  ctx.setGoal(script.goals[7]);
+  scene.damWall.visible = true; scene.flood.hide();
+  scene.river.army.visible = false; scene.campEdge.visible = true;
+  scene.guju.visible = false;
+  scene.setFlags(false);
+  const gc = world.npcs.get('gangamchan'); gc.collider.r = 0;
+  world.moveNpc('gangamchan', -8, 6.5, Math.PI * 0.2); gc.mesh.position.y = 0;
+  world.bounds = EXPLORE_BOUNDS;
+  placePlayer(world, RETURN_AT);
 }
 
 export default {
@@ -324,6 +327,23 @@ export default {
     world.closeView = true; // 낮은 카메라·정면 대화(상시 규칙). 장이 끝나면 world.clearLevel이 끈다
     return scene;
   },
+
+  // 장 도입(C-03): ① 비바람 속 북쪽 강둑에서 거란 대군이 냇물 쪽으로 나아오고 ② 진영의 강감찬이 맞설 채비를 한다
+  introScene(ctx) {
+    const { world } = ctx, r = scene.river;
+    let off = null;
+    return {
+      shots: [
+        { cam: [-8, 5.5, 4], look: [1.5, 1.5, -18], to: { cam: [-4, 4, -1], look: [1.5, 1.5, -15] },
+          act: () => { let k = 0; off = world.onUpdate(dt => { k = Math.min(0.28, k + dt * 0.03); r.setCross(k); }); } },
+        { cam: [-1, 2.5, 10.5], look: [-4, 2.1, 5], to: { cam: [-2.2, 2.4, 9.2], look: [-4, 2.2, 5] },
+          act: () => { off?.(); off = null; r.setCross(0); } },
+      ],
+      done: () => { off?.(); r.setCross(0); },
+    };
+  },
+  // 미니게임 뒤 빛나는 문(C-02): 진영 가운데 빈 땅, 돌아온 학생(남쪽)을 본다
+  portal: { at: [0, 4], ry: 0 },
 
   enterStage(ctx, stage) {
     if (stage === 'minigame') { ctx.world.bounds = EXPLORE_BOUNDS; placePlayer(ctx.world, scene.start); }
@@ -350,13 +370,11 @@ export default {
             await sayAll(dialogue, isNew ? n.first : n.later);
             if (!isNew || step !== 0) return;
             heard.add(id);
-            const next = PEOPLE.find(k => !heard.has(k)) || 'gangamchan';
-            await dialogue.say(script.next[next]);
-            if (next === 'gangamchan') step = 1;
+            if (heard.size === PEOPLE.length) { step = 1; await dialogue.say(script.next.gangamchan); } else await dialogue.say(script.more);
             setStep(ctx, step, heard);
           } else if (id === 'gangamchan') {
             await sayAll(dialogue, gangamchanTalk(heard));
-            if (!PEOPLE.some(k => heard.has(k))) return;
+            if (PEOPLE.some(k => !heard.has(k))) return; // 모두 들어야 강감찬이 이끈다(D-30)
             stop(); setTimeout(resolve, 0); // roam이 대화를 닫고 입력을 정리한 뒤에 넘어간다
           }
         },
@@ -377,13 +395,19 @@ export default {
     input.enabled = false;
     await sayAll(dialogue, script.hides.built);
 
-    // 2. 둑 터뜨리기: 강감찬을 따라 둑 위로 올라가(같은 장면) 신호에 맞춰 마개로 걸어간다
-    await sayAll(dialogue, script.dam.lead);
+    // 2. 둑 터뜨리기: 강감찬에게 말을 걸면 둑 위로 이끈다(C-05). 신호에 맞춰 마개로 걸어간다
+    const gc = world.npcs.get('gangamchan'); gc.collider.r = 0; // 다가가 말을 걸 수 있게(둑 위로 이끌 때도 길을 막지 않는다)
     dialogue.close();
-    ctx.setGoal(script.goals[4]);
+    gc.mark.visible = true;
+    await waitInteract(ctx, { pos: gc.mesh.position, quest: script.goals[4], label: '강감찬과 이야기하기', mark: false });
+    gc.mark.visible = false;
+    world.setTalkCamera(gc.mesh);
+    await sayAll(dialogue, script.dam.lead);
+    dialogue.close(); world.camMode = 'follow';
+    ctx.setGoal(script.goals[5]);
     await followGangamchan(ctx, { path: scene.bankPath.slice(1), stand: [scene.stand.x, scene.stand.z], bounds: { ...EXPLORE_BOUNDS, z0: BANK_BOUNDS.z0 }, face: Math.PI });
     setupDam(ctx);
-    ctx.setGoal(script.goals[5]);
+    ctx.setGoal(script.goals[6]);
     await sayAll(dialogue, script.dam.start);
     dialogue.close();
     await showHowTo(ctx.ui, script.dam.howto);
@@ -394,13 +418,18 @@ export default {
     await playFlood(ctx);
     await sayAll(dialogue, script.dam.done);
 
-    // 3. 귀주의 바람(D-12): 짧게 어두워졌다 밝아지며 귀주 언덕으로. 강감찬 곁에서 들판 건너 거란군 진을 내려다본다
-    await sayAll(dialogue, script.guju.lead);
     dialogue.close();
+    // 3. 귀주의 바람(D-12): 강감찬에게 말을 걸면(C-05) 짧게 어두워졌다 밝아지며 귀주 언덕으로. 강감찬 곁에서 들판 건너 거란군 진을 내려다본다
+    gc.mark.visible = true;
+    await waitInteract(ctx, { pos: gc.mesh.position, quest: script.goals[7], label: '강감찬과 이야기하기', mark: false });
+    gc.mark.visible = false;
+    world.setTalkCamera(gc.mesh);
+    await sayAll(dialogue, script.guju.lead);
+    dialogue.close(); world.camMode = 'follow';
     await ctx.fade(true);
     setupGuju(ctx, false);
     scene.reinforcements.visible = false;
-    ctx.setGoal(script.goals[6]);
+    ctx.setGoal(script.goals[8]);
     await ctx.fade(false);
     await sayAll(dialogue, script.guju.intro);
     await sayAll(dialogue, script.guju.start);
@@ -415,7 +444,10 @@ export default {
     for (const k of scene.gujuKhitan) k.visible = false;
     await sayAll(dialogue, script.guju.done);
     await sayAll(dialogue, script.result);
+    dialogue.close();
+    await ctx.fade(true);
     showAftermath(ctx);
+    await ctx.fade(false);
     return { firstTryCorrect: [a, b].filter(x => x.first).length, firstTryTotal: 2, easyModeUsed: a.easyModeUsed || b.easyModeUsed };
   },
 };

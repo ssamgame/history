@@ -36,7 +36,7 @@ test('ch2: completes with touch-only actions', async () => {
     eq(r.stars, 3);
     eq(r.firstTryTotal, 2); eq(r.firstTryCorrect, 2);
   } finally { bot.stop(); s.done(); }
-}, { timeout: 120000 });
+}, { timeout: 240000 });
 
 test('ch2: resume at minigame starts the wall defense', async () => {
   const s = touchSetup(ch2Script.speakers);
@@ -147,14 +147,29 @@ test('ch2 D-8: no info signs, a gate that opens and a 흥화진 name board; one-
 });
 function script_has(id) { return !!ch2Script.npc[id]; }
 
-test('ch2 D-8: Yanggyu gathers what the soldier and villager said (any order, never stuck)', () => {
+test('ch2 D-8/D-30: Yanggyu waits until both were heard, then gathers what the soldier and villager said', () => {
   const n = ch2Script.npc.yanggyu;
-  eq(yanggyuTalk(new Set()), [...n.greet, ...n.tooEarly]);
+  eq(yanggyuTalk(new Set()), n.wait);
+  eq(yanggyuTalk(new Set(['villager'])), n.wait, 'one of two is not enough');
+  ok(n.wait[0].text.includes('모두'));
   const all = yanggyuTalk(new Set(['soldier', 'villager']));
   ok(all.some(l => l.src && l.src.includes('S3')) && all.some(l => l.src && l.src.includes('S14')), 'echoes S3 and S14');
   ok(all.some(l => l.text.includes('무너지면 안 된다')), 'S2 resolve');
-  const one = yanggyuTalk(new Set(['villager']));
-  ok(one.some(l => l.text.includes('무너지면 안 된다')), 'one person heard is enough to go on');
+});
+
+test('ch2 D-30: no quiz goal, intro scene, glowing door on empty ground, no hud notices', async () => {
+  ok(!ch2Script.goals.some(g => g.includes('확인')), 'no quiz goal');
+  const s = touchSetup(ch2Script.speakers);
+  try {
+    ch2.buildScene(s.w, s.ctx);
+    const film = ch2.introScene(s.ctx);
+    ok(film.shots.length >= ch2Script.intro.length && film.shots.every(k => k.cam && k.look), 'a shot per sentence');
+    ok(ch2.portal && ch2.portal.at.length === 2, 'portal spec');
+    const [px, pz] = ch2.portal.at;
+    ok(!s.w.colliders.some(c => Math.hypot(c.x - px, c.z - pz) < c.r + 1.5), 'portal not on a collider');
+    const src = await (await fetch('../chapters/ch2/chapter.js')).text();
+    ok(!/hud\.notice|\.notice\(/.test(src), 'no notice toasts');
+  } finally { s.done(); }
 });
 
 test('roam: talking moves the camera close to the speaker and back afterwards', async () => {
@@ -184,8 +199,8 @@ async function untilRescue(s, sc) {
   const bot = touchBot(s, { answers });
   ch2.minigame(s.ctx); // 성벽 방어는 봇이 막고, 들판에 도착하면 멈춘다
   for (let i = 0; i < 2000 && s.w.bounds !== sc.field.bounds; i++) await sleep(15);
+  for (let i = 0; i < 2000 && !s.ui.querySelector('.screen.howto'); i++) await sleep(15); // 들판의 양규에게 다가가 말을 걸어야 구출이 시작된다(C-05): 봇이 그 일을 한다
   bot.stop();
-  for (let i = 0; i < 100 && !s.ui.querySelector('.screen.howto'); i++) await sleep(15);
   s.ui.querySelector('.screen.howto button.primary')?.click();
   await sleep(30);
 }
