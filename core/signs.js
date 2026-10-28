@@ -53,8 +53,8 @@ export function makeSign(title) {
 }
 
 // 건물 간판(현판, C-03 2026-10-28): 길 위에 따로 세운 안내판 대신 건물 벽(처마 아래)에 단 검은 판에 흰 글씨.
-// 돌려주는 묶음의 자리는 건물 앞 땅(학생이 서서 읽는 곳)이고, 판은 위(y)와 뒤(back, 건물 쪽)로 옮겨 단다.
-// world.addSpot에 넣으면 인물처럼 다가가 읽는다(대사는 script.npc[id].always 그대로).
+// 돌려주는 묶음의 자리는 건물 앞 땅이고, 판은 위(y)와 뒤(back, 건물 쪽)로 옮겨 단다.
+// 선생님 결정(D-30): 간판은 이름만 보여 주고 읽지 않는다(말 걸기 없음). 알려 줄 내용은 그 곁 사람의 대사로 옮긴다.
 export function makePlaque(title, { y = 2.9, back = 1.2 } = {}) {
   const g = new THREE.Group();
   g.userData.title = title;
@@ -74,9 +74,14 @@ export function makePlaque(title, { y = 2.9, back = 1.2 } = {}) {
   board.position.set(0, y, -back); board.rotation.x = -0.12; board.castShadow = true; g.add(board); // 아래에서 읽기 좋게 살짝 숙인다
   const frame = new THREE.Mesh(new THREE.BoxGeometry(2.5, 1.06, 0.06), mat(0x7a2a1e, 'wood', 'object'));
   frame.position.set(0, y, -back - 0.05); frame.rotation.x = -0.12; g.add(frame);
-  g.name = `sign:${title}`;
+  g.name = `plaque:${title}`;
   g.userData.plaque = true; g.userData.markY = y + 0.85; g.userData.markZ = -back + 0.2;
   return g;
 }
-// 안내판 하나 만들기: plaque가 있으면 건물 간판, 없으면 예전 기둥 안내판
-export function signOrPlaque(s) { return s.plaque ? makePlaque(s.title, s.plaque === true ? {} : s.plaque) : makeSign(s.title); }
+// 안내판 목록 하나 세우기: plaque가 있으면 이름만 있는 건물 간판(말 걸기 없음), 없으면 예전 기둥 안내판(말 걸어 읽기)
+export function placeSign(world, s) {
+  if (!s.plaque) return world.addSpot(s.id, makeSign(s.title), s.x, s.z, s.ry ?? 0);
+  const m = makePlaque(s.title, s.plaque === true ? {} : s.plaque);
+  m.position.set(s.x, 0, s.z); m.rotation.y = s.ry ?? 0; world.level.add(m);
+  return null;
+}

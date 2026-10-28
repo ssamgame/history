@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { mat, makePerson, setWork } from '../../core/people.js';
 import { scatter } from '../../core/props.js';
-import { makeSign, signOrPlaque } from '../../core/signs.js';
+import { makeSign, placeSign } from '../../core/signs.js';
 import { LOOKS } from '../../content/characters.js';
 import { createWeather } from '../../core/weather.js';
 import * as LM from '../joseon/landmarks.js';
@@ -334,7 +334,7 @@ export function buildTown(world, layout) {
   for (const s of layout.scatter || []) scatter(world, { ground: field.heightAt, ...s });
   if (layout.nature !== false) addNature(world, layout, field, kind, color);
   for (const n of layout.npcs || []) { world.addNpc(n.id, typeof n.look === 'string' ? LOOKS[n.look] : n.look, n.x, n.z, n.ry || 0); if (n.work) setWork(world.npcs.get(n.id).mesh, n.work); } // work: 일하는 동작
-  for (const s of layout.signs || []) world.addSpot(s.id, signOrPlaque(s), s.x, s.z, s.ry ?? 0); // plaque면 건물 간판(C-03)
+  for (const s of layout.signs || []) placeSign(world, s); // plaque면 이름만 있는 건물 간판(C-03)
   const weather = layout.weather ? createWeather(world, layout.weather, { count: 700 }) : null;
   // 깃발이 바람에 흔들린다
   const flags = Object.values(named).map(g => g.userData.flag).filter(Boolean);

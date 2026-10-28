@@ -142,7 +142,7 @@ test('faces: 갓 초상화를 그린 뒤 투명도가 되돌아온다', async ()
   eq(g.globalAlpha, 1);
 });
 
-test('signs: 안내판은 말 걸 수 있고, 장마다 있으며, 출처가 달린 해설이다', async () => {
+test('signs: 기둥 안내판은 말 걸 수 있다(아직 고치지 않은 장에서 쓰는 모양)', async () => {
   const { makeSign } = await import('../core/signs.js');
   const w = testWorld();
   try {
@@ -151,43 +151,25 @@ test('signs: 안내판은 말 걸 수 있고, 장마다 있으며, 출처가 달
     w.player.position.set(2, 0, 4.5);
     eq(w.nearestNpc(2.8).id, 'signX');
   } finally { w.dispose(); }
-  const { JOSEON } = await import('../chapters/index.js');
-  for (const c of JOSEON) {
-    const mod = (await c.load()).default;
-    const w2 = testWorld();
-    try {
-      mod.buildScene(w2);
-      const signs = [...w2.npcs.values()].filter(n => n.spot);
-      ok(signs.length >= 2, `${c.id} has ${signs.length} signs`);
-      const people = [...w2.npcs.values()].filter(n => !n.spot);
-      for (const s of signs) {
-        const lines = mod.script.npc[s.id] && mod.script.npc[s.id].always;
-        ok(lines && lines.length && lines.every(l => l.who !== 'narr' || l.src), `${c.id}/${s.id} lines`);
-        for (const p of people) { const d = Math.hypot(s.mesh.position.x - p.mesh.position.x, s.mesh.position.z - p.mesh.position.z); ok(d >= 3.5, `${c.id}/${s.id} too close to ${p.id} (${d.toFixed(1)})`); }
-        const b = w2.bounds;
-        ok(s.mesh.position.x >= b.x0 && s.mesh.position.x <= b.x1 && s.mesh.position.z >= b.z0 && s.mesh.position.z <= b.z1, `${c.id}/${s.id} reachable`);
-      }
-    } finally { w2.dispose(); }
-  }
 });
 
-test('signs: 고려편 1·2장에도 안내판이 있고 다른 물건과 겹치지 않는다', async () => {
-  const { CHAPTERS, JOSEON } = await import('../chapters/index.js');
-  for (const c of [CHAPTERS[0], CHAPTERS[1], ...JOSEON]) {
+// D-30 C-03: 고려편·조선편·근대 1·2장에는 길 위 안내판이 없다. 건물 간판(plaque:)은 이름만 보여 주고 말 걸 수 없다
+test('signs D-30: 14장에는 길 위 안내판(말 거는 기둥 판)이 없고, 간판은 이름만 보인다', async () => {
+  const { CHAPTERS, JOSEON, MODERN } = await import('../chapters/index.js');
+  const { placeSign } = await import('../core/signs.js');
+  const w0 = testWorld();
+  try {
+    eq(placeSign(w0, { id: 'p', title: '관아', x: 0, z: 0, plaque: { y: 3, back: 1 } }), null);
+    ok(!w0.npcs.has('p'), 'plaque is not talkable');
+    ok(w0.level.children.some(o => o.name === 'plaque:관아'));
+  } finally { w0.dispose(); }
+  for (const c of [...CHAPTERS, ...JOSEON, MODERN[0], MODERN[1]]) {
     const mod = (await c.load()).default;
     const w = testWorld();
     try {
       mod.buildScene(w);
-      const signs = [...w.npcs.values()].filter(n => n.spot);
-      ok(signs.length >= 2, `${c.id} signs`);
-      for (const s of signs) {
-        ok(mod.script.npc[s.id] && mod.script.npc[s.id].always.length, `${c.id}/${s.id} lines`);
-        for (const col of w.colliders) {
-          if (col === s.collider) continue;
-          const d = Math.hypot(col.x - s.mesh.position.x, col.z - s.mesh.position.z);
-          ok(d >= col.r + 0.5, `${c.id}/${s.id} overlaps something at (${col.x}, ${col.z}) d=${d.toFixed(1)}`);
-        }
-      }
+      const spots = [...w.npcs.values()].filter(n => n.spot).map(n => n.id);
+      eq(spots, [], `${c.id} road signs`);
     } finally { w.dispose(); }
   }
 });
