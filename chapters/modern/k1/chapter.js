@@ -107,7 +107,7 @@ const base = makeKitChapter({
       { id: 'official', look: 'joseonOfficial', x: 0, z: -3.5, ry: 0 },
     ],
     // 길 위 안내판 대신 건물 간판(C-03): 관아 처마 아래 「강화도 조약」, 서쪽 초가 벽에 「서양과의 조약」. x, z는 읽는 자리(건물 앞 땅)
-    signs: [{ id: 'signTreaty', title: '강화도 조약', x: -3, z: -4.2, plaque: { y: 4.2, back: 1.25 } }, { id: 'signWest', title: '서양과의 조약', x: -10.6, z: -0.4, ry: 0.15, plaque: { y: 2.3, back: 1.7 } }],
+    signs: [{ id: 'signTreaty', title: '강화도 조약', x: -3, z: -4.2, plaque: { y: 3.75, back: 1.1 } }, { id: 'signWest', title: '서양과의 조약', x: -10.6, z: -0.4, ry: 0.15, plaque: { y: 2.3, back: 1.7 } }],
     scatter: [{ kind: 'grass', count: 60, area: { x0: -15, x1: 15, z0: -8, z1: 12 }, avoid: [{ x: 0, z: 2, r: 3 }], seed: 201 }],
   },
   parts: [

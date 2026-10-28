@@ -12,10 +12,11 @@ export function withRo(word) {
   const jong = (c - 0xac00) % 28;
   return `${word}${jong === 0 || jong === 8 ? '로' : '으로'}`;
 }
-// 문 이름: next = { title, course? } → '세종 때의 과학 기술로 가는 문', 다음 편이면 '조선편 「조선을 걷다」로 가는 문'
+// 문 이름(2026-10-28 선생님): 장과 장 사이는 다음 장의 사건만 짧게 '위화도 회군으로 가는 문',
+// 편이 바뀌면 어느 시대로 가는지만 '조선으로 가는 문'. next = { title } 또는 { era }
 export function portalName(next) {
   if (!next) return '';
-  return next.course ? `${next.course} 「${next.title}」${withRo(next.title).slice(next.title.length)} 가는 문` : `${withRo(next.title)} 가는 문`;
+  return `${withRo(next.era || next.title)} 가는 문`;
 }
 
 function textSprite(text, { size = 1, color = '#fff6d8', bg = 'rgba(60,20,10,0.88)', border = '#f2c45a' } = {}) {
@@ -93,7 +94,6 @@ export function makePortal(world, { x, z, ry = 0, name, grand = false }) {
   }
   const label = textSprite(name, { size: grand ? 0.95 : 0.6, bg: grand ? 'rgba(20,30,70,0.9)' : 'rgba(60,20,10,0.88)' });
   label.position.y = H + (grand ? 2.6 : 0.9); g.add(label);
-  if (grand) { const sub = textSprite('다음 편으로', { size: 0.6, bg: 'rgba(120,80,10,0.9)' }); sub.position.y = H + 1.8; g.add(sub); }
   world.level.add(g);
   // 기둥에만 부딪힌다(가운데는 지나갈 수 있다)
   const c = Math.cos(ry), s = Math.sin(ry);
@@ -146,14 +146,14 @@ export function waitInteract(ctx, { pos, quest = null, label = '시작하기', r
 }
 
 // 미니게임이 끝난 뒤: 마을 가운데(chapter.portal 또는 학생 앞)에 문을 세우고, 학생이 문 앞에서 E를 누르면 문으로 걸어 들어간다.
-// next: { title, course? } (다음 장 또는 다음 편). next가 없으면(마지막 편 6장) '배운 내용 확인의 문'.
+// next: { title } 다음 장 또는 { era } 다음 편. next가 없으면(마지막 편 6장) '배운 내용 확인의 문'.
 export async function portalStage(ctx, chapter, next) {
   const { world } = ctx;
   const p = world.player.position;
   const spec = typeof chapter.portal === 'function' ? chapter.portal(ctx) : chapter.portal;
   const at = spec?.at || [p.x, p.z - 7];
   const ry = spec?.ry ?? 0;
-  const grand = !!next?.course || !next;
+  const grand = !!next?.era || !next;
   const name = next ? portalName(next) : '역사 여행을 마치는 문';
   const gate = makePortal(world, { x: at[0], z: at[1], ry, name, grand });
   ctx.portal = gate; // 퀴즈 배경·테스트용

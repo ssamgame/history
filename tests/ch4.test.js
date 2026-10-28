@@ -247,15 +247,14 @@ test('ch4: resume at minigame puts the player in the palace', () => {
   } finally { s.done(); }
 });
 
-test('ch4: resume at quiz shows Chungju with the slave documents already turned to ash', () => {
+test('ch4: resume at quiz puts the student in the palace yard (portal), the slave documents already turned to ash', () => {
   const s = touchSetup(ch4Script.speakers);
   try {
     const sc = ch4.buildScene(s.w, s.ctx);
     ch4.enterStage(s.ctx, 'quiz');
-    eq(s.w.camMode, 'fixed');
-    eq(s.w.player.visible, false);
+    eq(s.w.camMode, 'follow');
+    eq(s.w.player.visible, true);
     eq(sc.documents.visible, false, 'documents gone');
-    eq(sc.smoke.visible, true, 'smoke still rising');
     eq(sc.ashPile.visible, true, 'ash left');
   } finally { s.done(); }
 });

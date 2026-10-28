@@ -24,12 +24,14 @@ test('C-01: 퀘스트 목록은 마친 것 ✓(앞 두 개), 지금 것 하나, 
   } finally { ui.remove(); }
 });
 
-test('C-02: 문 이름은 다음 장 제목 + 로/으로 가는 문, 다음 편이면 편 이름', () => {
+test('C-02: 문 이름은 다음 장 사건 + 로/으로 가는 문, 다음 편이면 시대 이름만', async () => {
   eq(withRo('세종 때의 과학 기술'), '세종 때의 과학 기술로');
   eq(withRo('갑신정변'), '갑신정변으로');
-  eq(withRo('조선을 걷다'), '조선을 걷다로');
-  eq(portalName({ title: '세종과 훈민정음' }), '세종과 훈민정음으로 가는 문');
-  eq(portalName({ course: '조선편', title: '조선을 걷다' }), '조선편 「조선을 걷다」로 가는 문');
+  eq(portalName({ title: '훈민정음' }), '훈민정음으로 가는 문');
+  eq(portalName({ era: '조선' }), '조선으로 가는 문');
+  eq(portalName({ era: '근대' }), '근대로 가는 문');
+  const { ALL_CHAPTERS } = await import('../chapters/index.js');
+  for (const c of ALL_CHAPTERS) ok(c.short && c.short.length <= 12, `${c.id} short name`);
 });
 
 test('C-02: 큰 문(다음 편)은 보통 문보다 크고 빛기둥이 있다', () => {
