@@ -99,9 +99,10 @@ export function buildJ1Scene(world) {
   }
   army.position.set(3, 0, -11.2);
   const armyStart = army.position.clone();
+  const homes = army.children.map(s => s.position.clone()); // 회군 때 한 사람씩 걸어가므로 제자리를 기억해 둔다
   // 회군 장면: 0이면 북쪽 강가(북쪽을 봄), 1이면 남쪽 물길을 건너 섬 밖으로
   const setTurn = t => {
-    army.children.forEach(s => { s.rotation.y = t > 0 ? 0 : Math.PI; });
+    army.children.forEach((s, i) => { s.rotation.y = t > 0 ? 0 : Math.PI; s.position.copy(homes[i]); });
     army.position.set(armyStart.x, 0, armyStart.z + t * (SOUTH_Z + 8 - armyStart.z));
   };
 
