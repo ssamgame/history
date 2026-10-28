@@ -7,6 +7,7 @@ import { scatter } from '../../../core/props.js';
 import { LOOKS } from '../../../content/characters.js';
 import { geunjeongjeon } from '../landmarks.js';
 import { addSigns } from '../common.js';
+import { gateLeaves, nameBoard } from '../../kit/gate.js';
 
 export function buildJ2Scene(world) {
   const L = world.level;
@@ -26,7 +27,7 @@ export function buildJ2Scene(world) {
     hipRoof(w + 4, d + 3.4, 2.6, 0x3d4846, 0, 1.1 + tall, 0, g);
     return g;
   };
-  world.bounds = { x0: -15, x1: 15, z0: -7.5, z1: 10 };
+  world.bounds = { x0: -15, x1: 15, z0: -7.5, z1: 10 }; // 남쪽 끝은 카메라가 궁궐 문 지붕 뒤로 가지 않을 만큼
 
   // 땅: 궁궐 밖 풀밭과 박석을 깐 마당
   let hillH = () => 0;
@@ -58,9 +59,12 @@ export function buildJ2Scene(world) {
   hipRoof(6, 24, 1.6, 0x3d4846, -16, 3.0, 2);
   // 남쪽 담장과 궁궐 문
   for (const sx of [-1, 1]) { const g = new THREE.Group(); g.position.set(sx * 10, 0, 19); L.add(g); wall(g, { w: 14, h: 2.4, color: 0x9a8c7a }); } // 기와를 얹은 궁궐 담
-  mk(new THREE.BoxGeometry(6, 3.4, 1.6), 0xa8392b, 0, 1.7, 19);
-  mk(new THREE.BoxGeometry(2.6, 2.8, 1.8), 0x3a2c20, 0, 1.4, 19);
+  // 궁궐 문(시작 장면, D-24): 양쪽 기둥벽과 위 인방 사이에 문짝 둘. 학생이 이 문을 지나 들어온다
+  for (const sx of [-1, 1]) mk(new THREE.BoxGeometry(1.7, 3.4, 1.6), 0xa8392b, sx * 2.15, 1.7, 19);
+  mk(new THREE.BoxGeometry(6, 0.6, 1.6), 0xa8392b, 0, 3.1, 19);
   hipRoof(9, 4, 1.8, 0x3d4846, 0, 3.4, 19);
+  const gate = gateLeaves(L, { x: 0, z: 19.8, width: 2.6, height: 2.8, color: 0x7a3b2e, inward: -1 });
+  nameBoard(L, '경복궁', 2.8, 9.6); // S46
   // 근정전 앞 드므(불을 끌 물을 담아 둔 넓은 그릇) 둘
   for (const [x, z] of [[-9.5, -8.4], [10.5, -8.6]]) {
     mk(new THREE.BoxGeometry(1.3, 0.35, 1.3), 0xb3ab99, x, 0.18, z);
@@ -95,5 +99,5 @@ export function buildJ2Scene(world) {
   world.addNpc('scholar', LOOKS.scholar, 8.2, 1, -Math.PI / 2);
   world.addNpc('sejong', LOOKS.sejong, 0, -5, 0);
 
-  return { start: [0, 7] };
+  return { start: [0, 8], introFrom: [0, 23], gate, sejongAt: [0, -5] };
 }

@@ -4,9 +4,9 @@ import * as THREE from 'three';
 import { buildJ3Scene } from './scene.js';
 import { roam } from '../../../core/flow.js';
 import { showHowTo } from '../../../core/minigame.js';
-import { PLAY, labelSprite } from '../../kit/play.js';
+import { PLAY } from '../../kit/play.js';
 import { enterThroughGate, closeGate } from '../../kit/gate.js';
-import { sayAll, placePlayer, tryPart, sumParts } from '../common.js';
+import { sayAll, placePlayer, tryPart, sumParts, standPick, tileRow } from '../common.js';
 import script from './script.js';
 
 // 자격루 마당(마을에서 떨어진 x 400): 커다란 자격루 앞의 네 자리를 차례로 찾아가 누르면 그 부분이 움직인다
@@ -27,8 +27,7 @@ export const HOURS = [['호랑이', '🐯'], ['토끼', '🐰'], ['용', '🐲']
 export const DIAL_ROUNDS = [4, 2, 6];
 // 측우기에 고이는 빗물 높이(눈금). 소나기가 두 번 온다
 export const GAUGE_ROUNDS = [5, 3];
-const TILE_GAP = 2.6; // 고르는 자리 사이(가까이 선 자리 하나만 고르게)
-const REACH = 1.3;
+const TILE_GAP = 2.6; // 고르는 자리 사이(가까이 선 자리 하나만 고르게, common.js REACH 1.3)
 
 // 탐험 표시: 아직 안 들은 사람에게 느낌표, 화살표는 다음 사람
 function markTown(ctx, heard) {
@@ -43,51 +42,6 @@ export function townTalk(id, heard) {
   const n = script.npc[id];
   if (heard.has(id)) return n.later;
   return PEOPLE.some(k => k !== id && heard.has(k)) ? [n.bridge, ...n.first] : n.first;
-}
-
-// 자리 고르기: 줄지어 놓인 자리(tiles) 가운데 가까이 선 곳에서 대화 버튼을 누르면 고른다. 맞으면 true, 틀렸다가 고쳐 맞히면 'missed'
-function standPick(ctx, tiles, answer, { easy, hint }) {
-  const { world, hud, dialogue, audio } = ctx;
-  let cur = null, missed = false, done = false;
-  const target = tiles[answer];
-  const show = () => { ctx.testHooks.walkTo = { x: target.x, z: target.z }; world.setGoal(easy || missed ? { x: target.x, z: target.z } : null); };
-  show();
-  ctx.input.enabled = true;
-  return new Promise(resolve => {
-    const off = world.onUpdate(() => {
-      if (done) return;
-      const p = world.player.position;
-      cur = null; let bd = REACH;
-      for (const t of tiles) { const d = Math.hypot(p.x - t.x, p.z - t.z); if (d < bd) { bd = d; cur = t; } }
-      hud.setTalkEnabled?.(!!cur && !dialogue.isOpen());
-      hud.setPrompt?.(cur ? new THREE.Vector3(cur.x, 0, cur.z) : null);
-    });
-    const unbind = ctx.onAction(async () => {
-      if (done || !cur || dialogue.isOpen()) return;
-      const t = cur;
-      if (t === target) {
-        done = true; off(); unbind(); audio.play('correct');
-        hud.setTalkEnabled?.(false); hud.setPrompt?.(null); world.setGoal(null); ctx.testHooks.walkTo = null;
-        resolve(missed ? 'missed' : true);
-        return;
-      }
-      missed = true; audio.play('wrong'); show();
-      ctx.input.enabled = false;
-      await dialogue.say({ who: 'guide', text: `「${t.label}」이 아니에요. ${hint}` }); dialogue.close();
-      ctx.input.enabled = true;
-    });
-  });
-}
-
-// 줄지어 놓는 고르기 자리: 바닥 원과 이름표. 다 쓰면 remove()
-function tileRow(world, list, { y = 1.7, size = 0.9 } = {}) {
-  const g = new THREE.Group(); world.level.add(g);
-  for (const t of list) {
-    const r = new THREE.Mesh(new THREE.RingGeometry(0.8, 1.05, 28), new THREE.MeshBasicMaterial({ color: 0xd9a441, transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
-    r.rotation.x = -Math.PI / 2; r.position.set(t.x, 0.08, t.z); g.add(r);
-    const lab = labelSprite(t.label, { size }); lab.position.set(t.x, y, t.z); g.add(lab);
-  }
-  return { remove: () => world.level.remove(g) };
 }
 
 // 1) 커다란 앙부일구: 해가 움직여 그림자가 시각선을 옮겨 가고, 학생은 그림자가 가리키는 동물 자리에 서서 누른다

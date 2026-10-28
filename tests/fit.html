@@ -16,12 +16,6 @@
   if (kind === 'trace') traceGlyph({ ui }, GLYPHS[1]);
   else if (kind === 'j1cards') { const [, s] = await J('j1'); chooseCards({ ui }, { title: s.reasons.title, cards: s.reasons.cards }); }
   else if (kind === 'j1board') { const [c, s] = await J('j1'); placeOnBoard({ ui }, { title: s.hanyang.title, ...c.HANYANG, boardClass: 'map' }); }
-  else if (kind === 'j2cons') { const [c, s] = await J('j2'); placeOnBoard({ ui }, { title: s.consonants.title, ...c.CONSONANTS }); }
-  else if (kind === 'j2vowel') { const [c, s] = await J('j2'); placeOnBoard({ ui }, { title: s.vowels.title, ...c.VOWELS }); }
-  else if (kind === 'j2word') { const [, s] = await J('j2'); orderCards({ ui }, { title: s.words[1].title, cards: s.words[1].cards }); }
-  else if (kind === 'j3dial') { const [c, s] = await J('j3'); chooseCards({ ui }, { title: s.dial.title, prompt: s.dial.prompt, figure: c.dialSVG(4), cards: [{ text: '🐍 뱀', correct: false }, { text: '🐴 말', correct: true }, { text: '🐑 양', correct: false }] }); }
-  else if (kind === 'j3gauge') { const [c, s] = await J('j3'); chooseCards({ ui }, { title: s.rain.title, prompt: s.rain.prompt, figure: c.gaugeSVG(5), cards: [{ text: '눈금 6', correct: false }, { text: '눈금 5', correct: true }, { text: '눈금 4', correct: false }] }); }
-  else if (kind === 'j3clock') { const [, s] = await J('j3'); orderCards({ ui }, { title: s.clock.title, cards: s.clock.cards }); }
   else if (kind === 'j4wing') { const [c, s] = await J('j4'); placeOnBoard({ ui }, { title: s.wing.title, ...c.WING_BOARD }); }
   else if (kind === 'j5sort') { const [, s] = await J('j5'); sortCards({ ui }, { title: s.sort.title, bins: s.sort.bins, cards: s.sort.cards }); }
   else if (kind === 'j6pulley') { const [c, s] = await J('j6'); chooseCards({ ui }, { title: s.pulley.title, prompt: s.pulley.prompt, figure: c.pulleySVG(), cards: s.pulley.cards }); }

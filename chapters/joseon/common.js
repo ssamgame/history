@@ -2,6 +2,8 @@
 import { roam } from '../../core/flow.js';
 import { runWithRetries, actionButton } from '../../core/minigame.js';
 import { makeSign } from '../../core/signs.js';
+import * as THREE from 'three';
+import { labelSprite } from '../kit/play.js';
 
 export async function sayAll(dialogue, lines) { for (const l of lines) await dialogue.say(l); }
 
@@ -106,4 +108,79 @@ export function timingPress(ctx, { label, seconds, set, window: [lo, hi], fail }
 // 안내판 세우기: [{ id, title, x, z, ry }]. 대사는 script.npc[id].always에 둔다(읽지 않아도 장은 끝난다).
 export function addSigns(world, list) {
   for (const s of list) world.addSpot(s.id, makeSign(s.title), s.x, s.z, 0); // 글이 카메라(남쪽)를 보게
+}
+
+const REACH = 1.3; // 고르는 자리에 닿았다고 보는 거리(자리 사이는 2.6 이상 띄운다)
+
+// 자리 고르기(D-23·D-24, 조선 2·3장): 줄지어 놓인 자리(tiles) 가운데 가까이 선 곳에서 대화 버튼을 누르면 고른다. 맞으면 true, 틀렸다가 고쳐 맞히면 'missed'
+export function standPick(ctx, tiles, answer, { easy, hint }) {
+  const { world, hud, dialogue, audio } = ctx;
+  let cur = null, missed = false, done = false;
+  const target = tiles[answer];
+  const show = () => { ctx.testHooks.walkTo = { x: target.x, z: target.z }; world.setGoal(easy || missed ? { x: target.x, z: target.z } : null); };
+  show();
+  ctx.input.enabled = true;
+  return new Promise(resolve => {
+    const off = world.onUpdate(() => {
+      if (done) return;
+      const p = world.player.position;
+      cur = null; let bd = REACH;
+      for (const t of tiles) { const d = Math.hypot(p.x - t.x, p.z - t.z); if (d < bd) { bd = d; cur = t; } }
+      hud.setTalkEnabled?.(!!cur && !dialogue.isOpen());
+      hud.setPrompt?.(cur ? new THREE.Vector3(cur.x, 0, cur.z) : null);
+    });
+    const unbind = ctx.onAction(async () => {
+      if (done || !cur || dialogue.isOpen()) return;
+      const t = cur;
+      if (t === target) {
+        done = true; off(); unbind(); audio.play('correct');
+        hud.setTalkEnabled?.(false); hud.setPrompt?.(null); world.setGoal(null); ctx.testHooks.walkTo = null;
+        resolve(missed ? 'missed' : true);
+        return;
+      }
+      missed = true; audio.play('wrong'); show();
+      ctx.input.enabled = false;
+      await dialogue.say({ who: 'guide', text: `「${t.label}」이 아니에요. ${hint}` }); dialogue.close();
+      ctx.input.enabled = true;
+    });
+  });
+}
+
+// 줄지어 놓는 고르기 자리: 바닥 원과 이름표. 다 쓰면 remove()
+export function tileRow(world, list, { y = 1.7, size = 0.9 } = {}) {
+  const g = new THREE.Group(); world.level.add(g);
+  for (const t of list) {
+    const r = new THREE.Mesh(new THREE.RingGeometry(0.8, 1.05, 28), new THREE.MeshBasicMaterial({ color: 0xd9a441, transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
+    r.rotation.x = -Math.PI / 2; r.position.set(t.x, 0.08, t.z); g.add(r);
+    const lab = labelSprite(t.label, { size }); lab.position.set(t.x, y, t.z); g.add(lab);
+  }
+  return { remove: () => world.level.remove(g) };
+}
+
+
+// 아무 차례로 찾아가기: spots 가운데 아직 안 한 곳에 서서 대화 버튼을 누르면 onPick(spot)을 기다린다. 모두 하면 끝.
+// 테스트 봇에게는 아직 안 한 첫 자리를 testHooks.walkTo로 알려 준다
+export function visitAny(ctx, spots, onPick) {
+  const { world, hud, dialogue } = ctx;
+  const left = new Set(spots);
+  let cur = null, busy = false;
+  const next = () => { const n = spots.find(x => left.has(x)); ctx.testHooks.walkTo = n ? { x: n.x, z: n.z } : null; };
+  next();
+  ctx.input.enabled = true;
+  return new Promise(resolve => {
+    const off = world.onUpdate(() => {
+      const p = world.player.position;
+      cur = null; let bd = REACH;
+      if (!busy) for (const t of left) { const d = Math.hypot(p.x - t.x, p.z - t.z); if (d < bd) { bd = d; cur = t; } }
+      hud.setTalkEnabled?.(!!cur && !dialogue.isOpen());
+      hud.setPrompt?.(cur ? new THREE.Vector3(cur.x, 0, cur.z) : null);
+    });
+    const unbind = ctx.onAction(async () => {
+      if (busy || !cur || dialogue.isOpen()) return;
+      const t = cur; busy = true; ctx.input.enabled = false;
+      await onPick(t);
+      left.delete(t); busy = false; ctx.input.enabled = true; next();
+      if (!left.size) { off(); unbind(); hud.setTalkEnabled?.(false); hud.setPrompt?.(null); ctx.testHooks.walkTo = null; ctx.input.enabled = false; resolve(); }
+    });
+  });
 }
