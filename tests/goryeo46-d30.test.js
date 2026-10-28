@@ -55,7 +55,7 @@ test('ch5 D-30: two-sentence intro film (burning, then re-making), portal in the
 });
 
 test('ch6 D-30: two-sentence intro film, big portal in a clear spot, goals without quiz, 배중손 waits until all three were heard', async () => {
-  ok(typeof ch6.introScene === 'function' && ch6.portal && ch6.portal.at.length === 2);
+  ok(typeof ch6.introScene === 'function' && typeof ch6.portal === 'function');
   eq(ch6Script.intro.length, 2); ok(ch6Script.intro.every(l => l.src && l.src.includes('S21')));
   ok(!ch6Script.goals.some(g => g.includes('배운 내용')), 'no quiz goal');
   eq(ch6Script.goals.length, 7);
@@ -69,10 +69,11 @@ test('ch6 D-30: two-sentence intro film, big portal in a clear spot, goals witho
     film.shots[1].act(s.ctx);
     for (let i = 0; i < 10; i++) s.w.step(0.05, { x: 0, z: 0 });
     film.done(s.ctx);
-    const [px, pz] = ch6.portal.at, B = sc.portBounds;
-    ok(px - 4 > B.x0 && px + 4 < B.x1 && pz > B.z0 && pz < B.z1, 'inside the port');
-    for (const n of s.w.npcs.values()) ok(Math.hypot(n.mesh.position.x - px, n.mesh.position.z - pz) > 4.5, 'clear of people');
     ch6.enterStage(s.ctx, 'quiz');
     eq(s.w.bounds, sc.portBounds); eq(s.w.player.visible, true);
+    const [px, pz] = ch6.portal(s.ctx).at, B = sc.portBounds; // 문을 세울 때 곁의 군사는 비켜 선다
+    ok(px - 4 > B.x0 && px + 4 < B.x1 && pz > B.z0 && pz < B.z1, 'inside the port');
+    for (const n of s.w.npcs.values()) if (n.mesh.visible) ok(Math.hypot(n.mesh.position.x - px, n.mesh.position.z - pz) > 4.5, `clear of ${n.id}`);
+    for (const c of s.w.colliders) if (c.r >= 1) ok(Math.hypot(c.x - px, c.z - pz) > c.r + 3.2, `clear of something at (${c.x}, ${c.z})`);
   } finally { s.done(); }
 });
