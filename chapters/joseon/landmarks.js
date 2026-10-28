@@ -22,6 +22,13 @@ function railing(g, x0, x1, z, y, color = 0xd6d0c2) {
   add(g, box(x1 - x0, 0.1, 0.12), color, (x0 + x1) / 2, y + 0.5, z, 'stone');
 }
 
+// 앙부일구 시각 칸: 서쪽(묘시)에서 북쪽(오시)을 지나 동쪽(유시)까지 ANGBU_HOURS 칸. hourAngle(k)는 칸 가운데의 방위각(atan2(x, z), 북쪽 = π)
+export const ANGBU_HOURS = 7;
+export const ANGBU_STEP = Math.PI / 7.5;
+export const hourAngle = k => Math.PI + (3 - k) * ANGBU_STEP;
+// 그릇 안쪽 면 위의 점(그릇 묶음 좌표): 방위각 a, 테두리에서 아래로 e(라디안)
+export function bowlPoint(a, e) { const r = 0.78; return new THREE.Vector3(Math.sin(a) * r * Math.cos(e), 2.25 - r * Math.sin(e), Math.cos(a) * r * Math.cos(e)); }
+
 // 앙부일구: 두 단 돌받침 위, 십자 받침과 네 다리가 받치는 가마솥 모양 청동 그릇. 안쪽에 시각선과 절기선, 남쪽에서 북쪽으로 뻗은 그림자 바늘.
 export function angbuilgu() {
   const g = new THREE.Group();
@@ -31,17 +38,24 @@ export function angbuilgu() {
   for (const a of [0, Math.PI / 2]) { const c = add(g, box(1.5, 0.12, 0.16), bronze, 0, 1.31, 0); c.rotation.y = a; } // 십자 받침(물길)
   for (let i = 0; i < 4; i++) {
     const a = Math.PI / 4 + i * Math.PI / 2;
-    const leg = add(g, new THREE.CylinderGeometry(0.05, 0.08, 0.7, 6), bronze, Math.cos(a) * 0.62, 1.62, Math.sin(a) * 0.62);
+    const leg = add(g, new THREE.CylinderGeometry(0.05, 0.08, 0.5, 6), bronze, Math.cos(a) * 0.64, 1.52, Math.sin(a) * 0.64);
     leg.rotation.set(Math.sin(a) * 0.35, 0, -Math.cos(a) * 0.35);
     add(g, new THREE.SphereGeometry(0.1, 8, 6), bronze, Math.cos(a) * 0.68, 1.33, Math.sin(a) * 0.68); // 다리 끝(용 발 모양을 줄여 표현)
   }
-  // 그릇: 안쪽 면에 시각선(세로)과 절기선(가로)을 그린 무늬
-  const cv = document.createElement('canvas'); cv.width = 256; cv.height = 128;
+  // 그릇: 안쪽 면에 시각선(세로)과 절기선(가로)을 그린 무늬. 시각선은 북쪽 반(묘시~유시, ANGBU_HOURS 칸)에만 긋는다(D-30 S-01)
+  const cv = document.createElement('canvas'); cv.width = 512; cv.height = 128;
   const c = cv.getContext('2d');
-  c.fillStyle = '#b48a46'; c.fillRect(0, 0, 256, 128);
+  c.fillStyle = '#b48a46'; c.fillRect(0, 0, 512, 128);
+  const ux = a => ((((a + Math.PI / 2) / (Math.PI * 2)) % 1) + 1) % 1 * 512; // 방위각 a(atan2(x, z)) → 무늬의 가로 자리(SphereGeometry의 u)
+  const a0 = hourAngle(0) + ANGBU_STEP / 2, a1 = hourAngle(ANGBU_HOURS - 1) - ANGBU_STEP / 2;
   c.strokeStyle = '#4a3418'; c.lineWidth = 2;
-  for (let i = 0; i <= 24; i++) { c.beginPath(); c.moveTo(i * 256 / 24, 0); c.lineTo(i * 256 / 24, 128); c.stroke(); }
-  for (let j = 1; j < 13; j++) { c.beginPath(); c.moveTo(0, 20 + j * 7); c.lineTo(256, 20 + j * 7); c.stroke(); }
+  for (let j = 1; j < 13; j++) { // 절기선(가로): 시각선이 있는 쪽에만
+    c.beginPath(); c.moveTo(ux(a1), 14 + j * 7); c.lineTo(ux(a0), 14 + j * 7); c.stroke();
+  }
+  c.lineWidth = 3;
+  for (let k = 0; k <= ANGBU_HOURS; k++) { const x = ux(a0 - k * ANGBU_STEP); c.beginPath(); c.moveTo(x, 0); c.lineTo(x, 118); c.stroke(); } // 시각 칸 경계
+  c.strokeStyle = 'rgba(74,52,24,0.55)'; c.lineWidth = 1.5;
+  for (let k = 0; k < ANGBU_HOURS; k++) { const x = ux(hourAngle(k)); c.beginPath(); c.moveTo(x, 6); c.lineTo(x, 110); c.stroke(); } // 칸 가운데 잔줄
   const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
   const inner = new THREE.Mesh(new THREE.SphereGeometry(0.78, 24, 12, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), new THREE.MeshLambertMaterial({ map: tex, side: THREE.BackSide }));
   inner.position.y = 2.25; g.add(inner);
@@ -81,7 +95,15 @@ export function jagyeongnu() {
   add(g, new THREE.CylinderGeometry(0.2, 0.28, 0.42, 12), 0x8a6a3a, 2.75, 3.6, -0.3);               // 종
   add(g, new THREE.CylinderGeometry(0.3, 0.3, 0.3, 14), 0xa8392b, 3.4, 3.6, -0.3).rotation.x = Math.PI / 2; // 북
   add(g, new THREE.CylinderGeometry(0.28, 0.28, 0.05, 16), 0x9a7638, 4.05, 3.6, -0.3).rotation.x = Math.PI / 2; // 징
-  g.userData.puppets = puppets;
+  // 물이 차면 떠오르는 잣대(물통마다 하나, 처음엔 물통 안에 잠겨 있다), 구슬이 굴러 내려가는 비탈 홈, 구슬(D-30 S-03 장면)
+  const rods = [-0.4, 0.4].map(dz => { const r = add(g, new THREE.CylinderGeometry(0.035, 0.035, 1.2, 6), 0xd8c9a0, 1.3, 2.0, dz); r.userData.y0 = 2.0; return r; });
+  add(g, box(0.55, 0.16, 0.3), 0x3a2c20, 1.3, 2.69, 0, 'wood'); // 두 물통 위를 잇는 나무 판(잣대가 밀어 올린다)
+  const chute = { from: new THREE.Vector3(1.6, 2.86, 0.18), to: new THREE.Vector3(2.45, 2.35, 0.18) };
+  const ch = add(g, box(chute.from.distanceTo(chute.to) + 0.2, 0.05, 0.22), 0x6b4a32, (chute.from.x + chute.to.x) / 2, (chute.from.y + chute.to.y) / 2 - 0.13, 0.18, 'wood');
+  ch.rotation.z = Math.atan2(chute.to.y - chute.from.y, chute.to.x - chute.from.x);
+  const ball = add(g, new THREE.SphereGeometry(0.11, 12, 8), 0x4a4a48, chute.from.x, chute.from.y, chute.from.z);
+  add(g, box(1.1, 0.12, 0.16), bronze, 0.75, 0.25, 0); // 아래 물그릇에서 물통으로 물이 드는 관
+  g.userData.puppets = puppets; g.userData.rods = rods; g.userData.ball = ball; g.userData.chute = chute;
   return g;
 }
 
