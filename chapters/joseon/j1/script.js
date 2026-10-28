@@ -32,7 +32,7 @@ export default {
     soldier: {
       first: [
         { who: 'soldier', text: '요동 정벌에는 5만여 명의 군사와 2만여 필의 말이 나섰어.', src: ['S23'] },
-        { who: 'soldier', text: '이성계 장군과 조민수 장군이 군대를 나누어 이끌고 계셔.', src: ['S23'] },
+        { who: 'soldier', text: '이성계와 조민수가 군대를 나누어 이끌고 있어.', src: ['S23'] },
         { who: 'soldier', text: '우리가 북쪽으로 간 사이 남쪽 바닷가에 왜구가 쳐들어오면 어쩌지?', src: ['S23'] },
       ],
       bridge: { who: 'soldier', text: '궁수 말대로 비도 걱정이지만, 걱정이 하나 더 있어.' },
@@ -43,7 +43,7 @@ export default {
     yiseonggye: {
       wait: [{ who: 'yiseonggye', text: '먼저 군사들의 이야기를 모두 들어 보아라.' }],
       first: [
-        { who: 'yiseonggye', text: '군사들의 걱정을 들었구나. 나는 처음부터 이 싸움에 반대했다.', src: ['S23'] },
+        { who: 'yiseonggye', text: '군사들의 걱정을 들었구나. 나는 이 싸움에 반대했다.', src: ['S23'] },
       ],
       // 4불가론(H-01): 이성계가 네 까닭을 직접 말한다(S23)
       reasons: [
