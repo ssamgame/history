@@ -108,8 +108,8 @@ test('ch5 D-17: workshop gate, 경판 작업장 board, no reading signs, one-par
   let board = false; w.level.traverse(o => { if (o.userData && o.userData.title === '경판 작업장') board = true; });
   ok(board, '경판 작업장 name board');
   eq([...w.npcs.values()].filter(n => n.spot).length, 0, 'no reading signs');
-  eq(ch5Script.intro.length, 1); ok(!ch5Script.intro[0].text.includes('\n'));
-  ok(ch5Script.intro[0].src.includes('S9') && ch5Script.intro[0].src.includes('S7'));
+  eq(ch5Script.intro.length, 2); ok(ch5Script.intro.every(l => !l.text.includes('\n'))); // D-30: 자막 장면 두 문장
+  ok(ch5Script.intro[0].src.includes('S9') && ch5Script.intro[1].src.includes('S7'));
   eq(ch5Script.goals.length, 5);
   eq(sc.stations.length, 6, 'six work places');
   ok(!('tooEarly' in ch5Script), 'never blocks out of order');
@@ -194,7 +194,7 @@ test('ch5 D-17: full run uses no cards and keeps the low camera', async () => {
   const s = touchSetup(ch5Script.speakers);
   const bot = touchBot(s, { answers });
   let cards = 0, fixed = 0;
-  const off = s.w.onUpdate(() => { if (s.ui.querySelector('.order-card')) cards += 1; if (s.w.camMode === 'fixed' && !s.ctx.testHooks.quizView) fixed += 1; }); // 퀴즈 배경은 고정 카메라라 세지 않는다
+  const off = s.w.onUpdate(() => { if (s.ui.querySelector('.order-card')) cards += 1; if (s.w.camMode === 'fixed' && !s.ctx.testHooks.quizView && !s.ui.classList.contains('filming')) fixed += 1; }); // 퀴즈 배경·도입 장면은 고정 카메라라 세지 않는다
   try {
     const r = await runChapter(CHAPTERS[4], ch5, s.ctx, memSave());
     eq(cards, 0, 'no picture cards'); eq(fixed, 0, 'no fixed camera');
