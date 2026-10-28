@@ -27,3 +27,4 @@
 | ch6 (D-20 노 젓기·낮은 배 시점·앞에서 오는 몽골 배·인물 만나기 삭제) | 2026-10-28 | 6fa10cc | ch6·goryeo | 통과 |
 | 모든 편 (D-21 편 복습 퀴즈) | 2026-10-28 | 6fa10cc | review·save·screens·content·sw·flow·smoke | 통과 (63 묶음) |
 | j1 (D-22 진영 문·말 잇기·이성계 결심·한양 둘러보기) + ch5 closeGate 공용화 | 2026-10-28 | 16b43b6 | j1·ch5·goryeo5·play·kit·content·sw | 통과 (116 묶음) |
+| j3 (D-23 한양 문·말 잇기·앙부일구 그림자·자격루 직접 작동·측우기 눈금) | 2026-10-28 | c7f5ffb | j3·j1·play·kit·content·sw·smoke | 통과 (111 묶음) |
