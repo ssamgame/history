@@ -134,10 +134,31 @@ async function samjeondo(ctx) {
   // 아홉 층 단과 노란 차양, 단 위에 앉은 청 태종
   for (let i = 0; i < 9; i++) { const w = 9 - i * 0.7; const m = new THREE.Mesh(new THREE.BoxGeometry(w, 0.32, w * 0.8), mat(0xc2baa8, 'stone')); m.position.set(0, 0.16 + i * 0.32, -6); m.castShadow = m.receiveShadow = true; g.add(m); }
   const top = 9 * 0.32;
-  for (const [x, z] of [[-1.3, -7], [1.3, -7], [-1.3, -5], [1.3, -5]]) { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 2.6, 6), mat(0x8a2f24)); p.position.set(x, top + 1.3, z); g.add(p); }
-  const canopy = new THREE.Mesh(new THREE.ConeGeometry(2.3, 1.0, 4), mat(0xd9a441, 'cloth')); canopy.rotation.y = Math.PI / 4; canopy.position.set(0, top + 3.0, -6); g.add(canopy);
-  const emperor = makePerson({ robe: 0xd9a441, hat: 'qing', trim: 0x8a2f24, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache' } });
-  emperor.position.set(0, top - 0.35, -6.2); emperor.userData.noWalk = true; g.add(emperor);
+  for (const [x, z] of [[-1.5, -7.4], [1.5, -7.4], [-1.5, -5], [1.5, -5]]) { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 3.5, 6), mat(0x8a2f24)); p.position.set(x, top + 1.75, z); g.add(p); } // 의자 위로 높이 친 차양
+  const canopy = new THREE.Mesh(new THREE.ConeGeometry(2.5, 1.0, 4), mat(0xd9a441, 'cloth')); canopy.rotation.y = Math.PI / 4; canopy.position.set(0, top + 3.95, -6.2); g.add(canopy);
+  // 황제의 자리: 붉은 칠에 금테를 두른 넓은 의자(높은 등받이·팔걸이·발받침, 등받이 위 금장식)에 앉아 있다
+  const throne = new THREE.Group(); throne.position.set(0, top, -6.4); g.add(throne);
+  const RED = 0x8a1f1a, GOLD = 0xd9a441, part = (geo, c, x, y, z, kind) => { const m = new THREE.Mesh(geo, mat(c, kind)); m.position.set(x, y, z); m.castShadow = true; throne.add(m); return m; };
+  part(new THREE.BoxGeometry(1.9, 0.18, 0.9), RED, 0, 0.12, 0.65);                 // 발받침
+  part(new THREE.BoxGeometry(1.7, 0.55, 1.1), RED, 0, 0.28, 0);                    // 앉는 자리 아래
+  part(new THREE.BoxGeometry(1.75, 0.08, 1.15), GOLD, 0, 0.58, 0);                  // 금테
+  part(new THREE.BoxGeometry(1.6, 0.12, 1.0), 0xc8a050, 0, 0.66, 0.02, 'cloth');   // 방석
+  part(new THREE.BoxGeometry(1.8, 1.9, 0.18), RED, 0, 1.4, -0.52);                  // 높은 등받이
+  part(new THREE.BoxGeometry(1.5, 1.55, 0.04), GOLD, 0, 1.42, -0.42, 'cloth');      // 등받이 앞 금빛 판
+  for (const sx of [-1, 1]) {
+    part(new THREE.BoxGeometry(0.2, 0.55, 1.05), RED, sx * 0.88, 0.95, 0);          // 팔걸이
+    part(new THREE.BoxGeometry(0.26, 0.08, 1.1), GOLD, sx * 0.88, 1.24, 0);
+    part(new THREE.SphereGeometry(0.14, 10, 8), GOLD, sx * 0.88, 1.3, 0.5);          // 팔걸이 끝 금구슬
+    part(new THREE.CylinderGeometry(0.1, 0.12, 0.5, 8), GOLD, sx * 0.95, 2.5, -0.52); // 등받이 양 끝 금장식
+    part(new THREE.SphereGeometry(0.16, 10, 8), GOLD, sx * 0.95, 2.8, -0.52);
+  }
+  const crest = part(new THREE.ConeGeometry(0.32, 0.5, 6), GOLD, 0, 2.62, -0.52); crest.rotation.y = Math.PI / 6; // 등받이 가운데 꼭대기 장식
+  const emperor = makePerson({ robe: 0xd9a441, hat: 'qing', trim: 0x8a2f24, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache' } }, { track: false });
+  emperor.userData.noWalk = true; emperor.userData.manual = true;
+  emperor.position.set(0, top + 0.18, -6.35); // 엉덩이(0.55)가 방석 위에 오도록 앉는다
+  emperor.userData.legs.forEach(l => { l.rotation.x = -1.45; });                    // 다리를 앞으로 내밀어 앉은 자세
+  emperor.userData.arms.forEach((a, i) => { a.rotation.x = -0.55; a.rotation.z = (i ? -1 : 1) * 0.18; }); // 두 팔을 팔걸이에
+  g.add(emperor);
   for (const sd of [-1, 1]) for (let i = 0; i < 5; i++) {
     const q = makePerson(LOOKS.qingSoldier); q.position.set(sd * (9 + (i % 2) * 1.4), 0, -4 + i * 2.6); q.rotation.y = -sd * Math.PI / 2; q.userData.noWalk = true; g.add(q);
     if (i % 2 === 0) { const f = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.6).translate(0.6, 0, 0), new THREE.MeshLambertMaterial({ color: i % 4 ? 0x3c5a7a : 0xd9a441, side: THREE.DoubleSide })); f.position.set(sd * 11.2, 3.4, -4 + i * 2.6); g.add(f); const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 4.2, 5), mat(0x5a3f2a)); pole.position.set(sd * 11.2, 2.1, -4 + i * 2.6); g.add(pole); }
