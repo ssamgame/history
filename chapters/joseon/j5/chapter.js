@@ -155,8 +155,16 @@ async function samjeondo(ctx) {
   const crest = part(new THREE.ConeGeometry(0.32, 0.5, 6), GOLD, 0, 2.62, -0.52); crest.rotation.y = Math.PI / 6; // 등받이 가운데 꼭대기 장식
   const emperor = makePerson({ robe: 0xd9a441, hat: 'qing', trim: 0x8a2f24, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache' } }, { track: false });
   emperor.userData.noWalk = true; emperor.userData.manual = true;
-  emperor.position.set(0, top + 0.18, -6.35); // 엉덩이(0.55)가 방석 위에 오도록 앉는다
-  emperor.userData.legs.forEach(l => { l.rotation.x = -1.45; });                    // 다리를 앞으로 내밀어 앉은 자세
+  emperor.position.set(0, top + 0.18, -6.1); // 엉덩이(0.55)가 방석 위에 오도록 앉는다
+  // 황제만 다리에 무릎 관절을 넣어 앉힌다: 허벅지는 앞으로 눕고, 무릎에서 종아리가 아래로 내려와 발이 발받침에 닿는다
+  emperor.userData.legs.forEach(l => {
+    l.clear();
+    const thigh = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.34, 0.24), mat(0x2b241c)); thigh.position.y = -0.17; l.add(thigh);
+    const knee = new THREE.Group(); knee.position.y = -0.34; l.add(knee);
+    const shin = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.42, 0.22), mat(0x2b241c)); shin.position.y = -0.21; knee.add(shin);
+    const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.12, 0.34), mat(0x1e1a16, 'grain')); shoe.position.set(0, -0.45, 0.05); knee.add(shoe);
+    l.rotation.x = -1.5; knee.rotation.x = 1.5; l.userData.knee = knee;           // 허벅지는 앞으로, 종아리는 아래로
+  });
   emperor.userData.arms.forEach((a, i) => { a.rotation.x = -0.55; a.rotation.z = (i ? -1 : 1) * 0.18; }); // 두 팔을 팔걸이에
   g.add(emperor);
   for (const sd of [-1, 1]) for (let i = 0; i < 5; i++) {
