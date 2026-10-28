@@ -3,11 +3,12 @@ import { buildCh1Scene } from './scene.js';
 import { roam } from '../../core/flow.js';
 import script from './script.js';
 import { enterThroughGate } from '../kit/gate.js';
+import { waitInteract } from '../../core/portal.js';
 import * as THREE from 'three';
 
 export const START = [0, 19];
 export const INTRO_FROM = [0, 36]; // 장 시작 장면: 진영 밖 길(걷는 곳 z1=22 바깥)
-const FERRY_RETURN = [8, -12.2];
+const RETURN_AT = [1.5, 4]; // 담판이 끝난 뒤 진영으로 돌아온 학생 자리
 const SEOHUI_HOME = [-11, 1.3, 0.15];
 const PEOPLE = ['soldier', 'officer', 'archer']; // 이야기를 들어 볼 차례
 const LEAD_SPEED = 4.2, WAIT_FAR = 5, WAIT_NEAR = 3.2; // 서희 걸음, 학생이 이만큼 멀어지면 멈춰 기다리고 이만큼 오면 다시 걷는다
@@ -16,21 +17,24 @@ let scene = null;
 
 async function sayAll(dialogue, lines) { for (const l of lines) await dialogue.say(l); }
 
-// 서희의 첫 말(D-6): 병사 이야기를 아직 안 들었으면 먼저 들어 보라 하고, 들었으면 들은 사람의 말을 차례로 받아 '땅을 내줄 수 없다'로 모은다
+// 서희의 첫 말(D-6/D-30): 세 사람 이야기를 모두 듣기 전에는 마저 듣고 오라 하고, 모두 들었으면 들은 말을 차례로 받아 '땅을 내줄 수 없다'로 모은다
 export function seohuiTalk(heard) {
   const n = script.npc.seohui;
-  if (!heard.has('soldier')) return n.tooEarly;
+  if (PEOPLE.some(id => !heard.has(id))) return n.wait;
   return [...n.greet, ...PEOPLE.filter(id => heard.has(id)).map(id => n.heard[id]), ...n.land, ...n.go];
 }
 
-// 탐험 목표: 아직 이야기를 안 들은 다음 사람(차례대로)에게 느낌표와 화살표, 다 들었으면 서희
+// 탐험 목표(D-30): 아직 안 들은 사람 모두에게 느낌표, 화살표는 그중 첫째. 모두 들었으면 서희에게만
 function setStep(ctx, n, heard) {
-  const { world } = ctx;
+  const { world, hud } = ctx;
   ctx.setGoal(script.goals[n]);
-  const next = n === 0 ? PEOPLE.find(id => !heard.has(id)) : n === 1 ? 'seohui' : null;
-  for (const id of [...PEOPLE, 'seohui']) world.npcs.get(id).mark.visible = id === next;
+  const left = PEOPLE.filter(id => !heard.has(id));
+  for (const id of PEOPLE) world.npcs.get(id).mark.visible = n === 0 && left.includes(id);
+  world.npcs.get('seohui').mark.visible = n === 1;
+  const next = n === 0 ? left[0] : n === 1 ? 'seohui' : null;
   const t = next && world.npcs.get(next).mesh.position;
   world.setGoal(t ? { x: t.x, z: t.z } : null);
+  hud.setCounter(n === 0 ? `들은 이야기 ${heard.size}/${PEOPLE.length}` : null);
 }
 
 // 강을 건널 수 있는 곳은 널다리뿐: 학생 자리에 따라 걷는 곳을 바꾼다(진영 / 다리 위 / 강 건너)
@@ -99,6 +103,7 @@ function glideTo(world, pos, target) {
     cam.position.lerpVectors(from, P, e); cam.lookAt(look.lerpVectors(look0, T, e));
     if (t >= 1) { off(); world.setFixedCamera(pos, target); }
   });
+  return off;
 }
 
 function showAftermath(world) {
@@ -116,8 +121,23 @@ export default {
   buildScene(world) { scene = buildCh1Scene(world); return scene; },
 
   // 이어하기로 중간 단계부터 시작할 때 장면을 그 단계에 맞춘다.
+  // 장 도입(C-03): 강 건너 거란 진영에서 군대가 나아오고, 소손녕이 고려 쪽을 바라본다
+  introScene(ctx) {
+    const { world } = ctx, gs = scene.guards, p0 = gs.map(g => g.position.clone());
+    let off = null;
+    return {
+      shots: [
+        { cam: [9, 5.5, -8], look: [0, 1.8, -36], to: { cam: [4.5, 3.4, -24], look: [0, 2.1, -37] },
+          act: () => { off = world.onUpdate(dt => { gs.forEach(g => { g.position.z += dt * 0.7; }); }); } }, // 거란 군사들이 강 쪽으로 나아온다
+      ],
+      done: () => { off?.(); gs.forEach((g, i) => g.position.copy(p0[i])); },
+    };
+  },
+  // 미니게임 뒤 빛나는 문(C-02): 진영 길 가운데 빈 땅, 학생이 돌아온 남쪽을 본다
+  portal: { at: [1.5, -4], ry: 0 },
+
   enterStage(ctx, stage) {
-    if (stage === 'quiz') { showAftermath(ctx.world); placePlayer(ctx.world, FERRY_RETURN); ctx.setGoal(script.goals[4]); }
+    if (stage === 'quiz') { showAftermath(ctx.world); placePlayer(ctx.world, RETURN_AT); }
   },
 
   async explore(ctx) {
@@ -139,13 +159,11 @@ export default {
             await sayAll(dialogue, isNew || !n.later ? (n.first || n.always) : n.later);
             if (!isNew || step !== 0) return;
             heard.add(id);
-            const next = PEOPLE.find(k => !heard.has(k)) || 'seohui';
-            await dialogue.say(script.next[next]);
-            if (next === 'seohui') step = 1;
+            if (heard.size === PEOPLE.length) { step = 1; await dialogue.say(script.next.seohui); } else await dialogue.say(script.more);
             setStep(ctx, step, heard);
           } else if (id === 'seohui') {
             await sayAll(dialogue, seohuiTalk(heard));
-            if (!heard.has('soldier')) return;
+            if (PEOPLE.some(k => !heard.has(k))) return; // 모두 들어야 서희가 이끈다(D-30)
             await sayAll(dialogue, script.follow);
             stop(); setTimeout(resolve, 0); // roam이 대화를 닫고 입력을 정리한 뒤에 따라 걷기를 시작한다
           } else await sayAll(dialogue, n.always);
@@ -166,7 +184,7 @@ export default {
     world.moveNpc('seohui', spot.seohui[0], spot.seohui[1], spot.seohui[2]);
     world.player.position.set(spot.player[0], 0, spot.player[1]); world.player.rotation.y = spot.player[2];
     scene.sonn.rotation.y = 0;
-    glideTo(world, spot.cam.pos, spot.cam.target); // 두 사람 뒤에서 소손녕 얼굴을 정면으로
+    const glide = glideTo(world, spot.cam.pos, spot.cam.target); // 두 사람 뒤에서 소손녕 얼굴을 정면으로
 
     await sayAll(dialogue, script.negotiation.opening);
     const a = await dialogue.ask(script.negotiation.q1);
@@ -186,7 +204,12 @@ export default {
     await ctx.wait(3200);
     scene.gangdongPillars.visible = true;
     await sayAll(dialogue, script.retreat);
-    ctx.setGoal(script.goals[4]);
+    dialogue.close();
+    await ctx.fade(true);
+    glide?.(); showAftermath(world);
+    world.bounds = { ...scene.campBounds };
+    placePlayer(world, RETURN_AT);
+    await ctx.fade(false);
     return { firstTryCorrect: Number(a.firstTry) + Number(b.firstTry), firstTryTotal: 2, easyModeUsed: false };
   },
 };

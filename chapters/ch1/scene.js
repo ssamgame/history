@@ -268,7 +268,7 @@ export function buildCh1Scene(world) {
   world.addNpc('officer', LOOKS.officer, 15.5, 8, -Math.PI * 0.6);
   // 안내판(볼거리)은 두지 않는다(D-7: 안내판은 문화유산·특정 건물 옆에만. 1장에는 그런 대상이 없다)
 
-  const scene = { gate, ring, khitanGroup, gangdongPillars, sonn, horse /* 다리를 흔들어야 하므로 굳히지 않는다 */, emberCount: fire.emberCount, retreating: false,
+  const scene = { gate, ring, khitanGroup, guards, gangdongPillars, sonn, horse /* 다리를 흔들어야 하므로 굳히지 않는다 */, emberCount: fire.emberCount, retreating: false,
     campBounds: { ...world.bounds },
     // 서희가 앞장서 걷는 길(D-6): 지휘소 앞 → 흙길 → 나루터 → 널다리 → 소손녕 앞
     leadPath: [[-6, 2.8], [1.5, 2.8], [1.5, -6], [8, -12], [8, -25.8], [4.5, -29.5], [-1.1, -33.2]],

@@ -4,6 +4,7 @@ import { buildCh2Scene, WALL_TOP, WALK_Z } from './scene.js';
 import { roam } from '../../core/flow.js';
 import { showHowTo, runWithRetries } from '../../core/minigame.js';
 import { enterThroughGate } from '../kit/gate.js';
+import { waitInteract } from '../../core/portal.js';
 import { labelSprite } from '../kit/play.js';
 import script from './script.js';
 import * as THREE from 'three';
@@ -11,6 +12,7 @@ import * as THREE from 'three';
 const EXPLORE_BOUNDS = { x0: -10.5, x1: 10.5, z0: -10.5, z1: 7 };
 export const INTRO_FROM = [0, 22]; // 장 시작 장면: 남쪽 성문 밖 길
 const PEOPLE = ['soldier', 'villager']; // 이야기를 들어 볼 차례(병사 → 백성), 그다음 양규
+const RETURN_AT = [0, 6];           // 구출을 마치고 성안으로 돌아온 학생 자리
 const STAND = [0, WALK_Z];          // 성벽 위 학생이 설 자리(계단 바로 위)
 const YG_POST = [1.4, WALK_Z];      // 성벽 위 양규 자리
 const LEAD_PATH = [[0, -6.4], [0, -11.9], [0.3, WALK_Z], YG_POST];
@@ -28,22 +30,25 @@ let rescued = []; // 구한 백성 무리(구한 차례). 학생을 줄지어 �
 async function sayAll(dialogue, lines) { for (const l of lines) await dialogue.say(l); }
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
-// 양규의 첫 말(D-8): 아무 이야기도 안 들었으면 먼저 들어 보라 하고(막히지 않고 다시 찾아오면 된다),
-// 들었으면 들은 사람의 말을 차례로 이어받아 '이곳이 무너지면 안 된다'로 모은다
+// 양규의 첫 말(D-8/D-30): 모두 듣기 전에는 마저 듣고 오라 하고(막히지 않고 다시 찾아오면 된다),
+// 모두 들었으면 들은 사람의 말을 차례로 이어받아 '이곳이 무너지면 안 된다'로 모은다
 export function yanggyuTalk(heard) {
   const n = script.npc.yanggyu;
-  if (!PEOPLE.some(id => heard.has(id))) return [...n.greet, ...n.tooEarly];
+  if (PEOPLE.some(id => !heard.has(id))) return n.wait; // 모두 들어야 진행(D-30)
   return [...n.greet, ...PEOPLE.filter(id => heard.has(id)).map(id => n.heard[id]), ...n.land, ...n.go];
 }
 
-// 탐험 목표: 아직 이야기를 안 들은 다음 사람에게 느낌표와 화살표, 다 들었으면 양규
+// 탐험 목표(D-30): 아직 안 들은 사람 모두에게 느낌표, 화살표는 그중 첫째. 모두 들었으면 양규에게만
 function setStep(ctx, n, heard = new Set(PEOPLE)) {
-  const { world } = ctx;
+  const { world, hud } = ctx;
   ctx.setGoal(script.goals[n]);
-  const next = n === 0 ? PEOPLE.find(id => !heard.has(id)) : n === 1 ? 'yanggyu' : null;
-  for (const id of [...PEOPLE, 'yanggyu']) world.npcs.get(id).mark.visible = id === next;
+  const left = PEOPLE.filter(id => !heard.has(id));
+  for (const id of PEOPLE) world.npcs.get(id).mark.visible = n === 0 && left.includes(id);
+  world.npcs.get('yanggyu').mark.visible = n === 1;
+  const next = n === 0 ? left[0] : n === 1 ? 'yanggyu' : null;
   const t = next && world.npcs.get(next).mesh.position;
   world.setGoal(t ? { x: t.x, z: t.z } : null);
+  hud.setCounter(n === 0 ? `들은 이야기 ${heard.size}/${PEOPLE.length}` : null);
 }
 
 function placePlayer(world, [x, z], ry = Math.PI, y = 0) {
@@ -299,7 +304,7 @@ async function walkHome(ctx) {
   world.bounds = { x0: -24, x1: 24, z0: 0, z1: 72 };
   placePlayer(world, [0, 26], Math.PI);
   rescued.forEach((c, i) => { c.group.visible = true; c.group.position.set(0, 0, 28.4 + i * 2.3); c.group.rotation.y = 0; });
-  ctx.setGoal(script.goals[4]);
+  ctx.setGoal(script.goals[5]);
   await ctx.fade(false);
   await sayAll(dialogue, script.rescue.home);
   dialogue.close();
@@ -320,9 +325,8 @@ async function walkHome(ctx) {
 function showAftermath(ctx) {
   for (const c of scene.captives) c.group.visible = false;
   scene.khitan.visible = false;
-  ctx.world.bounds = scene.field.bounds;
-  placePlayer(ctx.world, scene.field.start);
-  ctx.setGoal(script.goals[5]);
+  ctx.world.bounds = EXPLORE_BOUNDS; // 구출이 끝나면 성안으로 돌아온다(빛나는 문이 선다)
+  placePlayer(ctx.world, RETURN_AT);
 }
 
 export default {
@@ -336,6 +340,21 @@ export default {
     world.closeView = true; // 낮은 카메라·정면 대화(상시 규칙). 장이 끝나면 world.clearLevel이 끈다
     return scene;
   },
+
+  // 장 도입(C-03): 눈 덮인 흥화진 북쪽에서 거란 대군이 성벽 쪽으로 나아온다
+  introScene(ctx) {
+    const { world } = ctx, f = scene.khitanFront;
+    let off = null;
+    return {
+      shots: [
+        { cam: [0, 8.5, -3], look: [0, 1.6, -30], to: { cam: [0, 7, -8.5], look: [0, 1.8, -26] },
+          act: () => { off = world.onUpdate(dt => { f.position.z += dt * 1.1; }); } },
+      ],
+      done: () => { off?.(); f.position.z = 0; },
+    };
+  },
+  // 미니게임 뒤 빛나는 문(C-02): 성안 눈길 가운데, 돌아온 학생(남쪽)을 본다
+  portal: { at: [0.5, 1], ry: 0 },
 
   enterStage(ctx, stage) {
     if (stage === 'minigame') putOnWall(ctx.world);
@@ -362,13 +381,11 @@ export default {
             await sayAll(dialogue, isNew ? n.first : n.later);
             if (!isNew || step !== 0) return;
             heard.add(id);
-            const next = PEOPLE.find(k => !heard.has(k)) || 'yanggyu';
-            await dialogue.say(script.next[next]);
-            if (next === 'yanggyu') step = 1;
+            if (heard.size === PEOPLE.length) { step = 1; await dialogue.say(script.next.yanggyu); } else await dialogue.say(script.more);
             setStep(ctx, step, heard);
           } else if (id === 'yanggyu') {
             await sayAll(dialogue, yanggyuTalk(heard));
-            if (!PEOPLE.some(k => heard.has(k))) return;
+            if (PEOPLE.some(k => !heard.has(k))) return; // 모두 들어야 양규가 이끈다(D-30)
             await sayAll(dialogue, script.follow);
             stop(); setTimeout(resolve, 0); // roam이 대화를 닫고 입력을 정리한 뒤에 따라 걷기를 시작한다
           }
@@ -400,11 +417,19 @@ export default {
 
     await ctx.fade(true);
     scene.khitan.visible = false;
-    ctx.setGoal(script.goals[4]);
     placePlayer(world, scene.field.start);
+    // 들판에서 양규가 기다린다: 다가가 말을 걸어야 구출이 시작된다(C-05)
+    const yg = world.npcs.get('yanggyu');
+    setYanggyu(world, scene.field.start[0] + 2.5, scene.field.start[1] - 3, Math.PI * 0.9);
+    yg.mark.visible = true;
     await ctx.fade(false);
+    await waitInteract(ctx, { pos: yg.mesh.position, quest: script.goals[4], label: '양규와 이야기하기', mark: false });
+    yg.mark.visible = false;
+    world.setTalkCamera(yg.mesh);
     await sayAll(dialogue, script.rescue.intro);
-    dialogue.close();
+    dialogue.close(); world.camMode = 'follow';
+    setYanggyu(world, YG_POST[0], YG_POST[1], Math.PI); // 양규는 성벽 위 자리로 돌아간다
+    ctx.setGoal(script.goals[5]);
     await showHowTo(ctx.ui, script.rescue.howto);
     input.enabled = true;
     const b = await runWithRetries(ctx, easy => rescue(ctx, easy), { failHint: script.rescue.failHint });
@@ -415,7 +440,6 @@ export default {
     await ctx.fade(false);
     await sayAll(dialogue, script.rescue.done);
     await sayAll(dialogue, script.result);
-    ctx.setGoal(script.goals[5]);
     return { firstTryCorrect: [a, b].filter(x => x.first).length, firstTryTotal: 2, easyModeUsed: a.easyModeUsed || b.easyModeUsed };
   },
 };
