@@ -1,4 +1,5 @@
 import { test, eq, ok } from './harness.js';
+import * as THREE from 'three';
 import { SOURCES } from '../content/sources.js';
 import { validateScript } from '../core/content.js';
 import j4Script from '../chapters/joseon/j4/script.js';
@@ -119,10 +120,10 @@ test('j4 D-25: harbour gate and board, one-paragraph intro, two-line how-to, peo
     ok(sc.gate && sc.gate.leaves.length === 2 && sc.introFrom[1] > sc.start[1], 'gate');
     let board = false; w.level.traverse(o => { if (o.userData && o.userData.title === '수군 포구') board = true; });
     ok(board, 'board');
-    eq([...w.npcs.values()].filter(n => n.spot).map(n => n.id).sort(), ['signPanok', 'signTurtle'], 'signs only beside the ships');
+    eq([...w.npcs.values()].filter(n => n.spot).map(n => n.id).sort(), [], 'D-30: no road signs');
     ok(sc.myShip && sc.myShip.userData.oars.length > 0, 'the student\'s ship has oars');
   } finally { w.dispose(); }
-  eq(j4Script.intro.length, 1);
+  ok(j4Script.intro.length <= 2);
   for (const h of [j4Script.sail, j4Script.wing.howto]) eq(h.steps.length, 2);
   ok(!('tooEarly' in j4Script.npc.commoner));
   eq(portTalk('commoner', new Set(['navy']))[0], j4Script.npc.commoner.bridge);
@@ -139,9 +140,108 @@ test('j4 D-25: the fleet spreads into the wing with one empty spot on the curve;
     ok(done, 'spread');
     eq(s.fleet.children.length, 5, 'five ships + the student = six');
     ok(s.fleet.children.every(sh => Math.hypot(sh.position.x - s.slot.x, sh.position.z - s.slot.z) > 3), 'the slot is empty');
-    ok(s.decoys.every(d => d.z > s.slot.z + 5), 'decoys sit in a straight row behind');
+    eq(s.decoys.length, 0, 'D-30 I-02: no decoy rings behind');
     let t = false; s.turtleCharge(1).then(() => { t = true; });
     for (let i = 0; i < 30 && !t; i++) { w.step(0.05, { x: 0, z: 0 }); await new Promise(r => setTimeout(r, 0)); }
     ok(s.leadTurtle.position.z < Math.min(...s.fleet.children.map(sh => sh.position.z)), 'turtle in front of the wing');
   } finally { w.dispose(); }
 });
+
+// ---- D-30 (C-01·C-02·C-03·C-05, I-01·I-02·I-03) ----
+test('j4 D-30: quests without the quiz goal, 이순신 waits for everyone, no road signs, sign facts moved into the 수군', () => {
+  ok(!j4Script.goals.some(g => g.includes('배운 내용')), 'no quiz goal');
+  ok(j4Script.npc.yisunsin.wait[0].text.includes('모두'));
+  ok(!('signPanok' in j4Script.npc) && !('signTurtle' in j4Script.npc), 'sign npc entries removed');
+  const navy = j4Script.npc.navy.first.map(l => l.text).join(' ');
+  ok(navy.includes('주력 전투선') && navy.includes('총구멍'), 'panok/turtle facts now in the 수군 talk');
+  ok(j4Script.intro.length <= 3 && j4Script.intro.every(l => !l.text.includes('\n')));
+  ok(typeof j4.introScene === 'function' && Array.isArray(j4.portal.at), 'intro film and portal');
+  const w = testWorld();
+  try {
+    const sc = buildJ4Scene(w);
+    eq([...w.npcs.values()].filter(n => n.spot).length, 0, 'no talkable signs');
+    const ctx = { world: w };
+    const film = j4.introScene(ctx);
+    ok(film.shots.length >= j4Script.intro.length, 'a shot for each line');
+    film.shots.forEach(s => s.act?.(ctx));
+    for (let i = 0; i < 20; i++) w.step(0.05, { x: 0, z: 0 });
+    film.done?.(ctx);
+    ok(!sc.enemy.visible, 'scene put back after the film');
+  } finally { w.dispose(); }
+});
+
+test('j4 D-30 I-01: the oars stay on the ship and really row (sweep and dip), and ease to rest when the ship stops', async () => {
+  const { panokseon, rowShip } = await import('../chapters/joseon/ships.js');
+  const s = panokseon();
+  const oars = s.userData.oars;
+  ok(oars.length >= 10, 'oars');
+  ok(oars.every(o => { let p = o; while (p.parent) p = p.parent; return p === s; }), 'oars are still in the ship (not baked away)');
+  const tip = o => { s.updateMatrixWorld(true); return o.localToWorld(new THREE.Vector3(...o.userData.tip)); };
+  rowShip(s, Math.PI / 2, 1); const f = tip(oars[0]);
+  rowShip(s, -Math.PI / 2, 1); const r = tip(oars[0]);
+  ok(Math.abs(f.z - r.z) > 0.8, `sweeps fore and aft ${f.z} ${r.z}`);
+  rowShip(s, 0, 1); const a = tip(oars[0]);
+  rowShip(s, Math.PI, 1); const b = tip(oars[0]);
+  ok(Math.abs(a.y - b.y) > 0.25, `dips and lifts ${a.y} ${b.y}`);
+  ok(Math.min(a.y, b.y) < 0, 'the blade goes into the water');
+  const w = testWorld();
+  try {
+    const sc = buildJ4Scene(w);
+    sc.setStage('wing');
+    for (let i = 0; i < 80; i++) w.step(0.05, { x: 0, z: 0 });
+    const o = sc.fleet.children[0].userData.oars[0];
+    const r0 = o.rotation.y; w.step(0.05, { x: 0, z: 0 }); w.step(0.05, { x: 0, z: 0 });
+    ok(Math.abs(o.rotation.y - r0) < 0.01, 'a standing ship rests its oars');
+  } finally { w.dispose(); }
+});
+
+test('j4 D-30 I-02: no yellow decoy rings behind the wing, and the wing ships stand wider apart', () => {
+  const w = testWorld();
+  try {
+    const s = buildJ4Scene(w);
+    eq(s.decoys.length, 0, 'decoys gone');
+    const spots = [...s.fleet.children.map(sh => sh.userData.spot), [s.slot.x, s.slot.z]].sort((a, b) => a[0] - b[0]);
+    for (let i = 1; i < spots.length; i++) ok(Math.hypot(spots[i][0] - spots[i - 1][0], spots[i][1] - spots[i - 1][1]) >= 7, `gap ${i}`);
+    ok(spots.every(([x]) => Math.abs(x) < s.seaBounds.x1 - 2), 'inside the sea bounds');
+  } finally { w.dispose(); }
+});
+
+test('j4 D-30 I-03: a hit ship catches fire, tilts and sinks under the water with smoke before it disappears', async () => {
+  const w = testWorld();
+  try {
+    const s = buildJ4Scene(w);
+    s.setStage('wing'); s.setAdvance(0.85);
+    const low = new Map(), fire = new Set(), tilt = new Map();
+    let n = null; s.playBattle().then(v => { n = v; });
+    for (let i = 0; i < 800 && n === null; i++) {
+      w.step(0.05, { x: 0, z: 0 });
+      for (const e of s.enemy.children) {
+        if (!e.visible) continue;
+        low.set(e, Math.min(low.get(e) ?? 9, e.position.y));
+        tilt.set(e, Math.max(tilt.get(e) ?? 0, Math.abs(e.rotation.z) + Math.abs(e.rotation.x)));
+        if (e.children.some(c => c.name === 'fire' && c.visible)) fire.add(e);
+      }
+      await new Promise(r => setTimeout(r, 0));
+    }
+    eq(n, 8);
+    eq(fire.size, 8, 'every hit ship burned');
+    ok(s.enemy.children.every(e => low.get(e) < -4.5), `sank under the water ${[...low.values()].map(v => v.toFixed(1))}`);
+    ok(s.enemy.children.every(e => tilt.get(e) > 0.4), 'tilted');
+    ok(s.enemy.children.every(e => !e.visible), 'gone');
+  } finally { w.dispose(); }
+});
+
+test('j4 D-30 C-05: after the lure the student sails to the flagship and talks to 이순신 before the wing starts', async () => {
+  const s = touchSetup(j4Script.speakers);
+  const said = [];
+  const say = s.dialogue.say; s.dialogue.say = l => { said.push(l); return say(l); };
+  const bot = touchBot(s, { answers });
+  try {
+    const sc = j4.buildScene(s.w, s.ctx);
+    ok(sc.flagship, 'flagship');
+    j4.enterStage(s.ctx, 'minigame');
+    await j4.minigame(s.ctx);
+    const i = said.indexOf(j4Script.lure.done[0]), j = said.indexOf(j4Script.wing.call[0]), k = said.indexOf(j4Script.wing.spread);
+    ok(i >= 0 && j > i && k > j, `order ${i} ${j} ${k}`);
+  } finally { bot.stop(); s.done(); }
+}, { timeout: 150000 });
