@@ -2,7 +2,7 @@
 import { test, ok } from './harness.js';
 import { sleep } from './bot.js';
 
-const KINDS = ['j4wing', 'j6pulley']; // 아직 게임에 남은 화면 카드 놀이(나머지는 장면 속 놀이로 바뀜, j3 앙부일구·측우기는 D-23에서 장면 속으로)
+const KINDS = ['j6pulley']; // 아직 게임에 남은 화면 카드 놀이(나머지는 장면 속 놀이로 바뀜: j3 D-23, j4 학익진 D-25)
 const SIZES = [[1000, 530], [1000, 600], [1280, 720], [1366, 650], [740, 360], [390, 844], [360, 740]]; // 마지막 둘: 휴대폰 세로
 const overlap = (a, b) => a.left < b.right - 2 && b.left < a.right - 2 && a.top < b.bottom - 2 && b.top < a.bottom - 2;
 
