@@ -124,7 +124,7 @@ function boot() {
     inChapter = true; input.enabled = true;
     music.play(meta.id);
     const next = nextOf(meta);
-    const result = await runChapter(meta, mod, ctx, save, { resumeStage: stage, next: next && (next.meta ? { title: next.meta.title } : { course: `${next.course.era}편`, title: next.course.title }) });
+    const result = await runChapter(meta, mod, ctx, save, { resumeStage: stage, next: next && (next.meta ? { title: next.meta.short || next.meta.title } : { era: next.course.era }) });
     music.stop();
     inChapter = false; input.enabled = false;
     input.releaseJoystick();
