@@ -86,7 +86,7 @@ function boot() {
     world, input, audio, music, hud, ui, testHooks: {},
     screens: { showIntroCard: (meta, lines) => showIntroCard(ui, meta, lines) },
     get dialogue() { return dialogue; },
-    setGoal: text => { const g = curGoals, i = g.indexOf(text); hud.setGoal(text, i >= 0 ? [i + 1, g.length] : null); },
+    setGoal: text => { const g = curGoals, i = g.indexOf(text); hud.setGoal(text, i >= 0 ? [i + 1, g.length] : null, g); },
     wait: ms => new Promise(r => setTimeout(r, ms)),
     fade: on => hud.fade(on),
     onAction(fn) { actionHandlers.add(fn); return () => actionHandlers.delete(fn); },
@@ -123,7 +123,8 @@ function boot() {
     hud.setTouchVisible(true);
     inChapter = true; input.enabled = true;
     music.play(meta.id);
-    const result = await runChapter(meta, mod, ctx, save, { resumeStage: stage });
+    const next = nextOf(meta);
+    const result = await runChapter(meta, mod, ctx, save, { resumeStage: stage, next: next && (next.meta ? { title: next.meta.title } : { course: `${next.course.era}편`, title: next.course.title }) });
     music.stop();
     inChapter = false; input.enabled = false;
     input.releaseJoystick();
@@ -137,6 +138,18 @@ function boot() {
       if (qs && (meta.no === 6 || !save.review(meta.session))) save.setReview(meta.session, await showReviewQuiz(ui, meta.session, qs));
       await showSessionCard(ui, meta.session, save, ALL_CHAPTERS);
     }
+    // 빛나는 문(C-02)으로 마친 장은 문 너머 다음 장(또는 다음 편 1장)으로 바로 이어 간다
+    if (!mod.portal || !next) return null;
+    if (next.course) { save.setCourse(next.course.id); return next.course.chapters[0]; }
+    return next.meta;
+  }
+
+  // 같은 편의 다음 장, 6장이면 다음 편 { course }
+  function nextOf(meta) {
+    const course = courseOfChapter(meta.id), i = course.chapters.findIndex(c => c.id === meta.id);
+    if (i + 1 < course.chapters.length) return { meta: course.chapters[i + 1] };
+    const ci = COURSES.indexOf(course);
+    return COURSES[ci + 1] ? { course: COURSES[ci + 1] } : null;
   }
 
   // 편 고르기 → 그 편의 지도 → 장. 고른 편은 저장해 두어 다음에 열면 그 편 지도부터 보인다.
@@ -150,7 +163,9 @@ function boot() {
         if (meta && meta.load) {
           const cid = courseOfChapter(id).id;
           if (save.data.course !== cid) save.setCourse(cid); // 이어하기 뒤 '장 선택으로'는 그 편 지도로
-          await playChapter(meta, stage); continue;
+          let nx = await playChapter(meta, stage);
+          while (nx && nx.load) nx = await playChapter(nx, 'intro');
+          continue;
         }
         save.data.current = null;
       }
@@ -162,18 +177,19 @@ function boot() {
         onSessionCard: () => showSessionCard(ui, course.session, save, ALL_CHAPTERS),
       });
       if (id === 'courses') { await pickCourse(); continue; }
-      await playChapter(ALL_CHAPTERS.find(c => c.id === id), 'intro');
+      let nx = await playChapter(ALL_CHAPTERS.find(c => c.id === id), 'intro');
+      while (nx && nx.load) nx = await playChapter(nx, 'intro');
     }
   }
 
   async function main() {
     const debug = new URLSearchParams(location.search).get('debug');
     // 개발용: ?debug=ch2-scene 처럼 장면만 띄운다. ?debug=ch2-minigame 은 미니게임부터, ?debug=ch2-quiz 는 퀴즈부터 시작한다. 조선편은 ?debug=j1-scene, 근대·일제 강점기·현대편은 k1·i1·h1.
-    const dm = /^(ch\d|[jkih]\d)-(scene|explore|minigame|quiz)$/.exec(debug || '');
+    const dm = /^(ch\d|[jkih]\d)-(scene|intro|explore|minigame|quiz)$/.exec(debug || ''); // intro: 도입 장면부터
     const meta = dm && ALL_CHAPTERS.find(c => c.id === dm[1] && c.load);
     if (meta) {
       window.__world = world; window.__ctx = ctx; // 개발용(?debug=…)에서만: 콘솔로 장면과 진행을 살펴본다
-      if (dm[2] !== 'scene') { await playChapter(meta, dm[2]); return mapLoop(); }
+      if (dm[2] !== 'scene') { let nx = await playChapter(meta, dm[2]); while (nx && nx.load) nx = await playChapter(nx, 'intro'); return mapLoop(); }
       const mod = (await meta.load()).default;
       world.setMood(mod.mood); world.setPlayerLook(roleLook(meta.id, mod.player), ROLES[meta.id]?.scale ?? 1); const sc = mod.buildScene(world, ctx);
       const [sx, sz] = sc.start || [0, 19];

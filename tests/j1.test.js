@@ -99,13 +99,14 @@ test('j1 D-22: camp gate and 위화도 board, no reading signs, one-paragraph in
     ok(board, '위화도 board');
     eq([...w.npcs.values()].filter(n => n.spot).length, 0, 'no reading signs');
   } finally { w.dispose(); }
-  eq(j1Script.intro.length, 1); ok(!j1Script.intro[0].text.includes('\n'));
+  ok(j1Script.intro.length <= 3); ok(j1Script.intro.every(l => !l.text.includes('\n'))); // 자막 장면(C-03): 짧은 문장 몇 개
   eq(j1Script.hanyang.howto.steps.length, 2);
   ok(j1Script.npc.archer.first.some(l => l.text.includes('압록강에 있는 섬')), 'island fact moved into a person');
   ok(j1Script.npc.soldier.first.some(l => l.text.includes('5만여 명')), 'army fact moved into a person');
 });
 
-test('j1 D-22: soldiers talk in any order and pick up from each other; 이성계 waits only until someone was heard', () => {
+test('j1 D-22/D-30: soldiers talk in any order and pick up from each other; 이성계 waits until all were heard', () => {
+  ok(j1Script.npc.yiseonggye.wait[0].text.includes('모두'));
   eq(campTalk('soldier', new Set()), j1Script.npc.soldier.first, 'soldier first');
   eq(campTalk('archer', new Set(['soldier']))[0], j1Script.npc.archer.bridge, 'archer picks up from the soldier');
   ok(!('tooEarly' in j1Script.npc.soldier), 'soldier never blocks');

@@ -11,6 +11,7 @@ import { LOOKS } from '../../../content/characters.js';
 import { geunjeongjeon, jongmyo, sajikdan } from '../landmarks.js';
 import * as THREE from 'three';
 import script from './script.js';
+import { waitInteract } from '../../../core/portal.js';
 
 // 미니게임 무대(마을에서 떨어진 x 400)
 // 1) 비 내리는 위화도 진영: 군사들이 하는 말(팻말) 가운데 이성계가 든 까닭을 찾는다
@@ -46,7 +47,7 @@ async function sayAll(dialogue, lines) { for (const l of lines) await dialogue.s
 function markCamp(ctx, heard) {
   const { world, hud } = ctx;
   PEOPLE.forEach(id => { world.npcs.get(id).mark.visible = !heard.has(id); });
-  world.npcs.get('yiseonggye').mark.visible = heard.size > 0;
+  world.npcs.get('yiseonggye').mark.visible = heard.size === PEOPLE.length; // 모두 들어야 이성계가 이야기한다(C-01)
   const next = world.npcs.get(PEOPLE.find(id => !heard.has(id)) || 'yiseonggye').mesh.position;
   world.setGoal({ x: next.x, z: next.z });
   ctx.setGoal(script.goals[heard.size === PEOPLE.length ? 1 : 0]);
@@ -70,7 +71,7 @@ export async function tourHanyang(ctx, s) {
   if (!world.npcs.has('minister')) world.addNpc('minister', LOOKS.minister, p0.x, p0.z, Math.PI);
   const m = world.npcs.get('minister');
   m.mesh.visible = true; world.moveNpc('minister', p0.x, p0.z + 0, Math.PI);
-  ctx.setGoal(script.goals[3]);
+  ctx.setGoal(script.goals[5]);
   await sayAll(dialogue, T.start); dialogue.close();
   for (const st of TOUR.stops) {
     const a = at(...st.at), b = at(...st.stand);
@@ -78,7 +79,7 @@ export async function tourHanyang(ctx, s) {
     await sayAll(dialogue, T[st.key]); dialogue.close();
   }
   m.mesh.visible = false; m.collider.r = 0; m.mark.visible = false;
-  ctx.setGoal(script.goals[4]);
+  ctx.setGoal(script.goals[6]);
 }
 
 function placePlayer(world, [x, z], ry = Math.PI) {
@@ -184,9 +185,26 @@ export default {
     return scene;
   },
 
+  // 장 도입(C-03): 비 내리는 위화도 진영. ① 북쪽 강가의 군대가 요동 쪽으로 늘어서 나아가고 ② 지휘 천막 앞 이성계의 근심 어린 얼굴
+  introScene(ctx) {
+    const { world } = ctx, a0 = scene.army.position.clone();
+    let off = null;
+    return {
+      shots: [
+        { cam: [7, 7, 6], look: [7, 1, -14], to: { cam: [7, 4.5, -3], look: [7, 1.5, -22] },
+          act: () => { off = world.onUpdate(dt => { scene.army.position.z -= dt * 0.9; }); } }, // 요동(북쪽)을 보고 나아간다
+        { cam: [2.6, 2.3, 2.8], look: [0, 2.0, -2.4], to: { cam: [-1.4, 2.2, 2.2], look: [0, 2.05, -2.4] },
+          act: () => { off?.(); off = null; } },
+      ],
+      done: () => { off?.(); scene.setTurn(0); scene.army.position.copy(a0); },
+    };
+  },
+  // 미니게임 뒤 빛나는 문(C-02): 군대가 떠난 동쪽 통로, 학생 쪽(서쪽)을 본다
+  portal: { at: [6, -0.5], ry: -Math.PI / 2 },
+
   enterStage(ctx, stage) {
     if (stage === 'minigame') { scene.gate.setOpen(0); placePlayer(ctx.world, [0, 1.5]); }
-    if (stage === 'quiz') { scene.setTurn(1); placePlayer(ctx.world, [0, 1.5]); ctx.setGoal(script.goals[5]); }
+    if (stage === 'quiz') { scene.setTurn(1); placePlayer(ctx.world, [0, 1.5]); }
   },
 
   async explore(ctx) {
@@ -211,7 +229,7 @@ export default {
             return;
           }
           if (id !== 'yiseonggye') return;
-          if (!heard.size) { await sayAll(dialogue, script.npc.yiseonggye.wait); return; }
+          if (heard.size < PEOPLE.length) { await sayAll(dialogue, script.npc.yiseonggye.wait); return; } // 모두 들어야 진행(C-01)
           await sayAll(dialogue, script.npc.yiseonggye.first);
           [...PEOPLE, 'yiseonggye'].forEach(k => { world.npcs.get(k).mark.visible = false; });
           world.setGoal(null); hud.setCounter(null);
@@ -239,13 +257,27 @@ export default {
       return ok;
     }, { failHint: R.fail });
     await sayAll(dialogue, R.done);
-    await sayAll(dialogue, script.npc.yiseonggye.turn); // 이성계의 결심
     dialogue.close();
+    // 다음 놀이는 저절로 시작하지 않는다: 이성계에게 가서 말을 걸어야 회군이 시작된다(C-05)
+    const yi = world.npcs.get('yiseonggye');
+    yi.mark.visible = true;
+    await waitInteract(ctx, { pos: yi.mesh.position, quest: script.goals[3], label: '이성계와 이야기하기', mark: false });
+    yi.mark.visible = false;
+    world.setTalkCamera(yi.mesh);
+    await sayAll(dialogue, script.npc.yiseonggye.turn); // 이성계의 결심
+    dialogue.close(); world.camMode = 'follow';
 
     // 2) 위화도 회군: 큰 지도 위에서 이성계의 군대가 위화도에서 개경으로 돌아오고, 고려가 물러나 조선이 선다
     await marchOnMap(ctx);
 
-    // 3) 새 도읍 한양 짓기: 알맞은 터에서 버튼을 누르면 그 자리에 지어진다
+    // 3) 새 도읍 한양 짓기: 진영에 남은 관리에게 말을 걸어야 시작한다(C-05). 알맞은 터에서 버튼을 누르면 그 자리에 지어진다
+    const mi = world.npcs.get('minister') || world.addNpc('minister', LOOKS.minister, -5, 4.5, Math.PI * 0.8);
+    mi.mesh.visible = true; mi.mark.visible = true;
+    await waitInteract(ctx, { pos: mi.mesh.position, quest: script.goals[4], label: '관리와 이야기하기', mark: false });
+    mi.mark.visible = false;
+    world.setTalkCamera(mi.mesh);
+    await sayAll(dialogue, script.npc.minister.first);
+    dialogue.close(); world.camMode = 'follow';
     world.setGoal(null);
     await showHowTo(ctx.ui, script.hanyang.howto);
     tries = 0;
@@ -267,7 +299,6 @@ export default {
     await ctx.fade(true);
     placePlayer(world, [0, 1.5]);
     await ctx.fade(false);
-    ctx.setGoal(script.goals[5]);
     return { firstTryCorrect, firstTryTotal: 2, easyModeUsed: a.easyModeUsed || b.easyModeUsed };
   },
 };

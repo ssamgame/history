@@ -291,9 +291,9 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
     // 사람이 아닌 '말 걸 수 있는 것'(안내판 등). 인물처럼 가까이 가서 대화 버튼으로 읽는다. 파란 'i' 표시가 늘 떠 있다.
     addSpot(id, mesh, x, z, faceY = 0) {
       mesh.position.set(x, 0, z); mesh.rotation.y = faceY;
-      const mark = markerSprite('i', '#7fb3c8'); mark.position.set(0, 3.1, 0); mark.scale.setScalar(0.6); mesh.add(mark);
+      const mark = markerSprite('i', '#7fb3c8'); mark.position.set(0, mesh.userData.markY ?? 3.1, mesh.userData.markZ ?? 0); mark.scale.setScalar(0.6); mesh.add(mark);
       level.add(mesh);
-      const spot = { id, mesh, mark, spot: true, collider: world.addCollider({ x, z, r: 0.6 }) };
+      const spot = { id, mesh, mark, spot: true, collider: world.addCollider({ x, z, r: mesh.userData.plaque ? 0 : 0.6 }) }; // 건물 간판은 건물 앞 땅이 읽는 자리(막지 않는다)
       world.npcs.set(id, spot);
       return spot;
     },
@@ -370,7 +370,7 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
         player.rotation.y += diff * Math.min(1, dt * 12);
       }
       animateWalk(player, moving, dt);
-      for (const n of world.npcs.values()) if (n.mark.visible) n.mark.position.y = (n.spot ? 3.1 : 3.5) + Math.sin(elapsed * 3) * 0.12;
+      for (const n of world.npcs.values()) if (n.mark.visible) n.mark.position.y = (n.spot ? (n.mesh.userData.markY ?? 3.1) : 3.5) + Math.sin(elapsed * 3) * 0.12;
       if (goal) {
         const dx = goal.x - p.x, dz = goal.z - p.z;
         goalArrow.visible = Math.hypot(dx, dz) > 3;

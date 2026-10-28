@@ -18,7 +18,7 @@ export default {
     { who: 'guide', text: '거리 사람들은 무슨 이야기를 할까? 느낌표가 뜬 사람에게 아무 차례로 다가가 물어보자.' },
   ],
   goals: ['한성 거리 사람들의 이야기를 들어 보자', '김옥균을 찾아가자', '김옥균을 따라 그날 밤을 걸어 보자', '개혁안을 게시판에 붙이자', '배운 내용을 확인해 보자'],
-  more: { who: 'guide', text: '다른 사람 이야기도 들어 볼까? 아니면 길 오른쪽에 선 김옥균을 찾아가도 돼.' },
+  more: { who: 'guide', text: '다른 사람 이야기도 들어 보자. 모두 듣고 나면 길 오른쪽에 선 김옥균을 찾아가자.' },
   minigameTitle: '갑신정변',
   npc: {
     merchant: {
@@ -38,7 +38,7 @@ export default {
       later: [{ who: 'clerk', text: '등불을 더 걸어야 하는데 손이 모자라는군.' }],
     },
     kimokgyun: {
-      wait: [{ who: 'kimokgyun', text: '오늘 밤 한성 거리에서 무슨 이야기가 오가는지부터 들어 보고 오시오.' }],
+      wait: [{ who: 'kimokgyun', text: '오늘 밤 한성 거리에서 무슨 이야기가 오가는지 모두 들어 보고 오시오.' }],
       first: [
         { who: 'kimokgyun', text: '청에 의지하는 세력을 몰아내고 새로운 조선을 만들어야 하오.', src: ['S51'] },
         { who: 'kimokgyun', text: '우리 개화 세력은 오늘 잔치를 틈타 정변을 일으킬 것이오.', src: ['S51'] },

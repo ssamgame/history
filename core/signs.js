@@ -51,3 +51,32 @@ export function makeSign(title) {
   g.name = `sign:${title}`;
   return g;
 }
+
+// 건물 간판(현판, C-03 2026-10-28): 길 위에 따로 세운 안내판 대신 건물 벽(처마 아래)에 단 검은 판에 흰 글씨.
+// 돌려주는 묶음의 자리는 건물 앞 땅(학생이 서서 읽는 곳)이고, 판은 위(y)와 뒤(back, 건물 쪽)로 옮겨 단다.
+// world.addSpot에 넣으면 인물처럼 다가가 읽는다(대사는 script.npc[id].always 그대로).
+export function makePlaque(title, { y = 2.9, back = 1.2 } = {}) {
+  const g = new THREE.Group();
+  g.userData.title = title;
+  const { w, h } = SIGN_CANVAS;
+  const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  const c = cv.getContext('2d');
+  c.fillStyle = '#2b2118'; c.fillRect(0, 0, w, h);
+  c.strokeStyle = '#c99a3c'; c.lineWidth = 10; c.strokeRect(10, 10, w - 20, h - 20);
+  const L = signTextLayout(c, title);
+  c.fillStyle = '#f4ead2'; c.font = L.font; c.textAlign = 'center'; c.textBaseline = 'middle';
+  const gap = L.size * 1.05, top = h / 2 - (gap * (L.lines.length - 1)) / 2 + L.size * 0.04;
+  L.lines.forEach((line, i) => c.fillText(line, w / 2, top + i * gap));
+  const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+  const face = new THREE.MeshLambertMaterial({ map: tex });
+  const edge = mat(0x4a3322, 'wood', 'object');
+  const board = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.88, 0.1), [edge, edge, edge, edge, face, face]);
+  board.position.set(0, y, -back); board.rotation.x = -0.12; board.castShadow = true; g.add(board); // 아래에서 읽기 좋게 살짝 숙인다
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(2.5, 1.06, 0.06), mat(0x7a2a1e, 'wood', 'object'));
+  frame.position.set(0, y, -back - 0.05); frame.rotation.x = -0.12; g.add(frame);
+  g.name = `sign:${title}`;
+  g.userData.plaque = true; g.userData.markY = y + 0.85; g.userData.markZ = -back + 0.2;
+  return g;
+}
+// 안내판 하나 만들기: plaque가 있으면 건물 간판, 없으면 예전 기둥 안내판
+export function signOrPlaque(s) { return s.plaque ? makePlaque(s.title, s.plaque === true ? {} : s.plaque) : makeSign(s.title); }

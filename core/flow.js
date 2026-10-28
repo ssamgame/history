@@ -2,10 +2,13 @@
 import { computeStars } from './save.js';
 import { bakeLevel } from './bake.js';
 import { showQuizView, endQuizView } from './quizview.js';
+import { portalStage } from './portal.js';
+import { playIntro } from './intro.js';
 
 export const STAGES = ['intro', 'explore', 'minigame', 'quiz'];
 
-export async function runChapter(meta, chapter, ctx, save, { resumeStage = 'intro' } = {}) {
+// next: 다음 장(또는 다음 편) { title, course? } — 장 모듈에 portal이 있으면 퀴즈 전에 그쪽으로 가는 빛나는 문을 세운다(C-02)
+export async function runChapter(meta, chapter, ctx, save, { resumeStage = 'intro', next = null } = {}) {
   const t0 = performance.now();
   const from = Math.max(0, STAGES.indexOf(resumeStage));
   const result = { firstTryCorrect: 0, firstTryTotal: 0, easyModeUsed: false, quizCorrect: 0, quizTotal: 0, wrongQuizzes: [] };
@@ -22,9 +25,11 @@ export async function runChapter(meta, chapter, ctx, save, { resumeStage = 'intr
   const level = l => { if (ctx.music) ctx.music.setLevel(l); }; // 배경음악: 탐험은 잔잔하게, 미니게임 전투는 세게
   level('calm');
   try {
+    // 장 도입(C-03): introScene이 있는 장은 장면을 먼저 지은 뒤 해설을 자막으로 띄우며 3D로 재현한다. 없는 장은 예전 해설 카드
+    const film = !!(chapter.introScene && ctx.world && ctx.ui);
     if (from === 0) {
       checkpoint('intro');
-      await ctx.screens.showIntroCard(meta, chapter.script.intro);
+      if (!film) await ctx.screens.showIntroCard(meta, chapter.script.intro);
     }
     const perf = ctx.world?.perf, t1 = performance.now(); // perf: 개발용 성능 측정(?perf=1)일 때만 있다
     const built = chapter.buildScene(ctx.world, ctx);
@@ -33,6 +38,7 @@ export async function runChapter(meta, chapter, ctx, save, { resumeStage = 'intr
     ctx.world?.applyDecor?.(); // 화질에 따라 먼 장식 켜고 끄기
     if (perf) { perf.time('장면 짓기', t2 - t1, meta.id); perf.time('장면 굳히기', performance.now() - t2, meta.id); }
     if (from > 0) chapter.enterStage?.(ctx, STAGES[from]);
+    if (from === 0 && film) await playIntro(ctx, meta, chapter.script.intro, chapter.introScene(ctx));
 
     if (from <= 1) {
       checkpoint('explore'); perf?.segment(`${meta.id} 탐험`);
@@ -47,6 +53,8 @@ export async function runChapter(meta, chapter, ctx, save, { resumeStage = 'intr
 
     level('calm'); perf?.segment(`${meta.id} 퀴즈`);
     checkpoint('quiz', { firstTryCorrect: result.firstTryCorrect, firstTryTotal: result.firstTryTotal, easyModeUsed: result.easyModeUsed });
+    // 퀴즈는 저절로 시작하지 않는다: 마을의 빛나는 문 앞에서 E를 눌러야 시작(C-02)
+    if (chapter.portal && ctx.world && ctx.ui) await portalStage(ctx, chapter, next);
     // 배운 내용 확인: 일어난 차례(year)대로 묻고, 문제마다 관련된 장면을 뒤에 비춘다. 틀리면 해설을 듣고 다시 고른다.
     const quizzes = [...chapter.quizzes].sort((a, b) => (a.year ?? 0) - (b.year ?? 0));
     for (const [k, q] of quizzes.entries()) {
@@ -85,8 +93,7 @@ export function roam(ctx, { onTalk, zones = [] }) {
     const p = world.player.position;
     for (const n of spots) {
       if (found.has(n.id) || !n.mesh.visible || n.mesh.position.distanceTo(p) > 7) continue;
-      found.add(n.id);
-      hud.notice?.(`새 장소 발견: ${n.mesh.userData.title || '안내판'}`);
+      found.add(n.id); // '새 장소 발견' 알림은 뺐다(C-01: 안내는 대화와 퀘스트로만)
     }
     for (const z of zones) {
       const now = (!z.active || z.active()) && Math.hypot(p.x - z.x, p.z - z.z) < z.r; // 비활성 구역은 '안에 있음'으로 치지 않는다

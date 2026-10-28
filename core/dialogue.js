@@ -40,6 +40,8 @@ export function createDialogue(root, speakers, { typeMs = 26, reduceMotion = fal
   function say(line) {
     return new Promise(resolve => {
       show(line.who, line);
+      el.classList.toggle('dlg-right', line.mood === 'right'); // 퀴즈 맞음: 연두 바탕(C-04)
+      el.classList.toggle('dlg-wrong', line.mood === 'wrong'); // 퀴즈 틀림: 분홍 바탕
       if (onSay) onSay(line);
       choicesEl.hidden = true; nextEl.hidden = false;
       const chars = [...line.text];
@@ -64,6 +66,7 @@ export function createDialogue(root, speakers, { typeMs = 26, reduceMotion = fal
     return new Promise(resolve => {
       clearInterval(timer); timer = null; advanceFn = null;
       show(prompt.who);
+      el.classList.remove('dlg-right', 'dlg-wrong');
       textEl.textContent = prompt.text;
       nextEl.hidden = true; choicesEl.hidden = false; choicesEl.innerHTML = '';
       openedAt = performance.now();
@@ -112,11 +115,11 @@ export function createDialogue(root, speakers, { typeMs = 26, reduceMotion = fal
       const text = off.length ? `해설을 떠올리며 다시 골라 봐요. ${q.question}` : q.question;
       const i = await choose({ who: 'narr', text }, q.options, { off });
       if (i === q.answer) {
-        await say({ who: 'narr', text: off.length ? `○ 맞았어요! 정답은 "${q.options[q.answer]}"이에요.` : `○ 맞았어요! ${q.explain}` });
+        await say({ who: 'narr', text: off.length ? `○ 맞았어요! 정답은 "${q.options[q.answer]}"이에요.` : `○ 맞았어요! ${q.explain}`, mood: 'right' });
         return { correct: off.length === 0, tries: off.length + 1 };
       }
       off.push(i);
-      await say({ who: 'narr', text: `× 아쉬워요. "${q.options[i]}"은(는) 답이 아니에요. ${q.explain}` });
+      await say({ who: 'narr', text: `× 아쉬워요. "${q.options[i]}"은(는) 답이 아니에요. ${q.explain}`, mood: 'wrong' });
     }
   }
 

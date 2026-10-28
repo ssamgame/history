@@ -1,7 +1,7 @@
 // 조선편 장들이 같이 쓰는 진행 도구: 차례대로 말 걸기 탐험, 미니게임 한 부분(다시 하기·첫 시도 기록), 플레이어 놓기.
 import { roam } from '../../core/flow.js';
 import { runWithRetries, actionButton } from '../../core/minigame.js';
-import { makeSign } from '../../core/signs.js';
+import { signOrPlaque } from '../../core/signs.js';
 import * as THREE from 'three';
 import { labelSprite } from '../kit/play.js';
 
@@ -105,9 +105,10 @@ export function timingPress(ctx, { label, seconds, set, window: [lo, hi], fail }
   });
 }
 
-// 안내판 세우기: [{ id, title, x, z, ry }]. 대사는 script.npc[id].always에 둔다(읽지 않아도 장은 끝난다).
+// 안내판 세우기: [{ id, title, x, z, ry, plaque? }]. 대사는 script.npc[id].always에 둔다(읽지 않아도 장은 끝난다).
+// plaque: { y, back }이면 길 위 기둥 대신 건물 벽의 간판(C-03). x, z는 그 건물 앞 땅, ry는 간판이 보는 쪽
 export function addSigns(world, list) {
-  for (const s of list) world.addSpot(s.id, makeSign(s.title), s.x, s.z, 0); // 글이 카메라(남쪽)를 보게
+  for (const s of list) world.addSpot(s.id, signOrPlaque(s), s.x, s.z, s.ry ?? 0); // 글이 카메라(남쪽)를 보게
 }
 
 const REACH = 1.3; // 고르는 자리에 닿았다고 보는 거리(자리 사이는 2.6 이상 띄운다)

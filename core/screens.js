@@ -243,13 +243,15 @@ export function showMessage(root, title, text) {
 
 // 탐험 중 화면 위 정보: 장 제목, 목표, 메뉴 버튼, 인물 위 "대화하기" 표시, 터치 조작.
 export function createHud(root, { touch }) {
-  const goal = h('span', { class: 'goal-text' });
+  // 왼쪽 위 '퀘스트' 목록(C-01, 2026-10-28): 마친 퀘스트는 ✓로 흐리게, 지금 퀘스트는 굵게, 그 아래 진행 수(들은 이야기 1/3 등)
+  const quests = h('ol', { class: 'quest-list' });
+  const goal = h('span', { class: 'goal-text' }); // 지금 퀘스트 글(시험·배치 검사가 찾는다)
   const goalStep = h('span', { class: 'goal-step', hidden: true });
   const chapter = h('div', { class: 'hud-chapter' });
   const timer = h('div', { class: 'hud-timer', hidden: true });
   const counter = h('div', { class: 'hud-counter', hidden: true });
-  const found = h('div', { class: 'hud-found', hidden: true });
-  const box = h('div', { class: 'hud', hidden: true }, chapter, h('div', { class: 'hud-goal' }, h('span', { class: 'seal' }, '목표'), goal, goalStep), found, h('div', { class: 'hud-row' }, timer, counter));
+  const found = h('div', { class: 'hud-found', hidden: true }); // 예전 '살펴본 안내판' 칸: 이제 쓰지 않는다(늘 숨김)
+  const box = h('div', { class: 'hud', hidden: true }, chapter, h('div', { class: 'hud-goal' }, h('span', { class: 'seal' }, '퀘스트'), quests), found, h('div', { class: 'hud-row' }, timer));
   const notice = h('div', { class: 'hud-notice', hidden: true, role: 'status' });
   const bigTimer = h('div', { class: 'hud-bigtimer', hidden: true, 'aria-live': 'off' }); // 남은 시간: 화면 위 가운데에 크게
   const bigWait = h('div', { class: 'hud-bigwait', hidden: true, 'aria-live': 'off' }); // 기다리는 동안 남은 초(정류장 등): 큰 시간 바로 아래
@@ -261,6 +263,7 @@ export function createHud(root, { touch }) {
   root.append(box, menuBtn, prompt, joyZone, talkBtn, fade, notice, bigTimer, bigWait);
   let noticeTimer = null;
   let camera = null;
+  let lastList = null, lastIdx = -1; // 퀘스트 목록에서 마지막으로 보인 차례
   return {
     joyZone, talkBtn, menuBtn,
     attachCamera(c) { camera = c; },
@@ -270,10 +273,19 @@ export function createHud(root, { touch }) {
     hide() { box.hidden = true; menuBtn.hidden = true; prompt.hidden = true; joyZone.hidden = talkBtn.hidden = true; notice.hidden = true; found.hidden = true; bigTimer.hidden = true; bigWait.hidden = true; },
     // 잠깐 뜨는 알림(새 장소 발견 등): 화면 위 가운데, 누르지 않아도 사라진다
     notice(text) { notice.textContent = text; notice.hidden = false; if (!box.hidden) notice.style.top = `${Math.round(box.getBoundingClientRect().bottom + 8)}px`; /* 목표 상자 바로 아래 */ clearTimeout(noticeTimer); noticeTimer = setTimeout(() => { notice.hidden = true; }, 2800); },
-    // 탐험 진행: 읽은 안내판 수 등 (null이면 숨김)
-    setFound(text) { found.hidden = text == null; if (text != null) found.textContent = text; },
-    // step: [지금, 전체] — 이 장의 목표 가운데 몇 번째인지(미션 진행)
-    setGoal(text, step = null) { goal.textContent = text; goalStep.hidden = !step; if (step) goalStep.textContent = `${step[0]}/${step[1]}`; },
+    // 예전 '살펴본 안내판 a/b': 퀘스트 목록으로 합쳐 더는 보이지 않는다(C-01)
+    setFound() { found.hidden = true; },
+    // 지금 퀘스트(text)와 이 장의 퀘스트 목록(list). list 안에서 text보다 앞의 것은 마친 퀘스트로 ✓
+    setGoal(text, step = null, list = []) {
+      goal.textContent = text || ''; goalStep.hidden = !step; if (step) goalStep.textContent = `${step[0]}/${step[1]}`;
+      const i = list.indexOf(text);
+      if (list !== lastList) { lastList = list; lastIdx = -1; }
+      // 목록에 없는 퀘스트(빛나는 문 찾아가기 등)는 그때까지 한 퀘스트를 모두 마친 것으로 본다
+      const done = (i >= 0 ? list.slice(0, i) : list.slice(0, lastIdx + 1)).slice(-2); // 마친 것은 바로 앞 두 개만(화면이 좁아서)
+      if (i >= 0) lastIdx = i;
+      const cur = h('li', { class: 'quest now' }, goal, counter);
+      quests.replaceChildren(...done.map(t => h('li', { class: 'quest done' }, t)), ...(text ? [cur] : []));
+    },
     setTimer(sec) {
       timer.hidden = true; bigTimer.hidden = sec == null; // 작은 글 대신 가운데 큰 숫자
       if (sec != null) { const n = Math.max(0, Math.ceil(sec)); timer.textContent = `남은 시간 ${n}초`; bigTimer.textContent = `${n}초`; bigTimer.classList.toggle('low', n <= 10); }
@@ -283,8 +295,10 @@ export function createHud(root, { touch }) {
     setCounter(text) { counter.hidden = text == null; if (text != null) counter.textContent = text; },
     setTalkEnabled(b) { talkBtn.disabled = !b; },
     setTouchVisible(b) { joyZone.hidden = talkBtn.hidden = !(touch && b); },
-    setPrompt(pos) {
+    // label: 말풍선 글(없으면 'E 대화하기'). 문·물건 앞에서는 '문으로 들어가기' 등으로 바꾼다
+    setPrompt(pos, label = null) {
       if (!pos || !camera) { prompt.hidden = true; return; }
+      prompt.textContent = label ? (touch ? `${label} (대화 버튼)` : `E ${label}`) : (touch ? '대화 버튼을 눌러요' : 'E 대화하기');
       const v = pos.clone().setY(3.3).project(camera);
       prompt.style.left = `${((v.x + 1) / 2) * 100}%`;
       prompt.style.top = `${((1 - v.y) / 2) * 100}%`;

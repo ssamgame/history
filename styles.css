@@ -30,6 +30,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
   display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; align-items: start;
 }
 .dlg[hidden] { display: none; }
+.dlg.dlg-right { background: #dcf5c0; border-color: #6aa84f; } /* 퀴즈 맞음: 연두(C-04) */
+.dlg.dlg-wrong { background: #ffd9e4; border-color: #d97a98; } /* 퀴즈 틀림: 분홍 */
 .dlg-portrait { grid-row: span 3; width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-display); font-size: 26px; color: var(--hanji); border: 2px solid #3b2f22; }
 .dlg-name { font-family: var(--font-display); font-weight: 700; color: var(--dan-red); font-size: 18px; }
 .dlg-text { font-size: 19px; line-height: 1.6; min-height: 3.2em; min-width: 0; }
@@ -153,7 +155,14 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
   background: rgba(27,31,29,.82); border: 1px solid rgba(217,164,65,.45); border-radius: 6px; padding: 10px 14px; display: grid; gap: 4px; }
 .hud[hidden] { display: none; }
 .hud-chapter { font-size: 13px; color: var(--gold); }
-.hud-goal { display: flex; gap: 8px; align-items: center; font-size: 16px; line-height: 1.4; }
+.hud-goal { display: flex; gap: 8px; align-items: flex-start; font-size: 16px; line-height: 1.4; }
+.quest-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; min-width: 0; } /* 퀘스트 목록(C-01) */
+.quest.done { font-size: 13px; color: rgba(242,234,217,.6); }
+.quest.done::before { content: '✓ '; color: #9fd37a; }
+.quest.now { font-weight: 700; color: var(--hanji); }
+.quest.now::before { content: '▶ '; color: var(--gold); font-size: 12px; }
+.quest.now .hud-counter { font-weight: 400; font-size: 14px; }
+.goal-step { display: none; }
 .seal { flex: none; background: var(--dan-red); color: var(--hanji); font-family: var(--font-display); font-size: 13px; padding: 2px 6px; border-radius: 2px; }
 .menubtn { position: fixed; z-index: 10; top: calc(12px + env(safe-area-inset-top, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); min-height: 48px; padding: 0 16px; font-size: 16px; border-radius: 4px; border: 1px solid rgba(242,234,217,.5); background: rgba(27,31,29,.82); color: var(--hanji); }
 .menubtn[hidden], .prompt[hidden] { display: none; }
@@ -400,5 +409,20 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 /* 편 복습 퀴즈(D-21) */
 .review-opts { display: grid; gap: 8px; margin: .6rem 0; }
 .review-opt { text-align: left; min-height: 48px; }
-.review-opt.right { border-color: #2f6b5e; background: #e3f1ec; color: #1d3f37; }
-.review-opt.wrong { border-color: var(--dan-red); background: #fbeee9; color: #5a2a20; }
+.review-opt.right { border-color: #6aa84f; background: #dcf5c0; color: #23401a; }
+.review-opt.wrong { border-color: #d97a98; background: #ffd9e4; color: #5a2032; }
+
+/* 장 도입 장면(C-03): 위아래 검은 띠, 제목, 아래 자막, 건너뛰기 */
+.filming .hud, .filming .menubtn, .filming .joyzone, .filming .talkbtn { visibility: hidden; }
+.intro-film { position: fixed; inset: 0; z-index: 30; cursor: pointer; }
+.intro-bar { position: absolute; left: 0; right: 0; height: 9vh; background: #000; }
+.intro-bar.top { top: 0; } .intro-bar.bottom { bottom: 0; }
+.intro-title { position: absolute; left: max(20px, env(safe-area-inset-left, 0px)); top: calc(9vh + 12px); color: var(--hanji); text-shadow: 0 2px 6px #000; animation: introTitle 9s forwards; pointer-events: none; }
+.intro-title h2 { margin: 2px 0 0; font-family: var(--font-display); font-size: clamp(22px, 4vw, 34px); }
+.intro-title .eyebrow { color: var(--gold); font-size: 15px; }
+@keyframes introTitle { 0% { opacity: 0; } 12% { opacity: 1; } 75% { opacity: 1; } 100% { opacity: .0; } }
+.intro-sub { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(9vh + 14px); width: min(820px, calc(100% - 32px)); box-sizing: border-box; background: rgba(15,14,12,.78); border-radius: 8px; padding: 12px 18px 8px; color: #fff; text-align: center; }
+.intro-sub[hidden] { display: none; }
+.intro-sub-text { margin: 0; font-size: clamp(17px, 2.4vw, 21px); line-height: 1.6; word-break: keep-all; }
+.intro-tap { display: block; text-align: right; font-size: 13px; color: rgba(255,255,255,.6); }
+.intro-skip { position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); top: calc(9vh + 12px); min-height: 48px; background: rgba(27,31,29,.85); color: var(--hanji); border: 1px solid var(--gold); }
