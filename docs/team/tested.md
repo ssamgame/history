@@ -26,3 +26,4 @@
 | ch6 (D-19 포구 말 잇기·배중손 따라 부두·진도·제주 걷기·인물 만나기) | 2026-10-28 | 746336c | ch6·goryeo·content·sw·stage3-text | 통과 (43 묶음) |
 | ch6 (D-20 노 젓기·낮은 배 시점·앞에서 오는 몽골 배·인물 만나기 삭제) | 2026-10-28 | 6fa10cc | ch6·goryeo | 통과 |
 | 모든 편 (D-21 편 복습 퀴즈) | 2026-10-28 | 6fa10cc | review·save·screens·content·sw·flow·smoke | 통과 (63 묶음) |
+| j1 (D-22 진영 문·말 잇기·이성계 결심·한양 둘러보기) + ch5 closeGate 공용화 | 2026-10-28 | 16b43b6 | j1·ch5·goryeo5·play·kit·content·sw | 통과 (116 묶음) |
