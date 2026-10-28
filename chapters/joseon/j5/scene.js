@@ -10,6 +10,7 @@ import { scatter } from '../../../core/props.js';
 import { LOOKS } from '../../../content/characters.js';
 import { createWeather } from '../../../core/weather.js';
 import { addSigns } from '../common.js';
+import { gateLeaves, nameBoard } from '../../kit/gate.js';
 
 const WALL = { rx: 20, rz: 16 };
 
@@ -57,9 +58,13 @@ export function buildJ5Scene(world) {
     mk(new THREE.BoxGeometry(3.2, 0.12, 1.25), 0xf4f6f8, x, 2.66, z, L, false).rotation.y = seg.rotation.y; // 성벽 위 눈
   }
   // 서문
-  mk(new THREE.BoxGeometry(1.6, 3.4, 4.2), 0xb3ada2, -WALL.rx, 1.7, 0);
-  mk(new THREE.BoxGeometry(1.8, 2.6, 2.4), 0x3a2c20, -WALL.rx - 0.05, 1.3, 0);
+  // 서문(D-26): 양쪽 문기둥 벽과 위 인방 사이에 나무 문짝 둘. 학생은 이 문으로 들어오고, 인조는 이 문으로 나간다
+  for (const sz of [-1, 1]) mk(new THREE.BoxGeometry(1.6, 3.4, 1.0), 0xb3ada2, -WALL.rx, 1.7, sz * 1.6);
+  mk(new THREE.BoxGeometry(1.6, 0.8, 4.2), 0xb3ada2, -WALL.rx, 3.0, 0);
   hipRoof(3.2, 5.6, 1.6, 0x3d4846, -WALL.rx, 3.4, 0);
+  const gateG = new THREE.Group(); gateG.position.set(-WALL.rx + 0.5, 0, 0); gateG.rotation.y = Math.PI / 2; L.add(gateG);
+  const gate = gateLeaves(gateG, { x: 0, z: 0, width: 2.2, height: 2.6, color: 0x6b4a32, inward: 1 });
+  nameBoard(L, '남한산성', -12, 3.4); // S38·S47
   // 행궁(북쪽)과 창고(동쪽)
   const palace = new THREE.Group(); palace.position.set(0, 0, -12); L.add(palace);
   mk(new THREE.BoxGeometry(12, 0.7, 6), 0xb3ada2, 0, 0.35, 0, palace);
@@ -115,12 +120,13 @@ export function buildJ5Scene(world) {
   addSigns(world, [
     { id: 'signFortress', title: '남한산성', x: 5, z: 4 },
     { id: 'signHaenggung', title: '행궁', x: 8, z: -8 },
-    { id: 'signWestGate', title: '서문', x: -14, z: 1, ry: Math.PI / 2 },
+    { id: 'signWestGate', title: '서문', x: -14, z: -3.6, ry: Math.PI / 2 },
   ]);
 
   world.addNpc('soldier', LOOKS.joseonSoldier, -9, 6, Math.PI * 0.7);
   world.addNpc('keeper', LOOKS.worker, 9, -2, -Math.PI / 2);
   world.addNpc('kimsangheon', LOOKS.kimsangheon, -3, -7, 0);
+  world.addNpc('injo', LOOKS.injo, 0, -7.6, 0); world.npcs.get('injo').mesh.visible = false; // 삼전도로 갈 때 나온다
   world.addNpc('choemyeonggil', LOOKS.choemyeonggil, 3, -7, 0);
 
   world.onUpdate((dt, t) => {
@@ -130,7 +136,7 @@ export function buildJ5Scene(world) {
   backdropMountains(world.level, { color: 0xc8ccd0, radius: 130 }); // 먼 산줄기(깊이감)
   surroundings(world, { bounds: world.bounds, trees: ['pine', 'bare'], count: 10, snow: true, gap: 8, seed: 17 }); // 걷는 곳 바깥에 그 장소다운 집·나무(깊이감)
   return {
-    start: [0, 7], fires,
+    start: [-12, 1], introFrom: [-26, 0], gate, fires, wood: { x: 1.6, z: 9.2 }, westGate: [-WALL.rx, 0],
     resetFires() { fires.forEach(f => setFire(f, false)); },
     light(f) { setFire(f, true); },
     allLit() { fires.forEach(f => setFire(f, true)); },

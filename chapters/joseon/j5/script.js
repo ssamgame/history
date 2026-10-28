@@ -7,35 +7,34 @@ export default {
     keeper: { name: '창고지기', mark: '倉', color: '#6b4a32', look: 'worker' },
     kimsangheon: { name: '김상헌', mark: '金', color: '#55608a', look: 'kimsangheon' },
     choemyeonggil: { name: '최명길', mark: '崔', color: '#5d6b52', look: 'choemyeonggil' },
+    official: { name: '신하', mark: '臣', color: '#55608a', look: 'joseonOfficial' },
+    injo: { name: '인조', mark: '王', color: '#a3262a', look: 'injo' },
   },
 
   intro: [
-    { who: 'narr', text: '1636년 12월, 청나라 군대가 압록강을 건너 쳐들어왔어요. 이 전쟁을 병자호란이라고 해요.', src: ['S38'] },
-    { who: 'narr', text: '인조는 강화도로 가려 했지만 길이 막혀 남한산성으로 들어갔어요.', src: ['S38'] },
+    { who: 'narr', text: '1636년 12월 청나라 군대가 압록강을 건너 쳐들어와 병자호란이 일어났고, 인조는 강화도로 가려 했지만 길이 막혀 남한산성으로 들어갔어요.', src: ['S38'] },
   ],
 
-  start: [
-    { who: 'guide', text: '너는 남한산성을 지키는 병사야. 눈이 많이 내리고 몹시 추워.' },
-    { who: 'guide', text: '적에게 둘러싸인 성안은 어떤 형편일까? 성벽 아래에서 불을 쬐는 병사에게 먼저 물어보자.' },
-  ],
+  start: [{ who: 'guide', text: '너는 남한산성을 지키는 병사야. 눈이 많이 내리고 몹시 추워. 성안 사람들의 이야기를 들어 보자.' }],
 
-  goals: ['성벽 아래의 병사에게 말을 걸어 보자', '창고지기에게 말을 걸어 보자', '김상헌의 생각을 들어 보자', '최명길의 생각을 들어 보자', '두 생각을 나누고 성을 지키자', '배운 내용을 확인해 보자'],
+  goals: ['성안 사람들의 이야기를 들어 보자', '행궁 앞 대신들의 의논을 들어 보자', '신하를 같은 생각의 대신 곁으로 데려가자', '장작을 들고 화톳불을 다시 켜자', '인조를 따라 삼전도로 가자', '배운 내용을 확인해 보자'],
+  more: { who: 'guide', text: '다른 사람 이야기도 들어 볼까? 아니면 행궁 앞의 대신들에게 가도 돼.' },
 
   npc: {
     soldier: {
       first: [
         { who: 'soldier', text: '성안의 군사는 1만 3천 명쯤이야.', src: ['S38'] },
         { who: 'soldier', text: '성 밖에는 청나라 군대가 가득해.', src: ['S38'] },
-        { who: 'soldier', text: '창고지기에게도 가 봐.' },
       ],
+      bridge: { who: 'soldier', text: '창고지기 말 들었지? 군사 형편도 좋지 않아.' },
       later: [{ who: 'soldier', text: '손이 꽁꽁 얼었어. 화톳불이 꺼지지 않게 해야 해.' }],
     },
     keeper: {
-      tooEarly: [{ who: 'keeper', text: '성벽 아래의 병사에게 먼저 가 봐.' }],
       first: [
         { who: 'keeper', text: '양식은 50여 일을 버틸 만큼밖에 없어.', src: ['S38'] },
         { who: 'keeper', text: '조정의 대신들은 앞으로 어떻게 할지 의견이 나뉘었대. 행궁 앞에 가 봐.' },
       ],
+      bridge: { who: 'keeper', text: '병사 말대로 성 밖은 적으로 가득하지. 성안 살림도 걱정이야.' },
       later: [{ who: 'keeper', text: '남은 곡식이 얼마 없어. 한 숟가락씩 아껴 먹어야 해.' }],
     },
     signFortress: { always: [
@@ -48,7 +47,7 @@ export default {
       { who: 'narr', text: '1637년 1월, 인조는 세자와 함께 이 서문으로 나와 삼전도로 갔어요.', src: ['S38'] },
     ] },
     kimsangheon: {
-      tooEarly: [{ who: 'kimsangheon', text: '성안의 형편부터 살펴보고 오너라.' }],
+      wait: [{ who: 'kimsangheon', text: '성안의 형편부터 살펴보고 오너라.' }],
       first: [
         { who: 'kimsangheon', text: '청과 화의할 수 없다. 끝까지 싸워야 한다.', src: ['S38'] },
         { who: 'kimsangheon', text: '이처럼 화의(싸움을 멈추고 화해하자는 의논)에 반대하는 생각을 척화라고 한다.', src: ['S38'] },
@@ -56,11 +55,10 @@ export default {
       later: [{ who: 'kimsangheon', text: '나는 화의에 찬성할 수 없다.' }],
     },
     choemyeonggil: {
-      tooEarly: [{ who: 'choemyeonggil', text: '김상헌 대감의 말씀부터 들어 보아라.' }],
       first: [
         { who: 'choemyeonggil', text: '나라와 백성을 지키려면 청과 화의를 해야 한다.', src: ['S38'] },
         { who: 'choemyeonggil', text: '이처럼 화의를 하자는 생각을 주화라고 한다.', src: ['S38'] },
-        { who: 'guide', text: '두 사람 모두 나라를 걱정했지만 생각이 달랐어. 누구의 말이 어떤 생각인지 나누어 보자.' },
+        { who: 'guide', text: '두 사람 모두 나라를 걱정했지만 생각이 달랐어. 행궁 마당의 신하들은 누구와 같은 생각일까?' },
       ],
     },
   },
@@ -78,13 +76,23 @@ export default {
       { text: '청과 이야기를 나누어 길을 찾자', bin: 'ju' },
     ],
     fail: '청과 화의하지 말고 끝까지 싸우자는 생각이 척화, 화의를 하자는 생각이 주화예요. 말의 뜻을 다시 읽어 보세요.',
+    // 신하를 데려가기(D-26): 신하에게 말을 걸면 따라오고, 같은 생각의 대신(김상헌=척화, 최명길=주화) 곁에 닿으면 그 곁에 선다
+    use: [0, 2, 4, 5],
+    howto: { title: '신하 데려가기', steps: ['마당의 신하에게 말을 걸면 생각을 말하고 나를 따라와요.', '같은 생각의 대신(김상헌=척화, 최명길=주화) 곁으로 데려가요.'] },
+    wrong: { who: 'guide', text: '이 신하의 말은 다른 쪽 생각에 가까워요. 화의에 반대하면 척화(김상헌), 화의를 하자면 주화(최명길)예요.' },
+    follow: { who: 'guide', text: '신하가 따라온다. 같은 생각의 대신 곁으로 데려가자.' },
   },
   fires: {
-    howto: [{ who: 'guide', text: '눈보라에 성벽의 화톳불이 꺼졌어! 시간 안에 화톳불에 다가가 모두 다시 켜자.' }],
+    howto: [{ who: 'guide', text: '눈보라에 성벽의 화톳불이 꺼졌어! 장작더미에서 장작을 들고 성벽을 따라 다시 켜자.' }],
+    card: { title: '화톳불 켜기', steps: ['장작더미에서 대화 버튼을 눌러 장작을 들어요.', '장작을 들고 꺼진 화톳불 옆에서 대화 버튼을 눌러 모두 켜요.'] },
+    pick: { who: 'guide', text: '장작을 들었어. 꺼진 화톳불로 가자!' },
     fail: '화살표를 따라 가장 가까운 화톳불부터 켜 보세요.',
     done: [{ who: 'guide', text: '화톳불이 다시 타오른다. 병사들이 손을 녹이고 있어.' }],
   },
   // 삼전도의 항복(선생님 의견으로 넣은 장면): 인조가 청 태종에게 삼궤구고두례를 하는 모습을 보여 준다
+  walk: {
+    start: [{ who: 'guide', text: '인조가 행궁을 나선다. 인조를 따라 서문으로 가자.' }],
+  },
   samjeondo: [
     { who: 'narr', text: '1637년 1월 30일, 인조는 소현세자와 신하들을 데리고 남한산성 서문을 나와 삼전도로 갔어요.', src: ['S63', 'S38'] },
     { who: 'narr', text: '삼전도에는 높은 단(수항단)이 세워져 있었고, 그 위에 청나라 황제(청 태종)가 앉아 있었어요.', src: ['S63'] },
