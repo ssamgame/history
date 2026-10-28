@@ -496,6 +496,27 @@ export function stops(ctx, part, easy) {
 }
 
 // ── deliver ───────────────────────────────────────────
+// 가져다 놓을 물건 모양(카드의 carry). 들 때는 몸 기준, 내려놓으면 바닥 기준(아랫면이 y 0)
+const CARRY_THING = {
+  log() { // 나무 기둥: 어깨에 메고(눕혀 들고), 내려놓으면 세운다
+    const g = new THREE.Group(), m = add(g, new THREE.CylinderGeometry(0.16, 0.18, 2.6, 8), 0x9a6a3a, 0, 0, 0);
+    m.material = mat(0x9a6a3a, 'wood', 'object');
+    g.rotation.x = Math.PI / 2; // 앞뒤로 길게 어깨에 멘다
+    return g;
+  },
+  sack() { // 세금 꾸러미: 베로 싼 보따리와 매듭
+    const g = new THREE.Group();
+    add(g, box(0.7, 0.45, 0.5), 0xd8ccb0, 0, 0.23, 0);
+    add(g, box(0.74, 0.08, 0.12), 0x8a6a48, 0, 0.46, 0); add(g, new THREE.SphereGeometry(0.11, 8, 6), 0x8a6a48, 0, 0.52, 0);
+    return g;
+  },
+  letter() { // 서양 배가 보낸 편지: 봉투와 붉은 봉인
+    const g = new THREE.Group();
+    add(g, box(0.5, 0.05, 0.34), 0xf4efe2, 0, 0.03, 0); add(g, new THREE.CylinderGeometry(0.06, 0.06, 0.03, 10), 0xa3262a, 0, 0.07, 0);
+    g.rotation.x = -0.5;
+    return g;
+  },
+};
 // 가져다 놓기 칸 이름표 자리: 원 앞쪽(카메라 쪽 dz)에 낮게(y는 글 가운데 높이) 두어, 먼 칸이어도 왼쪽 위 목표 상자 밑에 숨지 않게 한다
 export const BIN_LABEL = { y: 2.2, dz: 1.6 };
 export function deliver(ctx, part, easy) {
@@ -512,13 +533,15 @@ export function deliver(ctx, part, easy) {
   });
   let i = 0, held = null;
   const sheet = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.04, 0.44), mat(0xf2ede0)); sheet.rotation.x = -0.5; // 손에 든 종이
+  const things = new Map(); // 카드마다 든 물건(carry: 'log'·'sack'·'letter'), 없으면 종이 한 장
+  const thing = c => { if (!c.carry || !CARRY_THING[c.carry]) return sheet; if (!things.has(c)) things.set(c, CARRY_THING[c.carry]()); return things.get(c); };
   const missedCards = new Set();
   const hold = () => {
     if (held) world.player.remove(held);
     const c = part.cards[i];
     held = c ? labelSprite(c.text, { bg: 'rgba(255,250,240,0.97)', border: '#d9a441' }) : null;
     if (held) { held.position.set(0, 3.1 / (world.player.scale.y || 1), 0); held.scale.divideScalar(world.player.scale.x || 1); world.player.add(held); } // 키가 작아도 글은 같은 크기·높이
-    setCarry(world.player, c ? sheet : null, 'arms'); // 머리 위 글은 읽기용으로 두고, 손에는 종이 한 장을 든다(D-18)
+    setCarry(world.player, c ? thing(c) : null, c && c.carry === 'log' ? 'shoulder' : 'arms'); // 머리 위 글은 읽기용으로 두고, 손에는 그 물건(없으면 종이 한 장)을 든다(D-18)
     ctx.hud.setCounter(`${part.counter || '가져다 놓은 것'} ${i}/${part.cards.length}`);
     const target = c && bins.find(b => b.id === c.bin);
     ctx.testHooks.walkTo = target ? target.pos : null;
@@ -544,6 +567,7 @@ export function deliver(ctx, part, easy) {
     stay = -1; b.disc.material.opacity = 0.35; // 같은 원 안에서는 한 번만
     if (b.id === c.bin) {
       audio.play('correct'); toast(ctx, `○ ${c.text} → ${b.label}`, 'good');
+      if (c.carry) { const o = thing(c); setCarry(world.player, null); o.rotation.set(0, 0, 0); o.position.set(b.x + 1.2, c.carry === 'log' ? 1.3 : 0, b.z - 1.4); g.add(o); } // 가져간 것은 그 자리에 내려놓는다(기둥은 세운다)
       i += 1; home(); hold();
       s.say(c.talk, () => { if (i === part.cards.length) setTimeout(() => s.finish(true), 500); });
     } else {

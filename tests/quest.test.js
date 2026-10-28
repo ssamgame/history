@@ -12,7 +12,7 @@ test('quest: 차례대로 말 걸 사람마다 첫 대사·차례 전 대사·�
     for (const [i, id] of order.entries()) {
       const n = script.npc[id];
       ok(n && n.first?.length, `${meta.id} ${id}: 첫 대사`);
-      if (i > 0) ok(n.tooEarly?.length, `${meta.id} ${id}: 차례보다 먼저 왔을 때 대사`);
+      if (i > 0 && !ch.anyOrder) ok(n.tooEarly?.length, `${meta.id} ${id}: 차례보다 먼저 왔을 때 대사`);
       ok(n.later?.length || n.first?.length, `${meta.id} ${id}: 다시 말 걸 때 대사`);
       ok(layout.npcs.some(p => p.id === id), `${meta.id} ${id}: 마을에 서 있다`);
       ok(script.speakers[id] || n.first.every(l => script.speakers[l.who] || l.who === 'narr'), `${meta.id} ${id}: 말하는 사람 이름`);

@@ -7,6 +7,7 @@
 //   order   : 순서 맞추기 { title, cards: [정답 순서] }
 //   gauge   : 때 맞춰 누르기(움직이는 막대) { title, label, zone: [시작, 끝] (0~1) }
 //   collect : 장면 속 빛나는 곳에 차례로 가기 { title, spots: [{ x, z }], seconds, howto }
+// 모든 부분에 goal(그 부분 동안 목표 문장)을 둘 수 있다.
 // 모든 부분에 fail(다시 할 때 힌트), done(끝난 뒤 대사), before/after(ctx, scene) 를 둘 수 있다.
 import * as THREE from 'three';
 import { renderDiorama } from './diorama.js';
@@ -98,7 +99,7 @@ function runPart(ctx, scene, part, easy) {
     case 'book': return readBook(ctx, { title: part.title, pages: part.pages.map(p => ({ ...p, scene: p.scene || DIORAMA[p.pic] })), render: p => renderDiorama(p.scene, bookKey(part, p)), onTiming: (label, ms, note) => ctx.world?.perf?.time(label, ms, `${part.title} ${note}`) });
     case 'scene': return part.play(ctx, scene).then(() => true); // 짧은 장면(관아를 차지하는 모습 등)
     case 'doc': return showDocument(ctx, { title: part.title, heading: part.heading, intro: part.docIntro, items: part.items, src: part.src });
-    case 'drive': case 'stops': case 'deliver': case 'find': case 'ambush': case 'sneak': return PLAY[part.type](ctx, part, easy);
+    case 'drive': case 'stops': case 'deliver': case 'find': case 'ambush': case 'sneak': case 'judge': case 'build': return PLAY[part.type](ctx, part, easy);
     default: throw new Error(`unknown part ${part.type}`);
   }
 }
@@ -141,6 +142,7 @@ export function makeKitChapter(def) {
         const warm = part.type === 'book' && part.intro ? bookWarmup(part, renderDiorama, 1200, ms => world.perf?.time('역사책 첫 그림(안내 대사 동안 미리)', ms, part.title)) : null;
         if (part.intro) { await sayAll(dialogue, part.intro); dialogue.close(); }
         warm?.();
+        if (part.goal) ctx.setGoal(part.goal); // 부분마다 목표 문장(없으면 앞의 것 그대로)
         if (part.before) part.before(ctx, scene);
         if (['book', 'doc', 'scene'].includes(part.type)) await runPart(ctx, scene, part, false); // 읽기·장면은 첫 시도 점수에 넣지 않는다
         else results.push(await tryPart(ctx, easy => runPart(ctx, scene, part, easy), part.fail));
