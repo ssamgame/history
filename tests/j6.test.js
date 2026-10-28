@@ -4,13 +4,12 @@ import { SOURCES } from '../content/sources.js';
 import { validateScript } from '../core/content.js';
 import j6Script from '../chapters/joseon/j6/script.js';
 import { buildJ6Scene, GAPS } from '../chapters/joseon/j6/scene.js';
-import j6, { pulleySVG } from '../chapters/joseon/j6/chapter.js';
+import j6, { yardTalk, tryPulleys } from '../chapters/joseon/j6/chapter.js';
 import { runChapter } from '../core/flow.js';
 import { JOSEON, SESSIONS, isSessionDone } from '../chapters/index.js';
 import { testWorld, touchSetup, touchBot, memSave } from './bot.js';
 
 const answers = new Set(j6Script.quizzes.map(q => q.options[q.answer]));
-const cardPicks = new Set(j6Script.pulley.cards.filter(c => c.correct).map(c => c.text));
 
 test('j6: script passes validation', () => eq(validateScript(j6Script, SOURCES), []));
 
@@ -18,7 +17,7 @@ test('j6: quiz answers match the spec, completion year and record book are cited
   eq(j6Script.quizzes.map(q => q.options[q.answer]), ['탕평책', '거중기']);
   ok(j6Script.result[0].text.includes('1796') && j6Script.result[0].src.includes('S39'));
   ok(j6Script.result[1].src.includes('S42'));
-  ok(pulleySVG().includes('다'));
+  eq(j6Script.pulley.options[j6Script.pulley.answer], '다 (움직도르래 2개)');
 });
 
 test('j6: scene — three gaps the crane can fill, four people', () => {
@@ -35,7 +34,7 @@ test('j6: scene — three gaps the crane can fill, four people', () => {
 
 test('j6: completes with touch-only actions', async () => {
   const s = touchSetup(j6Script.speakers);
-  const bot = touchBot(s, { answers, cardPicks });
+  const bot = touchBot(s, { answers });
   try {
     const r = await runChapter(JOSEON[5], j6, s.ctx, memSave());
     eq(r.quizCorrect, 2);
@@ -44,19 +43,22 @@ test('j6: completes with touch-only actions', async () => {
   } finally { bot.stop(); s.done(); }
 }, { timeout: 150000 });
 
-test('j6: dropping a stone too early gives the early hint', async () => {
+test('j6 D-27: pressing away from a gap only gets a hint; the wall is still finished', async () => {
   const s = touchSetup(j6Script.speakers);
   const said = [];
-  const say = s.dialogue.say;
-  s.dialogue.say = l => { said.push(l.text); return say(l); };
-  const bot = touchBot(s, { answers, cardPicks, pressEarlyOnce: true });
+  const say = s.dialogue.say; s.dialogue.say = l => { said.push(l.text); return say(l); };
+  let pressedOnce = false;
+  const bot = touchBot(s, { answers, holdStill: () => false });
+  const off = s.w.onUpdate(() => { // 물레를 다 돌린 뒤 처음 한 번은 엉뚱한 곳에서 누른다
+    if (!pressedOnce && said.includes(j6Script.wall.up.text) && !s.dialogue.isOpen()) { pressedOnce = true; s.hud.talkBtn.disabled = false; s.hud.talkBtn.click(); }
+  });
   try {
     j6.buildScene(s.w, s.ctx);
     j6.enterStage(s.ctx, 'minigame');
     const r = await j6.minigame(s.ctx);
-    ok(said.includes(j6Script.wall.early), 'early hint');
-    eq(r.firstTryCorrect, 1);
-  } finally { bot.stop(); s.done(); }
+    ok(said.includes(j6Script.wall.notGap), 'hint');
+    eq(r.firstTryCorrect, 1, 'pulleys right, wall missed once');
+  } finally { off(); bot.stop(); s.done(); }
 }, { timeout: 150000 });
 
 test('joseon: all six chapters load and the result card opens after chapter 6', async () => {
@@ -124,6 +126,39 @@ test('j6: the crane lowers the stone into the gap and lifts the empty hook, like
   } finally { w.dispose(); }
 });
 
-test('j6: the crane howto reads naturally', () => {
-  ok(!j6Script.wall.howto[0].text.includes('들고 옆으로 옮겨'), j6Script.wall.howto[0].text);
+test('j6: the crane howto reads naturally (two lines)', () => {
+  eq(j6Script.wall.howto.steps.length, 2);
+  ok(!j6Script.wall.howto.steps.join(' ').includes('들고 옆으로 옮겨'));
 });
+
+// ---- D-27 ----
+test('j6 D-27: yard gate and 수원 화성 board, one-paragraph intro, people in any order, three pulley frames', () => {
+  const w = testWorld();
+  try {
+    const sc = buildJ6Scene(w);
+    ok(sc.yardGate && sc.yardGate.leaves.length === 2 && sc.introFrom[1] > sc.start[1], 'gate');
+    let board = false; w.level.traverse(o => { if (o.userData && o.userData.title === '수원 화성') board = true; });
+    ok(board, 'board');
+    eq(sc.pulleys.map(r => r.n), [0, 1, 2]);
+    eq([...w.npcs.values()].filter(n => n.spot).map(n => n.id), ['signGate'], 'only the sign beside 장안문');
+  } finally { w.dispose(); }
+  eq(j6Script.intro.length, 1);
+  eq(j6Script.pulley.howto.steps.length, 2);
+  ok(!('tooEarly' in j6Script.npc.worker));
+  eq(yardTalk('worker', new Set(['official']))[0], j6Script.npc.worker.bridge);
+  ok(j6Script.tour.some(l => l.src && l.src.includes('S48')), 'tour sourced');
+});
+
+test('j6 D-27: pulling the frames lifts the stone higher when there are more moving pulleys', async () => {
+  const s = touchSetup(j6Script.speakers);
+  const bot = touchBot(s, { answers });
+  const highest = [0, 0, 0];
+  try {
+    const sc = j6.buildScene(s.w, s.ctx);
+    const off = s.w.onUpdate(() => sc.pulleys.forEach((r, i) => { highest[i] = Math.max(highest[i], r.load.position.y); }));
+    const r = await tryPulleys(s.ctx, false);
+    off();
+    eq(r, true);
+    ok(highest[0] < highest[1] && highest[1] < highest[2], `heights ${highest.map(h => h.toFixed(2))}`);
+  } finally { bot.stop(); s.done(); }
+}, { timeout: 90000 });

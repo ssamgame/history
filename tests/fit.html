@@ -17,7 +17,6 @@
   else if (kind === 'j1cards') { const [, s] = await J('j1'); chooseCards({ ui }, { title: s.reasons.title, cards: s.reasons.cards }); }
   else if (kind === 'j1board') { const [c, s] = await J('j1'); placeOnBoard({ ui }, { title: s.hanyang.title, ...c.HANYANG, boardClass: 'map' }); }
   else if (kind === 'j5sort') { const [, s] = await J('j5'); sortCards({ ui }, { title: s.sort.title, bins: s.sort.bins, cards: s.sort.cards }); }
-  else if (kind === 'j6pulley') { const [c, s] = await J('j6'); chooseCards({ ui }, { title: s.pulley.title, prompt: s.pulley.prompt, figure: c.pulleySVG(), cards: s.pulley.cards }); }
   // 탐험 화면 위 정보(HUD)와 대화창을 가장 긴 글로 한꺼번에 띄운다(세로·가로 화면 배치 검사)
   else if (kind === 'hud') {
     const { createHud } = await import('../core/screens.js');

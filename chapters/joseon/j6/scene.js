@@ -9,6 +9,8 @@ import { scatter } from '../../../core/props.js';
 import { LOOKS } from '../../../content/characters.js';
 import { hwaseongGate } from '../landmarks.js';
 import { addSigns } from '../common.js';
+import { gateLeaves, nameBoard } from '../../kit/gate.js';
+import { labelSprite } from '../../kit/play.js';
 
 export const WALL_Z = -10, WALL_H = 3.6;
 export const GAPS = [-6, 0, 6];          // 성벽 빈자리(가운데 x)
@@ -92,13 +94,45 @@ export function buildJ6Scene(world) {
 
   addSigns(world, [
     { id: 'signGate', title: '장안문', x: -14.5, z: -1.5 },
-    { id: 'signUigwe', title: '화성성역의궤', x: 12.5, z: 9.5 },
-    { id: 'signTangpyeong', title: '탕평비 이야기', x: -11, z: 9.5 },
-  ]);
+  ]); // 장안문 옆 안내판만 남긴다(의궤·탕평비 이야기는 해설과 관리의 말로, D-27)
+
+  // 공사장 문(시작 장면, D-27): 남쪽 나무 울타리 사이 문과 「수원 화성」 이름판
+  const GATE_Z = 11.6;
+  for (const sx of [-1, 1]) {
+    for (let k = 0; k < 5; k++) mk(new THREE.CylinderGeometry(0.15, 0.17, 1.4, 6), 0x6b4a32, sx * (2.4 + k * 1.7), 0.7, GATE_Z);
+    mk(new THREE.BoxGeometry(7, 0.12, 0.1), 0x5a3f2a, sx * 5.8, 1.05, GATE_Z);
+    mk(new THREE.BoxGeometry(0.32, 2.3, 0.32), 0x5a3f2a, sx * 2.05, 1.15, GATE_Z);
+  }
+  const yardGate = gateLeaves(L, { x: 0, z: GATE_Z, width: 3.7, height: 1.9, color: 0x6b4a32, inward: 1 });
+  nameBoard(L, '수원 화성', 2.8, 9.8); // S39
+
+  // 도르래 세 틀(D-27): 정약용 곁. 가(도르래 없음)·나(움직도르래 1)·다(움직도르래 2), 같은 돌. 학생이 당기면 돌이 올라간다
+  const PULLEYS = [{ x: -3.5, n: 0, label: '가' }, { x: 1, n: 1, label: '나' }, { x: 5.5, n: 2, label: '다' }].map(r => {
+    const g = new THREE.Group(); g.position.set(r.x, 0, -3.6); L.add(g);
+    for (const sx of [-0.9, 0.9]) mk(new THREE.BoxGeometry(0.14, 3.2, 0.14), 0x7a5a3c, sx, 1.6, 0, g);
+    mk(new THREE.BoxGeometry(2.1, 0.18, 0.2), 0x6b4a32, 0, 3.2, 0, g);
+    const load = new THREE.Group(); g.add(load); // 돌과 움직도르래(함께 올라간다)
+    mk(new THREE.BoxGeometry(0.8, 0.6, 0.6), 0xb3ada2, 0, 0.3, 0, load);
+    for (let k = 0; k < r.n; k++) { const w = mk(new THREE.CylinderGeometry(0.2, 0.2, 0.08, 12), 0x8a6a45, (k - (r.n - 1) / 2) * 0.5, 0.95, 0, load); w.rotation.x = Math.PI / 2; }
+    const rope = mk(new THREE.CylinderGeometry(0.025, 0.025, 1, 4), 0xd8c9a0, 0, 2, 0.05, g, false);
+    const lab = labelSprite(r.label, { size: 0.9 }); lab.position.set(0, 3.9, 0); g.add(lab);
+    world.addCollider({ x: r.x, z: -3.6, r: 1.1 });
+    const setH = h => { load.position.y = h; const top = 3.1, bot = 0.6 + h + (r.n ? 0.4 : 0); rope.scale.y = top - bot; rope.position.y = (top + bot) / 2; };
+    setH(0);
+    return { ...r, z: -3.6, g, load, setH }; // g를 돌려줘야 굳히기(bake)에 합쳐지지 않아 통째로 숨길 수 있다
+  });
+
+  // 거중기 물레(D-27): 거중기 왼쪽 기둥 곁. 손잡이를 돌리면 매단 돌이 올라간다
+  const winch = new THREE.Group(); winch.position.set(TRACK[0] - 1.6, 0, WALL_Z + 3.2); L.add(winch);
+  for (const sx of [-0.7, 0.7]) mk(new THREE.BoxGeometry(0.16, 1.2, 0.16), 0x7a5a3c, sx, 0.6, 0, winch);
+  const drum = new THREE.Group(); drum.position.y = 1.1; winch.add(drum);
+  { const d = mk(new THREE.CylinderGeometry(0.28, 0.28, 1.3, 10), 0x8a6a45, 0, 0, 0, drum); d.rotation.z = Math.PI / 2;
+    for (let k = 0; k < 4; k++) { const sp = mk(new THREE.BoxGeometry(0.08, 1.3, 0.08), 0x5a3f2a, 0.72, 0, 0, drum); sp.rotation.x = k * Math.PI / 4; } } // 손잡이 살(돌리는 막대)
+  world.addCollider({ x: TRACK[0] - 1.6, z: WALL_Z + 3.2, r: 0.8 });
 
   world.addNpc('official', LOOKS.joseonOfficial, -6, 7, Math.PI);
   world.addNpc('worker', LOOKS.worker, 7, 4.5, -Math.PI / 2);
-  world.addNpc('jeongyakyong', LOOKS.jeongyakyong, 2, -5, 0);
+  world.addNpc('jeongyakyong', LOOKS.jeongyakyong, -6.6, -4.6, Math.PI * 0.3); // 도르래 틀 곁
   world.addNpc('jeongjo', LOOKS.jeongjo, -10, -3, 0);
 
   world.onUpdate((dt, t) => { if (gapGlow.visible) gapGlow.material.opacity = 0.45 + Math.sin(t * 5) * 0.3; });
@@ -111,7 +145,9 @@ export function buildJ6Scene(world) {
 
   surroundings(world, { bounds: world.bounds, houses: 'thatch', trees: ['pine', 'tree'], count: 10, gap: 8, seed: 19 }); // 걷는 곳 바깥에 그 장소다운 집·나무(깊이감)
   return {
-    start: [0, 9], fillers, gapGlow, trolley, stone, setLift,
+    start: [0, 8.5], introFrom: [0, 15], yardGate, pulleys: PULLEYS, winch: { x: TRACK[0] - 1.6, z: WALL_Z + 4.6 }, fillers, gapGlow, trolley, stone, setLift, gate, slideTo: x => slideTo(x), liftTo: h => liftTo(h), PICK_H, GAP_H,
+    // 물레를 한 번 돌린다(손잡이가 돌고 돌이 조금 올라간다)
+    turnWinch(h) { const a0 = drum.rotation.x; return Promise.all([anim(0.6, t => { drum.rotation.x = a0 + ease(t) * Math.PI / 2; }), liftTo(h)]); },
     // 돌을 옆으로 옮김: 0 = 왼쪽 끝, 1 = 오른쪽 끝
     setSlide: k => { trolley.position.x = TRACK[0] + k * (TRACK[1] - TRACK[0]); },
     kOf: x => (x - TRACK[0]) / (TRACK[1] - TRACK[0]),
