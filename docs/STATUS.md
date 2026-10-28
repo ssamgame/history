@@ -36,7 +36,12 @@
 
 2026-10-28 마지막 고침: 근대 2장 김옥균이 몸을 피한 자리에서 '일본으로 몸을 피했어요' 해설, 청 군사 15명(커밋 61a3d01).
 
-### 지금 하던 일: 근대 3장(k3 동학 농민 운동) — 선생님 답을 기다림
+### 지금 하는 일: D-30 전체 개선 (작업 목록 `docs/team/tasks-d30.md`)
+- 공통 시스템 시범 완료(커밋 a3b90df): 퀘스트 목록(`core/screens.js` createHud), 빛나는 문(`core/portal.js` portalStage, 장 모듈 `portal: { at, ry }`, 다음 장으로 바로 이어 감 `core/main.js` nextOf), 도입 장면(`core/intro.js` playIntro, 장 모듈 `introScene(ctx)` → `{ shots, done }`, `?debug=j1-intro`), 퀴즈 연두·분홍(`dialogue` mood), 다가가서 시작(`waitInteract`), 건물 간판(`core/signs.js` makePlaque, 안내판에 `plaque: { y, back }`).
+- 조선 1장(j1)에 모두 적용, 근대 1장 간판. 선생님 확인 뒤 나머지 12장에 펼치고 장별 고침(H~G).
+- 남은 공통: 13장에 introScene·portal·waitInteract·간판·모두 듣기 적용, `tests/signs` 옛 검사(j1·ch1 안내판 있어야 함)를 새 규칙으로.
+
+### (잠시 멈춤) 근대 3장(k3 동학 농민 운동) — 선생님 답을 기다림
 지금 흐름: 탐험(고부 농민 → 전봉준 → 농민군, 순서로 막음) → 마을을 돌며 농민 3명 모으기(drive, pickups follow) → 고부 관아 장면(gobuScene) → 농민군 요구 문서(doc) → 1·2차 동학 농민 운동 역사책 6쪽(book).
 여쭌 세 가지(첫째가 추천, 아직 답 없음 — 새 세션은 이것부터 다시 여쭌다):
 1. 탐험: (추천) 마을 문·이름판 + 고부 농민·농민군 아무 차례 말 잇기 + 전봉준 앞 학생의 결심("저도 농민들을 모으겠습니다!") / 순서 막기만 풀기
