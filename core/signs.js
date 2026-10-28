@@ -55,6 +55,7 @@ export function makeSign(title) {
 // 건물 간판(현판, C-03 2026-10-28): 길 위에 따로 세운 안내판 대신 건물 벽(처마 아래)에 단 검은 판에 흰 글씨.
 // 돌려주는 묶음의 자리는 건물 앞 땅이고, 판은 위(y)와 뒤(back, 건물 쪽)로 옮겨 단다.
 // 선생님 결정(D-30): 간판은 이름만 보여 주고 읽지 않는다(말 걸기 없음). 알려 줄 내용은 그 곁 사람의 대사로 옮긴다.
+// 놓는 높이(y)는 처마 바로 아래, 기둥·문살·인물에 가리면 지붕 쪽으로 더 올린다(낮은 카메라에서 사진으로 확인).
 export function makePlaque(title, { y = 2.9, back = 1.2 } = {}) {
   const g = new THREE.Group();
   g.userData.title = title;
@@ -63,9 +64,10 @@ export function makePlaque(title, { y = 2.9, back = 1.2 } = {}) {
   const c = cv.getContext('2d');
   c.fillStyle = '#2b2118'; c.fillRect(0, 0, w, h);
   c.strokeStyle = '#c99a3c'; c.lineWidth = 10; c.strokeRect(10, 10, w - 20, h - 20);
-  const L = signTextLayout(c, title);
+  // 글씨는 판보다 넉넉히 작게(2026-10-28 선생님: 간판 글씨가 커서 처마·기둥에 가리지 않게) — 기둥 안내판의 약 70%
+  const L0 = signTextLayout(c, title), size = Math.round(L0.size * 0.7), L = { ...L0, size, font: FONT(size) };
   c.fillStyle = '#f4ead2'; c.font = L.font; c.textAlign = 'center'; c.textBaseline = 'middle';
-  const gap = L.size * 1.05, top = h / 2 - (gap * (L.lines.length - 1)) / 2 + L.size * 0.04;
+  const gap = L.size * 1.1, top = h / 2 - (gap * (L.lines.length - 1)) / 2 + L.size * 0.04;
   L.lines.forEach((line, i) => c.fillText(line, w / 2, top + i * gap));
   const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
   const face = new THREE.MeshLambertMaterial({ map: tex });

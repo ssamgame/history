@@ -1,48 +1,48 @@
 // 고려편 6개 장. load가 null인 장은 지도에 "준비 중"으로 보인다.
 export const CHAPTERS = [
-  { id: 'ch1', no: 1, session: 1, title: '서희의 외교 담판', years: '993', event: '거란 1차 침입', place: '고려 서북쪽 국경', mapXY: [33, 27], load: () => import('./ch1/chapter.js') },
-  { id: 'ch2', no: 2, session: 1, title: '양규와 흥화진', years: '1010', event: '거란 2차 침입', place: '흥화진', mapXY: [20, 17], load: () => import('./ch2/chapter.js') },
-  { id: 'ch3', no: 3, session: 1, title: '강감찬과 귀주 대첩', years: '1018~1019', event: '거란 3차 침입', place: '귀주', mapXY: [28, 21], load: () => import('./ch3/chapter.js') },
-  { id: 'ch4', no: 4, session: 1, title: '강화도 천도와 처인성·충주성', years: '1231~1253', event: '몽골 침입', place: '강화도', mapXY: [33, 55], load: () => import('./ch4/chapter.js') },
-  { id: 'ch5', no: 5, session: 1, title: '팔만대장경', years: '1236~1251', event: '몽골 침입', place: '합천 해인사', mapXY: [62, 78], load: () => import('./ch5/chapter.js') },
-  { id: 'ch6', no: 6, session: 1, title: '삼별초의 항쟁', years: '1270~1273', event: '몽골에 맞선 항쟁', place: '진도·제주', mapXY: [32, 85], load: () => import('./ch6/chapter.js') },
+  { id: 'ch1', no: 1, session: 1, short: '서희의 외교 담판', title: '서희의 외교 담판', years: '993', event: '거란 1차 침입', place: '고려 서북쪽 국경', mapXY: [33, 27], load: () => import('./ch1/chapter.js') },
+  { id: 'ch2', no: 2, session: 1, short: '거란 2차 침입', title: '양규와 흥화진', years: '1010', event: '거란 2차 침입', place: '흥화진', mapXY: [20, 17], load: () => import('./ch2/chapter.js') },
+  { id: 'ch3', no: 3, session: 1, short: '귀주 대첩', title: '강감찬과 귀주 대첩', years: '1018~1019', event: '거란 3차 침입', place: '귀주', mapXY: [28, 21], load: () => import('./ch3/chapter.js') },
+  { id: 'ch4', no: 4, session: 1, short: '강화도 천도', title: '강화도 천도와 처인성·충주성', years: '1231~1253', event: '몽골 침입', place: '강화도', mapXY: [33, 55], load: () => import('./ch4/chapter.js') },
+  { id: 'ch5', no: 5, session: 1, short: '팔만대장경', title: '팔만대장경', years: '1236~1251', event: '몽골 침입', place: '합천 해인사', mapXY: [62, 78], load: () => import('./ch5/chapter.js') },
+  { id: 'ch6', no: 6, session: 1, short: '삼별초의 항쟁', title: '삼별초의 항쟁', years: '1270~1273', event: '몽골에 맞선 항쟁', place: '진도·제주', mapXY: [32, 85], load: () => import('./ch6/chapter.js') },
 ];
 
 // 조선편 6개 장 (조선편 설계 문서). 장을 완성하면 load를 채운다. 일어난 차례대로: 과학 기구(1434~) 다음에 훈민정음(1443~)
 export const JOSEON = [
-  { id: 'j1', no: 1, session: 2, title: '위화도 회군과 조선 건국', years: '1388~1394', event: '새 나라 조선', place: '위화도·한양', mapXY: [20, 20], load: () => import('./joseon/j1/chapter.js') },
-  { id: 'j3', no: 2, session: 2, title: '세종 때의 과학 기술', years: '1434~1442', event: '시간과 비를 재다', place: '한양', mapXY: [45, 49], load: () => import('./joseon/j3/chapter.js') },
-  { id: 'j2', no: 3, session: 2, title: '세종과 훈민정음', years: '1443~1446', event: '우리 글자', place: '한양 경복궁', mapXY: [35, 51], load: () => import('./joseon/j2/chapter.js') },
-  { id: 'j4', no: 4, session: 2, title: '임진왜란과 한산도 대첩', years: '1592', event: '일본의 침입', place: '한산도 앞바다', mapXY: [60, 88], load: () => import('./joseon/j4/chapter.js') },
-  { id: 'j5', no: 5, session: 2, title: '병자호란과 남한산성', years: '1636~1637', event: '청의 침입', place: '남한산성', mapXY: [50, 58], load: () => import('./joseon/j5/chapter.js') },
-  { id: 'j6', no: 6, session: 2, title: '영조·정조와 수원 화성', years: '1742~1796', event: '탕평과 화성', place: '수원', mapXY: [39, 62], load: () => import('./joseon/j6/chapter.js') },
+  { id: 'j1', no: 1, session: 2, short: '위화도 회군', title: '위화도 회군과 조선 건국', years: '1388~1394', event: '새 나라 조선', place: '위화도·한양', mapXY: [20, 20], load: () => import('./joseon/j1/chapter.js') },
+  { id: 'j3', no: 2, session: 2, short: '과학 기술', title: '세종 때의 과학 기술', years: '1434~1442', event: '시간과 비를 재다', place: '한양', mapXY: [45, 49], load: () => import('./joseon/j3/chapter.js') },
+  { id: 'j2', no: 3, session: 2, short: '훈민정음', title: '세종과 훈민정음', years: '1443~1446', event: '우리 글자', place: '한양 경복궁', mapXY: [35, 51], load: () => import('./joseon/j2/chapter.js') },
+  { id: 'j4', no: 4, session: 2, short: '임진왜란', title: '임진왜란과 한산도 대첩', years: '1592', event: '일본의 침입', place: '한산도 앞바다', mapXY: [60, 88], load: () => import('./joseon/j4/chapter.js') },
+  { id: 'j5', no: 5, session: 2, short: '병자호란', title: '병자호란과 남한산성', years: '1636~1637', event: '청의 침입', place: '남한산성', mapXY: [50, 58], load: () => import('./joseon/j5/chapter.js') },
+  { id: 'j6', no: 6, session: 2, short: '수원 화성', title: '영조·정조와 수원 화성', years: '1742~1796', event: '탕평과 화성', place: '수원', mapXY: [39, 62], load: () => import('./joseon/j6/chapter.js') },
 ];
 
 // 근대편·일제 강점기편·현대편 (비상 5-2 교과서 98~145쪽, 2026-10-23)
 const L = (course, id) => () => import(`./${course}/${id}/chapter.js`);
 export const MODERN = [
-  { id: 'k1', no: 1, session: 3, title: '흥선 대원군과 강화도 조약', years: '1863~1876', event: '문을 연 조선', place: '강화도', mapXY: [33, 54], load: L('modern', 'k1') },
-  { id: 'k2', no: 2, session: 3, title: '갑신정변', years: '1884', event: '개화를 위한 노력', place: '한성 우정총국', mapXY: [41, 52], load: L('modern', 'k2') },
-  { id: 'k3', no: 3, session: 3, title: '동학 농민 운동과 갑오개혁', years: '1894', event: '농민들이 일어서다', place: '전라도 고부', mapXY: [37, 74], load: L('modern', 'k3') },
-  { id: 'k4', no: 4, session: 3, title: '독립 협회와 대한 제국', years: '1896~1897', event: '자주독립을 외치다', place: '한성 독립문', mapXY: [45, 49], load: L('modern', 'k4') },
-  { id: 'k5', no: 5, session: 3, title: '근대 문물과 달라진 생활', years: '1880~1900년대', event: '전차가 달리다', place: '한성 거리', mapXY: [36, 56], load: L('modern', 'k5') },
-  { id: 'k6', no: 6, session: 3, title: '을사늑약과 나라를 지키려는 노력', years: '1905~1909', event: '의병과 애국 계몽 운동', place: '한성·전국', mapXY: [50, 60], load: L('modern', 'k6') },
+  { id: 'k1', no: 1, session: 3, short: '강화도 조약', title: '흥선 대원군과 강화도 조약', years: '1863~1876', event: '문을 연 조선', place: '강화도', mapXY: [33, 54], load: L('modern', 'k1') },
+  { id: 'k2', no: 2, session: 3, short: '갑신정변', title: '갑신정변', years: '1884', event: '개화를 위한 노력', place: '한성 우정총국', mapXY: [41, 52], load: L('modern', 'k2') },
+  { id: 'k3', no: 3, session: 3, short: '동학 농민 운동', title: '동학 농민 운동과 갑오개혁', years: '1894', event: '농민들이 일어서다', place: '전라도 고부', mapXY: [37, 74], load: L('modern', 'k3') },
+  { id: 'k4', no: 4, session: 3, short: '독립 협회', title: '독립 협회와 대한 제국', years: '1896~1897', event: '자주독립을 외치다', place: '한성 독립문', mapXY: [45, 49], load: L('modern', 'k4') },
+  { id: 'k5', no: 5, session: 3, short: '근대 문물', title: '근대 문물과 달라진 생활', years: '1880~1900년대', event: '전차가 달리다', place: '한성 거리', mapXY: [36, 56], load: L('modern', 'k5') },
+  { id: 'k6', no: 6, session: 3, short: '을사늑약', title: '을사늑약과 나라를 지키려는 노력', years: '1905~1909', event: '의병과 애국 계몽 운동', place: '한성·전국', mapXY: [50, 60], load: L('modern', 'k6') },
 ];
 export const COLONIAL = [
-  { id: 'i1', no: 1, session: 4, title: '일제의 식민 통치', years: '1910~1945', event: '나라를 빼앗기다', place: '항구와 마을', mapXY: [62, 82], load: L('colonial', 'i1') },
-  { id: 'i2', no: 2, session: 4, title: '3·1 운동', years: '1919', event: '대한 독립 만세', place: '서울 탑골 공원', mapXY: [41, 52], load: L('colonial', 'i2') },
-  { id: 'i3', no: 3, session: 4, title: '대한민국 임시 정부', years: '1919', event: '민주 공화제 정부', place: '중국 상하이', mapXY: [8, 70], load: L('colonial', 'i3') },
-  { id: 'i4', no: 4, session: 4, title: '봉오동 전투와 청산리 대첩', years: '1920', event: '독립군의 승리', place: '만주', mapXY: [70, 8], load: L('colonial', 'i4') },
-  { id: 'i5', no: 5, session: 4, title: '민족 문화를 지킨 사람들', years: '1920~1940년대', event: '우리말과 역사 지키기', place: '서울·광주', mapXY: [36, 76], load: L('colonial', 'i5') },
-  { id: 'i6', no: 6, session: 4, title: '한인 애국단과 한국광복군', years: '1931~1945', event: '광복을 향해', place: '중국 충칭', mapXY: [10, 40], load: L('colonial', 'i6') },
+  { id: 'i1', no: 1, session: 4, short: '일제의 식민 통치', title: '일제의 식민 통치', years: '1910~1945', event: '나라를 빼앗기다', place: '항구와 마을', mapXY: [62, 82], load: L('colonial', 'i1') },
+  { id: 'i2', no: 2, session: 4, short: '3·1 운동', title: '3·1 운동', years: '1919', event: '대한 독립 만세', place: '서울 탑골 공원', mapXY: [41, 52], load: L('colonial', 'i2') },
+  { id: 'i3', no: 3, session: 4, short: '대한민국 임시 정부', title: '대한민국 임시 정부', years: '1919', event: '민주 공화제 정부', place: '중국 상하이', mapXY: [8, 70], load: L('colonial', 'i3') },
+  { id: 'i4', no: 4, session: 4, short: '청산리 대첩', title: '봉오동 전투와 청산리 대첩', years: '1920', event: '독립군의 승리', place: '만주', mapXY: [70, 8], load: L('colonial', 'i4') },
+  { id: 'i5', no: 5, session: 4, short: '민족 문화 지키기', title: '민족 문화를 지킨 사람들', years: '1920~1940년대', event: '우리말과 역사 지키기', place: '서울·광주', mapXY: [36, 76], load: L('colonial', 'i5') },
+  { id: 'i6', no: 6, session: 4, short: '한국광복군', title: '한인 애국단과 한국광복군', years: '1931~1945', event: '광복을 향해', place: '중국 충칭', mapXY: [10, 40], load: L('colonial', 'i6') },
 ];
 export const PRESENT = [
-  { id: 'h1', no: 1, session: 5, title: '8·15 광복', years: '1945', event: '되찾은 나라', place: '서울', mapXY: [41, 52], load: L('present', 'h1') },
-  { id: 'h2', no: 2, session: 5, title: '대한민국 정부 수립', years: '1945~1948', event: '5·10 총선거', place: '서울', mapXY: [45, 55], load: L('present', 'h2') },
-  { id: 'h3', no: 3, session: 5, title: '6·25 전쟁', years: '1950', event: '전쟁이 일어나다', place: '낙동강·인천', mapXY: [58, 72], load: L('present', 'h3') },
-  { id: 'h4', no: 4, session: 5, title: '1·4 후퇴와 정전 협정', years: '1951~1953', event: '휴전선이 그어지다', place: '판문점', mapXY: [38, 46], load: L('present', 'h4') },
-  { id: 'h5', no: 5, session: 5, title: '전쟁 뒤의 삶', years: '1953~', event: '다시 일어서다', place: '부산 피란민 마을', mapXY: [64, 86], load: L('present', 'h5') },
-  { id: 'h6', no: 6, session: 5, title: '민주주의와 경제 성장', years: '1960~1988', event: '함께 이룬 대한민국', place: '서울', mapXY: [44, 51], load: L('present', 'h6') },
+  { id: 'h1', no: 1, session: 5, short: '8·15 광복', title: '8·15 광복', years: '1945', event: '되찾은 나라', place: '서울', mapXY: [41, 52], load: L('present', 'h1') },
+  { id: 'h2', no: 2, session: 5, short: '대한민국 정부 수립', title: '대한민국 정부 수립', years: '1945~1948', event: '5·10 총선거', place: '서울', mapXY: [45, 55], load: L('present', 'h2') },
+  { id: 'h3', no: 3, session: 5, short: '6·25 전쟁', title: '6·25 전쟁', years: '1950', event: '전쟁이 일어나다', place: '낙동강·인천', mapXY: [58, 72], load: L('present', 'h3') },
+  { id: 'h4', no: 4, session: 5, short: '정전 협정', title: '1·4 후퇴와 정전 협정', years: '1951~1953', event: '휴전선이 그어지다', place: '판문점', mapXY: [38, 46], load: L('present', 'h4') },
+  { id: 'h5', no: 5, session: 5, short: '전쟁 뒤의 삶', title: '전쟁 뒤의 삶', years: '1953~', event: '다시 일어서다', place: '부산 피란민 마을', mapXY: [64, 86], load: L('present', 'h5') },
+  { id: 'h6', no: 6, session: 5, short: '민주주의와 경제 성장', title: '민주주의와 경제 성장', years: '1960~1988', event: '함께 이룬 대한민국', place: '서울', mapXY: [44, 51], load: L('present', 'h6') },
 ];
 
 export const ALL_CHAPTERS = [...CHAPTERS, ...JOSEON, ...MODERN, ...COLONIAL, ...PRESENT];

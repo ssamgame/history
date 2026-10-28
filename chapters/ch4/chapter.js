@@ -8,6 +8,7 @@ import { enterThroughGate } from '../kit/gate.js';
 import { labelSprite } from '../kit/play.js';
 import { leadWalk } from '../kit/lead.js';
 import { setCarry } from '../../core/people.js';
+import { waitInteract } from '../../core/portal.js';
 import script from './script.js';
 
 let scene = null;
@@ -271,11 +272,14 @@ export function cheer(ctx) {
   };
 }
 
-function showChungju(ctx) {
-  const C = scene.areas.chungju;
-  ctx.world.player.visible = false;
-  ctx.world.setFixedCamera(C.cam.pos, C.cam.target);
-  ctx.world.moveNpc('kimyunhu', C.kimyunhu[0], C.kimyunhu[1], C.kimyunhu[2]);
+// 그 사람(id)에게 다가가 말을 걸어야 다음 놀이가 시작된다(C-05)
+async function talkTo(ctx, id, quest) {
+  const { world, dialogue } = ctx, n = world.npcs.get(id);
+  n.mark.visible = true;
+  await waitInteract(ctx, { pos: n.mesh.position, quest, label: `${script.speakers[id].name}와 이야기하기`, mark: false });
+  n.mark.visible = false;
+  ctx.input.enabled = false;
+  world.camMode = 'follow';
 }
 
 export default {
@@ -290,10 +294,25 @@ export default {
     return scene;
   },
 
+  // 장 도입(C-03): 압록강 가 길을 걸어가는 몽골 사신 일행(복면 병사는 아직 보이지 않는다)
+  introScene(ctx) {
+    const { world } = ctx, J = scene.areas.jeogo, { envoy, aide, archer } = J;
+    const e0 = envoy.position.clone(), a0 = aide.position.clone();
+    const f0 = e0.x + 3, f1 = e0.x + 12;
+    let off = null;
+    return {
+      shots: [{ cam: [f0 + 0.6, 3.3, 11], look: [f0, 1.0, 0.6], to: { cam: [f1 + 0.6, 3.3, 11], look: [f1, 1.0, 0.6] },
+        act: () => { archer.visible = false; off = world.onUpdate(dt => { envoy.position.x += dt * 1.5; aide.position.x += dt * 1.5; }); } }],
+      done: () => { off?.(); off = null; envoy.position.copy(e0); aide.position.copy(a0); archer.visible = true; },
+    };
+  },
+  // 미니게임 뒤 빛나는 문(C-02): 개경 궁궐 마당 오른쪽 빈 땅, 학생 쪽(남쪽)을 본다
+  portal: { at: [6, 5], ry: 0 },
+
   enterStage(ctx, stage) {
     const P = scene.areas.palace;
     if (stage === 'minigame') { ctx.world.bounds = P.bounds; placePlayer(ctx.world, P.start); }
-    if (stage === 'quiz') { showChungju(ctx); scene.burnt(); for (const b of scene.bundles) b.visible = false; ctx.setGoal(script.goals[script.goals.length - 1]); }
+    if (stage === 'quiz') { scene.burnt(); for (const b of scene.bundles) b.visible = false; ctx.world.bounds = P.bounds; placePlayer(ctx.world, P.start); }
   },
 
   // 배운 내용 확인 배경: 강화도 문제는 강화도 해협을, 처인성·충주성 문제는 처인성을 비춘다
@@ -382,6 +401,7 @@ export default {
     setupCheoin(ctx);
     ctx.setGoal(G[3]);
     await ctx.fade(false);
+    await talkTo(ctx, 'kimyunhu', G[3]); // 다가가서 말을 걸어야 시작한다(C-05)
     await sayAll(dialogue, script.cheoin.intro);
     await sayAll(dialogue, script.cheoin.lead);
     dialogue.close();
@@ -401,6 +421,7 @@ export default {
     setupChungju(ctx);
     ctx.setGoal(G[5]);
     await ctx.fade(false);
+    await talkTo(ctx, 'kimyunhu', G[5]); // C-05
     await sayAll(dialogue, script.chungju.intro);
     await sayAll(dialogue, script.chungju.lead);
     dialogue.close();
@@ -424,9 +445,15 @@ export default {
     const stopCheer = cheer(ctx); // 노비와 백성들이 제자리에서 만세
     await new Promise(r => setTimeout(r, 900));
     await sayAll(dialogue, script.chungju.done);
+    dialogue.close();
     stopCheer();
-    world.player.visible = true;
-    ctx.setGoal(G[G.length - 1]);
+    // 마을(개경 궁궐 마당)로 돌아온다: 이어서 빛나는 문이 선다(C-02)
+    await ctx.fade(true);
+    const P = scene.areas.palace;
+    world.setMood('overcast');
+    world.bounds = P.bounds;
+    placePlayer(world, P.start);
+    await ctx.fade(false);
     return { firstTryCorrect: (a.firstTry ? 1 : 0) + (b.first ? 1 : 0), firstTryTotal: 2, easyModeUsed: b.easyModeUsed };
   },
 };

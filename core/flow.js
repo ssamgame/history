@@ -7,7 +7,7 @@ import { playIntro } from './intro.js';
 
 export const STAGES = ['intro', 'explore', 'minigame', 'quiz'];
 
-// next: 다음 장(또는 다음 편) { title, course? } — 장 모듈에 portal이 있으면 퀴즈 전에 그쪽으로 가는 빛나는 문을 세운다(C-02)
+// next: 다음 장 { title }(사건 이름) 또는 다음 편 { era } — 장 모듈에 portal이 있으면 퀴즈 전에 그쪽으로 가는 빛나는 문을 세운다(C-02)
 export async function runChapter(meta, chapter, ctx, save, { resumeStage = 'intro', next = null } = {}) {
   const t0 = performance.now();
   const from = Math.max(0, STAGES.indexOf(resumeStage));

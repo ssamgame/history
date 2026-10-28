@@ -5,6 +5,7 @@ import { roam } from '../../core/flow.js';
 import { showHowTo, runWithRetries } from '../../core/minigame.js';
 import { enterThroughGate } from '../kit/gate.js';
 import { leadWalk } from '../kit/lead.js';
+import { waitInteract } from '../../core/portal.js';
 import * as THREE from 'three';
 import script from './script.js';
 
@@ -100,9 +101,15 @@ function talkToKim(ctx, lines) {
   });
 }
 
-function showAftermath(ctx) {
-  landAt(ctx, 'jeju');
-  ctx.setGoal(script.goals[script.goals.length - 1]);
+// 마을(강화도 포구)로 돌아온다: 이어서 큰 문이 선다(C-02)
+function returnToPort(ctx) {
+  const { world } = ctx;
+  scene.setSailing(false);
+  world.closeView = true; world.followOffset = null; world.followLookY = null;
+  world.bounds = scene.portBounds;
+  for (const id of ['baejungson', 'sambyeolcho', ...PEOPLE]) { const n = world.npcs.get(id); n.mesh.visible = true; n.mark.visible = false; }
+  world.npcs.get('kimtongjeong').mesh.visible = false;
+  placePlayer(world, scene.start);
 }
 
 let devWorld = null;
@@ -122,9 +129,36 @@ export default {
     return scene;
   },
 
+  // 장 도입(C-03): ① 포구에서 관리가 조정의 결정을 전하는 모습 ② 삼별초 군사들이 배중손 곁에서 주먹을 들어 반대하는 모습
+  introScene(ctx) {
+    const { world } = ctx;
+    const raise = ['sambyeolcho', 'baejungson'].map(id => world.npcs.get(id).mesh);
+    const all = ['minister', 'sambyeolcho', 'baejungson', 'villager'].map(id => world.npcs.get(id).mesh), ry0 = all.map(m => m.rotation.y);
+    const face = (m, [cx, , cz]) => { m.rotation.y = Math.atan2(cx - m.position.x, cz - m.position.z); }; // 카메라 쪽을 본다(얼굴이 보이게)
+    let off = null;
+    return {
+      shots: [
+        { cam: [-3.5, 2.3, 71], look: [-8, 1.8, 76], to: { cam: [-6, 2.3, 71.5], look: [-8, 1.8, 76] },
+          act: () => { face(all[0], [-3.5, 0, 71]); face(all[3], [-3.5, 0, 71]); } },
+        { cam: [-1, 2.6, 66.5], look: [2, 1.8, 72], to: { cam: [3, 2.6, 67], look: [3, 1.8, 72] },
+          act: () => {
+            face(all[1], [-1, 0, 66.5]); face(all[2], [-1, 0, 66.5]);
+            raise.forEach(m => { m.userData.manual = true; });
+            off = world.onUpdate((dt, t) => raise.forEach((m, i) => {
+              const a = m.userData.arms, w = 0.5 + 0.5 * Math.sin(t * 5 + i * 1.7);
+              a[0].rotation.x = a[1].rotation.x = -2.2 - 0.5 * w; a[0].rotation.z = -0.15; a[1].rotation.z = 0.15;
+            }));
+          } },
+      ],
+      done: () => { off?.(); off = null; all.forEach((m, i) => { m.rotation.y = ry0[i]; }); raise.forEach(m => { for (const a of m.userData.arms) a.rotation.set(0, 0, 0); m.userData.manual = false; }); },
+    };
+  },
+  // 미니게임 뒤 큰 문(C-02, 편의 마지막 장): 포구 가운데 빈 땅, 학생 쪽(남쪽)을 본다
+  portal: { at: [-13, 79], ry: 1.49 }, // 학생(0, 80) 왼쪽 풀밭, 학생 쪽을 본다(잔교·사람을 막지 않게)
+
   enterStage(ctx, stage) {
     if (stage === 'minigame') { ctx.world.closeView = true; ctx.world.bounds = scene.portBounds; scene.setSailing(false); placePlayer(ctx.world, scene.start); }
-    if (stage === 'quiz') showAftermath(ctx);
+    if (stage === 'quiz') returnToPort(ctx);
   },
 
   async explore(ctx) {
@@ -140,9 +174,10 @@ export default {
     const bj = world.npcs.get('baejungson');
     const mark = () => {
       PEOPLE.forEach(id => { world.npcs.get(id).mark.visible = !heard.has(id); });
-      bj.mark.visible = heard.size > 0;
+      bj.mark.visible = heard.size === PEOPLE.length; // 모두 들어야 배중손이 이야기한다(C-01)
       const nx = PEOPLE.find(id => !heard.has(id)), n = world.npcs.get(nx || 'baejungson');
       world.setGoal({ x: n.mesh.position.x, z: n.mesh.position.z });
+      ctx.setGoal(script.goals[nx ? 0 : 1]);
       hud.setCounter(`들은 이야기 ${heard.size}/${PEOPLE.length}`);
     };
     mark();
@@ -154,7 +189,7 @@ export default {
         async onTalk(id) {
           if (PEOPLE.includes(id)) { await sayAll(dialogue, script.npc[id]); heard.add(id); mark(); return; }
           if (id !== 'baejungson') return;
-          if (!heard.size) { await sayAll(dialogue, script.npc.baejungson.wait); return; }
+          if (heard.size < PEOPLE.length) { await sayAll(dialogue, script.npc.baejungson.wait); return; }
           await sayAll(dialogue, script.npc.baejungson.decide);
           PEOPLE.forEach(k => { world.npcs.get(k).mark.visible = false; }); bj.mark.visible = false;
           world.setGoal(null); hud.setCounter(null);
@@ -169,22 +204,30 @@ export default {
     const G = script.goals;
     input.enabled = false;
     // 1. 배중손을 따라 부두 끝으로
-    ctx.setGoal(G[1]);
+    ctx.setGoal(G[2]);
     await sayAll(dialogue, script.npc.baejungson.lead);
     dialogue.close();
     await leadWalk(ctx, { id: 'baejungson', path: scene.leadPath, stand: scene.leadStand, ring: scene.standRing, face: 0 });
+    // 배에 오르는 것도 저절로 시작하지 않는다: 배중손에게 말을 걸어야 한다(C-05)
+    const bj = world.npcs.get('baejungson');
+    bj.mark.visible = true;
+    await waitInteract(ctx, { pos: bj.mesh.position, quest: G[2], label: '배중손과 이야기하기', mark: false });
+    bj.mark.visible = false; input.enabled = false;
+    world.setTalkCamera(bj.mesh);
+    await sayAll(dialogue, script.npc.baejungson.board);
+    dialogue.close(); world.camMode = 'follow';
     // 2. 강화도 → 진도
     await ctx.fade(true);
     for (const id of ['baejungson', 'sambyeolcho', ...PEOPLE]) world.npcs.get(id).mesh.visible = false;
     toSea(ctx, scene.legs[0]);
-    ctx.setGoal(G[2]);
+    ctx.setGoal(G[3]);
     await ctx.fade(false);
     await showHowTo(ctx.ui, script.sail.howto);
     const a = await runWithRetries(ctx, easy => sailLeg(ctx, scene.legs[0], easy), { failHint: script.sail.failHint });
     // 3. 진도에 내려 용장성의 김통정에게
     await ctx.fade(true);
     landAt(ctx, 'jindo');
-    ctx.setGoal(G[3]);
+    ctx.setGoal(G[4]);
     await ctx.fade(false);
     await sayAll(dialogue, script.jindo.arrive);
     dialogue.close();
@@ -193,19 +236,22 @@ export default {
     await ctx.fade(true);
     world.npcs.get('kimtongjeong').mesh.visible = false;
     toSea(ctx, scene.legs[1]);
-    ctx.setGoal(G[4]);
+    ctx.setGoal(G[5]);
     await ctx.fade(false);
     const b = await runWithRetries(ctx, easy => sailLeg(ctx, scene.legs[1], easy), { failHint: script.sail.failHint });
     // 5. 제주에 내려 항파두리의 김통정에게
     await ctx.fade(true);
     landAt(ctx, 'jeju');
-    ctx.setGoal(G[5]);
+    ctx.setGoal(G[6]);
     await ctx.fade(false);
     await sayAll(dialogue, script.jeju.arrive);
     dialogue.close();
     await talkToKim(ctx, script.jeju.talk);
     input.enabled = false;
-    ctx.setGoal(G[6]);
+    // 마을(포구)로 돌아온다: 이어서 큰 문이 선다(C-02)
+    await ctx.fade(true);
+    returnToPort(ctx);
+    await ctx.fade(false);
     return { firstTryCorrect: [a, b].filter(x => x.first).length, firstTryTotal: 2, easyModeUsed: a.easyModeUsed || b.easyModeUsed };
   },
 };
