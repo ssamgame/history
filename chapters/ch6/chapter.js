@@ -154,7 +154,7 @@ export default {
     };
   },
   // 미니게임 뒤 큰 문(C-02, 편의 마지막 장): 포구 가운데 빈 땅, 학생 쪽(남쪽)을 본다
-  portal: { at: [-13, 79], ry: 1.49 }, // 학생(0, 80) 왼쪽 풀밭, 학생 쪽을 본다(잔교·사람을 막지 않게)
+  portal: { at: [12.5, 82], ry: -1.73 }, // 학생(0, 80) 오른쪽 풀밭, 학생 쪽을 본다(잔교·배중손을 막지 않게)
 
   enterStage(ctx, stage) {
     if (stage === 'minigame') { ctx.world.closeView = true; ctx.world.bounds = scene.portBounds; scene.setSailing(false); placePlayer(ctx.world, scene.start); }
