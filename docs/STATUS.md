@@ -36,10 +36,12 @@
 
 2026-10-28 마지막 고침: 근대 2장 김옥균이 몸을 피한 자리에서 '일본으로 몸을 피했어요' 해설, 청 군사 15명(커밋 61a3d01).
 
-### 지금 하는 일: D-30 전체 개선 (작업 목록 `docs/team/tasks-d30.md`)
-- 공통 시스템 시범 완료(커밋 a3b90df): 퀘스트 목록(`core/screens.js` createHud), 빛나는 문(`core/portal.js` portalStage, 장 모듈 `portal: { at, ry }`, 다음 장으로 바로 이어 감 `core/main.js` nextOf), 도입 장면(`core/intro.js` playIntro, 장 모듈 `introScene(ctx)` → `{ shots, done }`, `?debug=j1-intro`), 퀴즈 연두·분홍(`dialogue` mood), 다가가서 시작(`waitInteract`), 건물 간판(`core/signs.js` makePlaque, 안내판에 `plaque: { y, back }`).
-- 조선 1장(j1)에 모두 적용, 근대 1장 간판. 선생님 확인 뒤 나머지 12장에 펼치고 장별 고침(H~G).
-- 남은 공통: 13장에 introScene·portal·waitInteract·간판·모두 듣기 적용, `tests/signs` 옛 검사(j1·ch1 안내판 있어야 함)를 새 규칙으로.
+### D-30 전체 개선 — 만듦, 선생님 확인 대기 (작업 목록 `docs/team/tasks-d30.md`, 안내 `docs/team/d30-guide.md`)
+- 공통(14장: ch1~ch6, j1~j6, k1·k2): 퀘스트 목록, 모두 들어야 메인 인물 진행, 자막+3D 도입 장면(`?debug=<장>-intro`), 놀이 사이 다가가서 시작(waitInteract), 빛나는 문 → 복습 퀴즈 → 다음 장 바로(6장은 큰 문 '조선으로 가는 문'), 길 위 안내판 → 이름만 있는 건물 간판, 퀴즈 연두·분홍.
+- 장별 H·S·K·I·N·J·D·G 모두 만듦. 사진 `docs/team/shots/d30-*.png`.
+- 전체 테스트(2026-10-29): pass 562, fail 4 → hud 진행 수 고침(그 뒤 pass). 남은 실패 셋은 D-30 전부터: arena k1 doc papers, carry 다리 걸음(함께 돌 때만), stage3 G2.
+- 선생님께 여쭐 것: 앙부일구 시각 이름·시간(출처 S30 메모에 없음), 자격루 '잣대'(교과서 확인), 조선 6장 도르래 누르는 시간(다가 가장 길어 '무겁다'고 오해할 수 있음), 근대 2장 '창덕궁' 출처, 조선 4장 학익진에 틀릴 자리 없어짐, 조선 2장 대사의 12지신 동물 그림과 화면의 시각 이름이 다름.
+- 테스트 봇이 길게 누르기·끌기를 못 해 조선 6장 테스트 안 도우미가 대신함(공용 bot.js에 넣을지).
 
 ### (잠시 멈춤) 근대 3장(k3 동학 농민 운동) — 선생님 답을 기다림
 지금 흐름: 탐험(고부 농민 → 전봉준 → 농민군, 순서로 막음) → 마을을 돌며 농민 3명 모으기(drive, pickups follow) → 고부 관아 장면(gobuScene) → 농민군 요구 문서(doc) → 1·2차 동학 농민 운동 역사책 6쪽(book).

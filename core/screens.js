@@ -251,6 +251,7 @@ export function createHud(root, { touch }) {
   const timer = h('div', { class: 'hud-timer', hidden: true });
   const counter = h('div', { class: 'hud-counter', hidden: true });
   const found = h('div', { class: 'hud-found', hidden: true }); // 예전 '살펴본 안내판' 칸: 이제 쓰지 않는다(늘 숨김)
+  quests.append(h('li', { class: 'quest' }, counter)); // 퀘스트를 정하기 전에도 진행 수는 보인다
   const box = h('div', { class: 'hud', hidden: true }, chapter, h('div', { class: 'hud-goal' }, h('span', { class: 'seal' }, '퀘스트'), quests), found, h('div', { class: 'hud-row' }, timer));
   const notice = h('div', { class: 'hud-notice', hidden: true, role: 'status' });
   const bigTimer = h('div', { class: 'hud-bigtimer', hidden: true, 'aria-live': 'off' }); // 남은 시간: 화면 위 가운데에 크게
@@ -284,7 +285,7 @@ export function createHud(root, { touch }) {
       const done = (i >= 0 ? list.slice(0, i) : list.slice(0, lastIdx + 1)).slice(-2); // 마친 것은 바로 앞 두 개만(화면이 좁아서)
       if (i >= 0) lastIdx = i;
       const cur = h('li', { class: 'quest now' }, goal, counter);
-      quests.replaceChildren(...done.map(t => h('li', { class: 'quest done' }, t)), ...(text ? [cur] : []));
+      quests.replaceChildren(...done.map(t => h('li', { class: 'quest done' }, t)), text ? cur : h('li', { class: 'quest' }, counter)); // 퀘스트가 없어도 진행 수는 보인다
     },
     setTimer(sec) {
       timer.hidden = true; bigTimer.hidden = sec == null; // 작은 글 대신 가운데 큰 숫자
