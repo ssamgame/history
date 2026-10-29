@@ -1,6 +1,6 @@
 # 진행 정리 (2026-10-28) — 새 세션은 이 파일부터
 
-작업 브랜치 `claude/goryeo-game-handoff-vus00f`. 학생 사이트(main)는 **goryeo-v65 그대로**(배포는 선생님 승인 뒤에만).
+작업 브랜치 `claude/goryeo-game-handoff-vus00f`. 학생 사이트(main)는 **goryeo-v66**(2026-10-29 D-30 배포, Pages 빌드 성공 확인). 배포는 선생님 승인 뒤에만.
 결정 기록 `docs/team/decisions.md`(D-번호), 테스트 기록 `docs/team/tested.md`, 사진 `docs/team/shots/`.
 
 ## 꼭 지킬 것
@@ -36,7 +36,7 @@
 
 2026-10-28 마지막 고침: 근대 2장 김옥균이 몸을 피한 자리에서 '일본으로 몸을 피했어요' 해설, 청 군사 15명(커밋 61a3d01).
 
-### D-30 전체 개선 — 만듦, 선생님 확인 대기 (작업 목록 `docs/team/tasks-d30.md`, 안내 `docs/team/d30-guide.md`)
+### D-30 전체 개선 — 만듦, v66으로 배포(2026-10-29) (작업 목록 `docs/team/tasks-d30.md`, 안내 `docs/team/d30-guide.md`)
 - 공통(14장: ch1~ch6, j1~j6, k1·k2): 퀘스트 목록, 모두 들어야 메인 인물 진행, 자막+3D 도입 장면(`?debug=<장>-intro`), 놀이 사이 다가가서 시작(waitInteract), 빛나는 문 → 복습 퀴즈 → 다음 장 바로(6장은 큰 문 '조선으로 가는 문'), 길 위 안내판 → 이름만 있는 건물 간판, 퀴즈 연두·분홍.
 - 장별 H·S·K·I·N·J·D·G 모두 만듦. 사진 `docs/team/shots/d30-*.png`.
 - 전체 테스트(2026-10-29): pass 562, fail 4 → hud 진행 수 고침(그 뒤 pass). 남은 실패 셋은 D-30 전부터: arena k1 doc papers, carry 다리 걸음(함께 돌 때만), stage3 G2.
@@ -60,7 +60,8 @@
 ## 3. 남은 것
 1. 선생님 확인: 고려 4·5장, 조선 2~6장, 근대 2장.
 2. 근대편 k3~k6, 일제 강점기편 i1~i6, 현대편 h1~h6를 같은 방식으로 한 장씩(아직 배포판 그대로).
-3. 배포: 전체 테스트 → `core/precache.js` CACHE 올림 + `tests/sw.test.js` → main 병합·push → 판 번호 확인(승인 뒤). 이때 쓰지 않는 `chapters/ch5/pictures.js`를 PRECACHE에서 뺀다.
+3. 배포: 다음 배포는 v67(전체 테스트 → CACHE 올림 + sw.test → main 병합·push → Pages 빌드 확인, 이 환경에서는 github.io가 막혀 GitHub Actions 'pages build and deployment' 성공으로 확인). 미리보기 아티팩트는 아직 v65 내용(다시 올릴지 선생님께 여쭘).
+3-1. 근대 3장~현대 6장(18장)에는 D-30 공통 시스템(퀘스트 목록은 이미 보임, 빛나는 문·도입 장면·모두 듣기·다가가서 시작·간판)이 아직 없다.
 4. 예전부터: 실제 갤럭시 탭 측정(`docs/tablet-measure-guide.md`), 교과서 대조, 새 출처 S66~S70 주소 확인(이 환경에서 .kr 사이트가 안 열림), 배경음악 들어 보기, 첫 화면 병사가 버튼 뒤에 겹침, 별점에 첫 시도 점수 쓰기(규칙은 여쭌 뒤).
 5. 알려 둘 것: stage3 G2(고려 1장 담판 카메라·노을 해) 테스트가 근대 작업 전부터 실패한다. carry 테스트가 다른 테스트와 함께 돌면 가끔 실패(혼자 돌리면 통과). 조선 2장 자격루 세부 순서 대사는 출처 문장보다 자세함(교과서 확인 필요).
 
