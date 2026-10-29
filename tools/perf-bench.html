@@ -96,8 +96,7 @@
     a.dispose();
   }
   async function book() {
-    const mod = await load('h6'); // D-34·D-36·D-48·D-51·D-52: 근대 5장·일제 1장·현대 2·4·5장은 역사책을 뺐다
-    const part = Object.values(mod.script.parts).find(p => p.type === 'book');
+    const part = (await import('./book-sample.js')).default.book; // D-53: 학생 장에서는 역사책을 모두 뺐다(견본 책으로 잰다)
     const ui = document.createElement('div'); document.body.append(ui);
     stats.setQuality('-', false); stats.segment('역사책 첫 쪽 (현대 2장, 미리 찍기 없이)');
     status('역사책 첫 쪽 재는 중…');

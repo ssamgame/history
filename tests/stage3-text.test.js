@@ -37,7 +37,7 @@ test('stage3-text: D20 가져다 놓기 안내 10곳이 짧고 같은 꼴이다'
       ok(bare(p.howto).length <= 70, `${id}: 안내가 김 ${bare(p.howto).length}자`);
     }
   }
-  eq(n, 2, '가져다 놓기 안내 수'); // k1은 D-28에 물건을 안고 가는 안내로, k6은 D-35에 두 갈래 길 체험으로, i1은 D-36에 시대별 체험 걷기로, i3은 D-41에 청사 걷기로, i5는 D-44에 민족 문화 걷기로, i6은 D-46에 한인 애국단에서 한국광복군까지 걷기로, h1은 D-47에 문패 바꿔 달기·첫 한글 수업으로, h2는 D-48에 투표하기·헌법 완성하기로 바뀜
+  eq(n, 1, '가져다 놓기 안내 수'); // h6은 D-53에 수출 공장·올림픽 굴렁쇠로, k1은 D-28에 물건을 안고 가는 안내로, k6은 D-35에 두 갈래 길 체험으로, i1은 D-36에 시대별 체험 걷기로, i3은 D-41에 청사 걷기로, i5는 D-44에 민족 문화 걷기로, i6은 D-46에 한인 애국단에서 한국광복군까지 걷기로, h1은 D-47에 문패 바꿔 달기·첫 한글 수업으로, h2는 D-48에 투표하기·헌법 완성하기로 바뀜
 });
 
 test('stage3-text: D21 전차 놀이 안내가 짧다', async () => {
@@ -111,9 +111,9 @@ test('stage3-text: B14·B15 역사책 앞뒤 말이 역사책 쪽 글을 그대�
 });
 
 test('stage3-text: B20 긴 역사책 문장을 두 줄로 나눴다(같은 출처)', async () => {
-  const pages = [['h6', 'april19', ['S58']]]; // i1·i2·h2·h5 역사책은 D-36·D-39·D-48·D-52에 뺐다
+  const pages = [['sample', 'april19', ['S58']]]; // 학생 장의 역사책은 D-36~D-53에 모두 뺐다(견본 책 tools/book-sample.js)
   for (const [id, pic, src] of pages) {
-    const s = await load(id);
+    const s = { parts: (await import('../tools/book-sample.js')).default };
     const pg = Object.values(s.parts).filter(p => p.type === 'book').flatMap(p => p.pages).find(p => p.pic === pic);
     ok(pg, `${id} ${pic}`);
     ok(pg.lines.length >= 2, `${id} ${pic}: ${pg.lines.length}줄`);

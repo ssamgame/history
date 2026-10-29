@@ -10,15 +10,16 @@
 <body>
 <div id="ui"></div>
 <script type="module">
-  // 개발용: 근대~현대편 역사책 한 권을 장면 없이 띄워 본다. ?ch=k5&p=goods(부분 이름, 없으면 첫 책)&page=2
+  // 개발용: 역사책 한 권을 장면 없이 띄워 본다. ?page=2(견본 책), 장의 책은 ?ch=k5&p=goods(부분 이름, 없으면 첫 책)
   import { readBook } from '../core/minigame.js';
   import { renderDiorama } from '../chapters/kit/diorama.js';
   import { DIORAMA } from '../chapters/modern/dioramas.js';
   import { PIC } from '../chapters/modern/pictures.js';
   import { MODERN, COLONIAL, PRESENT } from '../chapters/index.js';
   const q = new URLSearchParams(location.search);
-  const meta = [...MODERN, ...COLONIAL, ...PRESENT].find(m => m.id === (q.get('ch') || 'h6'));
-  const { script } = (await meta.load()).default;
+  // ?ch가 없으면 견본 책(D-53: 학생 장에서는 역사책을 모두 뺐다, tools/book-sample.js)
+  const meta = q.get('ch') && [...MODERN, ...COLONIAL, ...PRESENT].find(m => m.id === q.get('ch'));
+  const script = meta ? (await meta.load()).default.script : { parts: (await import('./book-sample.js')).default };
   const part = q.get('p') ? script.parts[q.get('p')] : Object.values(script.parts).find(p => p.type === 'book');
   const ui = document.getElementById('ui');
   readBook({ ui }, { title: part.title, pages: part.pages.map(p => ({ ...p, figure: PIC[p.pic], scene: DIORAMA[p.pic] })), render: p => renderDiorama(p.scene, `${part.title}|${p.title}`) });
