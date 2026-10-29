@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>people gallery</title>
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+<style>
+  body { margin: 0; background: #e8e2d4; font-family: sans-serif; }
+  #row { display: flex; flex-wrap: wrap; gap: 4px; padding: 6px; }
+  .cell { width: 150px; text-align: center; font-size: 13px; }
+  .cell img { width: 64px; height: 64px; border-radius: 50%; background: #fff; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<div id="row"></div>
+<script type="module">
+  // 개발용: 등장인물 생김새를 한 줄로 세워 본다(D-54 생김새 바꾸기). ?ids=soldier,monk(없으면 모두)&per=8(한 줄 인원)&angle=0.35(돌려 보는 각)&zoom=2(크게)
+  import * as THREE from 'three';
+  import { makePerson } from '../core/people.js';
+  import { LOOKS } from '../content/characters.js';
+  import { portraitURL } from '../core/faces.js';
+  const q = new URLSearchParams(location.search);
+  const ids = (q.get('ids') || Object.keys(LOOKS).join(',')).split(',').filter(id => LOOKS[id]);
+  const per = +(q.get('per') || 8), angle = +(q.get('angle') || 0.35), zoom = +(q.get('zoom') || 1), W = per * 150 * zoom, rows = Math.ceil(ids.length / per), H = rows * 330 * zoom, U = 52 * zoom;
+  const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); renderer.setSize(W, H); renderer.shadowMap.enabled = true;
+  document.body.prepend(renderer.domElement);
+  const scene = new THREE.Scene(); scene.background = new THREE.Color(0xe8e2d4);
+  scene.add(new THREE.HemisphereLight(0xf4f0e8, 0x8a7a62, 1.3));
+  const sun = new THREE.DirectionalLight(0xfff2dc, 1.6); sun.position.set(4, 10, 8); scene.add(sun);
+  const cam = new THREE.OrthographicCamera(-W / 2 / U, W / 2 / U, H / 2 / U, -H / 2 / U, 0.1, 100); cam.position.set(0, 1.6, 20); cam.lookAt(0, 1.6, 0);
+  ids.forEach((id, i) => {
+    const p = makePerson(LOOKS[id], { track: false });
+    const col = i % per, row = Math.floor(i / per);
+    p.position.set((col - (per - 1) / 2) * (150 * zoom / U), 1.6 + H / 2 / U - 330 * zoom / U * (row + 1) + 0.6, 0); p.rotation.y = angle;
+    scene.add(p);
+  });
+  renderer.render(scene, cam);
+  const rowEl = document.getElementById('row');
+  for (const id of ids) { const d = document.createElement('div'); d.className = 'cell'; d.innerHTML = `<img src="${portraitURL(id)}"><div>${id}</div>`; rowEl.append(d); }
+  document.title = 'done';
+</script>
+</body>
+</html>

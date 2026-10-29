@@ -16,6 +16,27 @@ export function drawFeatures(g, face = {}, cx, cy, R) {
     g.fillStyle = 'rgba(232, 120, 110, 0.35)';
     for (const sx of [-1, 1]) { g.beginPath(); g.ellipse(cx + sx * 0.52 * R, cy + 0.22 * R, 0.17 * R, 0.1 * R, 0, 0, Math.PI * 2); g.fill(); }
   }
+  // 얼굴 입체감(D-54 생김새를 조금 더 사실적으로): 볼과 턱 아래 옅은 그늘, 콧등·이마의 밝은 빛, 광대 아래 그늘
+  if (face.shade !== false) {
+    const jaw = g.createRadialGradient(cx, cy + 0.05 * R, 0.7 * R, cx, cy + 0.05 * R, 1.05 * R);
+    jaw.addColorStop(0, 'rgba(150, 95, 65, 0)'); jaw.addColorStop(1, 'rgba(150, 95, 65, 0.18)');
+    g.fillStyle = jaw; g.beginPath(); g.ellipse(cx, cy + 0.05 * R, 1.05 * R, 1.05 * R, 0, 0, Math.PI * 2); g.fill();
+    const hi = g.createRadialGradient(cx, cy - 0.35 * R, 0, cx, cy - 0.35 * R, 0.5 * R);
+    hi.addColorStop(0, 'rgba(255, 240, 225, 0.35)'); hi.addColorStop(1, 'rgba(255, 240, 225, 0)');
+    g.fillStyle = hi; g.beginPath(); g.ellipse(cx, cy - 0.3 * R, 0.5 * R, 0.55 * R, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = 'rgba(150, 95, 65, 0.13)';
+    for (const sx of [-1, 1]) { g.beginPath(); g.ellipse(cx + sx * 0.5 * R, cy + 0.28 * R, 0.16 * R, 0.26 * R, sx * 0.3, 0, Math.PI * 2); g.fill(); }
+  }
+  // 어른 남자(수염이 있거나 sex가 정해지지 않은 어른): 옅은 팔자 주름. 아이·젊은이(age: 'young')는 그리지 않는다
+  if (age !== 'young' && age !== 'old' && face.sex !== 'f') {
+    g.strokeStyle = 'rgba(150, 95, 65, 0.3)'; g.lineWidth = Math.max(1.2, 0.022 * R);
+    for (const sx of [-1, 1]) { g.beginPath(); g.moveTo(cx + sx * 0.14 * R, cy + 0.16 * R); g.quadraticCurveTo(cx + sx * 0.27 * R, cy + 0.3 * R, cx + sx * 0.24 * R, cy + 0.46 * R); g.stroke(); }
+  }
+  // 수염 자국(군인·일꾼 stubble)
+  if (face.stubble) {
+    g.fillStyle = 'rgba(70, 60, 55, 0.16)';
+    g.beginPath(); g.moveTo(cx - 0.55 * R, cy + 0.25 * R); g.quadraticCurveTo(cx - 0.45 * R, cy + 0.92 * R, cx, cy + 0.96 * R); g.quadraticCurveTo(cx + 0.45 * R, cy + 0.92 * R, cx + 0.55 * R, cy + 0.25 * R); g.quadraticCurveTo(cx, cy + 0.5 * R, cx - 0.55 * R, cy + 0.25 * R); g.fill();
+  }
   // 주름(나이 든 인물): 이마 두 줄, 팔자 주름, 눈 밑
   if (age === 'old') {
     g.strokeStyle = SHADE; g.lineWidth = Math.max(1.5, 0.025 * R);
@@ -30,13 +51,17 @@ export function drawFeatures(g, face = {}, cx, cy, R) {
   g.beginPath(); g.moveTo(cx - 0.03 * R, cy + 0.0 * R); g.quadraticCurveTo(cx - 0.08 * R, cy + 0.17 * R, cx - 0.07 * R, cy + 0.2 * R); g.stroke();
   g.beginPath(); g.moveTo(cx - 0.1 * R, cy + 0.22 * R); g.quadraticCurveTo(cx, cy + 0.27 * R, cx + 0.1 * R, cy + 0.22 * R); g.stroke();
   // 입: 윗입술 선과 아랫입술
-  const my = cy + 0.42 * R;
+  const my = cy + 0.46 * R;
   g.lineWidth = Math.max(2, 0.045 * R); g.strokeStyle = '#5a2e24';
   if (mouth === 'smile') { g.beginPath(); g.arc(cx, my - 0.12 * R, 0.17 * R, Math.PI * 0.2, Math.PI * 0.8); g.stroke(); }
   else if (mouth === 'open') { g.fillStyle = '#7a2a22'; g.beginPath(); g.ellipse(cx, my, 0.1 * R, 0.08 * R, 0, 0, Math.PI * 2); g.fill(); }
   else {
-    g.beginPath(); g.moveTo(cx - 0.14 * R, my); g.quadraticCurveTo(cx, my - 0.02 * R, cx + 0.14 * R, my); g.stroke();
-    g.fillStyle = 'rgba(168, 100, 90, 0.55)'; g.beginPath(); g.ellipse(cx, my + 0.045 * R, 0.09 * R, 0.03 * R, 0, 0, Math.PI * 2); g.fill();
+    const lip = face.sex === 'f' ? 'rgba(190, 90, 85, 0.75)' : 'rgba(168, 100, 90, 0.5)', lw = face.sex === 'f' ? 0.13 : 0.15;
+    g.fillStyle = lip; // 윗입술(가운데가 살짝 파인 활 모양)과 도톰한 아랫입술
+    g.beginPath(); g.moveTo(cx - lw * R, my); g.quadraticCurveTo(cx - 0.06 * R, my - 0.055 * R, cx, my - 0.03 * R); g.quadraticCurveTo(cx + 0.06 * R, my - 0.055 * R, cx + lw * R, my); g.closePath(); g.fill();
+    g.beginPath(); g.moveTo(cx - lw * 0.85 * R, my + 0.005 * R); g.quadraticCurveTo(cx, my + 0.1 * R, cx + lw * 0.85 * R, my + 0.005 * R); g.closePath(); g.fill();
+    g.beginPath(); g.moveTo(cx - lw * R, my); g.quadraticCurveTo(cx, my + 0.012 * R, cx + lw * R, my); g.stroke();
+    g.fillStyle = 'rgba(150, 95, 65, 0.22)'; g.beginPath(); g.ellipse(cx, my + 0.17 * R, 0.08 * R, 0.035 * R, 0, 0, Math.PI * 2); g.fill(); // 아랫입술 밑 그늘
   }
   // 수염
   g.fillStyle = beardColor;
@@ -77,16 +102,20 @@ export function drawFeatures(g, face = {}, cx, cy, R) {
       g.beginPath(); g.arc(ex, ey + 0.05 * R, 0.13 * R, Math.PI * 1.1, Math.PI * 1.9); g.stroke();
       continue;
     }
-    const h = eyes === 'stern' ? 0.06 * R : 0.08 * R, w = 0.15 * R;
+    const h = eyes === 'stern' ? 0.072 * R : 0.09 * R, w = 0.17 * R;
     g.fillStyle = '#f7f1e6';
     g.beginPath(); g.moveTo(ex - w, ey); g.quadraticCurveTo(ex, ey - h * 1.6, ex + w, ey); g.quadraticCurveTo(ex, ey + h * 1.2, ex - w, ey); g.fill();
     g.save(); g.clip();
-    g.fillStyle = '#4a3020'; g.beginPath(); g.arc(ex, ey + 0.005 * R, 0.068 * R, 0, Math.PI * 2); g.fill();
-    g.fillStyle = '#120c08'; g.beginPath(); g.arc(ex, ey + 0.005 * R, 0.034 * R, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#4a3020'; g.beginPath(); g.arc(ex, ey + 0.005 * R, 0.078 * R, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#120c08'; g.beginPath(); g.arc(ex, ey + 0.005 * R, 0.04 * R, 0, Math.PI * 2); g.fill();
     g.fillStyle = '#ffffff'; g.beginPath(); g.arc(ex + 0.02 * R, ey - 0.02 * R, 0.018 * R, 0, Math.PI * 2); g.fill();
     g.restore();
-    g.strokeStyle = INK; g.lineWidth = Math.max(2, 0.045 * R);
+    g.strokeStyle = INK; g.lineWidth = Math.max(2, (face.sex === 'f' ? 0.06 : 0.045) * R);
     g.beginPath(); g.moveTo(ex - w * 1.05, ey + 0.005 * R); g.quadraticCurveTo(ex, ey - h * 1.7, ex + w * 1.05, ey); g.stroke();
+    // 쌍꺼풀 대신 옅은 눈두덩 선과 아래 눈꺼풀
+    g.strokeStyle = 'rgba(150, 95, 65, 0.4)'; g.lineWidth = Math.max(1.2, 0.022 * R);
+    g.beginPath(); g.moveTo(ex - w * 0.8, ey - h * 1.25); g.quadraticCurveTo(ex, ey - h * 2.3, ex + w * 0.95, ey - h * 1.1); g.stroke();
+    g.beginPath(); g.moveTo(ex - w * 0.7, ey + h * 0.75); g.quadraticCurveTo(ex, ey + h * 1.35, ex + w * 0.8, ey + h * 0.6); g.stroke();
   }
   // 안경: 검은 둥근 테와 다리
   if (glasses === 'round') {
@@ -96,7 +125,7 @@ export function drawFeatures(g, face = {}, cx, cy, R) {
     for (const sx of [-1, 1]) { g.beginPath(); g.moveTo(cx + sx * 0.52 * R, cy - 0.07 * R); g.lineTo(cx + sx * 0.8 * R, cy - 0.12 * R); g.stroke(); }
   }
   // 눈썹
-  g.strokeStyle = browColor; g.lineWidth = Math.max(2, 0.075 * R);
+  g.strokeStyle = browColor; g.lineWidth = Math.max(2, (face.sex === 'f' ? 0.055 : face.brow === 'thick' ? 0.1 : 0.075) * R);
   for (const sx of [-1, 1]) {
     const bx = cx + sx * 0.33 * R, by = cy - 0.33 * R;
     g.beginPath();
@@ -114,8 +143,13 @@ const faceCache = new Map();
 export function faceTexture(face = {}) {
   const key = JSON.stringify(face);
   if (faceCache.has(key)) return faceCache.get(key);
-  const cv = document.createElement('canvas'); cv.width = cv.height = 256;
-  drawFeatures(cv.getContext('2d'), face, 128, 118, 108);
+  // 3D 얼굴 판은 눈 아래(코·입·턱)를 1.5배 길게 늘여 붙인다(D-54: 턱이 있는 달걀꼴 머리에서 입이 코에 붙지 않게)
+  const tmp = document.createElement('canvas'); tmp.width = tmp.height = 384;
+  drawFeatures(tmp.getContext('2d'), face, 192, 186, 176);
+  const cv = document.createElement('canvas'); cv.width = cv.height = 384;
+  const c = cv.getContext('2d'), cut = 190, f = 1.5;
+  c.drawImage(tmp, 0, 0, 384, cut, 0, 0, 384, cut);
+  c.drawImage(tmp, 0, cut, 384, 384 - cut, 0, cut, 384, (384 - cut) * f);
   const tex = new THREE.CanvasTexture(cv);
   tex.colorSpace = THREE.SRGBColorSpace;
   faceCache.set(key, tex);
@@ -184,6 +218,16 @@ function drawHat(g, hat, cx, cy, R, hairColor = '#1e1c1a') {
       for (const s of [-1, 1]) { g.beginPath(); g.moveTo(cx + s * 0.6 * R, cy - 0.85 * R); g.quadraticCurveTo(cx + s * 1.12 * R, cy - 0.55 * R, cx + s * 1.04 * R, cy + 0.35 * R); g.lineTo(cx + s * 0.82 * R, cy + 0.3 * R); g.quadraticCurveTo(cx + s * 0.86 * R, cy - 0.3 * R, cx + s * 0.55 * R, cy - 0.55 * R); g.closePath(); g.fill(); } // 귀를 덮고 내려온 옆머리
       g.strokeStyle = SKIN; g.lineWidth = Math.max(1.5, 0.04 * R); g.beginPath(); g.moveTo(cx, cy - 1.02 * R); g.lineTo(cx, cy - 0.72 * R); g.stroke();
     }
+  } else if (hat === 'kunfa') {        // 거란 곤발: 깎은 정수리, 귀 앞으로 늘어뜨린 머리
+    g.fillStyle = hairColor;
+    for (const s of [-1, 1]) { g.beginPath(); g.roundRect(cx + s * 0.92 * R - 0.09 * R, cy - 0.55 * R, 0.18 * R, 0.95 * R, 0.08 * R); g.fill(); }
+  } else if (hat === 'mongol') {       // 몽골 모자: 털 두른 챙과 둥근 모자, 붉은 술
+    g.fillStyle = '#6a5038'; g.beginPath(); g.roundRect(cx - 1.05 * R, cy - 0.85 * R, 2.1 * R, 0.3 * R, 0.12 * R); g.fill();
+    g.fillStyle = '#4a3a2a'; g.beginPath(); g.ellipse(cx, cy - 0.85 * R, 0.8 * R, 0.6 * R, 0, Math.PI, 0); g.fill();
+    g.fillStyle = '#b8452f'; g.beginPath(); g.arc(cx, cy - 1.48 * R, 0.13 * R, 0, Math.PI * 2); g.fill();
+  } else if (hat === 'daenggi') {      // 땋은 머리와 붉은 댕기: 가운데 가르마
+    g.fillStyle = hairColor; g.beginPath(); g.ellipse(cx, cy - 0.45 * R, 0.98 * R, 0.62 * R, 0, Math.PI, 0); g.fill();
+    g.strokeStyle = SKIN; g.lineWidth = Math.max(1.5, 0.04 * R); g.beginPath(); g.moveTo(cx, cy - 1.05 * R); g.lineTo(cx, cy - 0.75 * R); g.stroke();
   } else if (hat === 'qing') {          // 청나라 모자: 낮은 원뿔과 붉은 술
     g.fillStyle = '#3a3028';
     g.beginPath(); g.moveTo(cx - 1.12 * R, cy - 0.55 * R); g.lineTo(cx + 1.12 * R, cy - 0.55 * R); g.lineTo(cx, cy - 1.3 * R); g.closePath(); g.fill();
@@ -191,7 +235,7 @@ function drawHat(g, hat, cx, cy, R, hairColor = '#1e1c1a') {
   } else {                              // 맨머리와 상투
     g.fillStyle = '#1e1c1a';
     g.beginPath(); g.ellipse(cx, cy - 0.45 * R, 0.98 * R, 0.62 * R, 0, Math.PI, 0); g.fill();
-    if (hat === 'topknot') { g.beginPath(); g.arc(cx, cy - 1.12 * R, 0.2 * R, 0, Math.PI * 2); g.fill(); }
+    if (hat === 'topknot') { g.beginPath(); g.arc(cx, cy - 1.12 * R, 0.2 * R, 0, Math.PI * 2); g.fill(); g.fillStyle = '#141210'; g.fillRect(cx - 0.96 * R, cy - 0.72 * R, 1.92 * R, 0.13 * R); } // 상투와 망건
   }
   g.restore();
 }
@@ -213,11 +257,20 @@ export function portraitURL(lookId) {
   if (L.outfit === 'suit') { // 양복: 흰 셔츠와 넥타이
     g.fillStyle = '#f2efe8'; g.beginPath(); g.moveTo(64, 126); g.lineTo(96, 126); g.lineTo(80, 160); g.closePath(); g.fill();
     g.fillStyle = '#7a2a2a'; g.beginPath(); g.moveTo(76, 130); g.lineTo(84, 130); g.lineTo(86, 158); g.lineTo(80, 162); g.lineTo(74, 158); g.closePath(); g.fill();
-  } else if (L.trim) { g.fillStyle = hex(L.trim); g.fillRect(14, 150, 132, 6); }
+  } else if (L.outfit === 'armor') { // 찰갑 조각
+    g.fillStyle = hex(L.armor ?? 0x6b665e); g.beginPath(); g.ellipse(80, 170, 70, 46, 0, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = 'rgba(30, 26, 22, 0.45)'; g.lineWidth = 1.5;
+    for (let y = 130; y < 160; y += 7) for (let x = 14 + (y % 14 ? 4 : 0); x < 146; x += 8) g.strokeRect(x, y, 7, 6);
+  } else if (L.outfit === 'danryeong' || L.outfit === 'deel' || L.outfit === 'uniform') { // 둥근 깃
+    g.strokeStyle = hex(L.outfit === 'uniform' ? L.robe : (L.trim ?? 0x2b241c)); g.lineWidth = 6; g.beginPath(); g.arc(80, 132, 20, Math.PI * 0.05, Math.PI * 0.95); g.stroke();
+    if (L.outfit === 'deel') { g.strokeStyle = hex(L.trim ?? 0x2b241c); g.lineWidth = 5; g.beginPath(); g.moveTo(84, 150); g.lineTo(104, 166); g.stroke(); }
+  } else if (L.outfit === 'jangsam') { g.fillStyle = '#8a3a2a'; g.beginPath(); g.moveTo(40, 132); g.lineTo(58, 126); g.lineTo(130, 168); g.lineTo(108, 170); g.closePath(); g.fill(); }
+  else if (L.trim) { g.fillStyle = hex(L.trim); g.fillRect(14, 150, 132, 6); }
   const cx = 80, cy = 92, R = 42;
   const shape = L.face && L.face.shape, sx = shape === 'long' ? 0.88 : shape === 'round' ? 1.06 : 1, sy = shape === 'long' ? 1.1 : 1;
+  const skinCol = { light: '#f4d2b0', tan: '#d9a77e', old: '#e8c4a0' }[L.skin || (L.face?.age === 'old' ? 'old' : '')] || SKIN;
   g.fillStyle = SKIN_SHADE; for (const s of [-1, 1]) { g.beginPath(); g.ellipse(cx + s * R * 0.98 * sx, cy + 4, 7, 10, 0, 0, Math.PI * 2); g.fill(); } // 귀
-  g.fillStyle = SKIN; g.beginPath(); g.ellipse(cx, cy + (sy - 1) * R * 0.4, R * sx, R * sy, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = skinCol; g.beginPath(); g.ellipse(cx, cy + (sy - 1) * R * 0.4, R * sx, R * sy, 0, 0, Math.PI * 2); g.fill();
   drawHat(g, L.hat, cx, cy, R, L.hairColor);
   drawFeatures(g, L.face, cx, cy + 4, R * 0.95);
   g.restore();

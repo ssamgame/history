@@ -1,30 +1,32 @@
 // 등장인물 생김새: 3D 인물과 대화창 얼굴 그림이 함께 쓴다.
 // face: eyes(round·kind·stern), brows(normal·stern·worried), mouth(smile·flat·open), beard(null·mustache·thin·thick·walrus·goatee·full),
 //       beardColor, browColor, glasses(round), shape(long·round), age(old), blush
-// outfit: suit(양복: 흰 셔츠와 넥타이), hairColor: 흰머리·희끗한 머리. hat buzz(아주 짧게 깎은 머리)·swept(뒤로 넘긴 머리)
+// outfit: suit(양복: 흰 셔츠와 넥타이)·armor(찰갑, armor 색)·danryeong(단령)·jangsam(장삼과 가사)·short(저고리와 바지, pants 색)·deel(거란·몽골 옷)·chima(저고리와 치마)·uniform(제복),
+//   hairColor: 흰머리·희끗한 머리. hat buzz(아주 짧게 깎은 머리)·swept(뒤로 넘긴 머리)·kunfa(거란 곤발)·mongol(몽골 모자)·daenggi(땋은 머리와 댕기)
+// skin: light·base·tan(그을린 얼굴)·old. face에 더: age('young'·'old'), sex('f'), stubble(수염 자국), brow('thick')
 // 모든 인물은 근엄한 표정(가는 눈, 힘준 눈썹, 다문 입)으로 그린다.
 export const LOOKS = {
-  player: { robe: 0x2f6b5e, hat: 'helmet', gear: 'spear', face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
-  soldier: { robe: 0x7a3b2e, hat: 'helmet', gear: 'spear', face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
-  archer: { robe: 0x5d6b3e, hat: 'helmet', gear: 'bow', face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
-  officer: { robe: 0x6a4c6e, hat: 'official', face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache', beardColor: '#8d877c' } },
-  seohui: { robe: 0x2b4c7e, hat: 'official', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'goatee' } },
-  sonn: { robe: 0x5b4a36, hat: 'fur', gear: 'sword', trim: 0xb8452f, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache' } },
-  yanggyu: { robe: 0x7a2a1e, hat: 'general', gear: 'sword', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'full' } },
+  player: { robe: 0x2f6b5e, outfit: 'armor', armor: 0x5f5a52, hat: 'helmet', gear: 'spear', skin: 'tan', face: { eyes: 'stern', brows: 'stern', mouth: 'flat', age: 'young' } },
+  soldier: { robe: 0x7a3b2e, outfit: 'armor', armor: 0x6e5a46, hat: 'helmet', gear: 'spear', skin: 'tan', face: { eyes: 'stern', brows: 'stern', mouth: 'flat', stubble: true } },
+  archer: { robe: 0x5d6b3e, outfit: 'armor', armor: 0x7a6a50, hat: 'helmet', gear: 'bow', skin: 'tan', face: { eyes: 'stern', brows: 'stern', mouth: 'flat', stubble: true } },
+  officer: { robe: 0x6a4c6e, outfit: 'danryeong', hat: 'official', face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache', beardColor: '#8d877c' } },
+  seohui: { robe: 0x2b4c7e, outfit: 'danryeong', hat: 'official', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'goatee', brow: 'thick' } },
+  sonn: { robe: 0x5b4a36, outfit: 'deel', hat: 'fur', gear: 'sword', trim: 0x9a7a52, skin: 'tan', face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache', brow: 'thick' } },
+  yanggyu: { robe: 0x7a2a1e, outfit: 'armor', armor: 0x7e7a70, hat: 'general', gear: 'sword', trim: 0xd9a441, skin: 'tan', face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'full', brow: 'thick' } },
   // 강감찬은 귀주 대첩 때 일흔이 넘은 나이여서 흰 수염으로 그린다
-  gangamchan: { robe: 0x8a2f24, hat: 'general', gear: 'sword', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'full', beardColor: '#e8e4dc', age: 'old', browColor: '#bdb7ad' } },
-  villager: { robe: 0xd8cfbf, hat: 'topknot', face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
-  khitan: { robe: 0x6e5a44, hat: 'fur', gear: 'spear', face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
-  khitanBright: { robe: 0xa8834f, hat: 'fur', trim: 0xb8452f, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
+  gangamchan: { robe: 0x8a2f24, outfit: 'armor', armor: 0x9a8a62, hat: 'general', gear: 'sword', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'full', beardColor: '#e8e4dc', age: 'old', browColor: '#bdb7ad' } },
+  villager: { robe: 0xd8cfbf, outfit: 'short', pants: 0xcfc4ae, hat: 'topknot', skin: 'tan', face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
+  khitan: { robe: 0x6e5a44, outfit: 'deel', hat: 'kunfa', gear: 'spear', trim: 0x8a6a4a, skin: 'tan', face: { eyes: 'stern', brows: 'stern', mouth: 'flat', stubble: true } },
+  khitanBright: { robe: 0xa8834f, outfit: 'deel', hat: 'kunfa', trim: 0xb8452f, skin: 'tan', face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   // 4~6장
-  kimyunhu: { robe: 0x7d7a74, hat: 'bald', trim: 0x9a6b3c, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
-  monk: { robe: 0x8a8780, hat: 'bald', face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
-  minister: { robe: 0x55608a, hat: 'official', face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'goatee' } },
-  artisan: { robe: 0xc8b89a, hat: 'topknot', trim: 0x6b4a32, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache' } },
-  baejungson: { robe: 0x2a3a5a, hat: 'general', gear: 'sword', trim: 0xb8452f, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache' } },
-  kimtongjeong: { robe: 0x4a3a2a, hat: 'general', gear: 'sword', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'full' } },
-  sambyeolcho: { robe: 0x3a2f2a, hat: 'helmet', gear: 'spear', trim: 0xb8452f, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
-  mongol: { robe: 0x3e4a5c, hat: 'fur', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
+  kimyunhu: { robe: 0x7d7a74, outfit: 'jangsam', hat: 'bald', trim: 0x9a6b3c, skin: 'tan', face: { eyes: 'stern', brows: 'stern', mouth: 'flat', brow: 'thick' } },
+  monk: { robe: 0x8a8780, outfit: 'jangsam', hat: 'bald', face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
+  minister: { robe: 0x55608a, outfit: 'danryeong', hat: 'official', face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'goatee' } },
+  artisan: { robe: 0xc8b89a, outfit: 'short', pants: 0xb8a888, hat: 'topknot', trim: 0x6b4a32, skin: 'tan', face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache' } },
+  baejungson: { robe: 0x2a3a5a, outfit: 'armor', armor: 0x5a5a5e, hat: 'general', gear: 'sword', trim: 0xb8452f, skin: 'tan', face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache', brow: 'thick' } },
+  kimtongjeong: { robe: 0x4a3a2a, outfit: 'armor', armor: 0x7a6a4a, hat: 'general', gear: 'sword', trim: 0xd9a441, skin: 'tan', face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'full' } },
+  sambyeolcho: { robe: 0x3a2f2a, outfit: 'armor', armor: 0x4e4a44, hat: 'helmet', gear: 'spear', trim: 0xb8452f, skin: 'tan', face: { eyes: 'stern', brows: 'stern', mouth: 'flat', stubble: true } },
+  mongol: { robe: 0x3e4a5c, outfit: 'deel', hat: 'mongol', trim: 0x8a6a42, skin: 'tan', face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'thin' } },
   // 조선편. 임금·세자는 익선관, 양반·학자는 갓, 조선 군사는 전립
   yiseonggye: { robe: 0x7a2a1e, hat: 'general', gear: 'bow', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'full' } },
   joseonSoldier: { robe: 0x3c4c6a, hat: 'jeollip', gear: 'spear', trim: 0xb8452f, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
@@ -33,7 +35,7 @@ export const LOOKS = {
   scholar: { robe: 0xc9d4d8, hat: 'gat', trim: 0x3a4a5a, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'goatee' } },
   jangyeongsil: { robe: 0x6a5a4a, hat: 'gat', trim: 0x2b241c, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache' } },
   commoner: { robe: 0xd8cfbf, hat: 'topknot', trim: 0x6b4a32, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache', beardColor: '#5a5048' } },
-  kid: { robe: 0xe6dcc3, hat: 'topknot', trim: 0x7a4e32, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
+  kid: { robe: 0xe6dcc3, outfit: 'short', pants: 0xe0d6c0, hat: 'daenggi', trim: 0x7a4e32, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', age: 'young' } },
   yisunsin: { robe: 0x7a2a1e, hat: 'general', gear: 'sword', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'full', shape: 'long' } },
   navy: { robe: 0x2f4a5e, hat: 'jeollip', gear: 'spear', trim: 0xb8452f, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   injo: { robe: 0xa3262a, hat: 'ikseon', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache' } },

@@ -57,7 +57,7 @@ export const SEAT_Y = 0.32;
 export function sitDown(p) {
   const u = p.userData;
   u.legs?.forEach(l => { l.position.z = 0.2; l.rotation.x = -Math.PI / 2; if (l.userData.knee) l.userData.knee.rotation.x = Math.PI / 2; });
-  const robe = p.children.find(m => m.geometry?.parameters?.height === 1.25); // 긴 옷자락은 앞뒤로 좁혀 굽힌 무릎과 정강이가 보이게
+  const robe = p.children.find(m => m.name === 'robe'); // 긴 옷자락은 앞뒤로 좁혀 굽힌 무릎과 정강이가 보이게
   if (robe) robe.scale.z = 0.72;
   p.children.filter(m => m.name === 'hem').forEach(m => { m.scale.z = 0.72; });
   p.position.y = SEAT_Y - 0.55; u.seated = true;
