@@ -17,7 +17,7 @@
   import { PIC } from '../chapters/modern/pictures.js';
   import { MODERN, COLONIAL, PRESENT } from '../chapters/index.js';
   const q = new URLSearchParams(location.search);
-  const meta = [...MODERN, ...COLONIAL, ...PRESENT].find(m => m.id === (q.get('ch') || 'h4'));
+  const meta = [...MODERN, ...COLONIAL, ...PRESENT].find(m => m.id === (q.get('ch') || 'h5'));
   const { script } = (await meta.load()).default;
   const part = q.get('p') ? script.parts[q.get('p')] : Object.values(script.parts).find(p => p.type === 'book');
   const ui = document.getElementById('ui');

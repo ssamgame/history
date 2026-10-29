@@ -3,7 +3,7 @@ import { SOURCES } from '../content/sources.js';
 import { validateScript } from '../core/content.js';
 
 test('content: 65 sources with title and url', () => {
-  eq(Object.keys(SOURCES).length, 71);
+  eq(Object.keys(SOURCES).length, 72);
   for (const [id, s] of Object.entries(SOURCES)) ok(s.title && s.url.startsWith('https://'), id);
 });
 

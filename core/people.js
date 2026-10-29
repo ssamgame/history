@@ -235,6 +235,7 @@ const CARRY = {
   side: { at: [0.56, 1.42, 0.45], arms: [null, [-1.1, 0.05]] },
   shoulder: { at: [0.48, 2.0, -0.08], arms: [null, [-2.9, -0.15]] },
   flag: { at: [0.5, 1.23, 0.66], arms: [null, [-1.0, 0]] }, // 깃대를 오른손에 쥐고 팔을 굽혀 가슴 앞에 든다(D-43, 왼팔은 걸을 때 흔든다)
+  back: { at: [0, 1.5, -0.42], arms: [[-0.35, 0.18], [-0.35, -0.18]] }, // 보따리를 등에 지고 두 손으로 멜빵을 잡는다(D-51 피란길)
 };
 export function carryPose(person, ph = 0, k = 0) {
   const u = person.userData, c = u.carry; if (!c || !u.arms) return;
