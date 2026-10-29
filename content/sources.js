@@ -73,4 +73,5 @@ export const SOURCES = {
   S68: { title: '국가기록원: 6·25 전쟁의 전개', url: 'https://theme.archives.go.kr/next/625/warChange.do', note: '1951년 3월 15일 서울을 다시 되찾음, 1951년 7월 10일 개성에서 휴전 회담 시작, 1951년 10월부터 판문점 천막에서 회담 (함께 본 자료: 서울신문 새 실록 6·25 https://www.seoul.co.kr/news/1990/06/30/19900630009001)' },
   S69: { title: '전자신문: 전자산업 50년 (2) 우정국 시대', url: 'https://www.etnews.com/200801180030', note: '1885년 9월 한성전보총국을 열어 서울~인천 전신 시작, 같은 해 서울~의주 전신선 (함께 본 자료: 한국경제 생글생글 https://sgsg.hankyung.com/article/2005111524561)' },
   S70: { title: '한국민족문화대백과사전: 5·10 총선거', url: 'https://encykorea.aks.ac.kr/Article/E0038395', note: '1948년 5월 10일 제헌 국회 총선거, 만 21세 이상 남녀에게 선거권, 보통·평등·직접·비밀 선거로 치른 첫 선거 (함께 본 자료: 서울신문 서중석 특별기고 https://m.seoul.co.kr/news/1998/05/09/19980509001008)' },
+  S71: { title: '국가기록원: 유엔군 참전의 의의와 교훈', url: 'https://theme.archives.go.kr/next/625/warLesson.do', note: '6·25 전쟁에 유엔군 전투 부대를 보낸 16개 나라: 미국, 영국, 캐나다, 튀르키예, 오스트레일리아, 필리핀, 태국, 네덜란드, 콜롬비아, 그리스, 뉴질랜드, 에티오피아, 벨기에, 프랑스, 남아프리카 공화국, 룩셈부르크 (함께 본 자료: 한경 생글생글 <감사합니다, 잊지 않겠습니다> https://sgsg.hankyung.com/article/2023062390851)' },
 };
