@@ -96,7 +96,7 @@
     a.dispose();
   }
   async function book() {
-    const mod = await load('h2'); // D-34·D-36: 근대 5장·일제 1장은 역사책을 뺐다
+    const mod = await load('h4'); // D-34·D-36·D-48: 근대 5장·일제 1장·현대 2장은 역사책을 뺐다
     const part = Object.values(mod.script.parts).find(p => p.type === 'book');
     const ui = document.createElement('div'); document.body.append(ui);
     stats.setQuality('-', false); stats.segment('역사책 첫 쪽 (현대 2장, 미리 찍기 없이)');
