@@ -640,16 +640,46 @@ export function find(ctx, part, easy) {
 
 // ── ambush ────────────────────────────────────────────
 // shooters: [{ x, z, ry }] 언덕 풀숲에 엎드려 총을 겨눈 사람(D-37 근대 6장 의병). 누르면 가까운 둘이 쏘아(불빛·연기·총소리) 적이 놀라 물러난다
-function proneShooter(g, { x, z, ry = 0, look = 'uibyeong', y = 0 }) {
+function proneShooter(g, { x, z, ry = 0, look = 'uibyeong', y = 0, seed = 1 }) { // (x, z)는 가슴 자리. 발은 뒤(-z), 총은 앞(+z)
   const s = new THREE.Group(); s.position.set(x, y, z); s.rotation.y = ry; g.add(s);
-  const mound = new THREE.Mesh(new THREE.SphereGeometry(1.7, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), mat(0x56703e, 'grass')); mound.scale.set(1, 0.32, 1.25); mound.receiveShadow = true; s.add(mound); // 언덕 둔덕
-  const body = makePerson({ ...LOOKS[look], gear: null }, { track: false }); body.rotation.x = Math.PI / 2 - 0.22; body.position.set(0, 0.62, -0.9); s.add(body); // 엎드려 고개를 든다
-  const gun = new THREE.Group(); gun.position.set(0.28, 0.78, 0.55); s.add(gun); // 앞으로 겨눈 총
-  add(gun, new THREE.CylinderGeometry(0.05, 0.05, 1.5, 6), 0x1e1c1a, 0, 0, 0.4).rotation.x = Math.PI / 2;
-  add(gun, box(0.09, 0.12, 0.5), 0x6b4a32, 0, -0.02, -0.35);
-  for (let i = 0; i < 9; i++) { const a = i / 9 * Math.PI * 2 + 0.4, h = 0.9 + (i % 3) * 0.25, t = new THREE.Mesh(new THREE.ConeGeometry(0.26, h, 5), mat(i % 2 ? 0x4a6a34 : 0x6a8040, 'grass')); t.position.set(Math.cos(a) * 1.2, 0.45 + h / 2, Math.sin(a) * 1.3); t.rotation.z = Math.cos(a) * 0.25; s.add(t); } // 몸을 가린 풀숲
-  const muzzle = new THREE.Vector3(0.28, 0.78, 1.45);
-  return { group: s, gun, muzzle };
+  const patch = new THREE.Mesh(new THREE.CircleGeometry(1.6, 14).rotateX(-Math.PI / 2), mat(0x4a6234, 'grass')); patch.scale.set(0.9, 1, 1.5); patch.position.set(0, 0.03, -0.3); s.add(patch); // 눌린 풀
+  const body = makePerson({ ...LOOKS[look], gear: null }, { track: false });
+  body.rotation.x = Math.PI / 2 - 0.14; body.position.set(0, 0.42, -1.2); s.add(body); // 배를 깔고 엎드려 가슴만 조금 든다
+  const u = body.userData;
+  if (u.head) u.head.rotation.x = -1.2; // 고개를 들어 앞을 본다
+  u.arms?.forEach((a, i) => { a.rotation.x = Math.PI + 0.1; a.rotation.z = (i ? -1 : 1) * 0.28; }); // 두 팔을 앞으로 뻗어 총을 받친다
+  u.legs?.forEach((l, i) => { l.rotation.z = (i ? -1 : 1) * 0.12; }); // 다리는 조금 벌린다
+  const band = new THREE.Mesh(new THREE.CylinderGeometry(0.335, 0.335, 0.08, 16, 1, true), new THREE.MeshLambertMaterial({ color: 0xf2efe6, side: THREE.DoubleSide })); // 흰 머리띠
+  band.position.y = 0.12; u.head?.add(band);
+  const knot = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.18, 0.04), band.material); knot.position.set(0.08, 0.04, -0.34); knot.rotation.z = 0.4; u.head?.add(knot);
+  const gun = new THREE.Group(); gun.position.set(0.16, 0.7, 1.15); s.add(gun); // 뺨에 붙여 앞으로 겨눈 총
+  add(gun, new THREE.CylinderGeometry(0.055, 0.06, 1.6, 6), 0x1e1c1a, 0, 0.02, 0.65).rotation.x = Math.PI / 2;
+  add(gun, box(0.1, 0.14, 0.75), 0x6b4a32, 0, -0.03, -0.2);
+  let r = seed * 9301 + 49297; const rnd = () => (r = (r * 9301 + 49297) % 233280) / 233280;
+  for (let i = 0; i < 16; i++) { // 몸을 가린 키 큰 풀숲(앞쪽 총구 길은 비운다)
+    const a = rnd() * Math.PI * 2, d = 0.9 + rnd() * 0.9, px = Math.cos(a) * d, pz = Math.sin(a) * d * 1.4 - 0.2;
+    if (pz > 0.6 && Math.abs(px) < 0.7) continue;
+    const h = 1.0 + rnd() * 0.9, t = new THREE.Mesh(new THREE.ConeGeometry(0.1 + rnd() * 0.08, h, 4), mat(rnd() < 0.5 ? 0x4a6a34 : 0x6a8040, 'grass'));
+    t.position.set(px, h / 2, pz); t.rotation.set((rnd() - 0.5) * 0.5, 0, (rnd() - 0.5) * 0.5); s.add(t);
+  }
+  const muzzle = new THREE.Vector3(0.16, 0.72, 2.6);
+  return { group: s, gun, muzzle, headband: !!u.head, aim: !!(u.head && u.arms?.length === 2) };
+}
+// 일본군 깃발(욱일기, D-38 선생님): 앞선 부대가 든다
+let rsTex = null;
+function risingSunFlag() {
+  if (!rsTex) {
+    const cv = document.createElement('canvas'); cv.width = 96; cv.height = 64; const c = cv.getContext('2d');
+    c.fillStyle = '#f4f0e6'; c.fillRect(0, 0, 96, 64);
+    c.fillStyle = '#b8282c';
+    for (let i = 0; i < 16; i += 2) { const a0 = i / 16 * Math.PI * 2, a1 = (i + 1) / 16 * Math.PI * 2; c.beginPath(); c.moveTo(42, 32); c.lineTo(42 + Math.cos(a0) * 120, 32 + Math.sin(a0) * 120); c.lineTo(42 + Math.cos(a1) * 120, 32 + Math.sin(a1) * 120); c.closePath(); c.fill(); }
+    c.beginPath(); c.arc(42, 32, 13, 0, Math.PI * 2); c.fill();
+    rsTex = new THREE.CanvasTexture(cv); rsTex.colorSpace = THREE.SRGBColorSpace;
+  }
+  const f = new THREE.Group();
+  add(f, new THREE.CylinderGeometry(0.035, 0.035, 4.4, 5), 0x3a2c20, 0, 2.2, 0);
+  const cloth = new THREE.Mesh(new THREE.PlaneGeometry(1.65, 1.1), new THREE.MeshLambertMaterial({ map: rsTex, side: THREE.DoubleSide })); cloth.position.set(0.85, 3.75, 0); f.add(cloth);
+  return f;
 }
 function muzzleFire(g, shooter, ctx) {
   const p = shooter.group.localToWorld(shooter.muzzle.clone()); g.worldToLocal(p);
@@ -677,8 +707,8 @@ export function ambush(ctx, part, easy) {
   world.camMode = 'fixed';
   const taps = createTapTargets(ctx);
   s.cleanup(() => taps.dispose());
-  const shooters = (part.shooters || []).map(sp => proneShooter(g, sp));
-  const hook = ctx.testHooks.ambush = { prone: shooters.length, shots: 0, flashes: 0 };
+  const shooters = (part.shooters || []).map((sp, i) => proneShooter(g, { seed: i + 1, ...sp }));
+  const hook = ctx.testHooks.ambush = { prone: shooters.length, shots: 0, flashes: 0, headbands: shooters.filter(x => x.headband).length, aimPose: shooters.length > 0 && shooters.every(x => x.aim), flag: false };
   const fire = u => { // 다가온 적과 가까운 둘이 쏜다
     const near = shooters.map(sh => ({ sh, d: sh.group.position.distanceTo(u.position) })).sort((a, b) => a.d - b.d).slice(0, 2);
     near.forEach(({ sh }) => { muzzleFire(g, sh, ctx); hook.flashes += 1; });
@@ -701,6 +731,7 @@ export function ambush(ctx, part, easy) {
     const u = new THREE.Group(); g.add(u);
     if (part.unit === 'ship') { add(u, box(2.6, 1.6, 7), 0x3a3f46, 0, 0.5, 0); add(u, box(1.6, 2, 2.4), 0x2b2f36, 0, 2, -0.6); add(u, new THREE.CylinderGeometry(0.08, 0.08, 4, 5), 0x2b241c, 0, 3.4, 0.8); }
     else for (let i = 0; i < 3; i++) { const p = makePerson(LOOKS[W.look || part.look || 'gendarme']); p.position.set((i - 1) * 0.9, 0, -i * 0.6); u.add(p); }
+    if (part.flag && spawned === 0) { const f = risingSunFlag(); f.position.set(0.45, 0, 0.6); u.add(f); hook.flag = true; } // 차례마다 맨 앞 부대가 깃발을 든다
     const [[ax, az], [bx, bz]] = paths[(spawned + wi) % paths.length];
     u.rotation.y = Math.atan2(bx - ax, bz - az);
     const unit = { u, k: 0, state: 'come', t: null, smoke: null, a: [ax, az], b: [bx, bz], len: Math.hypot(bx - ax, bz - az), speed: (W.speed || part.speed || 2.2) * (easy ? 0.7 : 1) };

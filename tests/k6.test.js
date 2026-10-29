@@ -157,6 +157,12 @@ test('k6 D-37: 고갯길 매복은 양쪽 언덕에 엎드린 의병이 총을 �
   ok(part.shooters?.length >= 4, `엎드린 의병 ${part.shooters?.length}`);
   ok(part.shooters.some(s => s.x < -3) && part.shooters.some(s => s.x > 3), '길 양쪽 언덕');
   ok(!(PASS_CROWD(part)), '서 있는 의병 무리는 뺐다');
+  // D-38: 참고 그림처럼 양쪽 풀숲에 한데 모여 엎드리고, 카메라는 의병 뒤 낮은 곳에서 길 앞쪽을 본다
+  const L = part.shooters.filter(s => s.x < 0), R = part.shooters.filter(s => s.x > 0);
+  ok(L.length >= 3 && R.length >= 3, '양쪽에 셋 이상');
+  for (const side of [L, R]) for (const a of side) for (const b of side) ok(Math.hypot(a.x - b.x, a.z - b.z) < 3.5, '한데 모여 있다');
+  ok(part.camera.pos[2] > Math.max(...part.shooters.map(s => s.z)) && part.camera.pos[1] < 4, '카메라는 의병 뒤 낮은 곳');
+  ok(part.flag, '일본군 깃발');
   const s = touchSetup(script.speakers);
   const bot = touchBot(s, { answers: new Set() });
   try {
@@ -167,6 +173,9 @@ test('k6 D-37: 고갯길 매복은 양쪽 언덕에 엎드린 의병이 총을 �
     ok(h && h.prone >= 4, `엎드린 의병 ${h?.prone}`);
     ok(h.shots >= 7, `쏜 횟수 ${h.shots}`);
     ok(h.flashes >= h.shots, `총구 불빛 ${h.flashes}`);
+    ok(h.headbands >= h.prone, `머리띠 ${h.headbands}`);
+    ok(h.flag, '앞선 일본군이 깃발을 든다');
+    ok(h.aimPose, '고개를 들고 두 팔로 총을 겨눈 자세');
   } finally { bot.stop(); s.done(); }
 }, { timeout: 120000 });
 const PASS_CROWD = part => (part.arena.props || []).some(p => p.type === 'crowd' && p.looks?.includes('uibyeong'));

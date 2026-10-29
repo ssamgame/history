@@ -59,15 +59,15 @@ export const EXILE = { edge: { style: 'forest', seed: 733, back: false },
   from: [0, 12], boat: [3, -22], villager: [-3.6, 4.4],
   stations: [{ x: -1.4, z: 5 }, { x: 3, z: -12.6 }],
 };
-// 고갯길 양쪽 언덕 풀숲에 엎드려 길 가운데(빛나는 곳)를 겨눈 의병들(D-37)
-const AIM = (x, z) => ({ x, z, ry: Math.atan2(0 - x, 0 - z) });
-const SHOOTERS = [AIM(-7.5, -5), AIM(-8.5, 1.5), AIM(-10, 9), AIM(7.5, -6.5), AIM(8.5, 0), AIM(7, 6)];
+// 고갯길 양쪽 풀숲에 한데 모여 엎드려 길 앞쪽(빛나는 곳)을 겨눈 의병들(D-37·D-38 참고 그림). (x, z)는 가슴 자리
+const AIM = (x, z) => ({ x, z, ry: Math.atan2(-x, -1 - z) });
+const SHOOTERS = [AIM(-4.2, 9), AIM(-5.6, 10.2), AIM(-3.8, 11.4), AIM(4.2, 8.6), AIM(5.7, 9.8), AIM(4, 11.2)];
 const PASS = { edge: { style: 'forest', seed: 307 }, center: [{ type: 'firepit', x: -14, z: 14 }, { type: 'rifles', x: -18, z: 10 }, { type: 'woodpile', x: 15, z: 10, ry: 0.4 }], // 한성으로 가는 산속 고갯길: 양쪽 숲에 의병이 숨어 있다
   origin: [400, 0], ground: 'grass', groundColor: 0x55703f, bounds: { x0: -30, x1: 30, z0: -30, z1: 30 },
   roads: [{ x: 0, z: 0, w: 5, d: 70, color: 0x7a6a50 }],
   props: [
     { type: 'tree', x: -8, z: -18, color: 0x34503a }, { type: 'tree', x: -10, z: -6, color: 0x34503a }, { type: 'tree', x: -14, z: -12, color: 0x34503a },
-    { type: 'tree', x: 8, z: -14, color: 0x34503a }, { type: 'tree', x: 10, z: -2, color: 0x34503a }, { type: 'tree', x: 8, z: 10, color: 0x34503a },
+    { type: 'tree', x: 8, z: -14, color: 0x34503a }, { type: 'tree', x: 10, z: -2, color: 0x34503a }, { type: 'tree', x: 13, z: 15, color: 0x34503a },
   ],
 };
 const HAGUE = { edge: { style: 'brick', seed: 207 }, center: [{ type: 'lamp', x: -14, z: 4 }, { type: 'lamp', x: 14, z: 4 }, { type: 'lamp', x: -14, z: -8 }, { type: 'lamp', x: 14, z: -8 }, { type: 'lamp', x: 7, z: 7 }, { type: 'lamp', x: 9, z: 0 }], // 헤이그 회의장 앞
@@ -413,7 +413,7 @@ const base = makeKitChapter({
   },
   parts: [
     { ...script.parts.roads, goal: script.goals[3], play: ctx => twoRoads(ctx) },
-    { ...script.parts.hills, goal: script.goals[4], intro: meet('uibyeong', '의병과 이야기하기', script.parts.hills.intro), arena: PASS, camera: { pos: [-14, 15, 18], target: [0, 0, -2] }, path: [[0, -32], [0, 30]], zone: { x: 0, z: 0, r: 7 }, look: 'gendarme', shooters: SHOOTERS },
+    { ...script.parts.hills, goal: script.goals[4], intro: meet('uibyeong', '의병과 이야기하기', script.parts.hills.intro), arena: PASS, camera: { pos: [0.5, 3.6, 19.5], target: [0, 0.4, -3] }, path: [[0, -34], [0, 7]], zone: { x: 0, z: -1, r: 5 }, look: 'gendarme', shooters: SHOOTERS, flag: true }, // 의병 등 뒤 낮은 곳에서 길 앞쪽을 본다(D-38)
     { ...script.parts.exile, goal: script.goals[5], intro: meet('uibyeong', '의병과 이야기하기', script.parts.exile.intro), play: ctx => exileWalk(ctx) },
     { ...script.parts.envoys, goal: script.goals[6], intro: meet('student', '학생과 이야기하기', script.parts.envoys.intro), arena: HAGUE, from: [0, 12], route: xy(script.parts.envoys.route, [{ x: -6, z: 7 }, { x: 6, z: 3 }, { x: -6, z: -1 }, { x: 0, z: -7 }]) },
   ],
