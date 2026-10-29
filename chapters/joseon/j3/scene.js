@@ -12,7 +12,20 @@ import { addSigns } from '../common.js';
 import { gateLeaves, nameBoard } from '../../kit/gate.js';
 import { labelSprite } from '../../kit/play.js';
 
-const HOUR_NAMES = ['묘시', '진시', '사시', '오시', '미시', '신시', '유시'];
+// 12지신 동물 그림 아래에 괄호로 작게 시각 이름(2026-10-29 선생님). 좁은 네모 표라 이웃 칸과 겹치지 않는다
+const HOUR_TAGS = [['🐰', '묘시'], ['🐲', '진시'], ['🐍', '사시'], ['🐴', '오시'], ['🐑', '미시'], ['🐵', '신시'], ['🐔', '유시']];
+function hourTag([emoji, name]) {
+  const cv = document.createElement('canvas'); cv.width = 128; cv.height = 140;
+  const c = cv.getContext('2d');
+  c.fillStyle = 'rgba(239,227,198,0.95)'; c.fillRect(0, 0, 128, 140);
+  c.strokeStyle = '#6b4a32'; c.lineWidth = 6; c.strokeRect(3, 3, 122, 134);
+  c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.font = '68px "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", sans-serif'; c.fillText(emoji, 64, 56);
+  c.font = 'bold 28px "Nanum Myeongjo", Batang, serif'; c.fillStyle = '#231c14'; c.fillText(`(${name})`, 64, 118);
+  const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true }));
+  sp.scale.set(0.2, 0.22, 1); return sp;
+}
 
 export function buildJ3Scene(world) {
   const L = world.level;
@@ -37,10 +50,10 @@ export function buildJ3Scene(world) {
   const DIAL = [-8, 5];
   const dial = angbuilgu(); dial.position.set(DIAL[0], 0, DIAL[1]); dial.scale.setScalar(2.6); L.add(dial); // D-30 S-01: 더 크게
   world.addCollider({ x: DIAL[0], z: DIAL[1], r: 3 });
-  // 그릇 테두리 안쪽의 시각 이름(묘시~유시). 시각 칸을 누르는 동안에는 숨기고 누르는 단추가 그 자리에 뜬다
+  // 그릇 테두리 안쪽의 동물 그림과 시각 이름(묘시~유시). 시각 칸을 누르는 동안에는 숨기고 누르는 단추가 그 자리에 뜬다
   const hourTags = [];
   for (let k = 0; k < ANGBU_HOURS; k++) {
-    const t = labelSprite(HOUR_NAMES[k], { size: 0.2 }); t.material.depthTest = true;
+    const t = hourTag(HOUR_TAGS[k]);
     const q = bowlPoint(hourAngle(k), 0.28); t.position.set(q.x * 0.86, q.y + 0.1, q.z * 0.86); dial.add(t); hourTags.push(t);
   }
   // 그림자: 그릇 바닥 가운데에서 안쪽 벽을 따라 테두리 가까이까지 뻗는 검은 띠(그룹을 돌리면 그 방위각 쪽으로). 끝으로 갈수록 넓어진다

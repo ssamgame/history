@@ -18,9 +18,13 @@ test('j3: quiz answers match the spec, and the rain gauge is not credited to 장
   ok(!/장영실[^"]*측우기를? (만들|발명)/.test(all) && !/측우기[^"]*장영실이 (만들|발명)/.test(all), 'no 장영실 측우기 claim');
 });
 
-test('j3: sundial rounds — three different hours, named 묘시~유시 with clock times, west to east', () => {
+test('j3: sundial rounds — three different hours, named 묘시~유시 with clock times, west to east', async () => {
   eq(HOURS.map(h => h[0]), ['묘시', '진시', '사시', '오시', '미시', '신시', '유시']);
   eq(HOURS[1][1], '7~9시');
+  // 2026-10-29 선생님: 12지신 동물 그림 옆에 괄호로 작게 시각 이름과 시간
+  const { HOUR_ANIMALS, hourLabel } = await import('../chapters/joseon/j3/chapter.js');
+  eq(HOUR_ANIMALS.map(a => a[0]), ['토끼', '용', '뱀', '말', '양', '원숭이', '닭']);
+  eq(hourLabel(1), { text: '🐲 용', sub: '(진시 7~9시)' });
   ok(HOURS.every(h => /^\d+~\d+시$/.test(h[1])), 'every hour has a clock time');
   ok(HOUR_ANGLES[0] > HOUR_ANGLES[6] && Math.abs(HOUR_ANGLES[3] - Math.PI) < 1e-6, 'west → north(오시) → east');
   eq(new Set(DIAL_ROUNDS).size, 3);

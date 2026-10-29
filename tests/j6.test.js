@@ -326,10 +326,10 @@ test('j6 D-30 J-04: pulley frames show fixed and moving pulleys with rope strand
   } finally { hand.stop(); bot.stop(); s.done(); }
 }, { timeout: 90000 });
 
-test('j6 D-30 J-05: hold E or the big button to pull; letting go stops and slowly slides back; later steps need longer holds', async () => {
+test('j6 D-30 J-05: hold E or the big button to pull; letting go stops and slowly slides back; 가→나→다는 짧아지고 물레가 가장 길다', async () => {
   const { HOLD_SEC } = await import('../chapters/joseon/j6/chapter.js');
   const { holdPress } = await import('../chapters/joseon/j6/hold.js');
-  ok(HOLD_SEC.pulley[0] < HOLD_SEC.pulley[1] && HOLD_SEC.pulley[1] < HOLD_SEC.pulley[2] && HOLD_SEC.pulley[2] < HOLD_SEC.winch, JSON.stringify(HOLD_SEC));
+  ok(HOLD_SEC.pulley[0] > HOLD_SEC.pulley[1] && HOLD_SEC.pulley[1] > HOLD_SEC.pulley[2] && HOLD_SEC.pulley[0] < HOLD_SEC.winch, JSON.stringify(HOLD_SEC)); // 2026-10-29 선생님: 가→나→다로 갈수록 짧게(다가 가장 가볍다), 물레가 가장 길다
   const s = touchSetup({});
   try {
     const seen = [];

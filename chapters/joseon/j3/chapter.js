@@ -19,6 +19,9 @@ let scene = null;
 // 앙부일구의 시각 칸(서쪽 → 북쪽 → 동쪽): 시각 이름과 지금 시계로 나타낸 시간(D-30 S-01)
 export const HOURS = [['묘시', '5~7시'], ['진시', '7~9시'], ['사시', '9~11시'], ['오시', '11~13시'], ['미시', '13~15시'], ['신시', '15~17시'], ['유시', '17~19시']];
 export const HOUR_ANGLES = HOURS.map((_, k) => hourAngle(k));
+// 12지신 동물 그림(S31) 옆에 괄호로 작게 시각 이름과 시간(2026-10-29 선생님): '🐲 용 (진시 7~9시)'
+export const HOUR_ANIMALS = [['토끼', '🐰'], ['용', '🐲'], ['뱀', '🐍'], ['말', '🐴'], ['양', '🐑'], ['원숭이', '🐵'], ['닭', '🐔']];
+export const hourLabel = k => ({ text: `${HOUR_ANIMALS[k][1]} ${HOUR_ANIMALS[k][0]}`, sub: `(${HOURS[k][0]} ${HOURS[k][1]})` });
 // 그림자가 닿는 시각 칸 번호(해가 움직여 세 번 바뀐다)
 export const DIAL_ROUNDS = [1, 4, 6];
 // 측우기에 고이는 빗물 높이(눈금). 소나기가 두 번 온다
@@ -101,7 +104,7 @@ async function readDial(ctx, easy) {
   const d = scene.dial.position, y = 2.25 * scene.dial.scale.x;
   world.setFixedCamera([d.x, y + 3.6, d.z + 3.2], [d.x, y - 0.9, d.z - 0.5]); // 그릇 안이 다 보이게 남쪽 위에서(놀이 카메라 예외)
   scene.showHourTags(false);
-  const items = HOURS.map(([text, sub], k) => ({ text, sub, at: scene.hourPoint(k) }));
+  const items = HOURS.map((_, k) => ({ ...hourLabel(k), at: scene.hourPoint(k) }));
   let missed = false;
   try {
     for (const [i, h] of DIAL_ROUNDS.entries()) {

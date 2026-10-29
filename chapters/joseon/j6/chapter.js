@@ -16,7 +16,7 @@ import script from './script.js';
 const PEOPLE = ['official', 'worker'];
 const SPOT = [-2, 2];
 // 길게 누르기(J-05): 가 → 나 → 다 → 물레로 갈수록 오래 눌러야 한다(초)
-export const HOLD_SEC = { pulley: [1.4, 1.9, 2.4], winch: 2.9 };
+export const HOLD_SEC = { pulley: [2.4, 1.9, 1.4], winch: 2.9 }; // 가→나→다로 갈수록 짧게: 도르래가 많을수록 가볍게 들린다(2026-10-29 선생님). 물레 거중기가 가장 길다
 let scene = null;
 
 function markYard(ctx, heard) {
