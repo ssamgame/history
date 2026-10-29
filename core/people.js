@@ -126,9 +126,14 @@ let personCount = 0;
 // outfit(D-54): 'armor'(고려·조선 찰갑: 몸통·어깨·허리 아래 갑옷 조각, armor 색), 'danryeong'(둥근 깃 단령과 각대), 'jangsam'(스님 장삼과 가사),
 //   'short'(저고리와 바지: 웃옷이 엉덩이까지, pants 색 바지와 행전), 'deel'(거란·몽골: 오른쪽으로 여미는 긴 옷과 목 긴 장화), 'suit'(양복),
 //   'chima'(저고리와 긴 치마: 웃옷이 짧고 치마가 발목까지), 'uniform'(단추 달린 제복·군복·교복, 주머니)
-export function makePerson(look = {}, { track = true } = {}) {
-  const { robe, hat, trim = 0x2b241c, face = {}, gear = null, outfit = null, hairColor = null, armor = 0x6b665e, pants = null, skin = null } = look;
-  const fv = faceVariant(look); // 사람마다 다른 생김새(D-54)
+// stable: 늘 같은 생김새(말을 거는 사람·학생). 아니면 이름 없는 사람(병사·마을 사람·군중)은 한 사람씩 얼굴과 옷빛이 조금씩 다르다(D-54).
+// 이름난 인물은 LOOKS에 named: true(어디서 만들어도 같은 얼굴).
+export function makePerson(look = {}, { track = true, stable = false } = {}) {
+  const vary = !stable && !look.named;
+  const { trim = 0x2b241c, face = {}, gear = null, outfit = null, hairColor = null, armor = 0x6b665e, pants = null, skin = null } = look;
+  let { robe, hat } = look;
+  const fv = faceVariant(vary ? { ...look, _n: personCount % 6 + 1 } : look); // 사람마다 다른 생김새(같은 생김새 묶음마다 여섯 가지 얼굴을 돌려 쓴다: 얼굴 그림 수를 줄여 태블릿 메모리를 아낀다)
+  if (vary && robe != null) robe = new THREE.Color(robe).offsetHSL((fv.tone * 0.37 % 1) * 0.03, 0, fv.tone * 0.05).getHex(); // 옷빛도 조금씩
   const g = new THREE.Group();
   const legs = [], arms = [];
   for (const sx of [-0.16, 0.16]) {
@@ -248,7 +253,7 @@ export function makePerson(look = {}, { track = true } = {}) {
     if (outfit !== 'armor') { for (const sx of [-0.48, 0.48]) part(new THREE.BoxGeometry(0.34, 0.14, 0.46), 0x8a8478, sx, 1.72, 0, g); part(new THREE.BoxGeometry(0.62, 0.5, 0.5), 0x8a8478, 0, 1.45, 0, g); }
     hg.add(helmetGuard(0x8a8478)); // 투구 드림
   } else if (hat === 'fur') {
-    hp(new THREE.CylinderGeometry(0.4, 0.36, 0.34, 8), 0x5a4130, 0, 2.38, 0);
+    hp(new THREE.CylinderGeometry(0.4, 0.36, 0.34, 8), 0x5a4130, 0, 2.43, 0); // 털모자(눈썹이 보이게 조금 높이)
   } else if (hat === 'kunfa') {     // 거란 곤발: 정수리를 깎고 양쪽 귀 앞의 머리만 길게 늘어뜨린다
     const hz = new THREE.Group(); hz.name = 'hat:kunfa'; hg.add(hz);
     for (const sx of [-1, 1]) { part(new THREE.CylinderGeometry(0.05, 0.03, 0.42, 5), hc, sx * 0.29, 0.02 - 0.13, 0.1, hz, 'grain'); part(new THREE.SphereGeometry(0.08, 6, 4), hc, sx * 0.29, 0.13, 0.08, hz, 'grain'); }

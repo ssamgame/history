@@ -153,7 +153,7 @@ export function drawFeatures(g, face = {}, cx, cy, R) {
 // 3D 머리(people.js: 턱 넓이 jaw·얼굴 넓이 faceW·코 크기·귀 크기)와 얼굴 무늬·대화창 초상화가 같은 값을 쓴다.
 const variantCache = new Map();
 export function faceVariant(L = {}) {
-  const key = JSON.stringify([L.robe, L.hat, L.outfit, L.trim, L.face]);
+  const key = JSON.stringify([L.robe, L.hat, L.outfit, L.trim, L.face, L._n]); // _n: 군중 속 한 사람마다 다른 번호
   if (variantCache.has(key)) return variantCache.get(key);
   let h = 2166136261; for (let i = 0; i < key.length; i++) { h ^= key.charCodeAt(i); h = Math.imul(h, 16777619); }
   const r = () => { h ^= h << 13; h ^= h >>> 17; h ^= h << 5; return ((h >>> 0) % 10000) / 10000; };
@@ -161,11 +161,11 @@ export function faceVariant(L = {}) {
   const span = (a, b) => a + (b - a) * r();
   const v = {
     eyeW: span(0.74, 1.3) * (kid ? 1.06 : 1), eyeH: span(0.68, 1.42) * (kid ? 1.12 : 1), tilt: span(-0.2, 0.3), gap: span(0.88, 1.12),
-    lid: r() < 0.45 ? 'double' : 'mono', browT: span(0.6, 1.65) * (fem ? 0.8 : 1), browY: span(-0.07, 0.06), browL: span(0.75, 1.25), browA: span(0.35, 1.7),
+    lid: r() < 0.45 ? 'double' : 'mono', browT: span(0.6, 1.65) * (fem ? 0.8 : 1), browY: span(-0.04, 0.06), browL: span(0.75, 1.25), browA: span(0.35, 1.7),
     noseW: span(0.72, 1.5), noseL: span(0.8, 1.38) * (kid ? 0.88 : 1), mouthW: span(0.74, 1.32), lip: span(0.6, 1.5) * (fem ? 1.12 : 1),
     cheek: span(0.5, 1.8) * (old ? 1.3 : 1), mole: r() < 0.22 ? [span(-0.55, 0.55), span(0.05, 0.6)] : null,
     iris: ['#4a3020', '#3a2616', '#5a3a22', '#2e2014'][Math.floor(r() * 4)],
-    jaw: span(0.04, 0.34) * (fem || kid ? 1.15 : 1), faceW: span(0.9, 1.13), faceH: span(0.93, 1.09), ear: span(0.8, 1.3), tone: span(-1, 1),
+    jaw: span(0.04, 0.34) * (fem || kid ? 1.15 : 1), faceW: span(0.9, 1.13), faceH: span(0.93, 1.06), ear: span(0.8, 1.3), tone: span(-1, 1),
     stubble: !fem && !kid && r() < 0.3,
     ...(f.v || {}),
   };
@@ -179,12 +179,12 @@ export function faceTexture(face = {}) {
   const key = JSON.stringify(face);
   if (faceCache.has(key)) return faceCache.get(key);
   // 3D 얼굴 판은 눈 아래(코·입·턱)를 1.5배 길게 늘여 붙인다(D-54: 턱이 있는 달걀꼴 머리에서 입이 코에 붙지 않게)
-  const tmp = document.createElement('canvas'); tmp.width = tmp.height = 384;
-  drawFeatures(tmp.getContext('2d'), face, 192, 186, 176);
-  const cv = document.createElement('canvas'); cv.width = cv.height = 384;
-  const c = cv.getContext('2d'), cut = 190, f = 1.5;
-  c.drawImage(tmp, 0, 0, 384, cut, 0, 0, 384, cut);
-  c.drawImage(tmp, 0, cut, 384, 384 - cut, 0, cut, 384, (384 - cut) * f);
+  const S = 320, tmp = document.createElement('canvas'); tmp.width = tmp.height = S;
+  drawFeatures(tmp.getContext('2d'), face, S / 2, S * 0.484, S * 0.458);
+  const cv = document.createElement('canvas'); cv.width = cv.height = S;
+  const c = cv.getContext('2d'), cut = Math.round(S * 0.495), f = 1.5;
+  c.drawImage(tmp, 0, 0, S, cut, 0, 0, S, cut);
+  c.drawImage(tmp, 0, cut, S, S - cut, 0, cut, S, (S - cut) * f);
   const tex = new THREE.CanvasTexture(cv);
   tex.colorSpace = THREE.SRGBColorSpace;
   faceCache.set(key, tex);

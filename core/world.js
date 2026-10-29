@@ -183,7 +183,7 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
 
   const level = new THREE.Group();
   scene.add(level);
-  const player = makePerson(LOOKS.player, { track: false });
+  const player = makePerson(LOOKS.player, { track: false, stable: true });
   scene.add(player);
 
   const goalArrow = new THREE.Mesh(
@@ -273,14 +273,14 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
     // 장마다 학생 생김새를 바꾼다(조선편 수군·일꾼 등). 플레이어 물체는 그대로 두고 안의 몸만 바꾼다. scale: 역할의 키(아이는 작게)
     setPlayerLook(opts, scale = 1) {
       player.scale.setScalar(scale);
-      const fresh = makePerson(opts, { track: false });
+      const fresh = makePerson(opts, { track: false, stable: true });
       for (const c of [...player.children]) { player.remove(c); c.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
       for (const c of [...fresh.children]) player.add(c);
       player.userData = fresh.userData;
     },
     addCollider(c) { world.colliders.push(c); return c; },
     addNpc(id, opts, x, z, faceY = 0) {
-      const mesh = makePerson(opts);
+      const mesh = makePerson(opts, { stable: true }); // 말을 거는 사람은 대화창 얼굴과 같은 생김새
       mesh.position.set(x, 0, z); mesh.rotation.y = faceY;
       const mark = markerSprite('!'); mark.position.set(0, 3.5, 0); mark.visible = false; mesh.add(mark);
       level.add(mesh);

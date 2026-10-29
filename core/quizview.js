@@ -44,7 +44,7 @@ export function showQuizView(ctx, chapter, q, k) {
   let orbit = null, guest = null;
   world.player.visible = false; // 학생이 화면을 가리지 않게(장 끝에서 다시 보인다)
   if (subject && subject.custom) { /* 장이 이미 카메라를 정했다 */ } else if (subject && subject.look) { // 장면에 없는 역사 인물: 학생이 서 있던 자리에 잠깐 세운다
-    guest = makePerson(LOOKS[subject.look]);
+    guest = makePerson(LOOKS[subject.look], { stable: true });
     guest.position.set(world.player.position.x, 0, world.player.position.z); guest.rotation.y = 0;
     world.level.add(guest);
     subject.mesh = guest;
