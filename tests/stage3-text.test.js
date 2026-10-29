@@ -37,7 +37,7 @@ test('stage3-text: D20 가져다 놓기 안내 10곳이 짧고 같은 꼴이다'
       ok(bare(p.howto).length <= 70, `${id}: 안내가 김 ${bare(p.howto).length}자`);
     }
   }
-  eq(n, 8, '가져다 놓기 안내 수'); // k1은 D-28에 물건을 안고 가는 안내로, k6은 D-35에 두 갈래 길 체험으로 바뀜
+  eq(n, 7, '가져다 놓기 안내 수'); // k1은 D-28에 물건을 안고 가는 안내로, k6은 D-35에 두 갈래 길 체험으로, i1은 D-36에 시대별 체험 걷기로 바뀜
 });
 
 test('stage3-text: D21 전차 놀이 안내가 짧다', async () => {
@@ -111,8 +111,8 @@ test('stage3-text: B14·B15 역사책 앞뒤 말이 역사책 쪽 글을 그대�
 });
 
 test('stage3-text: B20 긴 역사책 문장을 두 줄로 나눴다(같은 출처)', async () => {
-  const pages = [['h6', 'april19', ['S58']], ['h2', 'liberation', ['S51']], ['h2', 'election', ['S51']], ['i1', 'railway', ['S51']],
-    ['i1', 'sanmi', ['S51']], ['h5', 'peddler', ['S51']], ['i2', 'ww1end', ['S51']]];
+  const pages = [['h6', 'april19', ['S58']], ['h2', 'liberation', ['S51']], ['h2', 'election', ['S51']],
+    ['h5', 'peddler', ['S51']], ['i2', 'ww1end', ['S51']]];
   for (const [id, pic, src] of pages) {
     const s = await load(id);
     const pg = Object.values(s.parts).filter(p => p.type === 'book').flatMap(p => p.pages).find(p => p.pic === pic);
