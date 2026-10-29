@@ -639,6 +639,30 @@ export function find(ctx, part, easy) {
 }
 
 // ── ambush ────────────────────────────────────────────
+// shooters: [{ x, z, ry }] 언덕 풀숲에 엎드려 총을 겨눈 사람(D-37 근대 6장 의병). 누르면 가까운 둘이 쏘아(불빛·연기·총소리) 적이 놀라 물러난다
+function proneShooter(g, { x, z, ry = 0, look = 'uibyeong', y = 0 }) {
+  const s = new THREE.Group(); s.position.set(x, y, z); s.rotation.y = ry; g.add(s);
+  const mound = new THREE.Mesh(new THREE.SphereGeometry(1.7, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), mat(0x56703e, 'grass')); mound.scale.set(1, 0.32, 1.25); mound.receiveShadow = true; s.add(mound); // 언덕 둔덕
+  const body = makePerson({ ...LOOKS[look], gear: null }, { track: false }); body.rotation.x = Math.PI / 2 - 0.22; body.position.set(0, 0.62, -0.9); s.add(body); // 엎드려 고개를 든다
+  const gun = new THREE.Group(); gun.position.set(0.28, 0.78, 0.55); s.add(gun); // 앞으로 겨눈 총
+  add(gun, new THREE.CylinderGeometry(0.05, 0.05, 1.5, 6), 0x1e1c1a, 0, 0, 0.4).rotation.x = Math.PI / 2;
+  add(gun, box(0.09, 0.12, 0.5), 0x6b4a32, 0, -0.02, -0.35);
+  for (let i = 0; i < 9; i++) { const a = i / 9 * Math.PI * 2 + 0.4, h = 0.9 + (i % 3) * 0.25, t = new THREE.Mesh(new THREE.ConeGeometry(0.26, h, 5), mat(i % 2 ? 0x4a6a34 : 0x6a8040, 'grass')); t.position.set(Math.cos(a) * 1.2, 0.45 + h / 2, Math.sin(a) * 1.3); t.rotation.z = Math.cos(a) * 0.25; s.add(t); } // 몸을 가린 풀숲
+  const muzzle = new THREE.Vector3(0.28, 0.78, 1.45);
+  return { group: s, gun, muzzle };
+}
+function muzzleFire(g, shooter, ctx) {
+  const p = shooter.group.localToWorld(shooter.muzzle.clone()); g.worldToLocal(p);
+  const flash = new THREE.Mesh(new THREE.SphereGeometry(0.38, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffe08a }));
+  const smoke = new THREE.Mesh(new THREE.SphereGeometry(0.35, 8, 6), new THREE.MeshBasicMaterial({ color: 0xe8e4da, transparent: true, opacity: 0.75, depthWrite: false }));
+  flash.position.copy(p); smoke.position.copy(p); g.add(flash, smoke);
+  let t = 0;
+  const off = ctx.world.onUpdate(dt => {
+    t += dt; flash.visible = t < 0.15; shooter.gun.position.z = 0.55 - Math.max(0, 0.12 - t); // 총이 뒤로 살짝 튄다
+    smoke.scale.setScalar(1 + t * 3); smoke.position.y = p.y + t * 0.6; smoke.material.opacity = Math.max(0, 0.75 - t * 0.6);
+    if (t > 1.3) { off(); g.remove(flash, smoke); }
+  });
+}
 export function ambush(ctx, part, easy) {
   const { world, audio } = ctx;
   const s = session(ctx, { ...part, from: null }, easy);
@@ -653,6 +677,13 @@ export function ambush(ctx, part, easy) {
   world.camMode = 'fixed';
   const taps = createTapTargets(ctx);
   s.cleanup(() => taps.dispose());
+  const shooters = (part.shooters || []).map(sp => proneShooter(g, sp));
+  const hook = ctx.testHooks.ambush = { prone: shooters.length, shots: 0, flashes: 0 };
+  const fire = u => { // 다가온 적과 가까운 둘이 쏜다
+    const near = shooters.map(sh => ({ sh, d: sh.group.position.distanceTo(u.position) })).sort((a, b) => a.d - b.d).slice(0, 2);
+    near.forEach(({ sh }) => { muzzleFire(g, sh, ctx); hook.flashes += 1; });
+    hook.shots += 1; audio.play('shot');
+  };
   const paths = part.paths || [part.path]; // 여러 길이면 번갈아 들어온다
   const zones = part.zones || [part.zone];
   for (const zn of zones) { const zm = new THREE.Mesh(new THREE.CircleGeometry(zn.r, 40).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xd9a441, transparent: true, opacity: 0.18 })); zm.position.set(zn.x, 0.08, zn.z); g.add(zm); }
@@ -675,7 +706,7 @@ export function ambush(ctx, part, easy) {
     const unit = { u, k: 0, state: 'come', t: null, smoke: null, a: [ax, az], b: [bx, bz], len: Math.hypot(bx - ax, bz - az), speed: (W.speed || part.speed || 2.2) * (easy ? 0.7 : 1) };
     unit.t = taps.add(u, { label: part.label || '공격!', onTap: () => {
       if (unit.state !== 'come') return;
-      unit.state = 'back'; hits += 1; waveHits += 1; audio.play('correct'); count();
+      unit.state = 'back'; hits += 1; waveHits += 1; if (shooters.length) fire(u); audio.play('correct'); count();
       const puff = new THREE.Mesh(new THREE.SphereGeometry(1.4, 10, 8), new THREE.MeshBasicMaterial({ color: 0xdedad2, transparent: true, opacity: 0.7 }));
       puff.position.set(0, 1.5, 0); u.add(puff); unit.smoke = puff;
     } });

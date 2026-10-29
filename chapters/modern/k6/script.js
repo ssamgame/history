@@ -124,11 +124,11 @@ export default {
       },
     },
     hills: {
-      type: 'ambush', src: ['S51'], title: '한성으로 가는 고갯길: 일본군을 막아요', label: '막아라!', counter: '막아 낸 부대',
-      howto: '일본군이 고갯길의 빛나는 곳에 들어오면 그 위의 「막아라!」를 눌러요. 두 차례 이어져요.',
+      type: 'ambush', src: ['S51'], title: '한성으로 가는 고갯길: 언덕 풀숲에 숨어 일본군을 막아요', label: '발사!', counter: '막아 낸 부대',
+      howto: '의병들이 언덕 풀숲에 엎드려 총을 겨누고 있어요. 일본군이 빛나는 곳에 들어오면 「발사!」를 눌러요. 두 차례 이어져요.',
       intro: [ // 의병에게 말을 걸면(C-05)
         { who: 'uibyeong', text: '한성으로 가는 고갯길이네. 일본군이 이 길로 몰려오고 있어.' },
-        { who: 'uibyeong', text: '숲에 숨어 있다가, 일본군이 빛나는 곳에 들어오면 막는 걸세!' },
+        { who: 'uibyeong', text: '양쪽 언덕 풀숲에 엎드려 총을 겨누게. 일본군이 빛나는 곳에 들어오면 쏘는 걸세!' },
       ],
       waves: [
         { enemies: 4, need: 3, interval: 2, speed: 2.6 },

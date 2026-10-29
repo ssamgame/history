@@ -7,6 +7,7 @@ const SOUNDS = {
   water: [{ f: 120, d: 0.6, type: 'sine', to: 40 }],
   boom: [{ f: 110, d: 0.7, type: 'sawtooth', to: 28 }, { f: 60, d: 0.5, type: 'sine', to: 25, at: 0.02 }], // 먼바다 군함의 대포(D-28)
   bell: [{ f: 523, d: 0.9, type: 'sine' }, { f: 90, d: 0.3, type: 'triangle', at: 0.45 }], // 자격루의 종과 북(D-23)
+  shot: [{ f: 190, d: 0.14, type: 'sawtooth', to: 45 }, { f: 70, d: 0.22, type: 'sine', to: 30, at: 0.01 }], // 의병의 총소리(D-37)
 };
 
 export function createAudio() {
