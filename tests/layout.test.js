@@ -117,7 +117,7 @@ for (const meta of [...MODERN, ...COLONIAL, ...PRESENT]) {
 test('layout: 역사책 그림은 크고, 글·쪽 번호·버튼은 잘리거나 겹치지 않는다', async () => {
   for (const [w, h, minPic] of [[1000, 560, 300], [1280, 800, 330], [800, 1280, 330], [740, 360, 150], [844, 390, 170], [390, 844, 160], [360, 640, 140]]) {
     const frame = document.createElement('iframe');
-    frame.src = '../tools/book-preview.html?ch=k5&page=2'; frame.style.cssText = `width:${w}px;height:${h}px;position:fixed;left:-3000px;top:0;border:0`;
+    frame.src = '../tools/book-preview.html?ch=i1&page=2'; frame.style.cssText = `width:${w}px;height:${h}px;position:fixed;left:-3000px;top:0;border:0`; // D-34: 근대 5장은 역사책을 뺐다(일제 1장 책으로)
     document.body.appendChild(frame);
     try {
       await new Promise(r => frame.addEventListener('load', r));

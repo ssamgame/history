@@ -80,14 +80,14 @@ test('kit: every new course opens its first chapter', () => {
 });
 
 import { PIC } from '../chapters/modern/pictures.js';
-test('kit: 역사책 쪽마다 그림이 있고, 근대 5장은 찾기 대신 근대 문물 역사책과 전차 손님이 있다', async () => {
+test('kit: 역사책 쪽마다 그림이 있고, 근대 5장은 찾기 대신 문물 체험 걷기와 전차 손님이 있다', async () => {
   for (const meta of KIT) {
     const { script } = (await meta.load()).default;
     for (const p of Object.values(script.parts || {})) if (p.type === 'book') for (const pg of p.pages) ok(PIC[pg.pic], `${meta.id} ${pg.title}: 그림 ${pg.pic}`);
   }
   const k5 = (await import('../chapters/modern/k5/script.js')).default;
   ok(!Object.values(k5.parts).some(p => p.type === 'find'), '근대 문물 찾기는 뺐다');
-  ok(k5.parts.goods.type === 'book' && k5.parts.goods.pages.length >= 6);
+  ok(k5.parts.munmul.type === 'scene' && k5.parts.munmul.stations.length >= 5, '문물 체험 걷기'); // D-34: 역사책 대신
   ok(k5.parts.tram.route.some(r => r.alight && r.board), '정류장에서 손님이 타고 내린다');
 });
 
