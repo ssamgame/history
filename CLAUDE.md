@@ -11,7 +11,7 @@
 
 - 저장소: https://github.com/ssamgame/history (조직 `ssamgame`, 브랜치 `main`) — 2026-10-23에 goryeo에서 history로 이름을 바꿨다(옛 주소 ssamgame.github.io/goryeo/는 열리지 않음)
 - 학생 주소: https://ssamgame.github.io/history/ (GitHub Pages, main에서 바로 배포)
-- 미리보기: https://claude.ai/artifact/QSh1YhvtwooxoyDRsBZsCT (링크 공유 중, 다시 올리면 모두에게 바뀐다)
+- 미리보기: https://claude.ai/artifact/Hfhs4Zdmb9WL1Q4dsULYuz (2026-10-29 새 계정에서 새로 만듦, 모든 장 열림 사본. 처음엔 비공개라 선생님이 공유 메뉴에서 열어 줘야 남이 본다. 옛 QSh1YhvtwooxoyDRsBZsCT는 더 고치지 않음)
 - 사용자는 초등 교사다. 답은 늘 한국어로, 쉬운 말로 한다.
 
 ## 기술 구성

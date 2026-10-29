@@ -1,6 +1,6 @@
 # 진행 정리 (2026-10-29) — 새 세션은 이 파일부터
 
-- 작업 브랜치 `claude/goryeo-game-handoff-vus00f`. 학생 사이트(main)는 **goryeo-v67**(2026-10-29 배포). 미리보기 아티팩트 https://claude.ai/artifact/QSh1YhvtwooxoyDRsBZsCT 도 v67.
+- 작업 브랜치 `claude/goryeo-game-handoff-vus00f`. 학생 사이트(main)는 **goryeo-v67**(2026-10-29 배포). 새 미리보기 아티팩트 https://claude.ai/artifact/Hfhs4Zdmb9WL1Q4dsULYuz (2026-10-29 이 계정에서 새로 만듦: 작업 브랜치 그대로 = v67 + 근대 4·5장, 모든 장 열림 사본). 옛 QSh1YhvtwooxoyDRsBZsCT는 더 고치지 않는다.
 - 결정 기록 `docs/team/decisions.md`(D-번호), 공통 도구 안내 `docs/team/d30-guide.md`, 작업 목록 `docs/team/tasks-d30.md`, 사진 `docs/team/shots/`.
 
 ## 꼭 지킬 것
@@ -22,7 +22,7 @@
 - 지금 만드는 중인 에이전트는 없다.
 
 ## 3. 남은 일
-1. 새 계정에서 새 미리보기 아티팩트를 만든다(선생님 결정, 근대 4·5장 포함, 모든 장 열림 사본). 근대 5장 사진은 선생님께 보냄. 학생 사이트 v68 배포는 선생님 승인 때(근대 4·5장 모두 아직 학생 사이트 전).
+1. (끝남 2026-10-29) 새 미리보기 아티팩트를 만들었다. 근대 5장 사진은 선생님께 보냄. 학생 사이트 v68 배포는 선생님 승인 때(근대 4·5장 모두 아직 학생 사이트 전).
 2. 근대 6장 ~ 현대 6장(13장): 장마다 바꿀 곳 세 가지를 여쭌 뒤 D-30 공통 시스템과 함께 고친다(근대 5장 다음은 k6).
 3. 배포 순서: 전체 테스트 → `core/precache.js` CACHE 올림(다음 v68) + `tests/sw.test.js` → 새 파일은 PRECACHE에 → main 병합·push → GitHub Actions 'pages build and deployment' 성공 확인(이 환경에서는 github.io가 막힘) → 승인 있으면 미리보기 아티팩트 다시 올림(`index.html` + PRECACHE 파일 목록을 `files`로).
 4. 예전부터: 실제 갤럭시 탭 측정(`docs/tablet-measure-guide.md`), 교과서 대조, 출처 S66~S70 주소 확인, 배경음악 들어 보기, 첫 화면 병사가 버튼 뒤에 겹침, 별점 규칙.
