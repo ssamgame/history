@@ -16,14 +16,14 @@
 <body>
 <div id="row"></div>
 <script type="module">
-  // 개발용: 등장인물 생김새를 한 줄로 세워 본다(D-54 생김새 바꾸기). ?ids=soldier,monk(없으면 모두)&per=8(한 줄 인원)&angle=0.35(돌려 보는 각)&zoom=2(크게)
+  // 개발용: 등장인물 생김새를 한 줄로 세워 본다(D-54 생김새 바꾸기). ?ids=soldier,monk(없으면 모두)&per=8(한 줄 인원)&angle=0.35(돌려 보는 각)&zoom=2(크게)&heads=1(얼굴만)
   import * as THREE from 'three';
   import { makePerson } from '../core/people.js';
   import { LOOKS } from '../content/characters.js';
   import { portraitURL } from '../core/faces.js';
   const q = new URLSearchParams(location.search);
   const ids = (q.get('ids') || Object.keys(LOOKS).join(',')).split(',').filter(id => LOOKS[id]);
-  const per = +(q.get('per') || 8), angle = +(q.get('angle') || 0.35), zoom = +(q.get('zoom') || 1), W = per * 150 * zoom, rows = Math.ceil(ids.length / per), H = rows * 330 * zoom, U = 52 * zoom;
+  const per = +(q.get('per') || 8), angle = +(q.get('angle') || 0.35), zoom = +(q.get('zoom') || 1), W = per * 150 * zoom, rows = Math.ceil(ids.length / per), heads = q.get('heads') === '1', CH = heads ? 120 : 330, H = rows * CH * zoom, U = 52 * zoom;
   const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); renderer.setSize(W, H); renderer.shadowMap.enabled = true;
   document.body.prepend(renderer.domElement);
   const scene = new THREE.Scene(); scene.background = new THREE.Color(0xe8e2d4);
@@ -33,10 +33,23 @@
   ids.forEach((id, i) => {
     const p = makePerson(LOOKS[id], { track: false });
     const col = i % per, row = Math.floor(i / per);
-    p.position.set((col - (per - 1) / 2) * (150 * zoom / U), 1.6 + H / 2 / U - 330 * zoom / U * (row + 1) + 0.6, 0); p.rotation.y = angle;
+    p.position.set((col - (per - 1) / 2) * (150 * zoom / U), 1.6 + H / 2 / U - CH * zoom / U * (row + 0.5) - (heads ? 2.15 : -0.6 - CH * zoom / U / 2), 0); p.rotation.y = angle;
     scene.add(p);
   });
-  renderer.render(scene, cam);
+  if (heads) { // 얼굴만: 한 사람씩 머리를 크게 찍어 칸에 붙인다
+    renderer.setSize(240, 240); renderer.domElement.style.display = 'none';
+    const hc = new THREE.OrthographicCamera(-0.62, 0.62, 0.62, -0.62, 0.1, 100);
+    const grid = document.createElement('div'); grid.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;padding:6px'; document.body.prepend(grid);
+    scene.children.filter(o => o.userData?.legs).forEach(o => { o.visible = false; });
+    ids.forEach(id => {
+      const p = makePerson(LOOKS[id], { track: false }); p.scale.setScalar(1); p.rotation.y = angle * 0.6; scene.add(p);
+      const top = p.getObjectByName('headGroup').getWorldPosition(new THREE.Vector3());
+      hc.position.set(top.x, top.y + 0.05, 20); hc.lookAt(top.x, top.y + 0.05, 0);
+      renderer.render(scene, hc);
+      const im = document.createElement('img'); im.src = renderer.domElement.toDataURL(); im.title = id; im.style.width = '240px'; grid.append(im);
+      scene.remove(p);
+    });
+  } else renderer.render(scene, cam);
   const rowEl = document.getElementById('row');
   for (const id of ids) { const d = document.createElement('div'); d.className = 'cell'; d.innerHTML = `<img src="${portraitURL(id)}"><div>${id}</div>`; rowEl.append(d); }
   document.title = 'done';

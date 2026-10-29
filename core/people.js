@@ -1,6 +1,6 @@
 // 코드로 만드는 로우폴리 인물과 걷기 동작, 머리 위 표시.
 import * as THREE from 'three';
-import { faceTexture } from './faces.js';
+import { faceTexture, faceVariant } from './faces.js';
 import { worldMapped } from './textures.js';
 
 // 장면에서 쓰는 색 → 어울리는 무늬. 무늬를 따로 말하지 않으면 색으로 고른다(성벽 회색은 돌, 지붕 먹색은 기와, 갈색 목재는 나뭇결).
@@ -32,7 +32,7 @@ const HEAD_Y = 2.02, HEAD_SCALE = 1.3;
 // 피부색(D-54): 밝은 얼굴(light), 보통, 햇볕에 그을린 얼굴(tan: 농민·군사·일꾼), 나이 든 얼굴(old)
 export const SKINS = { light: 0xf4d2b0, base: 0xf0c9a2, tan: 0xd9a77e, old: 0xe8c4a0 };
 const skinMats = new Map();
-const headMat = (skin = 'base') => { const c = SKINS[skin] ?? SKINS.base; if (!skinMats.has(c)) skinMats.set(c, new THREE.MeshLambertMaterial({ color: c })); return skinMats.get(c); };
+const headMat = (skin = 'base', tone = 0) => { const c0 = new THREE.Color(SKINS[skin] ?? SKINS.base); const c = c0.offsetHSL(0, tone * 0.03, tone * 0.035).getHex(); if (!skinMats.has(c)) skinMats.set(c, new THREE.MeshLambertMaterial({ color: c })); return skinMats.get(c); };
 // 찰갑(작은 쇠·가죽 조각을 끈으로 엮은 갑옷) 무늬: 회색조로 그려 재질 색을 곱한다
 let lamellarTex = null;
 function lamellar() {
@@ -126,7 +126,9 @@ let personCount = 0;
 // outfit(D-54): 'armor'(고려·조선 찰갑: 몸통·어깨·허리 아래 갑옷 조각, armor 색), 'danryeong'(둥근 깃 단령과 각대), 'jangsam'(스님 장삼과 가사),
 //   'short'(저고리와 바지: 웃옷이 엉덩이까지, pants 색 바지와 행전), 'deel'(거란·몽골: 오른쪽으로 여미는 긴 옷과 목 긴 장화), 'suit'(양복),
 //   'chima'(저고리와 긴 치마: 웃옷이 짧고 치마가 발목까지), 'uniform'(단추 달린 제복·군복·교복, 주머니)
-export function makePerson({ robe, hat, trim = 0x2b241c, face = {}, gear = null, outfit = null, hairColor = null, armor = 0x6b665e, pants = null, skin = null }, { track = true } = {}) {
+export function makePerson(look = {}, { track = true } = {}) {
+  const { robe, hat, trim = 0x2b241c, face = {}, gear = null, outfit = null, hairColor = null, armor = 0x6b665e, pants = null, skin = null } = look;
+  const fv = faceVariant(look); // 사람마다 다른 생김새(D-54)
   const g = new THREE.Group();
   const legs = [], arms = [];
   for (const sx of [-0.16, 0.16]) {
@@ -192,7 +194,7 @@ export function makePerson({ robe, hat, trim = 0x2b241c, face = {}, gear = null,
     const piv = new THREE.Group(); piv.position.set(sx, 1.65, 0); g.add(piv);
     part(new THREE.BoxGeometry(0.18, 0.72, 0.2), robe, 0, -0.34, 0, piv);
     part(new THREE.BoxGeometry(0.2, 0.08, 0.22), trim, 0, -0.66, 0, piv); // 소맷부리
-    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), headMat(sk)); hand.position.set(0, -0.78, 0); hand.castShadow = true; hand.name = 'hand'; piv.add(hand);
+    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), headMat(sk, fv.tone)); hand.position.set(0, -0.78, 0); hand.castShadow = true; hand.name = 'hand'; piv.add(hand);
     arms.push(piv);
   }
   // 머리 묶음: 둥근 머리 + 만화풍 얼굴 무늬 + 모자. 만화처럼 머리를 크게(1.3배) 그린다.
@@ -200,20 +202,21 @@ export function makePerson({ robe, hat, trim = 0x2b241c, face = {}, gear = null,
   hg.position.set(0, HEAD_Y + 0.08, 0); hg.scale.setScalar(HEAD_SCALE); g.add(hg);
   const hp = (geo, color, x, y, z) => part(geo, color, x, y - HEAD_Y, z, hg); // y는 몸 기준 높이로 적는다
   // 머리 모양(D-54): 공 대신 위가 둥글고 턱으로 갈수록 갸름한 달걀꼴(얼굴 무늬 판도 같은 꼴로)
-  const jawify = geo => { const pa = geo.attributes.position; for (let i = 0; i < pa.count; i++) { const y = pa.getY(i); if (y < 0) { const k = 1 - 0.2 * Math.min(1, -y / 0.32); pa.setX(i, pa.getX(i) * k); pa.setZ(i, pa.getZ(i) * (1 - 0.08 * Math.min(1, -y / 0.32))); pa.setY(i, y * 1.1); } } geo.computeVertexNormals(); return geo; };
-  const head = new THREE.Mesh(jawify(new THREE.SphereGeometry(0.32, 18, 14)), headMat(sk));
+  const jawify = geo => { const pa = geo.attributes.position; for (let i = 0; i < pa.count; i++) { const y = pa.getY(i); if (y < 0) { const k = 1 - fv.jaw * Math.min(1, -y / 0.32); pa.setX(i, pa.getX(i) * k); pa.setZ(i, pa.getZ(i) * (1 - 0.08 * Math.min(1, -y / 0.32))); pa.setY(i, y * 1.1); } } geo.computeVertexNormals(); return geo; };
+  const head = new THREE.Mesh(jawify(new THREE.SphereGeometry(0.32, 18, 14)), headMat(sk, fv.tone));
   head.name = 'head'; head.castShadow = true; hg.add(head);
   const faceGeo = jawify(new THREE.SphereGeometry(0.326, 18, 16, Math.PI / 2 - 1.15, 2.3, 0.62, 1.85));
-  const faceMesh = new THREE.Mesh(faceGeo, faceMat(face));
+  const faceMesh = new THREE.Mesh(faceGeo, faceMat({ ...face, v: fv }));
   faceMesh.name = 'face'; hg.add(faceMesh);
   // 얼굴 모양: 갸름한 얼굴(long)은 위아래로, 둥근 얼굴(round)은 옆으로 조금 늘린다
   if (face.shape === 'long') hg.scale.set(HEAD_SCALE * 0.92, HEAD_SCALE * 1.1, HEAD_SCALE * 0.96);
   else if (face.shape === 'round') hg.scale.set(HEAD_SCALE * 1.06, HEAD_SCALE * 0.98, HEAD_SCALE * 1.04);
+  else hg.scale.set(HEAD_SCALE * fv.faceW, HEAD_SCALE * fv.faceH, HEAD_SCALE * (0.98 + (fv.faceW - 1) * 0.5)); // 사람마다 조금 다른 얼굴 넓이
   // 귀와 코
   const ears = new THREE.Group(); ears.name = 'ears'; hg.add(ears);
-  for (const sx of [-1, 1]) { const e = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), headMat(sk)); e.scale.set(0.55, 1, 0.8); e.position.set(sx * 0.315, -0.02, -0.02); ears.add(e); }
-  const nose = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.1, 6), headMat(sk)); nose.name = 'nose';
-  nose.rotation.x = Math.PI / 2 + 0.25; nose.position.set(0, -0.06, 0.33); hg.add(nose);
+  for (const sx of [-1, 1]) { const e = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), headMat(sk, fv.tone)); e.scale.set(0.55 * fv.ear, fv.ear, 0.8 * fv.ear); e.position.set(sx * 0.315, -0.02, -0.02); ears.add(e); }
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.1, 6), headMat(sk, fv.tone)); nose.name = 'nose';
+  nose.rotation.x = Math.PI / 2 + 0.25; nose.position.set(0, -0.06, 0.33); nose.scale.set(fv.noseW, fv.noseL, fv.noseW); hg.add(nose);
   // 안경(둥근 검은 테)
   if (face.glasses === 'round') {
     const gl = new THREE.Group(); gl.name = 'glasses'; hg.add(gl);
@@ -258,12 +261,13 @@ export function makePerson({ robe, hat, trim = 0x2b241c, face = {}, gear = null,
   } else if (hat === 'daenggi') {   // 혼인 전 아이·젊은이: 가운데 가르마, 뒤로 길게 땋은 머리와 붉은 댕기
     const hz = new THREE.Group(); hz.name = 'hat:daenggi'; hg.add(hz);
     part(new THREE.SphereGeometry(0.335, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2.7), hc, 0, 0.06, -0.01, hz, 'grain');
-    part(new THREE.SphereGeometry(0.33, 12, 6, 0, Math.PI * 2, Math.PI / 2.7, 0.9), hc, 0, 0.06, -0.03, hz, 'grain').scale.set(1, 1, 0.97); // 뒤통수
+    part(new THREE.SphereGeometry(0.333, 12, 6, 0, Math.PI * 2, Math.PI / 2.7 - 0.08, 0.98), hc, 0, 0.06, -0.025, hz, 'grain').scale.set(1, 1, 0.97); // 뒤통수
     part(new THREE.CylinderGeometry(0.055, 0.04, 0.6, 6), hc, 0, -0.3, -0.3, hz, 'grain');
     part(new THREE.BoxGeometry(0.1, 0.16, 0.03), 0xb8282c, 0, -0.62, -0.31, hz, 'grain');
   } else if (hat === 'topknot') {   // 맨머리에 상투와 망건(이마 위 검은 띠)
-    hp(new THREE.SphereGeometry(0.33, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2.4), hc, 0, 2.04, -0.01);
-    hp(new THREE.SphereGeometry(0.1, 8, 6), hc, 0, 2.4, -0.02);
+    hp(new THREE.SphereGeometry(0.335, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2.9), hc, 0, 2.08, -0.01); // 이마 위까지 빗어 올린 머리
+    hp(new THREE.SphereGeometry(0.333, 12, 6, 0, Math.PI * 2, Math.PI / 2.9 - 0.08, 1.03), hc, 0, 2.08, -0.025).scale.set(1, 1, 0.97); // 뒤통수
+    hp(new THREE.SphereGeometry(0.1, 8, 6), hc, 0, 2.42, -0.02);
     const mg = new THREE.Mesh(new THREE.CylinderGeometry(0.29, 0.31, 0.06, 16, 1, true), mat(0x141210, 'cloth', 'object')); mg.material.side = THREE.DoubleSide; mg.position.y = 0.19; // 망건은 이마 위(눈썹보다 높게) mg.name = 'manggeon'; hg.add(mg);
   } else if (JOSEON_HATS[hat]) {    // 조선 모자: 묶음 하나(hat:이름)로 만든다
     const hatG = new THREE.Group(); hatG.name = `hat:${hat}`; hg.add(hatG);

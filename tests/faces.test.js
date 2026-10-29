@@ -56,7 +56,7 @@ test('faces: dialogue shows the speaker face, and the narrator keeps its mark', 
 test('faces: heads are drawn larger, cartoon style', () => {
   const p = makePerson(LOOKS.soldier);
   const hg = p.getObjectByName('headGroup');
-  ok(hg && hg.scale.x >= 1.25, 'head group scaled up');
+  ok(hg && (hg.scale.x + hg.scale.y) / 2 >= 1.15, 'head group scaled up'); // D-54: 사람마다 얼굴 넓이·길이가 조금씩 다르다
   ok(hg.getObjectByName('face'), 'face inside the head group');
 });
 
