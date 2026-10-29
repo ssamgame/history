@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { makeKitChapter } from '../../kit/chapter.js';
 import { buildArena } from '../../kit/play.js';
-import { BUILD, flagMesh } from '../../kit/town.js';
+import { BUILD, holdFlag, cheerFlag } from '../../kit/town.js';
 import { gateLeaves, nameBoard } from '../../kit/gate.js';
 import { walkInAndTalk, anyOrderTalk } from '../../kit/talk.js';
 import { burning } from '../../kit/fire.js';
@@ -21,16 +21,8 @@ const xy = (list, pts) => list.map((it, i) => ({ ...it, ...pts[i] }));
 const GENDARME_SWORD = { ...LOOKS.gendarme, gear: 'sword' };
 const HALL = { x: 13, z: 8, scale: 1.3 }; // 공원 담 너머 태화관(앞이 공원 쪽)
 
-// 사람 손에 태극기(막대 끝). 팔을 들면 깃발도 오른다
-function handFlag(p) {
-  const arm = p.userData.arms?.[1]; if (!arm) return null;
-  const f = new THREE.Group(); f.position.set(0, -0.78, 0.05); arm.add(f);
-  const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.1, 4), new THREE.MeshLambertMaterial({ color: 0x5a3f2a })); stick.position.y = -0.4; f.add(stick);
-  const cloth = flagMesh(0.62, 0.42); cloth.position.set(0.32, -0.8, 0); f.add(cloth);
-  return f;
-}
-// 만세: 깃발 든 팔을 번쩍 들었다 내린다(k 0~1)
-const cheerPose = (p, k) => { const a = p.userData.arms; if (!a) return; const u = Math.sin(k * Math.PI); a[1].rotation.x = Math.PI * 0.95 * u; a[0].rotation.x = Math.PI * 0.6 * u; };
+// 만세(D-43): 태극기 든 오른팔을 가슴 앞에서 머리 위로 번쩍 들었다 내린다(k 0~1). 깃발 쥐기는 kit/town.js holdFlag
+const cheerPose = (p, k) => cheerFlag(p, Math.sin(k * Math.PI));
 
 // ── 무대(마을에서 떨어진 x 400) ──
 const JONGNO = { edge: { style: 'modern', seed: 352 }, center: [{ type: 'papers', x: -14, z: 4, kind: 'news', n: 3 }, { type: 'flagpole', x: 14, z: 16 }, { type: 'cargo', x: -14, z: -10, kind: 'cloth', n: 5 }, { type: 'papers', x: -7, z: 16, kind: 'news', n: 3 }, { type: 'flagpole', x: 7, z: 16 }], // 탑골 공원 문에서 종로 거리, 시장, 큰길로
@@ -61,6 +53,18 @@ export const FLOW = { edge: { style: 'thatch', seed: 419 },
 
 let scene = null;
 
+// 만세 행진 중 지점에 닿으면(D-43): 카메라가 행렬 앞쪽으로 돌아가 뒤따르는 사람들이 얼굴을 보이며 태극기를 번쩍 든다
+async function marchCheer(ctx) {
+  const { world } = ctx, p = world.player.position.clone(), ry = world.player.rotation.y;
+  const fx = Math.sin(ry), fz = Math.cos(ry), v = new THREE.Vector3();
+  world.setFixedCamera([p.x + fx * 6.5 + fz * 1.6, 2.6, p.z + fz * 6.5 - fx * 1.6], [p.x - fx * 3, 1.4, p.z - fz * 3]);
+  const folk = [];
+  world.level.traverse(o => { if (o.userData?.carry?.style === 'flag' && o.getWorldPosition(v).distanceTo(p) < 16) folk.push(o); });
+  for (let n = 0; n < 2; n++) { ctx.audio?.play?.('tap'); await wait(world, 0.85, k => folk.forEach((f, i) => cheerPose(f, Math.min(1, Math.max(0, k * 1.15 - (i % 3) * 0.05))))); }
+  world.camMode = 'follow';
+  if (ctx.testHooks) ctx.testHooks.marchCheer = (ctx.testHooks.marchCheer || 0) + 1;
+}
+
 // ── 탐험 끝 장면: 팔각정에서 학생이 독립 선언서를 읽고, 모인 사람들이 품속 태극기를 꺼내 세 번 만세를 외친다 ──
 export async function declarationScene(ctx) {
   const { world, dialogue } = ctx;
@@ -69,28 +73,29 @@ export async function declarationScene(ctx) {
   world.closeView = true;
   await ctx.fade?.(true);
   const g = new THREE.Group(); g.name = 'i2Declare'; world.level.add(g);
-  const hook = ctx.testHooks.declare = { reader: false, flags: 0, cheers: 0 };
+  const hook = ctx.testHooks.declare = { reader: false, flags: 0, cheers: 0, held: false, camZ: 0, raisedY: 0 };
   const reader = person(g, 'student', 0, -4.9, 0); reader.position.y = 0.6; // 팔각정 위
   const paper = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.55, 0.02), new THREE.MeshLambertMaterial({ color: 0xf2ecd8 })); paper.position.set(0, 1.4, 0.45); paper.rotation.x = -0.4; reader.add(paper); hook.reader = true;
   const looks = ['student', 'schoolgirl', 'commoner', 'woman', 'gentleman', 'peasant', 'student', 'citizen', 'schoolgirl', 'worker', 'commoner', 'student'];
-  const crowd = looks.map((look, i) => { const r = i < 6 ? 0 : 1, c = i % 6; const p = person(g, look, -4.2 + c * 1.7 + r * 0.8, -1.4 + r * 1.5); face(p, 0, -5); return p; });
-  const flags = crowd.map(handFlag).filter(Boolean); flags.forEach(f => { f.visible = false; });
-  placePlayer(world, [2.4, 2.6], Math.PI * 0.95);
+  const crowd = looks.map((look, i) => { const r = i < 6 ? 0 : 1, c = i % 6; const p = person(g, look, -4.2 + c * 1.7 + r * 0.8, 0.4 + r * 1.5); face(p, 0, -5); return p; }); // 팔각정 앞을 조금 띄워 마주 보는 카메라 자리를 둔다(D-43)
+  const flags = []; // 낭독이 끝나면 품속 태극기를 꺼내 든다
+  placePlayer(world, [5.2, 3.2], Math.PI * 0.95);
   try {
-    world.setFixedCamera([5.5, 6.8, 4.5], [0, 1.6, -4]); // 비스듬히 위에서 팔각정의 학생과 모인 사람들을 함께
+    world.setFixedCamera([6.6, 3.4, -4.6], [-1, 1.4, -1.2]); // 팔각정 옆 앞쪽에서 읽는 학생과 모인 사람들의 얼굴을 함께(D-43)
     await ctx.fade?.(false);
     await dialogue.say(L[0]);
     world.setTalkCamera({ position: new THREE.Vector3(0, 0.6, -4.9) }); face(reader, world.player.position.x, world.player.position.z);
     await dialogue.say(L[1]);
-    world.setFixedCamera([5.5, 6.8, 4.5], [0, 1.6, -4]);
+    world.setFixedCamera([6.6, 3.4, -4.6], [-1, 1.4, -1.2]);
     await dialogue.say(L[2]);
     dialogue.close();
-    flags.forEach(f => { f.visible = true; }); hook.flags = flags.length; // 모두 품속 태극기를 꺼낸다
-    world.setFixedCamera([-6.5, 3.4, 4.2], [0.2, 1.8, -2.4]); // 반대쪽에서 태극기를 든 사람들
+    crowd.forEach(p => flags.push(holdFlag(p))); hook.flags = flags.length; hook.held = crowd.every(p => p.userData.carry?.style === 'flag'); // 모두 품속 태극기를 꺼내 가슴 앞에 든다
+    world.setFixedCamera([1.2, 2.8, -2.6], [-0.2, 1.4, 2.4]); // 팔각정 계단 앞에서 마주 보며 태극기를 든 사람들의 얼굴(D-43)
     for (let n = 0; n < 3; n++) { // 대한 독립 만세! 세 번
       ctx.audio?.play?.('correct');
-      await wait(world, 0.9, k => crowd.forEach((p, i) => cheerPose(p, Math.min(1, Math.max(0, k * 1.15 - (i % 4) * 0.04)))));
+      await wait(world, 0.9, k => { crowd.forEach((p, i) => cheerPose(p, Math.min(1, Math.max(0, k * 1.15 - (i % 4) * 0.04)))); hook.raisedY = Math.max(hook.raisedY, ...flags.map(f => f.position.y)); });
       hook.cheers += 1;
+      if (n === 0) { hook.camZ = world.camera.position.z; }
       if (n === 0) { await dialogue.say(L[3]); dialogue.close(); }
     }
     await dialogue.say(L[4]);
@@ -177,9 +182,9 @@ export async function flowWalk(ctx) {
   A.boards.forEach(([name, z]) => nameBoard(g, name, -3.2, z, { ry: 0 }));
   const hook = ctx.testHooks.flow = { used: [], pressed: 0, newspaper: false, classes: 0, arrested: false, smoke: 0 };
   const reader = person(g, 'citizen', -6.2, 21, Math.PI / 2);
-  const classes = [['student', 7.5, 3.5], ['worker', 8.6, 5.2], ['peasant', 9.6, 6.8], ['commoner', 7.4, 7.6], ['woman', 8.3, 9]].map(([look, x, z]) => { const p = person(g, look, x, z, -Math.PI / 2); handFlag(p); p.visible = false; return p; });
-  const yu = person(g, 'yugwansun', -3.2, -13.5, Math.PI / 2); handFlag(yu);
-  const market = [['peasant', -5.8, -15], ['commoner', -6.2, -12.4], ['woman', -4.6, -16.4], ['grandma', -6.6, -10.4], ['kidModern', -4.4, -10.8]].map(([look, x, z]) => { const p = person(g, look, x, z, Math.PI / 2); handFlag(p); p.visible = false; return p; });
+  const classes = [['student', 7.5, 3.5], ['worker', 8.6, 5.2], ['peasant', 9.6, 6.8], ['commoner', 7.4, 7.6], ['woman', 8.3, 9]].map(([look, x, z]) => { const p = person(g, look, x, z, -Math.PI / 2); holdFlag(p); p.visible = false; return p; });
+  const yu = person(g, 'yugwansun', -3.2, -13.5, Math.PI / 2); holdFlag(yu);
+  const market = [['peasant', -5.8, -15], ['commoner', -6.2, -12.4], ['woman', -4.6, -16.4], ['grandma', -6.6, -10.4], ['kidModern', -4.4, -10.8]].map(([look, x, z]) => { const p = person(g, look, x, z, Math.PI / 2); holdFlag(p); p.visible = false; return p; });
   const guards = [[2.8, -18], [3.8, -17.4]].map(([x, z]) => { const p = person(g, GENDARME_SWORD, x, z, 0); p.visible = false; return p; });
   const raid = [[-5.5, -25], [0.5, -29.5], [5, -26]].map(([x, z]) => { const p = person(g, GENDARME_SWORD, x, z, Math.PI); p.visible = false; return p; });
   const marks = stationMarks(a, g, P.stations, A.stations);
@@ -222,7 +227,7 @@ const base = makeKitChapter({
       { type: 'wall', x: -17, z: 2, w: 16, ry: Math.PI / 2 }, { type: 'wall', x: 17, z: -4, w: 10, ry: Math.PI / 2 },
       { type: 'shop', x: -20, z: -5, w: 5, style: 'modern', ry: Math.PI / 2, sign: '양복점', awning: 0x2f6b5e, seed: 1 }, { type: 'shop', x: 20, z: 3, w: 5, ry: -Math.PI / 2, sign: '포목점', seed: 3 },
       { type: 'tree', x: -13, z: 7 }, { type: 'tree', x: 17, z: 11.5, color: 0x5a7a40 }, { type: 'tree', x: -8, z: -8.5, color: 0x5a7a40 }, { type: 'tree', x: 9, z: -8.5 },
-      { type: 'flagpole', x: 4, z: -3 }, { type: 'lamp', x: -15, z: 9.5 },
+      { type: 'flagpole', x: -6.5, z: 4 }, // 낭독 장면 카메라(팔각정 옆)를 가리지 않게 옆으로(D-43) { type: 'lamp', x: -15, z: 9.5 },
       { type: 'wall', x: -8.5, z: GATE_Z, w: 13, h: 1.8, solid: false }, { type: 'wall', x: 8.5, z: GATE_Z, w: 13, h: 1.8, solid: false }, // 공원 담과 문
     ],
     npcs: [
@@ -240,7 +245,7 @@ const base = makeKitChapter({
       route: xy(script.parts.flags.route, [{ x: -4, z: 4 }, { x: 4, z: -10 }]),
       pickups: xy(script.parts.flags.pickups, [{ x: -16, z: 18 }, { x: 15, z: 14 }, { x: -15, z: 0 }, { x: 16, z: -2 }]) },
     { ...script.parts.march, goal: script.goals[4], intro: meet('student', '학생과 이야기하기', script.parts.march.intro), arena: JONGNO, from: [0, 21], followers: { looks: ['student', 'schoolgirl', 'citizen', 'woman', 'peasant', 'yugwansun'], per: 2, flags: true },
-      route: xy(script.parts.march.route, [{ x: 0, z: 18 }, { x: 2, z: 6 }, { x: -2, z: -6 }, { x: 0, z: -18 }]),
+      route: xy(script.parts.march.route, [{ x: 0, z: 18 }, { x: 2, z: 6, scene: marchCheer }, { x: -2, z: -6 }, { x: 0, z: -18, scene: marchCheer }]),
       hazards: [{ x: -14, z: 0, to: [14, 0], kind: 'crowd', r: 1.6, speed: 0.4 }, { x: 14, z: -12, to: [-14, -12], kind: 'crowd', r: 1.6, speed: 0.45 }] },
     { ...script.parts.flow, goal: script.goals[5], intro: meet('yugwansun', '유관순과 이야기하기', script.parts.flow.intro), play: ctx => flowWalk(ctx) },
   ],

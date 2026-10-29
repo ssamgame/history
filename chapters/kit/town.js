@@ -1,7 +1,7 @@
 // 장면 부품 상자: 근대·일제 강점기·현대편 장들이 '배치표(layout)'만 써서 장면을 만든다.
 // layout = { ground, area, bounds, start, props: [{ type, x, z, ry, ... }], npcs: [{ id, look, x, z, ry }], signs: [{ id, title, x, z }], scatter: [...] }
 import * as THREE from 'three';
-import { mat, makePerson, setWork } from '../../core/people.js';
+import { mat, makePerson, setWork, setCarry } from '../../core/people.js';
 import { scatter } from '../../core/props.js';
 import { makeSign, placeSign } from '../../core/signs.js';
 import { LOOKS } from '../../content/characters.js';
@@ -52,6 +52,22 @@ export function flagMesh(w = 1.2, h = 0.8, color = null) {
   m.castShadow = true; return m;
 }
 
+// 태극기 들기(D-43): 깃대를 오른손에 쥐고 팔을 굽혀 가슴 앞에 든다(걸어도 그대로). 깃발은 손 위로 곧게 선다
+export function holdFlag(person) {
+  const f = new THREE.Group(); f.name = 'handFlag';
+  add(f, new THREE.CylinderGeometry(0.022, 0.022, 1.25, 5), 0x5a3f2a, 0, 0.45, 0, 'wood');
+  const cloth = flagMesh(0.62, 0.42); cloth.position.set(0, 0.84, 0); f.add(cloth);
+  setCarry(person, f, 'flag');
+  return f;
+}
+// 만세(D-43): u(0~1)만큼 태극기 든 오른팔을 앞으로 번쩍 들어 머리 위로, 왼팔도 함께 든다. 깃발은 손을 따라 곧게 선 채 오른다
+export function cheerFlag(person, u) {
+  const a = person.userData.arms, c = person.userData.carry; if (!a) return;
+  const t = -1.0 + (-Math.PI * 0.95 + 1.0) * u;
+  a[1].rotation.set(t, 0, 0); a[0].rotation.set(-Math.PI * 0.62 * u, 0, 0);
+  if (c?.style === 'flag') c.obj.position.set(0.5, 1.65 - 0.78 * Math.cos(t), -0.78 * Math.sin(t));
+}
+
 // 부품마다 만드는 법. 모두 (0,0,0) 기준, 앞은 +z.
 export const BUILD = {
   // 초가집 / 기와집
@@ -88,7 +104,7 @@ export const BUILD = {
       const row = Math.floor(i / cols);
       person.position.set((i % cols - (cols - 1) / 2) * 1.3 + (row % 2) * 0.6 + j(1) * 0.55, 0, row * 1.35 + j(2) * 0.5);
       person.rotation.y = (p.face || 0) + j(3) * 0.7;
-      if (p.flags && (i * 7) % 10 < p.flags * 10) { const f = flagMesh(0.6, 0.4); f.position.set(0.5, 2.6, 0); person.add(f); add(person, new THREE.CylinderGeometry(0.02, 0.02, 1.2, 4), 0x5a3f2a, 0.5, 2.3, 0); }
+      if (p.flags && (i * 7) % 10 < p.flags * 10) holdFlag(person); // 손에 쥐고 가슴 앞에(D-43)
       g.add(person);
     }
     return 0;

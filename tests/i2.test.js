@@ -89,6 +89,9 @@ test('i2 D-39: 독립 선언서 낭독 장면 — 팔각정에서 읽고, 모두
     ok(h.reader, '선언서를 읽는 학생');
     ok(h.flags >= 8, `꺼낸 태극기 ${h.flags}`);
     ok(h.cheers >= 3, `만세 ${h.cheers}번`);
+    ok(h.held, 'D-43: 태극기는 손에 쥐고 가슴 앞에');
+    ok(h.raisedY > 2, `D-43: 만세 때 깃발이 머리 위로 ${h.raisedY.toFixed(2)}`);
+    ok(h.camZ < -2, `D-43: 카메라가 사람들 앞쪽(팔각정 쪽)에서 얼굴을 본다 z ${h.camZ.toFixed(1)}`);
     eq(s.w.level.children.length, n0, '더한 것을 치웠다');
     ok(s.w.player.visible, '학생이 보인다');
   } finally { bot.stop(); s.done(); }
@@ -113,3 +116,18 @@ test('i2 D-39: 만세의 흐름 걷기 — 네 자리를 대화 버튼으로 겪
     eq(s.w.bounds, b0, '걷는 곳도 마을로');
   } finally { bot.stop(); s.done(); }
 }, { timeout: 150000 });
+
+// D-43: 태극기를 든 사람은 모두 손에 쥐고 가슴 앞에 든다(옛 모습: 머리 위에 떠 있거나 거꾸로 매달린 깃발)
+import { BUILD } from '../chapters/kit/town.js';
+import * as THREE from 'three';
+test('i2 D-43: 무리 속 태극기는 오른손에 쥐어 가슴 앞, 깃발은 손 위로 선다', () => {
+  const g = new THREE.Group();
+  BUILD.crowd(g, { n: 10, flags: 1, looks: ['student'] });
+  const ps = g.children.filter(c => c.userData?.arms);
+  ok(ps.length === 10 && ps.every(p => p.userData.carry?.style === 'flag'), '모두 손에 쥔다');
+  for (const p of ps) {
+    const f = p.userData.carry.obj;
+    ok(f.position.z > 0.4 && f.position.y > 1 && f.position.y < 1.5, `가슴 앞 ${f.position.y.toFixed(2)}, ${f.position.z.toFixed(2)}`);
+    ok(p.userData.arms[1].rotation.x < -0.5, '오른팔을 앞으로 굽힌다');
+  }
+});

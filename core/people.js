@@ -228,12 +228,13 @@ export function gaitPose(person, ph, k = 1) {
 }
 
 // 물건 들기(D-18, 모든 장 공통): 든 물건을 몸에 붙이고 팔이 받치는 자세가 된다. style:
-//   'arms'(두 팔로 가슴 앞에 안기: 꾸러미·판) · 'side'(굽힌 오른팔 위에 얹어 옆구리에 끼기: 두루마리) · 'shoulder'(오른손으로 어깨에 멘 것을 잡기: 쇠가죽 묶음)
+//   'arms'(두 팔로 가슴 앞에 안기: 꾸러미·판) · 'side'(굽힌 오른팔 위에 얹어 옆구리에 끼기: 두루마리) · 'shoulder'(오른손으로 어깨에 멘 것을 잡기: 쇠가죽 묶음) · 'flag'(오른손에 깃대)
 // at: 물건 자리(몸 기준), arms: [왼팔, 오른팔]의 [앞뒤, 안팎] 각도(null이면 걸을 때 흔드는 팔)
 const CARRY = {
   arms: { at: [0, 1.22, 0.6], arms: [[-1.0, 0.33], [-1.0, -0.33]] },
   side: { at: [0.56, 1.42, 0.45], arms: [null, [-1.1, 0.05]] },
   shoulder: { at: [0.48, 2.0, -0.08], arms: [null, [-2.9, -0.15]] },
+  flag: { at: [0.5, 1.23, 0.66], arms: [null, [-1.0, 0]] }, // 깃대를 오른손에 쥐고 팔을 굽혀 가슴 앞에 든다(D-43, 왼팔은 걸을 때 흔든다)
 };
 export function carryPose(person, ph = 0, k = 0) {
   const u = person.userData, c = u.carry; if (!c || !u.arms) return;
