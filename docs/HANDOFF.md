@@ -26,7 +26,7 @@
 ## 2. 바로 다음에 할 일
 1. ~~새 미리보기 아티팩트를 이 계정에서 새로 만든다~~ → **끝남**: https://claude.ai/artifact/Hfhs4Zdmb9WL1Q4dsULYuz (`index.html`을 페이지로, PRECACHE 124개 파일을 files로, `chapters/index.js`만 모든 장 열림 사본). 다시 올릴 때는 같은 `file_path`(`index.html`)로 올리면 같은 주소가 유지된다. 원래 지시:(선생님 결정 2026-10-29: 옛 미리보기 QSh1YhvtwooxoyDRsBZsCT는 옛 계정 것이라 더 고치지 않는다). 작업 브랜치 그대로(근대 4·5장 포함) + 모든 장 열림 사본으로, 3절 방법대로 `index.html` + PRECACHE 전체를 `files`로 올린다. 만든 새 주소를 선생님께 알리고 `CLAUDE.md`·`docs/STATUS.md`·이 파일의 미리보기 주소를 바꾼다. 근대 5장 사진 5장은 이미 선생님께 보냈다.
 2. 학생 사이트 **v68 배포**는 선생님 승인 때만(근대 4·5장이 아직 학생 사이트에 없다). 배포 순서는 4절.
-3. 근대 6장(D-35)은 만듦(사진 `d35-k6-*.png`, 선생님 확인, 미리보기에 올림). 일제 1장(D-36)과 근대 6장 고갯길(D-37·38)도 만들어 미리보기에 올림(v3). 일제 2장(D-39)·3장(D-41)도 만듦(사진 `d39-i2-*.png`·`d41-i3-*.jpg`). **일제 강점기 4장(i4)부터 현대 6장까지 9장**. 걸으며 겪는 장면은 공용 `chapters/kit/walk.js`(walkStations·stationMarks·classroom·meet·minigameWithMeet)를 쓴다: 장마다 ① 탐험 ② 놀이 ③ (역사책이 있으면) 무엇으로 바꿀지를 선택지 두세 개로 여쭌다 → `docs/team/decisions.md`에 D-35부터 적는다 → 만든다(장 담당 에이전트를 `isolation: worktree`로 맡기면 편하다) → 합치고 테스트 → 사진 → 미리보기.
+3. 근대 6장(D-35)은 만듦(사진 `d35-k6-*.png`, 선생님 확인, 미리보기에 올림). 일제 1장(D-36)과 근대 6장 고갯길(D-37·38)도 만들어 미리보기에 올림(v3). 일제 2장(D-39)·3장(D-41)·4장(D-42)도 만듦(사진 `d39-i2-*.png`·`d41-i3-*.jpg`·`d42-i4-*.jpg`). **일제 강점기 5장(i5)부터 현대 6장까지 8장**. 걸으며 겪는 장면은 공용 `chapters/kit/walk.js`(walkStations·stationMarks·classroom·meet·minigameWithMeet)를 쓴다: 장마다 ① 탐험 ② 놀이 ③ (역사책이 있으면) 무엇으로 바꿀지를 선택지 두세 개로 여쭌다 → `docs/team/decisions.md`에 D-35부터 적는다 → 만든다(장 담당 에이전트를 `isolation: worktree`로 맡기면 편하다) → 합치고 테스트 → 사진 → 미리보기.
    - 지금까지 선생님이 고른 방향(본보기): 탐험은 "아무 차례로 모두 들으면 메인 인물이 퀘스트" + 탐험 끝 그 사건다운 장면, 놀이는 기존 놀이 하나는 두고 **역사책은 걸으며 보는 장면/고르기 놀이로 바꿈**.
    - 본보기 코드: `chapters/modern/k3/`, `k4/`, `k5/`와 `tests/k3~k5.test.js`. 공통 도구 안내 `docs/team/d30-guide.md`.
 

@@ -640,7 +640,7 @@ export function find(ctx, part, easy) {
 
 // ── ambush ────────────────────────────────────────────
 // shooters: [{ x, z, ry }] 언덕 풀숲에 엎드려 총을 겨눈 사람(D-37 근대 6장 의병). 누르면 가까운 둘이 쏘아(불빛·연기·총소리) 적이 놀라 물러난다
-function proneShooter(g, { x, z, ry = 0, look = 'uibyeong', y = 0, seed = 1 }) { // (x, z)는 가슴 자리. 발은 뒤(-z), 총은 앞(+z)
+export function proneShooter(g, { x, z, ry = 0, look = 'uibyeong', y = 0, seed = 1, band: wear = true }) { // (x, z)는 가슴 자리. 발은 뒤(-z), 총은 앞(+z)
   const s = new THREE.Group(); s.position.set(x, y, z); s.rotation.y = ry; g.add(s);
   const patch = new THREE.Mesh(new THREE.CircleGeometry(1.6, 14).rotateX(-Math.PI / 2), mat(0x4a6234, 'grass')); patch.scale.set(0.9, 1, 1.5); patch.position.set(0, 0.03, -0.3); s.add(patch); // 눌린 풀
   const body = makePerson({ ...LOOKS[look], gear: null }, { track: false });
@@ -649,9 +649,11 @@ function proneShooter(g, { x, z, ry = 0, look = 'uibyeong', y = 0, seed = 1 }) {
   if (u.head) u.head.rotation.x = -1.2; // 고개를 들어 앞을 본다
   u.arms?.forEach((a, i) => { a.rotation.x = Math.PI + 0.1; a.rotation.z = (i ? -1 : 1) * 0.28; }); // 두 팔을 앞으로 뻗어 총을 받친다
   u.legs?.forEach((l, i) => { l.rotation.z = (i ? -1 : 1) * 0.12; }); // 다리는 조금 벌린다
-  const band = new THREE.Mesh(new THREE.CylinderGeometry(0.335, 0.335, 0.08, 16, 1, true), new THREE.MeshLambertMaterial({ color: 0xf2efe6, side: THREE.DoubleSide })); // 흰 머리띠
-  band.position.y = 0.12; u.head?.add(band);
-  const knot = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.18, 0.04), band.material); knot.position.set(0.08, 0.04, -0.34); knot.rotation.z = 0.4; u.head?.add(knot);
+  if (wear) { // 흰 머리띠(의병). 군모를 쓴 독립군은 band: false
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.335, 0.335, 0.08, 16, 1, true), new THREE.MeshLambertMaterial({ color: 0xf2efe6, side: THREE.DoubleSide }));
+    band.position.y = 0.12; u.head?.add(band);
+    const knot = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.18, 0.04), band.material); knot.position.set(0.08, 0.04, -0.34); knot.rotation.z = 0.4; u.head?.add(knot);
+  }
   const gun = new THREE.Group(); gun.position.set(0.16, 0.7, 1.15); s.add(gun); // 뺨에 붙여 앞으로 겨눈 총
   add(gun, new THREE.CylinderGeometry(0.055, 0.06, 1.6, 6), 0x1e1c1a, 0, 0.02, 0.65).rotation.x = Math.PI / 2;
   add(gun, box(0.1, 0.14, 0.75), 0x6b4a32, 0, -0.03, -0.2);
@@ -663,7 +665,7 @@ function proneShooter(g, { x, z, ry = 0, look = 'uibyeong', y = 0, seed = 1 }) {
     t.position.set(px, h / 2, pz); t.rotation.set((rnd() - 0.5) * 0.5, 0, (rnd() - 0.5) * 0.5); s.add(t);
   }
   const muzzle = new THREE.Vector3(0.16, 0.72, 2.6);
-  return { group: s, gun, muzzle, headband: !!u.head, aim: !!(u.head && u.arms?.length === 2) };
+  return { group: s, gun, muzzle, headband: wear && !!u.head, aim: !!(u.head && u.arms?.length === 2) };
 }
 // 일본군 깃발(욱일기, D-38 선생님): 앞선 부대가 든다
 let rsTex = null;
@@ -681,7 +683,7 @@ function risingSunFlag() {
   const cloth = new THREE.Mesh(new THREE.PlaneGeometry(1.65, 1.1), new THREE.MeshLambertMaterial({ map: rsTex, side: THREE.DoubleSide })); cloth.position.set(0.85, 3.75, 0); f.add(cloth);
   return f;
 }
-function muzzleFire(g, shooter, ctx) {
+export function muzzleFire(g, shooter, ctx) {
   const p = shooter.group.localToWorld(shooter.muzzle.clone()); g.worldToLocal(p);
   const flash = new THREE.Mesh(new THREE.SphereGeometry(0.38, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffe08a }));
   const smoke = new THREE.Mesh(new THREE.SphereGeometry(0.35, 8, 6), new THREE.MeshBasicMaterial({ color: 0xe8e4da, transparent: true, opacity: 0.75, depthWrite: false }));
