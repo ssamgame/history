@@ -1,6 +1,6 @@
 # 역사 속으로 걸어가기 — 작업 안내
 
-> **새 세션은 `docs/STATUS.md`부터 읽는다**(꼭 지킬 것·상시 규칙·계획/진행/남은 것). 결정 기록 `docs/team/decisions.md`, 테스트 기록 `docs/team/tested.md`, 팀 방식 `.claude/agents/planner.md`·`developer.md`.
+> **새 세션은 `docs/HANDOFF.md`(인계), `docs/STATUS.md` 순서로 읽는다**(꼭 지킬 것·상시 규칙·계획/진행/남은 것). 결정 기록 `docs/team/decisions.md`, 테스트 기록 `docs/team/tested.md`, 팀 방식 `.claude/agents/planner.md`·`developer.md`.
 
 초등 5학년 사회의 한국사를 3D로 걸어 다니며 배우는 브라우저 게임이다(사이트 이름 「역사 속으로 걸어가기」). 첫 화면 → 편 고르기 → 그 편의 1~6장. 편마다 6장을 한 흐름으로 이어서 한다(장마다 약 10분).
 
