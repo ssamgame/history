@@ -98,7 +98,7 @@ test('perf: 측정 페이지(tools/perf-bench.html)가 우선 장면 넷을 세 
     for (let i = 0; i < 1500 && d.title !== 'done'; i++) await sleep(40);
     eq(d.title, 'done', '끝까지 잰다');
     const txt = d.querySelector('#result').textContent;
-    for (const name of ['근대 3장 동학 마을', '근대 5장 전차 길', '현대 5장 피란민 마을', '역사책 첫 쪽']) ok(txt.includes(name), name);
+    for (const name of ['근대 3장 동학 마을', '근대 5장 전차 길', '일제 4장 숲', '역사책 첫 쪽']) ok(txt.includes(name), name);
     for (const q of ['low', 'medium', 'high']) ok(txt.includes(`| ${q} |`), q);
     ok(txt.includes('역사책 첫 그림'), '역사책 그림 시간');
   } finally { frame.remove(); }

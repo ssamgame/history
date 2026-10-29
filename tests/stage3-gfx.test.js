@@ -47,7 +47,7 @@ test('stage3 G5: 가져다 놓기(deliver) 칸 이름표가 목표 상자(HUD) �
   for (const { id, ch } of await kitChapters()) for (const p of ch.parts) if (p.type === 'deliver') cases.push({ id, from: p.from, bins: p.bins });
   const j5 = (await import('../chapters/joseon/j5/script.js')).default;
   cases.push({ id: 'j5', from: [0, 11], bins: j5.sort.bins.map((b, i) => ({ ...b, ...[{ x: -10, z: -5 }, { x: 10, z: -5 }][i] })) });
-  ok(cases.length >= 5, `가져다 놓기 ${cases.length}곳`); // D-35부터 장마다 가져다 놓기를 체험 걷기로 바꾸며 줄었다
+  ok(cases.length >= 4, `가져다 놓기 ${cases.length}곳`); // D-35부터 장마다 가져다 놓기를 체험 걷기로 바꾸며 줄었다(D-53 현대 6장도 뺌)
   for (const c of cases) for (const b of c.bins) {
     const lab = labelSprite(b.label, { size: 1.25 });
     const pts = projectLabel(c.from, b, lab, BIN_LABEL);

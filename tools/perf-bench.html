@@ -37,7 +37,7 @@
   import { renderDiorama } from '../chapters/kit/diorama.js';
   import { DIORAMA } from '../chapters/modern/dioramas.js';
   import { PIC } from '../chapters/modern/pictures.js';
-  import { MODERN, PRESENT } from '../chapters/index.js';
+  import { MODERN, COLONIAL, PRESENT } from '../chapters/index.js';
 
   const q = new URLSearchParams(location.search);
   const fast = q.get('fast') === '1';
@@ -48,7 +48,7 @@
   const world = createWorld($('stage'), { quality: QUALITIES[0] });
   addEventListener('resize', () => world.resize());
   const stats = createPerfStats();
-  const load = async id => (await [...MODERN, ...PRESENT].find(m => m.id === id).load()).default;
+  const load = async id => (await [...MODERN, ...COLONIAL, ...PRESENT].find(m => m.id === id).load()).default;
 
   // 프레임마다: 걷기(앞의 길 지점으로) → 그리기 → 재기
   let walk = null, last = performance.now(), lastMem = 0;
