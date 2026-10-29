@@ -280,3 +280,66 @@ test('ch2 D-16: two Khitan camp tents outside the fortress burn, far from the wa
     }
   } finally { w.dispose(); }
 });
+
+// D-32 (2026-10-29 선생님): 성벽 방어 동안 성 밖 거란군 무리가 사다리 아래로 끊임없이 걸어와 모이고, 밀려나면 다시 다가온다
+test('ch2 D-32: Khitan soldiers keep walking up to the ladders and come back after a push', async () => {
+  const s = touchSetup(ch2Script.speakers);
+  try {
+    const sc = await wallStarted(s);
+    ok(Array.isArray(sc.horde) && sc.horde.length >= 10, 'a horde of soldiers outside the wall');
+    const z0 = sc.horde.map(k => k.position.z);
+    let strode = 0;
+    for (let i = 0; i < 60; i++) { s.w.step(0.05, { x: 0, z: 0 }); strode = Math.max(strode, ...sc.horde.map(k => k.userData.stride || 0)); }
+    const moved = sc.horde.filter((k, i) => Math.abs(k.position.z - z0[i]) > 1).length;
+    ok(moved >= 6, `most soldiers walk toward the wall (${moved})`);
+    ok(strode > 0.5, 'their legs walk');
+    let l = null;
+    for (let i = 0; i < 200 && !l; i++) {
+      s.w.step(0.05, { x: 0, z: 0 });
+      l = sc.ladders.find(x => x.group.visible && x.climber.visible && sc.horde.filter(k => Math.hypot(k.position.x - x.x, k.position.z + 15.5) < 3.2).length >= 2);
+    }
+    ok(l, 'soldiers gather under a raised ladder');
+    const near = sc.horde.filter(k => Math.hypot(k.position.x - l.x, k.position.z + 15.5) < 3.2), nz = near.map(k => k.position.z);
+    s.w.player.position.x = l.x; s.w.step(0.05, { x: 0, z: 0 }); // 사다리를 밀어낸다
+    s.w.player.position.x = l.x > 0 ? -11 : 11;
+    for (let i = 0; i < 30; i++) s.w.step(0.05, { x: 0, z: 0 });
+    ok(near.every((k, i) => k.position.z < nz[i] - 1), 'pushed back with the ladder');
+    const back = near.map(k => k.position.z);
+    for (let i = 0; i < 200; i++) s.w.step(0.05, { x: 0, z: 0 });
+    ok(near.some((k, i) => k.position.z > back[i] + 2), 'they come back toward the wall');
+    ok(sc.horde.every(k => k.position.z < -15.6 && k.visible), 'nobody walks into the wall');
+  } finally { s.done(); }
+}, { timeout: 40000 });
+
+// D-32: 사다리 자리의 게이지가 시간이 지날수록 노랑 → 주황 → 빨강으로 차오르고, 다 차는 순간 그 사다리로 적이 올라온다
+test('ch2 D-32: the ladder gauge fills yellow to red and the enemy climbs over when it is full', async () => {
+  const s = touchSetup(ch2Script.speakers);
+  try {
+    const sc = await wallStarted(s);
+    ok(Array.isArray(sc.wallGauges) && sc.wallGauges.length === 6, 'a gauge per ladder spot');
+    s.w.player.position.x = -11.4;
+    let l = null;
+    for (let i = 0; i < 80 && !l; i++) { s.w.step(0.05, { x: 0, z: 0 }); l = sc.ladders.find(x => x.group.visible); }
+    ok(l, 'a ladder appeared');
+    const g = sc.wallGauges[sc.ladders.indexOf(l)];
+    ok(g.visible && g.userData.fill < 0.2, `gauge starts nearly empty (${g.userData.fill})`);
+    const hue = c => c.getHSL({}, THREE.SRGBColorSpace).h;
+    const c0 = g.material.color.clone();
+    ok(hue(c0) > 0.11 && hue(c0) < 0.18, `starts yellow (${c0.getHexString()})`);
+    let last = g.userData.fill, mid = null, full = null, breached = false;
+    for (let i = 0; i < 400 && !breached; i++) {
+      s.w.step(0.05, { x: 0, z: 0 });
+      breached = (s.ctx.testHooks.wallBreaches || 0) >= 1;
+      if (breached) break;
+      const f = g.userData.fill;
+      ok(f >= last - 1e-9, 'fills steadily'); last = f;
+      if (!mid && f > 0.45 && f < 0.6) mid = g.material.color.clone();
+      if (f > 0.9) full = g.material.color.clone();
+    }
+    ok(breached, 'an enemy climbed over');
+    ok(last > 0.95, `gauge was full when the enemy came up (${last})`);
+    ok(mid && hue(mid) > 0.05 && hue(mid) < 0.11, `orange in the middle (${mid && mid.getHexString()})`);
+    ok(full && hue(full) < 0.04, `red when nearly full (${full && full.getHexString()})`);
+    ok(!g.visible, 'gauge cleared after the climb');
+  } finally { s.done(); }
+}, { timeout: 40000 });

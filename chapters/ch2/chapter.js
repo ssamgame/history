@@ -1,6 +1,6 @@
 // 2장 「양규와 흥화진」(D-8): 성문을 열고 들어옴 → 병사·백성 이야기를 듣고 양규에게 → 양규를 따라 성벽에 올라
 // 양규가 가리킨 사다리를 밀어냄(같은 장면) → 백성 구출(구한 백성이 따라와 성으로 들어옴) → 퀴즈.
-import { buildCh2Scene, WALL_TOP, WALK_Z } from './scene.js';
+import { buildCh2Scene, setGauge, WALL_TOP, WALK_Z } from './scene.js';
 import { roam } from '../../core/flow.js';
 import { showHowTo, runWithRetries } from '../../core/minigame.js';
 import { enterThroughGate } from '../kit/gate.js';
@@ -23,6 +23,9 @@ const NEED_PUSH = 10;    // 이만큼 밀어내면 바로 성공
 const RAISE_SECONDS = 0.8; // 거란 병사가 사다리를 세우는 시간
 const RAISE_LEAN = 1.1;    // 세우기 전 사다리가 뒤로 눕혀진 각도(라디안)
 const FALL_SECONDS = 0.7;  // 밀린 사다리가 뒤로 넘어가는 시간
+const GATHER_Z = -16.3;    // 성 밖 거란군이 사다리 아래 모이는 줄(사다리 밑동 -14.5보다 바깥)
+const BACK_Z = -25;        // 사다리가 밀려나면 이만큼 물러났다가 다시 다가온다
+const PUSH_BACK_R = 3.6;   // 밀린 사다리 밑동에서 이만큼 안의 군사가 함께 밀려난다
 
 let scene = null;
 let rescued = []; // 구한 백성 무리(구한 차례). 학생을 줄지어 따라온다
@@ -141,6 +144,61 @@ function resetLadders() {
     l.climber.visible = false; l.carrier.visible = false;
   }
   for (const r of scene.wallRings) r.visible = false;
+  for (const g of scene.wallGauges) { g.visible = false; setGauge(g, 0); }
+}
+
+// 성 밖 거란군 무리(D-32): 사다리 아래로 걸어와 모이고, 세운 사다리 아래에 몰리며, 사다리가 밀려나면 함께 물러났다가 다시 다가온다.
+// 걸음은 자리가 바뀌면 다리·무릎·팔이 저절로 움직인다(core/people.js). 사람마다 빠르기가 조금씩 다르다.
+function makeHorde(active) {
+  let seed = 7;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const hs = scene.horde.map(k => {
+    k.position.copy(k.userData.home); k.visible = true;
+    return { k, state: 'come', tx: 0, tz: 0, wait: 0, speed: 1.2 + rnd() * 0.5, ladder: null };
+  });
+  const aim = (h, l) => {
+    h.ladder = l; h.state = 'come';
+    h.tx = clamp(l.x + (rnd() - 0.5) * 2.6, -11, 11); h.tz = GATHER_Z - rnd() * 1.8;
+  };
+  const pick = h => {
+    const busy = [...active.keys()].filter(l => hs.filter(o => o.ladder === l).length < 5);
+    aim(h, busy.length && rnd() < 0.75 ? busy[Math.floor(rnd() * busy.length)] : scene.ladders[Math.floor(rnd() * scene.ladders.length)]);
+  };
+  hs.forEach(pick);
+  const near = (h, l) => Math.hypot(h.k.position.x - l.x, h.k.position.z + 15.5) < PUSH_BACK_R;
+  return {
+    raised(l) { // 사다리를 세우면 가까운 군사 몇이 그 아래로 몰려온다
+      const free = hs.filter(h => h.state !== 'back').sort((a, b) => Math.abs(a.k.position.x - l.x) - Math.abs(b.k.position.x - l.x));
+      for (const h of free.slice(0, 4)) aim(h, l);
+    },
+    pushed(l) { // 사다리와 함께 밀려나 물러난다
+      for (const h of hs) if (near(h, l) || (h.ladder === l && h.state === 'wait')) {
+        h.state = 'back'; h.tx = clamp(h.k.position.x + (rnd() - 0.5) * 3, -16, 16); h.tz = BACK_Z - rnd() * 4;
+      }
+    },
+    update(dt) {
+      for (const h of hs) {
+        const p = h.k.position;
+        if (h.state === 'wait') {
+          h.wait -= dt;
+          if (h.wait <= 0 && !active.has(h.ladder)) pick(h); // 이 사다리가 서 있지 않으면 다른 사다리 쪽으로
+          continue;
+        }
+        let dx = h.tx - p.x, dz = h.tz - p.z;
+        const d = Math.hypot(dx, dz), step = (h.state === 'back' ? 3.4 : h.speed) * dt;
+        if (d <= step) {
+          p.x = h.tx; p.z = h.tz;
+          if (h.state === 'back') pick(h);
+          else { h.state = 'wait'; h.wait = 2 + rnd() * 3; h.k.rotation.y = (rnd() - 0.5) * 0.4; } // 성벽을 올려다본다
+          continue;
+        }
+        dx /= d; dz /= d;
+        p.x += dx * step; p.z += dz * step;
+        h.k.rotation.y = Math.atan2(dx, dz);
+      }
+    },
+    reset() { for (const h of hs) { h.k.position.copy(h.k.userData.home); h.k.rotation.y = 0; } },
+  };
 }
 
 function callLabel(world) { // 양규 머리 위 "저기다!"
@@ -165,11 +223,12 @@ function wallDefense(ctx, easy) {
   p.set(clamp(p.x, WALL_BOUNDS.x0, WALL_BOUNDS.x1), WALL_TOP, WALK_Z);
   const yg = world.npcs.get('yanggyu'), m = yg.mesh.position, label = callLabel(world);
   let t = 0, nextSpawn = 1, blocked = 0, breaches = 0, slotSeed = 5, done = false, pointed = null, callT = 0;
-  const active = new Map(), falling = new Map();
+  const active = new Map(), falling = new Map(), horde = makeHorde(active);
+  const gauge = l => scene.wallGauges[scene.ladders.indexOf(l)];
   return new Promise(resolve => {
     const finish = ok => {
       if (done) return; done = true;
-      off(); resetLadders(); label.visible = false;
+      off(); resetLadders(); horde.reset(); label.visible = false;
       hud.setTimer(null); hud.setCounter(null); world.setGoal(null);
       resolve(ok);
     };
@@ -177,6 +236,7 @@ function wallDefense(ctx, easy) {
       blocked += 1; ctx.testHooks.wallPushed = (ctx.testHooks.wallPushed || 0) + 1;
       audio.play('tap'); active.delete(l); falling.set(l, { k: 0, from: l.pivot.rotation.x });
       scene.wallRings[scene.ladders.indexOf(l)].visible = false;
+      gauge(l).visible = false; horde.pushed(l);
     };
     const off = world.onUpdate(dt => {
       if (done) return;
@@ -193,11 +253,14 @@ function wallDefense(ctx, easy) {
           l.pivot.rotation.x = l.tilt - RAISE_LEAN;
           active.set(l, { t: 0 });
           scene.wallRings[scene.ladders.indexOf(l)].visible = true;
+          setGauge(gauge(l), 0); gauge(l).visible = true; horde.raised(l);
         }
       }
       for (const l of active.keys()) if (Math.abs(p.x - l.x) < PUSH_R) push(l); // 가까이 가면 밀어낸다
+      horde.update(dt);
       for (const [l, a] of active) {
         a.t += dt;
+        setGauge(gauge(l), a.t / (RAISE_SECONDS + climbTime)); // 다 차는 순간 이 사다리로 적이 올라온다
         if (a.t < RAISE_SECONDS) { // 사다리를 세우는 중: 뒤로 눕혀 있던 사다리가 성벽 쪽으로 일어선다
           const r = a.t / RAISE_SECONDS;
           l.pivot.rotation.x = l.tilt - RAISE_LEAN * (1 - r * r * (3 - 2 * r));
@@ -208,9 +271,9 @@ function wallDefense(ctx, easy) {
         const k = Math.min(1, (a.t - RAISE_SECONDS) / climbTime);
         l.climber.position.set(0, k * (l.len - 0.3), 0.25); // 끝에 다다르면 성가퀴 위로 몸이 드러난다
         if (a.t >= RAISE_SECONDS + climbTime) {
-          breaches += 1; audio.play('wrong');
+          breaches += 1; audio.play('wrong'); ctx.testHooks.wallBreaches = (ctx.testHooks.wallBreaches || 0) + 1;
           active.delete(l); l.group.visible = false;
-          scene.wallRings[scene.ladders.indexOf(l)].visible = false;
+          scene.wallRings[scene.ladders.indexOf(l)].visible = false; gauge(l).visible = false;
           if (breaches >= 3) return finish(false);
         }
       }

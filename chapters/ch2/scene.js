@@ -21,6 +21,17 @@ export const LADDER_X = [-9.3, -5.7, -2.1, 1.5, 5.1, 8.7];
 export const WALL_TOP = WALL_H + 0.14; // 성벽 위 걷는 높이(쌓인 눈 위)
 export const WALK_Z = -12.55;          // 성벽 위 걷는 줄(성가퀴 안쪽)
 
+const GAUGE_SEG = 32;
+const G_YELLOW = new THREE.Color(0xffd43b), G_ORANGE = new THREE.Color(0xff8c1a), G_RED = new THREE.Color(0xe82a1e);
+// 사다리 게이지 채우기(0~1): 찬 만큼만 그리고, 반까지는 노랑 → 주황, 그다음 주황 → 빨강
+export function setGauge(g, f) {
+  f = Math.min(1, Math.max(0, f));
+  g.userData.fill = f;
+  g.geometry.setDrawRange(0, 6 * Math.ceil(f * GAUGE_SEG));
+  if (f < 0.5) g.material.color.copy(G_YELLOW).lerp(G_ORANGE, f / 0.5);
+  else g.material.color.copy(G_ORANGE).lerp(G_RED, (f - 0.5) / 0.5);
+}
+
 function seeded(s) { return () => (s = (s * 16807) % 2147483647) / 2147483647; }
 
 export function buildCh2Scene(world) {
@@ -106,6 +117,9 @@ export function buildCh2Scene(world) {
     const k = makePerson(LOOKS.khitan);
     k.position.set(-18 + i * 4, 0, -24 - (i % 2) * 2); khitanFront.add(k);
   }
+  for (let i = 0; i < 4; i++) { const k = makePerson(LOOKS.khitan); k.position.set(-12 + i * 8, 0, -29); khitanFront.add(k); } // 뒷줄
+  const horde = [...khitanFront.children]; // 성벽 방어 때 사다리 아래로 걸어와 모이는 무리(D-32)
+  for (const k of horde) k.userData.home = k.position.clone();
 
   // 사다리 6개와 오르는 거란 병사 (처음엔 숨김)
   const len = Math.hypot(WALL_H, LADDER_Z + HALF + 1.6 + 0.0);
@@ -149,9 +163,17 @@ export function buildCh2Scene(world) {
   // 성문 바로 안쪽 길옆 장소 이름판(D-8, 읽는 안내판이 아니다). 열린 오른쪽 문짝에 가리지 않는 자리
   nameBoard(L, '흥화진', 3, 8.8);
   // 성벽 위 사다리 자리마다 빛나는 원(양규가 가리킨 곳). 학생이 그 원에 가까이 가면 사다리를 밀어낸다
+  // D-32: 원은 옅은 노란 바탕이고, 그 위 게이지가 시간이 지날수록 노랑 → 주황 → 빨강으로 차오른다(다 차면 적이 올라온다)
   const wallRings = LADDER_X.map(x => {
-    const r = new THREE.Mesh(new THREE.RingGeometry(0.6, 0.9, 24), new THREE.MeshBasicMaterial({ color: 0xff6a3d, transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
+    const r = new THREE.Mesh(new THREE.RingGeometry(0.6, 0.95, 32), new THREE.MeshBasicMaterial({ color: 0xfff0a8, transparent: true, opacity: 0.85, side: THREE.DoubleSide, depthWrite: false }));
     r.rotation.x = -Math.PI / 2; r.position.set(x, WALL_TOP + 0.04, WALK_Z); r.visible = false; L.add(r); return r;
+  });
+  const wallGauges = LADDER_X.map(x => {
+    const g = new THREE.Mesh(new THREE.RingGeometry(0.6, 0.95, GAUGE_SEG, 1, Math.PI / 2, Math.PI * 2),
+      new THREE.MeshBasicMaterial({ color: 0xffd43b, transparent: true, opacity: 0.95, side: THREE.DoubleSide, depthWrite: false }));
+    g.rotation.x = -Math.PI / 2; g.scale.x = -1; // 화면 위(북쪽)에서 시작해 시계 방향으로 찬다
+    g.position.set(x, WALL_TOP + 0.06, WALK_Z); g.visible = false; g.renderOrder = 2; L.add(g);
+    setGauge(g, 0); return g;
   });
 
   const ring = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.25, 28), new THREE.MeshBasicMaterial({ color: 0xd9a441, transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
@@ -160,7 +182,7 @@ export function buildCh2Scene(world) {
 
   backdropMountains(world.level, { color: 0xc8ccd0, radius: 130 }); // 먼 산줄기(깊이감)
   return {
-    ring, gate, wallRings, stairs: { x: 0, z: -6, r: 1.6 }, ladders, captives, khitan, khitanFront, campFires,
+    ring, gate, wallRings, wallGauges, horde, stairs: { x: 0, z: -6, r: 1.6 }, ladders, captives, khitan, khitanFront, campFires,
     field: { bounds: { x0: -24, x1: 24, z0: 20, z1: 72 }, start: [0, 68], lostZ: 21 }, // 플레이어는 남쪽에서 북쪽(화면 위)으로 쫓아간다
     start: [0, 6],
   };
