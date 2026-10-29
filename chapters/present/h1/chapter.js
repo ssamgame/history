@@ -197,12 +197,12 @@ export async function classroomPlay(ctx) {
   world.closeView = true;
   await ctx.fade?.(true);
   const a = buildArena(world, A), g = a.group;
-  const [rx, rz] = A.room, room = classroom(g, rx, rz, { teacher: 'scholarModern' }), O = a.at(rx, rz);
+  const [rx, rz] = A.room, room = classroom(g, rx, rz, { teacher: 'scholarModern', seated: true }), O = a.at(rx, rz);
   const kids = room.kids;
-  const hook = ctx.testHooks.school = { desks: kids.length, books: 0, oldBooks: 0, read: 0, board: false, facing: 0 };
+  const hook = ctx.testHooks.school = { desks: kids.length, books: 0, oldBooks: 0, read: 0, board: false, facing: 0, seated: kids.filter(k => k.userData.seated).length };
   const crate = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.5, 0.6), mat(0x7a5a3c, 'wood', 'object')); crate.position.set(A.crate[0], 0.25, A.crate[1]); g.add(crate); // 걷은 교과서 상자
   const desks = kids.map((kid, i) => {
-    const kx = kid.position.x, kz = kid.position.z;
+    const kx = kid.position.x, kz = kid.position.z - 0.3; // 책상 줄(아이는 그 뒤 의자에 앉아 있다)
     const old = bookMesh(0x5a3a2a); old.position.set(kx, 0.74, kz - 0.55); room.group.add(old); hook.oldBooks += 1;
     const ring = new THREE.Mesh(new THREE.RingGeometry(0.45, 0.6, 24), new THREE.MeshBasicMaterial({ color: 0xd9a441, transparent: true, opacity: 0.9, side: THREE.DoubleSide }));
     ring.rotation.x = -Math.PI / 2; ring.position.set(kx + 0.8, 0.1, kz - 0.2); ring.visible = false; room.group.add(ring);
@@ -229,7 +229,7 @@ export async function classroomPlay(ctx) {
       audio.play('tap');
       const lab = labelSprite(d.word, { size: 0.7 }); lab.position.set(d.kx, 2.5, d.kz); room.group.add(lab); // 아이가 일어나 낱말을 읽는다
       classView(); // 칠판 쪽 높은 곳에서 아이들의 얼굴과 책상을 본다
-      await wait(world, 0.9, k => { d.kid.position.y = 0.12 * Math.sin(k * Math.PI); });
+      await wait(world, 0.9, k => { const ar = d.kid.userData.arms; if (ar) ar[1].rotation.x = -1.3 * Math.sin(k * Math.PI); }); // 앉은 채 손을 들고 읽는다
       hook.read += 1;
       await wait(world, 0.9);
       lab.removeFromParent();

@@ -52,8 +52,18 @@ export function sayer(ctx) {
   };
 }
 
-// 학교 교실: 앞(+z)이 열린 방, 칠판·선생님 책상·책상 여덟과 학생들. teacher: 선생님 생김새
-export function classroom(g, x, z, { teacher = 'scholarModern', wall = 0xe6dcc3 } = {}) {
+// 의자에 앉기(D-49): 허벅지를 앞으로 눕히고 무릎을 굽혀 정강이를 내린다. 몸 전체를 내려 엉덩이가 의자 높이(0.32)에 닿는다
+export const SEAT_Y = 0.32;
+export function sitDown(p) {
+  const u = p.userData;
+  u.legs?.forEach(l => { l.position.z = 0.2; l.rotation.x = -Math.PI / 2; if (l.userData.knee) l.userData.knee.rotation.x = Math.PI / 2; });
+  const robe = p.children.find(m => m.geometry?.parameters?.height === 1.25); // 긴 옷자락은 앞뒤로 좁혀 굽힌 무릎과 정강이가 보이게
+  if (robe) robe.scale.z = 0.72;
+  p.children.filter(m => m.name === 'hem').forEach(m => { m.scale.z = 0.72; });
+  p.position.y = SEAT_Y - 0.55; u.seated = true;
+}
+// 학교 교실: 앞(+z)이 열린 방, 칠판·선생님 책상·책상 여덟과 학생들. teacher: 선생님 생김새. seated: 학생들이 의자에 앉는다
+export function classroom(g, x, z, { teacher = 'scholarModern', wall = 0xe6dcc3, seated = false } = {}) {
   const c = new THREE.Group(); c.position.set(x, 0, z); g.add(c);
   const box = (w, h, d, color, bx, by, bz, kind = 'wood') => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color, kind)); m.position.set(bx, by, bz); m.castShadow = true; m.receiveShadow = true; c.add(m); return m; };
   box(9, 0.1, 7, 0x8a6a48, 0, 0.05, 0);
@@ -65,6 +75,11 @@ export function classroom(g, x, z, { teacher = 'scholarModern', wall = 0xe6dcc3 
   for (let r = 0; r < 2; r++) for (let i = 0; i < 4; i++) {
     const kx = -2.7 + i * 1.8, kz = -0.4 + r * 1.8;
     box(1.2, 0.7, 0.5, 0x7a5a3c, kx, 0.35, kz - 0.55);
+    if (seated) { // 책상 뒤 의자에 앉는다(무릎이 책상 밑으로 들어가게 조금 뒤로)
+      box(0.62, 0.06, 0.7, 0x6b4a32, kx, SEAT_Y - 0.03, kz + 0.45); box(0.62, 0.62, 0.06, 0x6b4a32, kx, SEAT_Y + 0.31, kz + 0.8); // 의자 앉는 판과 등받이(옷자락 뒤로 보이게)
+      for (const [lx, lz] of [[-0.26, 0.15], [0.26, 0.15], [-0.26, 0.76], [0.26, 0.76]]) box(0.06, SEAT_Y - 0.06, 0.06, 0x5e432c, kx + lx, (SEAT_Y - 0.06) / 2, kz + lz);
+      const k = person(c, i % 2 ? 'schoolgirl' : 'student', kx, kz + 0.3, Math.PI); sitDown(k); kids.push(k);
+    } else
     kids.push(person(c, i % 2 ? 'schoolgirl' : 'student', kx, kz, Math.PI));
   }
   return { group: c, teacher: t, kids, box };

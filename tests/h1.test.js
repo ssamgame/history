@@ -67,6 +67,7 @@ test('h1 D-47 C-05: 놀이는 새 놀이 둘(문패 바꿔 달기 → 첫 한글
   ok(!script.parts.news && !script.parts.change, '소식 전하기·가져다 놓기는 뺐다');
   const hs = script.parts.names.houses;
   ok(hs.length >= 4, `집 ${hs.length}`);
+  ok(!hs.some(h => h.old === '야스모토'), 'D-49: 야스모토는 다른 이름으로');
   for (const h of hs) { eq(h.options.length, 3); ok(h.options.includes(h.name), `${h.name}: 선택지에 정답`); ok(h.old && h.old !== h.name, '옛 문패'); }
 });
 
@@ -128,6 +129,7 @@ test('h1 D-47: 첫 한글 수업 — 책상마다 한글 교과서를 놓으면 
     ok(h.desks >= 8 && h.books === h.desks, `책상 ${h.desks}, 놓은 책 ${h.books}`);
     eq(h.oldBooks, 0, '일본어 교과서는 모두 걷었다');
     ok(h.read >= h.desks, `읽은 아이 ${h.read}`);
+    eq(h.seated, h.desks, 'D-49: 아이들이 모두 자기 책상 의자에 앉아 있다');
     ok(h.board, '칠판 글씨');
     ok(h.facing >= 0.8, `D-45: 함께 읽는 아이들 얼굴이 보인다 ${h.facing}`);
     eq(s.w.level.children.length, n0, '무대를 치웠다');
