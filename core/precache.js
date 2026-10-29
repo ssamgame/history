@@ -1,5 +1,5 @@
 // 서비스 워커가 처음 설치될 때 기기에 저장해 둘 파일 목록. 장을 추가하면 여기에도 넣는다.
-export const CACHE = 'goryeo-v65'; // 배포할 때마다 올린다 (학생 기기에 새 판이 반영되도록)
+export const CACHE = 'goryeo-v66'; // 배포할 때마다 올린다 (학생 기기에 새 판이 반영되도록)
 
 export const PRECACHE = [
   'index.html', 'styles.css', 'vendor/three.module.min.js', 'content/sources.js', 'content/review.js',
@@ -7,7 +7,7 @@ export const PRECACHE = [
   'core/quality.js', 'core/audio.js', 'core/world.js', 'core/people.js', 'core/screens.js', 'core/flow.js', 'core/portal.js', 'core/intro.js',
   'core/precache.js',
   'core/minigame.js', 'core/weather.js', 'core/faces.js', 'core/music.js', 'core/textures.js', 'core/props.js', 'content/characters.js', 'content/glyphs.js',
-  'core/quizview.js', 'content/roles.js', 'chapters/ch5/pictures.js',
+  'core/quizview.js', 'content/roles.js',
   'chapters/index.js', 'chapters/ch1/chapter.js', 'chapters/ch1/scene.js', 'chapters/ch1/script.js',
   'chapters/ch2/chapter.js', 'chapters/ch2/scene.js', 'chapters/ch2/script.js',
   'chapters/ch3/chapter.js', 'chapters/ch3/scene.js', 'chapters/ch3/script.js',
@@ -21,7 +21,7 @@ export const PRECACHE = [
   'chapters/joseon/j4/chapter.js', 'chapters/joseon/j4/scene.js', 'chapters/joseon/j4/script.js',
   'chapters/joseon/j5/chapter.js', 'chapters/joseon/j5/scene.js', 'chapters/joseon/j5/script.js',
   'chapters/joseon/j6/chapter.js', 'chapters/joseon/j6/scene.js', 'chapters/joseon/j6/script.js', 'chapters/joseon/j6/hold.js',
-  'chapters/kit/chapter.js', 'chapters/kit/town.js', 'chapters/kit/play.js', 'chapters/kit/buildings.js', 'chapters/kit/terrain.js', 'chapters/kit/gate.js', 'chapters/kit/lead.js', 'chapters/kit/fire.js', 'chapters/kit/diorama.js', 'chapters/joseon/ships.js', 'chapters/joseon/j2/pictures.js', 'chapters/modern/pictures.js', 'chapters/modern/dioramas.js',
+  'chapters/kit/chapter.js', 'chapters/kit/town.js', 'chapters/kit/play.js', 'chapters/kit/buildings.js', 'chapters/kit/terrain.js', 'chapters/kit/gate.js', 'chapters/kit/lead.js', 'chapters/kit/talk.js', 'chapters/kit/fire.js', 'chapters/kit/diorama.js', 'chapters/joseon/ships.js', 'chapters/joseon/j2/pictures.js', 'chapters/modern/pictures.js', 'chapters/modern/dioramas.js',
   'chapters/modern/k1/chapter.js', 'chapters/modern/k1/script.js',
   'chapters/modern/k2/chapter.js', 'chapters/modern/k2/script.js',
   'chapters/modern/k3/chapter.js', 'chapters/modern/k3/script.js',
