@@ -617,7 +617,7 @@ export function cityGate(g, p = {}) {
 // ── 시대·장소별 건물 (2026-10-24 전면 개선) ──
 // 간판·현판 글: 나무판(또는 천)에 쓴 글자. 같은 글은 한 번만 그린다.
 const signTex = new Map();
-function signMaterial(text, { bg = '#2b241c', fg = '#f2e6b0', vertical = false } = {}) {
+export function signMaterial(text, { bg = '#2b241c', fg = '#f2e6b0', vertical = false } = {}) {
   const key = `${text}|${bg}|${fg}|${vertical}`;
   if (signTex.has(key)) return signTex.get(key);
   const cv = document.createElement('canvas'); cv.width = vertical ? 64 : 256; cv.height = vertical ? 256 : 64;
