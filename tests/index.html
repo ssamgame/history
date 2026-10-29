@@ -9,7 +9,7 @@
 <div id="sandbox" style="position:fixed;left:0;top:0;width:800px;height:500px;visibility:hidden"></div>
 <script type="module">
   import { run } from './harness.js';
-  const files = ['smoke', 'save', 'content', 'dialogue', 'input', 'quality', 'world', 'flow', 'screens', 'ch1', 'sw', 'weather', 'minigame', 'ch2', 'ch3', 'faces', 'session2-core', 'ch4', 'ch5', 'ch6', 'classroom', 'speech', 'music', 'graphics', 'courses', 'joseon-core', 'j1', 'j2', 'j3', 'j4', 'j5', 'j6', 'k1', 'k2', 'k3', 'k4', 'k5', 'k6', 'i1', 'i2', 'i3', 'i4', 'layout', 'kit', 'play', 'feedback', 'goryeo-feedback', 'carry', 'perf', 'quest', 'stage3-text', 'stage3-gfx', 'review', 'd30', 'goryeo46-d30'];
+  const files = ['smoke', 'save', 'content', 'dialogue', 'input', 'quality', 'world', 'flow', 'screens', 'ch1', 'sw', 'weather', 'minigame', 'ch2', 'ch3', 'faces', 'session2-core', 'ch4', 'ch5', 'ch6', 'classroom', 'speech', 'music', 'graphics', 'courses', 'joseon-core', 'j1', 'j2', 'j3', 'j4', 'j5', 'j6', 'k1', 'k2', 'k3', 'k4', 'k5', 'k6', 'i1', 'i2', 'i3', 'i4', 'i5', 'layout', 'kit', 'play', 'feedback', 'goryeo-feedback', 'carry', 'perf', 'quest', 'stage3-text', 'stage3-gfx', 'review', 'd30', 'goryeo46-d30'];
   const failed = [];
   for (const f of files) {
     try { await import(`./${f}.test.js`); } catch (e) { failed.push(`FAIL import ${f}: ${e.message}`); }
