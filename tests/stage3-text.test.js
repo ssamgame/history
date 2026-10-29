@@ -37,7 +37,7 @@ test('stage3-text: D20 가져다 놓기 안내 10곳이 짧고 같은 꼴이다'
       ok(bare(p.howto).length <= 70, `${id}: 안내가 김 ${bare(p.howto).length}자`);
     }
   }
-  eq(n, 9, '가져다 놓기 안내 수'); // k1은 D-28에 물건을 안고 가는 안내로 바뀜
+  eq(n, 8, '가져다 놓기 안내 수'); // k1은 D-28에 물건을 안고 가는 안내로, k6은 D-35에 두 갈래 길 체험으로 바뀜
 });
 
 test('stage3-text: D21 전차 놀이 안내가 짧다', async () => {
