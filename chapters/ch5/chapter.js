@@ -1,6 +1,6 @@
-// 5장 「팔만대장경」(D-17): 작업장 문을 열고 들어와 스님의 이야기 → 장인 네 사람의 "그다음엔…"(어느 차례로든) →
-// 스님이 건넨 나무판을 들고 빛나는 여섯 곳을 돌며 경판 만들기 → 그 경판에 大藏經을 새겨 서가에 꽂기 → 퀴즈.
-import { buildCh5Scene } from './scene.js';
+// 5장 「팔만대장경」(D-17, D-32): 작업장 문을 열고 들어와 스님의 이야기 → 장인 네 사람의 "그다음엔…"(어느 차례로든) →
+// 스님이 건넨 나무판을 들고 빛나는 여섯 곳에서 E를 눌러 경판 만들기(자리마다 과정 그림, 3번 장인 자리에서 大藏經을 바로 새김) → 서가에 꽂기 → 퀴즈.
+import { buildCh5Scene, drawMakingStep } from './scene.js';
 import { roam } from '../../core/flow.js';
 import { traceGlyph, showHowTo } from '../../core/minigame.js';
 import { labelSprite, setCarry } from '../../core/people.js';
@@ -14,7 +14,6 @@ import script from './script.js';
 
 const ARTISANS = ['artisan1', 'artisan2', 'artisan3', 'artisan4'];
 const NEAR = 1.3;      // 빛나는 자리에 닿았다고 보는 거리
-const WORK_TIME = 1.2; // 판을 내려놓고 모습이 바뀔 때까지(초)
 const WRONG_NEAR = 0.9, WRONG_STAY = 0.5; // 차례가 아닌 자리에 이만큼 가까이 이만큼 머물면 스님이 알려 준다
 let scene = null;
 
@@ -49,73 +48,96 @@ function putDown(world, [x, y, z]) {
   world.level.add(scene.plank); scene.plank.position.set(x, y, z); scene.plank.rotation.set(0, 0, 0);
 }
 
-// 놀이 1: 경판 만들기. 지금 차례인 자리만 빛나고, 가까이 가면 판을 내려놓고 잠깐 뒤 모습이 한 단계 바뀐 판을 다시 든다.
-// 다른 자리에 가면 스님이 짧게 알려 준다(실패로 세지 않고 다시 하기도 없다). 한 번도 틀리지 않으면 first: true
-export function makeBlock(ctx) {
-  const { world, hud, dialogue, audio } = ctx;
-  const S = scene.stations;
-  let k = 0, work = -1, first = true, began = false, wasInput = false;
-  const stay = new Map(), told = new Set(); // 다른 자리에 머문 시간, 이번에 머무는 동안 이미 알려 준 자리
-  scene.setStage(0);
+// 과정 그림(D-32): 그 자리의 일을 그린 그림과 그 아래 설명 한 줄. '다음'(또는 E)을 누르면 닫힌다
+export function showStepPicture(ctx, i) {
+  const P = script.making.pictures[i];
   return new Promise(resolve => {
-    const show = () => {
-      S.forEach((s, i) => { s.ring.visible = i === k && work < 0; });
-      world.setGoal(work < 0 && S[k] ? { x: S[k].spot[0], z: S[k].spot[1] } : null);
-      hud.setCounter(`경판 만들기 ${k}/${S.length}`);
-    };
-    const off = world.onUpdate(dt => {
-      if (!began) { began = true; hold(world); show(); return; } // 스님이 나무판을 건넨다
-      const p = world.player.position;
-      if (work >= 0) { // 판을 내려놓고 일하는 중
-        work += dt;
-        if (work < WORK_TIME) return;
-        work = -1; k += 1; scene.setStage(k); hold(world); audio.play('correct');
-        if (k >= S.length) { ctx.input.enabled = wasInput; off(); S.forEach(s => { s.ring.visible = false; }); hud.setCounter(null); world.setGoal(null); resolve({ first }); return; }
-        ctx.input.enabled = wasInput; show(); return;
-      }
-      S.forEach((s, i) => {
-        const d = Math.hypot(p.x - s.spot[0], p.z - s.spot[1]);
-        if (i === k) { if (d < NEAR) { putDown(world, s.put); work = 0; wasInput = ctx.input.enabled; ctx.input.enabled = false; audio.play('tap'); show(); } return; }
-        // 다른 자리: 지나가기만 하면 괜찮고, 그 자리에 잠깐 머물면 스님이 알려 준다
-        if (d >= WRONG_NEAR) { stay.delete(i); return; }
-        const t = (stay.get(i) || 0) + dt; stay.set(i, t);
-        if (t < WRONG_STAY || told.has(i)) return;
-        told.add(i);
-        if (!dialogue.isOpen()) { first = false; dialogue.say(script.making.failHint).then(() => dialogue.close()); }
-      });
-      for (const i of told) if (!stay.has(i)) told.delete(i);
-    });
+    const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+    const screen = el('section', 'screen doc ch5-step'); screen.dataset.step = P.id;
+    const card = el('div', 'card'); Object.assign(card.style, { padding: '16px 20px', gap: '10px' });
+    const cv = drawMakingStep(document.createElement('canvas'), i);
+    cv.setAttribute('role', 'img'); cv.setAttribute('aria-label', P.title);
+    Object.assign(cv.style, { display: 'block', justifySelf: 'center', width: 'clamp(140px, calc((100dvh - 300px) * 1.43), 360px)', height: 'auto', borderRadius: '4px', border: '2px solid #6b4a32' });
+    const ok = el('button', 'btn primary doc-ok', '다음'); ok.type = 'button';
+    card.append(el('div', 'eyebrow', `경판 만들기 ${i + 1} / ${script.making.pictures.length}`), el('h2', null, P.title), cv, el('p', null, P.text), ok);
+    screen.append(card); ctx.ui.append(screen);
+    let unbind = null, done = false;
+    const close = () => { if (done) return; done = true; clearTimeout(arm); unbind?.(); screen.remove(); resolve(); };
+    ok.addEventListener('click', close);
+    const arm = setTimeout(() => { unbind = ctx.onAction?.(close) || null; }, 300); // 방금 누른 E가 바로 닫지 않게 잠깐 뒤부터 받는다
   });
 }
 
-// 놀이 2: 방금 만든 경판을 새기는 자리로 가져가 大藏經을 새기고(글자판), 그 경판을 들고 서가에 꽂는다. 화면 전환 없이 같은 장면에서 잇는다
-export async function carveAndShelve(ctx) {
-  const { world, dialogue, hud, input } = ctx;
-  const C = scene.stations.find(s => s.id === 'carve'), H = scene.shelf;
-  const walkTo = (spot, ring) => new Promise(resolve => {
-    ring.visible = true; world.setGoal({ x: spot[0], z: spot[1] });
-    const was = input.enabled; input.enabled = true;
-    const off = world.onUpdate(() => {
-      const p = world.player.position;
-      if (Math.hypot(p.x - spot[0], p.z - spot[1]) >= NEAR) return;
-      off(); ring.visible = false; world.setGoal(null); input.enabled = was; resolve();
-    });
-  });
-  if (scene.plank.parent !== world.player) hold(world);
-  await dialogue.say(script.carving.go); dialogue.close();
-  await walkTo(C.spot, C.ring);
-  putDown(world, C.put);
-  ctx.audio.play('tap');
+// 3번 장인 자리에서 내려놓은 판에 大藏經 세 글자를 바로 새긴다(글자판)
+async function carve(ctx) {
+  const { dialogue, hud } = ctx;
   await sayAll(dialogue, script.carving.intro);
   dialogue.close();
   const glyphs = script.carving.glyphs;
   for (let i = 0; i < glyphs.length; i++) { await traceGlyph(ctx, glyphs[i]); scene.setCarved(i + 1); hud.setCounter(`새긴 글자 ${i + 1}/${glyphs.length}`); }
-  hud.setCounter(null);
-  ctx.audio.play('correct');
-  hold(world);
+}
+
+// 놀이: 경판 만들기. 지금 차례인 자리만 빛나고, 그 자리에서 E(대화 버튼)를 누르면 판을 내려놓고 그 일의 과정 그림이 뜬다.
+// 그림을 닫으면 판이 한 단계 바뀌고 다시 든다. 3번 장인 자리(글자 새기기)에서는 그 자리에서 바로 大藏經을 새기고, 새긴 경판을 들고 4번 장인에게 간다.
+// 다른 자리에 머물면 스님이 짧게 알려 준다(실패로 세지 않고 다시 하기도 없다). 한 번도 틀리지 않으면 first: true
+export async function makeBlock(ctx) {
+  const { world, hud, dialogue, audio } = ctx;
+  const S = scene.stations, P = script.making.pictures;
+  let k = 0, first = true, busy = false;
+  const stay = new Map(), told = new Set(); // 다른 자리에 머문 시간, 이번에 머무는 동안 이미 알려 준 자리
+  scene.setStage(0); scene.setCarved(0); hold(world); // 스님이 나무판을 건넨다
+  const show = () => {
+    S.forEach((s, i) => { s.ring.visible = i === k && !busy; });
+    hud.setCounter(`경판 만들기 ${k}/${S.length}`);
+  };
+  const offHint = world.onUpdate(dt => {
+    if (busy) return;
+    const p = world.player.position;
+    S.forEach((s, i) => {
+      if (i <= k) return; // 지금 차례인 자리와 이미 마친 자리(방금 일을 마치고 그대로 서 있어도)는 알려 주지 않는다
+      const d = Math.hypot(p.x - s.spot[0], p.z - s.spot[1]);
+      if (d >= WRONG_NEAR) { stay.delete(i); return; } // 지나가기만 하면 괜찮고, 그 자리에 잠깐 머물면 스님이 알려 준다
+      const t = (stay.get(i) || 0) + dt; stay.set(i, t);
+      if (t < WRONG_STAY || told.has(i)) return;
+      told.add(i);
+      if (!dialogue.isOpen()) { first = false; dialogue.say(script.making.failHint).then(() => dialogue.close()); }
+    });
+    for (const i of told) if (!stay.has(i)) told.delete(i);
+  });
+  while (k < S.length) {
+    busy = false; show();
+    const st = S[k];
+    await waitInteract(ctx, { pos: { x: st.spot[0], z: st.spot[1] }, label: P[k].title, r: NEAR + 0.3, mark: false });
+    busy = true; show();
+    const was = ctx.input.enabled; ctx.input.enabled = false;
+    putDown(world, st.put); audio.play('tap');
+    await showStepPicture(ctx, k);
+    if (st.id === 'carve') await carve(ctx);
+    k += 1; scene.setStage(k); hold(world); audio.play('correct');
+    if (st.id === 'carve') { hud.setCounter(`경판 만들기 ${k}/${S.length}`); await dialogue.say(script.carving.toEnds); dialogue.close(); }
+    ctx.input.enabled = was;
+  }
+  offHint();
+  S.forEach(s => { s.ring.visible = false; }); hud.setCounter(null); world.setGoal(null);
+  return { first };
+}
+
+// 다 만든 경판을 들고 서가에 꽂는다. 화면 전환 없이 같은 장면에서 잇는다
+export async function shelveBlock(ctx) {
+  const { world, dialogue, input } = ctx;
+  const H = scene.shelf;
+  if (scene.plank.parent !== world.player) hold(world);
   scene.library.visible = true;
   await dialogue.say(script.carving.shelve); dialogue.close();
-  await walkTo(H.spot, H.ring);
+  await new Promise(resolve => {
+    H.ring.visible = true; world.setGoal({ x: H.spot[0], z: H.spot[1] });
+    const was = input.enabled; input.enabled = true;
+    const off = world.onUpdate(() => {
+      const p = world.player.position;
+      if (Math.hypot(p.x - H.spot[0], p.z - H.spot[1]) >= NEAR) return;
+      off(); H.ring.visible = false; world.setGoal(null); input.enabled = was; resolve();
+    });
+  });
   shelve();
   ctx.audio.play('correct');
 }
@@ -233,7 +255,7 @@ export default {
     input.enabled = true;
     const a = await makeBlock(ctx);
     input.enabled = false;
-    // 다음 놀이는 저절로 시작하지 않는다: 스님에게 가서 말을 걸어야 글자 새기기가 시작된다(C-05)
+    // 다음 일은 저절로 시작하지 않는다: 스님에게 가서 말을 걸어야 서가에 꽂는 일이 시작된다(C-05)
     const monk = world.npcs.get('monk');
     monk.mark.visible = true;
     await waitInteract(ctx, { pos: monk.mesh.position, quest: script.goals[4], label: '스님과 이야기하기', mark: false });
@@ -242,7 +264,8 @@ export default {
     world.setTalkCamera(monk.mesh);
     await sayAll(dialogue, script.making.done);
     dialogue.close(); world.camMode = 'follow';
-    await carveAndShelve(ctx);
+    ctx.setGoal(script.goals[5]);
+    await shelveBlock(ctx);
     input.enabled = false;
     await sayAll(dialogue, script.result);
     dialogue.close();

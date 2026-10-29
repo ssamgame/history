@@ -165,7 +165,7 @@ export function buildCh5Scene(world) {
   const setStage = n => {
     plank.userData.stage = n;
     wood.color.setHex(STAGE_COLOR[n]); wood.roughness = n >= 6 ? 0.35 : n === 1 ? 0.55 : 0.9; // 젖으면 짙고 촉촉하게, 옻칠하면 윤이 난다
-    marks.visible = n >= 4; ends.visible = n >= 5;
+    marks.visible = n >= 4 && !(plank.userData.carved > 0); ends.visible = n >= 5; // 大藏經을 새겼으면 작은 자국 대신 그 글자가 보인다
     marks.children.forEach(m => m.material.color.setHex(n >= 6 ? 0x1a0e08 : 0x3a2616));
   };
   const setCarved = (n, glyphs = ['大', '藏', '經']) => {
@@ -209,4 +209,65 @@ export function buildCh5Scene(world) {
   backdropMountains(world.level, { color: 0x4f6a3e, radius: 130 }); // 먼 산줄기(깊이감)
   surroundings(world, { bounds: world.bounds, trees: ['pine', 'pine', 'tree'], count: 12, seed: 5 }); // 걷는 곳 바깥에 그 장소다운 집·나무(깊이감)
   return { library, shelf, stations, plank, setStage, setCarved, gate, start: [0, 7], introFrom: [0, 15] };
+}
+
+// 경판 만드는 과정 그림(D-32): 단계마다 캔버스에 그린다(그림 파일 없음, 글자 없음). 그림판은 100×70 칸을 scale배로 키운다.
+// 0 바닷물에 담그기 · 1 소금물에 삶기 · 2 그늘에서 말리기 · 3 글자 새기기 · 4 마구리 달기 · 5 옻칠하기
+export function drawMakingStep(canvas, i, scale = 5) {
+  canvas.width = 100 * scale; canvas.height = 70 * scale;
+  const g = canvas.getContext('2d');
+  if (!g) return canvas;
+  g.setTransform(scale, 0, 0, scale, 0, 0);
+  g.lineJoin = 'round'; g.lineCap = 'round';
+  const fill = (c, d) => { g.fillStyle = c; g.fill(new Path2D(d)); };
+  const line = (c, w, d) => { g.strokeStyle = c; g.lineWidth = w; g.stroke(new Path2D(d)); };
+  const box = (x, y, w, h, c, stroke = null, rot = 0, cx = 0, cy = 0) => {
+    g.save();
+    if (rot) { g.translate(cx, cy); g.rotate(rot * Math.PI / 180); g.translate(-cx, -cy); }
+    g.fillStyle = c; g.beginPath();
+    if (g.roundRect) g.roundRect(x, y, w, h, Math.min(2, h / 2)); else g.rect(x, y, w, h);
+    g.fill();
+    if (stroke) { g.strokeStyle = stroke; g.lineWidth = 1.5; g.stroke(); }
+    g.restore();
+  };
+  const plank = (x, y, w, h, c = '#c9a26b') => box(x, y, w, h, c, '#7a5530');
+  const dot = (x, y, r, c, stroke) => {
+    g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fillStyle = c; g.fill();
+    if (stroke) { g.strokeStyle = stroke; g.lineWidth = 1.5; g.stroke(); }
+  };
+  const paper = c => { g.fillStyle = c; g.fillRect(0, 0, 100, 70); };
+  if (i === 0) { // 파도 위에 떠 있는 통나무
+    paper('#d8ecf4');
+    fill('#4f88a8', 'M0 38 Q12 32 25 38 T50 38 T75 38 T100 38 V70 H0Z');
+    box(18, 30, 44, 10, '#8a5a3a', '#5a3a22'); dot(62, 35, 5, '#c9a26b', '#5a3a22');
+    box(44, 40, 40, 9, '#94643f', '#5a3a22'); dot(84, 44.5, 4.5, '#c9a26b', '#5a3a22');
+    line('#bfe0ee', 2, 'M0 52 Q12 46 25 52 T50 52 T75 52 T100 52');
+    line('#bfe0ee', 1.5, 'M6 62 Q16 58 26 62 M60 64 Q70 60 80 64');
+  } else if (i === 1) { // 불 위의 큰 가마솥과 김
+    paper('#f3e9d6');
+    line('#a9a9a9', 2.5, 'M28 18 q4 -8 0 -14 M44 16 q4 -8 0 -14 M60 18 q4 -8 0 -14');
+    fill('#2e2b28', 'M18 24 H82 Q80 52 50 54 Q20 52 18 24Z'); box(14, 21, 72, 5, '#44403b');
+    box(24, 16, 34, 6, '#8a5a3a'); box(40, 13, 34, 6, '#94643f');
+    fill('#e8742c', 'M30 66 Q34 54 40 62 Q44 50 50 60 Q56 48 60 62 Q66 54 70 66Z'); fill('#f7c24a', 'M40 66 Q45 58 50 64 Q55 58 60 66Z');
+  } else if (i === 2) { // 지붕 그늘 아래 세워 말리는 판자
+    paper('#eef0e2'); dot(88, 12, 7, '#f2c94c');
+    fill('#3d4846', 'M8 22 L50 6 L92 22 Z'); box(14, 22, 4, 40, '#6b4a32'); box(82, 22, 4, 40, '#6b4a32');
+    g.fillStyle = '#cfd3c4'; g.fillRect(18, 22, 64, 40);
+    plank(24, 30, 9, 30); plank(36, 28, 9, 32); plank(48, 30, 9, 30); plank(60, 28, 9, 32);
+    g.fillStyle = '#a59c8a'; g.fillRect(0, 62, 100, 8);
+  } else if (i === 3) { // 판에 줄지어 새긴 글자와 새김칼
+    paper('#f3e9d6'); plank(10, 10, 62, 50);
+    for (let c = 0; c < 5; c++) for (let r = 0; r < 4; r++) box(18 + c * 10, 17 + r * 10, 6, 6, '#5a3a22');
+    box(70, 30, 24, 6, '#6b4a32', null, -35, 82, 33); fill('#b8bcc2', 'M66 48 L72 40 L75 43 Z');
+  } else if (i === 4) { // 판 양 끝에 덧댄 마구리와 네 귀퉁이 구리판
+    paper('#f3e9d6'); plank(20, 14, 60, 42, '#b07a42');
+    for (const x of [8, 80]) box(x, 9, 12, 52, '#7a4e2a', '#4a2e16');
+    for (const [x, y] of [[8, 9], [86, 9], [8, 55], [86, 55]]) { g.fillStyle = '#c46a2c'; g.fillRect(x, y, 6, 6); g.strokeStyle = '#7a3a14'; g.lineWidth = 1; g.strokeRect(x, y, 6, 6); }
+    for (let k = 0; k < 4; k++) box(30 + k * 11, 26, 6, 18, '#6b4422');
+  } else { // 붓으로 검게 윤이 나는 옻칠을 입힌다
+    paper('#f3e9d6'); plank(10, 14, 64, 44, '#c9a26b'); box(10, 14, 40, 44, '#2a1a12');
+    line('#6e5a4e', 2, 'M14 18 L26 18');
+    box(58, 6, 7, 34, '#8a5a3a', null, 25, 61, 23); fill('#2a1a12', 'M50 38 Q48 46 54 46 Q58 44 56 36Z');
+  }
+  return canvas;
 }

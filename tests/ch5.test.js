@@ -97,7 +97,8 @@ test('ch5: resume at quiz shows the finished library of woodblocks', () => {
 });
 
 // ---- D-17: 스님이 여는 탐험, 나무판을 들고 경판 만들기, 그 경판에 大藏經 새기기 ----
-import { artisanTalk, makeBlock, carveAndShelve } from '../chapters/ch5/chapter.js';
+import * as ch5mod from '../chapters/ch5/chapter.js';
+const { artisanTalk, makeBlock, carveAndShelve } = ch5mod;
 import { sleep } from './bot.js';
 
 test('ch5 D-17: workshop gate, 경판 작업장 board, no reading signs, one-paragraph intro, five goals', () => {
@@ -110,7 +111,7 @@ test('ch5 D-17: workshop gate, 경판 작업장 board, no reading signs, one-par
   eq([...w.npcs.values()].filter(n => n.spot).length, 0, 'no reading signs');
   eq(ch5Script.intro.length, 2); ok(ch5Script.intro.every(l => !l.text.includes('\n'))); // D-30: 자막 장면 두 문장
   ok(ch5Script.intro[0].src.includes('S9') && ch5Script.intro[1].src.includes('S7'));
-  eq(ch5Script.goals.length, 5);
+  eq(ch5Script.goals.length, 6);
   eq(sc.stations.length, 6, 'six work places');
   ok(!('tooEarly' in ch5Script), 'never blocks out of order');
   w.dispose();
@@ -132,60 +133,98 @@ test('ch5 D-17: artisans tell their part in any order, pick up from the one befo
 
 function stepN(w, n = 1) { for (let i = 0; i < n; i++) w.step(0.05, { x: 0, z: 0 }); }
 
-test('ch5 D-17: carrying the plank to the six glowing places in order changes it step by step; a wrong place gets a hint, not a fail', async () => {
+// ---- D-32: 장인 자리에서 E를 눌러야 그 단계가 되고, 그 과정 그림이 뜬다. 글자는 3번 장인 자리에서 바로 새긴다 ----
+const stepPanel = s => s.ui.querySelector('.ch5-step');
+function inkColors(cv) { // 캔버스에 실제로 그렸는지: 서로 다른 색 수
+  const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data, set = new Set();
+  for (let i = 0; i < d.length; i += 4 * 97) set.add(`${d[i]},${d[i + 1]},${d[i + 2]}`);
+  return set.size;
+}
+
+test('ch5 D-32: each work place waits for E (talk button), then shows a drawn picture of that step with one sourced line; a wrong place gets a hint, not a fail', async () => {
+  const P = ch5Script.making.pictures;
+  eq(P.length, 6);
+  for (const p of P) { eq(p.who, 'narr'); ok(p.src.length && p.src.every(x => ['S8', 'S9'].includes(x)), p.id); ok(!p.text.includes('\n') && p.title); }
   const s = touchSetup(ch5Script.speakers);
   try {
     const sc = ch5.buildScene(s.w, s.ctx);
+    eq(P.map(p => p.id), sc.stations.map(x => x.id), 'one picture per work place in order');
     ch5.enterStage(s.ctx, 'minigame');
     let res = null;
     makeBlock(s.ctx).then(r => { res = r; });
     stepN(s.w);
-    ok(s.w.player.children.includes(sc.plank), 'the monk hands the plank: it is in the arms');
-    eq(sc.plank.userData.stage, 0);
-    const seen = [];
-    for (let k = 0; k < 6; k++) {
-      const st = sc.stations[k];
-      eq(sc.stations.filter(x => x.ring.visible).map(x => x.id), [st.id], `only place ${k + 1} glows`);
-      if (k === 0) { // 다른 자리를 지나가기만 하면 알려 주지 않는다
-        const w3 = sc.stations[3];
-        s.w.player.position.set(w3.spot[0], 0, w3.spot[1]); stepN(s.w, 2);
-        s.w.player.position.set(w3.spot[0], 0, w3.spot[1] + 3); stepN(s.w);
-        await sleep(20); ok(!s.dialogue.isOpen(), 'just passing by');
-      }
-      if (k === 1) { // 틀린 곳(말리는 선반)에 먼저 가 본다
-        const w2 = sc.stations[2];
-        s.w.player.position.set(w2.spot[0], 0, w2.spot[1]); stepN(s.w, 12); // 잠깐 머문다(지나가기만 하면 알려 주지 않음)
-        await sleep(20);
-        ok(s.dialogue.isOpen(), 'monk hint'); s.dialogue.close(); await sleep(5);
-        eq(sc.plank.userData.stage, 1, 'nothing happens at the wrong place');
-        s.w.player.position.set(w2.spot[0] + 3, 0, w2.spot[1] + 3); stepN(s.w);
-      }
-      s.w.player.position.set(st.spot[0], 0, st.spot[1]); stepN(s.w);
-      ok(!s.w.player.children.includes(sc.plank), `put down at ${st.id}`);
-      stepN(s.w, 40);
-      seen.push(sc.plank.userData.stage);
-      ok(s.w.player.children.includes(sc.plank) || k === 5, `picked up again after ${st.id}`);
-    }
-    await sleep(5);
-    eq(seen, [1, 2, 3, 4, 5, 6]);
-    ok(sc.plank.getObjectByName('marks').visible && sc.plank.getObjectByName('ends').visible, 'letters and end pieces');
-    ok(res && res.first === false, 'hint means no first-try point');
+    ok(s.w.player.children.includes(sc.plank), 'the plank is in the arms');
+    const st0 = sc.stations[0];
+    s.w.player.position.set(st0.spot[0], 0, st0.spot[1]); stepN(s.w, 40);
+    await sleep(10);
+    eq(sc.plank.userData.stage, 0, 'standing there is not enough');
+    ok(!stepPanel(s), 'no picture yet');
+    ok(!s.hud.talkBtn.disabled, 'talk button ready at the work place');
+    s.hud.talkBtn.click(); await sleep(10); stepN(s.w);
+    const panel = stepPanel(s);
+    ok(panel, 'picture panel opens');
+    eq(panel.dataset.step, 'soak');
+    const cv = panel.querySelector('canvas');
+    ok(cv && cv.width >= 300 && inkColors(cv) >= 4, 'a picture is drawn on a canvas');
+    ok(panel.textContent.includes(P[0].text), 'one line under the picture');
+    ok(!s.w.player.children.includes(sc.plank), 'put down at the work place');
+    eq(sc.plank.userData.stage, 0, 'still waiting while the picture is open');
+    panel.querySelector('.doc-ok').click(); await sleep(10); stepN(s.w, 2);
+    ok(!stepPanel(s), 'closed');
+    eq(sc.plank.userData.stage, 1, 'soaked');
+    ok(s.w.player.children.includes(sc.plank), 'picked up again');
+    stepN(s.w, 14); await sleep(20);
+    ok(!s.dialogue.isOpen(), 'standing on at the place just finished is not a wrong place');
+    // 틀린 곳(말리는 선반)에 머물면 스님이 알려 주고, 거기서는 대화 버튼이 눌리지 않는다
+    const w2 = sc.stations[2];
+    s.w.player.position.set(w2.spot[0], 0, w2.spot[1]); stepN(s.w, 12);
+    await sleep(20);
+    ok(s.dialogue.isOpen(), 'monk hint'); s.dialogue.close(); await sleep(5); stepN(s.w);
+    ok(s.hud.talkBtn.disabled, 'nothing to do at the wrong place');
+    eq(sc.plank.userData.stage, 1);
+    ok(res === null);
   } finally { s.done(); }
 });
 
-test('ch5 D-17: 大藏經 is carved on the block just made, then the student carries it to the shelf', async () => {
+test('ch5 D-32: 1 -> 2 -> 3 work places, the letters 大藏經 are carved right at artisan 3, and the carved block is carried to artisan 4', async () => {
   const s = touchSetup(ch5Script.speakers);
   const bot = touchBot(s, { answers });
   try {
     const sc = ch5.buildScene(s.w, s.ctx);
     ch5.enterStage(s.ctx, 'minigame');
-    sc.setStage(6); setCarryPlank(s, sc);
-    await carveAndShelve(s.ctx);
-    eq(sc.plank.userData.carved, 3, 'three letters carved');
-    eq(sc.plank.parent, sc.library, 'on the shelf');
-    ok(sc.library.visible);
+    const C = sc.stations.find(x => x.id === 'carve');
+    const order = [], boards = new Set();
+    let traceAway = 0, traceStage = new Set(), carried = false;
+    const seen = n => { // 봇은 그림·글자판이 뜨자마자 눌러 닫으므로 화면에 붙는 순간을 살핀다
+      if (n.classList?.contains('ch5-step')) order.push(n.dataset.step);
+      const b = n.querySelector?.('.trace-board');
+      if (b) {
+        boards.add(b); traceStage.add(sc.plank.userData.stage);
+        if (Math.hypot(s.w.player.position.x - C.spot[0], s.w.player.position.z - C.spot[1]) > 2) traceAway += 1;
+      }
+    };
+    const mo = new MutationObserver(list => list.forEach(m => m.addedNodes.forEach(seen)));
+    mo.observe(s.ui, { childList: true });
+    const off = s.w.onUpdate(() => {
+      if (sc.plank.userData.carved === 3 && sc.plank.userData.stage === 4 && !stepPanel(s) && sc.plank.parent === s.w.player) carried = true;
+    });
+    const r = await makeBlock(s.ctx);
+    off(); mo.disconnect();
+    eq(order, ['soak', 'boil', 'dry', 'carve', 'ends', 'lacquer']);
+    eq(boards.size, 3, 'three letters traced');
+    eq(traceAway, 0, 'traced at the carving place');
+    eq([...traceStage], [3], 'carved before the end pieces');
+    eq(sc.plank.userData.carved, 3); eq(sc.plank.userData.stage, 6);
+    ok(carried, 'the carved block is carried to artisan 4');
+    eq(r.first, true);
   } finally { bot.stop(); s.done(); }
-}, { timeout: 60000 });
+}, { timeout: 90000 });
+
+test('ch5 D-32: no separate carving part after the block is made', () => {
+  eq(typeof carveAndShelve, 'undefined');
+  ok(!('go' in ch5Script.carving), 'no "take it to the carving place" line');
+  ok(ch5Script.carving.intro[0].text.includes('3번 장인'));
+});
 
 import { setCarry } from '../core/people.js';
 function setCarryPlank(s, sc) { setCarry(s.w.player, sc.plank, 'arms'); }
@@ -194,10 +233,13 @@ test('ch5 D-17: full run uses no cards and keeps the low camera', async () => {
   const s = touchSetup(ch5Script.speakers);
   const bot = touchBot(s, { answers });
   let cards = 0, fixed = 0;
+  const boards = new Set();
+  const poll = setInterval(() => { const b = s.ui.querySelector('.trace-board'); if (b) boards.add(b); }, 5); // 장이 장면을 다시 지으면 onUpdate가 지워져서 따로 살핀다
   const off = s.w.onUpdate(() => { if (s.ui.querySelector('.order-card')) cards += 1; if (s.w.camMode === 'fixed' && !s.ctx.testHooks.quizView && !s.ui.classList.contains('filming')) fixed += 1; }); // 퀴즈 배경·도입 장면은 고정 카메라라 세지 않는다
   try {
     const r = await runChapter(CHAPTERS[4], ch5, s.ctx, memSave());
     eq(cards, 0, 'no picture cards'); eq(fixed, 0, 'no fixed camera');
     eq(r.firstTryCorrect, 1);
-  } finally { off(); bot.stop(); s.done(); }
+    eq(boards.size, 3, 'the three letters are carved once (inside block making)');
+  } finally { clearInterval(poll); off(); bot.stop(); s.done(); }
 }, { timeout: 150000 });
