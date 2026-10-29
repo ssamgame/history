@@ -86,6 +86,7 @@ test('i5 D-44: 광주 학생 항일 운동 장면 — 학생들이 걸어 나와
     ok(h.students >= 10, `학생 ${h.students}`);
     ok(h.walked > 5, `걸어 나온 거리 ${h.walked}`);
     ok(h.fists >= 3, `주먹 ${h.fists}번`);
+    ok(h.facing >= 0.8, `D-45: 학생들의 얼굴이 보인다 ${h.facing}`);
     ok(h.camFront, '카메라가 학생들 앞쪽에서 얼굴을 본다');
     eq(s.w.level.children.length, n0, '무대를 치웠다');
     eq(s.w.bounds, b0, '걷는 곳도 마을로');

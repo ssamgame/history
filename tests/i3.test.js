@@ -89,6 +89,7 @@ test('i3 D-41: 임시 정부 출범 장면 — 청사 앞에 동포가 모이고
     ok(h.crowd >= 8, `모인 동포 ${h.crowd}`);
     ok(h.flagTo - h.flagFrom > 2, `태극기가 오른다 ${h.flagFrom} → ${h.flagTo}`);
     ok(h.cheers >= 3, `만세 ${h.cheers}번`);
+    ok(h.facing >= 0.8, `D-45: 만세 부르는 동포들의 얼굴이 보인다 ${h.facing}`);
     eq(s.w.level.children.length, n0, '더한 것을 치웠다');
     ok(sc.flag.position.y > 3, '끝나도 태극기는 깃대 위에');
     ok(s.w.player.visible, '학생이 보인다');

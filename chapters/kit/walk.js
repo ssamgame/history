@@ -86,3 +86,15 @@ export async function minigameWithMeet(base, ctx) {
   d.say = line => (line && line.meet ? meetPerson(ctx, line.meet) : say.call(d, line));
   try { return await base.minigame(ctx); } finally { d.say = say; ctx.setGoal(null); }
 }
+
+// 얼굴이 보이는지(D-45 상시 규칙): 사람들 가운데 카메라 쪽을 바라보는(앞 방향과 카메라 쪽이 dot 이상) 비율. 만세·환호처럼 여럿이 함께하는 장면은 0.8 이상이어야 한다
+export function facingShare(world, people, dot = 0.2) {
+  const cam = world.camera.position, v = new THREE.Vector3(), q = new THREE.Quaternion(), f = new THREE.Vector3();
+  const n = people.filter(p => {
+    p.getWorldPosition(v); p.getWorldQuaternion(q);
+    f.set(0, 0, 1).applyQuaternion(q).setY(0).normalize();
+    const to = new THREE.Vector3(cam.x - v.x, 0, cam.z - v.z).normalize();
+    return f.dot(to) >= dot;
+  }).length;
+  return people.length ? n / people.length : 1;
+}

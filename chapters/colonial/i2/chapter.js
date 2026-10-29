@@ -10,7 +10,7 @@ import { BUILD, holdFlag, cheerFlag } from '../../kit/town.js';
 import { gateLeaves, nameBoard } from '../../kit/gate.js';
 import { walkInAndTalk, anyOrderTalk } from '../../kit/talk.js';
 import { burning } from '../../kit/fire.js';
-import { wait, person, ease, face, stationMarks, walkStations, sayer, meet, minigameWithMeet } from '../../kit/walk.js';
+import { wait, person, ease, face, stationMarks, walkStations, sayer, meet, minigameWithMeet, facingShare } from '../../kit/walk.js';
 import { LOOKS } from '../../../content/characters.js';
 import { placePlayer } from '../../joseon/common.js';
 import script from './script.js';
@@ -73,7 +73,7 @@ export async function declarationScene(ctx) {
   world.closeView = true;
   await ctx.fade?.(true);
   const g = new THREE.Group(); g.name = 'i2Declare'; world.level.add(g);
-  const hook = ctx.testHooks.declare = { reader: false, flags: 0, cheers: 0, held: false, camZ: 0, raisedY: 0 };
+  const hook = ctx.testHooks.declare = { reader: false, flags: 0, cheers: 0, held: false, camZ: 0, raisedY: 0, facing: 0 };
   const reader = person(g, 'student', 0, -4.9, 0); reader.position.y = 0.6; // 팔각정 위
   const paper = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.55, 0.02), new THREE.MeshLambertMaterial({ color: 0xf2ecd8 })); paper.position.set(0, 1.4, 0.45); paper.rotation.x = -0.4; reader.add(paper); hook.reader = true;
   const looks = ['student', 'schoolgirl', 'commoner', 'woman', 'gentleman', 'peasant', 'student', 'citizen', 'schoolgirl', 'worker', 'commoner', 'student'];
@@ -95,7 +95,7 @@ export async function declarationScene(ctx) {
       ctx.audio?.play?.('correct');
       await wait(world, 0.9, k => { crowd.forEach((p, i) => cheerPose(p, Math.min(1, Math.max(0, k * 1.15 - (i % 4) * 0.04)))); hook.raisedY = Math.max(hook.raisedY, ...flags.map(f => f.position.y)); });
       hook.cheers += 1;
-      if (n === 0) { hook.camZ = world.camera.position.z; }
+      if (n === 0) { hook.camZ = world.camera.position.z; hook.facing = facingShare(world, crowd); }
       if (n === 0) { await dialogue.say(L[3]); dialogue.close(); }
     }
     await dialogue.say(L[4]);

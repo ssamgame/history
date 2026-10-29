@@ -710,7 +710,7 @@ export function ambush(ctx, part, easy) {
   const taps = createTapTargets(ctx);
   s.cleanup(() => taps.dispose());
   const shooters = (part.shooters || []).map((sp, i) => proneShooter(g, { seed: i + 1, ...sp }));
-  const hook = ctx.testHooks.ambush = { prone: shooters.length, shots: 0, flashes: 0, headbands: shooters.filter(x => x.headband).length, aimPose: shooters.length > 0 && shooters.every(x => x.aim), flag: false };
+  const hook = ctx.testHooks.ambush = { prone: shooters.length, shots: 0, flashes: 0, headbands: shooters.filter(x => x.headband).length, aimPose: shooters.length > 0 && shooters.every(x => x.aim), flag: false, fallen: 0, lying: 0 };
   const fire = u => { // 다가온 적과 가까운 둘이 쏜다
     const near = shooters.map(sh => ({ sh, d: sh.group.position.distanceTo(u.position) })).sort((a, b) => a.d - b.d).slice(0, 2);
     near.forEach(({ sh }) => { muzzleFire(g, sh, ctx); hook.flashes += 1; });
@@ -739,7 +739,8 @@ export function ambush(ctx, part, easy) {
     const unit = { u, k: 0, state: 'come', t: null, smoke: null, a: [ax, az], b: [bx, bz], len: Math.hypot(bx - ax, bz - az), speed: (W.speed || part.speed || 2.2) * (easy ? 0.7 : 1) };
     unit.t = taps.add(u, { label: part.label || '공격!', onTap: () => {
       if (unit.state !== 'come') return;
-      unit.state = 'back'; hits += 1; waveHits += 1; if (shooters.length) fire(u); audio.play('correct'); count();
+      unit.state = part.unit === 'ship' ? 'back' : 'down'; unit.down = 0; hits += 1; waveHits += 1; if (shooters.length) fire(u); audio.play('correct'); count(); // 맞은 병사는 뒤로 쓰러진다(D-45, 배는 물러난다)
+      if (unit.state === 'down') hook.fallen += u.children.filter(c => c.userData?.arms).length;
       const puff = new THREE.Mesh(new THREE.SphereGeometry(1.4, 10, 8), new THREE.MeshBasicMaterial({ color: 0xdedad2, transparent: true, opacity: 0.7 }));
       puff.position.set(0, 1.5, 0); u.add(puff); unit.smoke = puff;
     } });
@@ -755,6 +756,17 @@ export function ambush(ctx, part, easy) {
       const [ax, az] = unit.a, [bx, bz] = unit.b, len = unit.len;
       if (unit.state === 'come') unit.k += (unit.speed * dt) / len;
       else if (unit.state === 'back') { unit.k -= (unit.speed * 1.6 * dt) / len; unit.u.rotation.y = Math.atan2(ax - bx, az - bz); }
+      else if (unit.state === 'down') { // 쓰러져 잠시 누워 있다가(피는 없다) 땅속으로 사라진다
+        unit.down += dt;
+        unit.u.children.forEach((c, i) => {
+          if (c === unit.smoke) return;
+          const k = Math.min(1, Math.max(0, (unit.down - i * 0.12) / 0.45));
+          const side = i % 2 ? 1 : -1; // 옆으로 비스듬히 쓰러져 멀리서도 누운 모습이 보인다
+          c.rotation.x = -Math.PI * 0.18 * k * k; c.rotation.z = side * Math.PI / 2 * k * k; c.position.y = unit.down > 2.4 ? -Math.min(1, (unit.down - 2.4) / 0.8) * 0.6 : 0;
+          if (c.userData?.arms) hook.lying = Math.max(hook.lying, Math.abs(c.rotation.z));
+        });
+        if (unit.down > 3.2) { unit.state = 'away'; unit.u.visible = false; }
+      }
       const x = ax + (bx - ax) * unit.k, z = az + (bz - az) * unit.k;
       unit.u.position.set(x, 0, z);
       if (unit.smoke) { unit.smoke.scale.multiplyScalar(1 + dt * 0.6); unit.smoke.material.opacity = Math.max(0, unit.smoke.material.opacity - dt * 0.4); }

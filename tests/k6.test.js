@@ -149,9 +149,9 @@ test('k6 D-35: 만주·연해주로 — 의병과 함께 강가 나룻배까지 
   } finally { bot.stop(); s.done(); }
 }, { timeout: 120000 });
 
-// D-37: 고갯길 매복 — 의병들이 길 양쪽 언덕 풀숲에 엎드려 총을 겨누고, 일본군이 빛나는 곳에 들어오면 「발사!」, 총을 쏘면 일본군은 놀라 물러난다
+// D-37: 고갯길 매복 — 의병들이 길 양쪽 언덕 풀숲에 엎드려 총을 겨누고, 일본군이 빛나는 곳에 들어오면 「발사!」, 총을 쏘면 일본군은 놀라 물러난다(D-45부터는 맞은 일본군이 뒤로 쓰러진다)
 import { PLAY } from '../chapters/kit/play.js';
-test('k6 D-37: 고갯길 매복은 양쪽 언덕에 엎드린 의병이 총을 쏘고, 일본군은 물러난다', async () => {
+test('k6 D-37·D-45: 고갯길 매복은 양쪽 언덕에 엎드린 의병이 총을 쏘고, 맞은 일본군은 쓰러진다', async () => {
   const part = k6.parts.find(p => p.type === 'ambush');
   eq(part.label, '발사!');
   ok(part.shooters?.length >= 4, `엎드린 의병 ${part.shooters?.length}`);
@@ -176,6 +176,8 @@ test('k6 D-37: 고갯길 매복은 양쪽 언덕에 엎드린 의병이 총을 �
     ok(h.headbands >= h.prone, `머리띠 ${h.headbands}`);
     ok(h.flag, '앞선 일본군이 깃발을 든다');
     ok(h.aimPose, '고개를 들고 두 팔로 총을 겨눈 자세');
+    ok(h.fallen >= h.shots, `D-45: 맞은 일본군이 쓰러진다 ${h.fallen}`);
+    ok(h.lying > 1.4, `D-45: 뒤로 누운 자세 ${h.lying.toFixed(2)}`);
   } finally { bot.stop(); s.done(); }
 }, { timeout: 120000 });
 const PASS_CROWD = part => (part.arena.props || []).some(p => p.type === 'crowd' && p.looks?.includes('uibyeong'));

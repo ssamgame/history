@@ -91,7 +91,8 @@ test('i4 D-42: 봉오동 전투 장면 — 양쪽 숲의 독립군이 쏘고, �
     ok(h.prone >= 6, `엎드린 독립군 ${h.prone}`);
     ok(h.enemies >= 6, `일본군 ${h.enemies}`);
     ok(h.volleys >= 3, `쏜 차례 ${h.volleys}`);
-    ok(h.retreated, '일본군이 물러난다');
+    ok(h.fallen >= 6, `D-45: 맞은 일본군이 쓰러진다 ${h.fallen}`);
+    ok(h.retreated, '남은 일본군이 물러난다');
     eq(s.w.level.children.length, n0, '무대를 치웠다');
     eq(s.w.bounds, b0, '걷는 곳도 마을로');
   } finally { bot.stop(); s.done(); }
@@ -110,6 +111,7 @@ test('i4 D-42: 승리한 진영 걷기 — 세 자리를 대화 버튼으로 겪
     ok(h.pressed >= 3, `대화 버튼으로 시작 ${h.pressed}`);
     eq(h.met, ['hongbeomdo', 'kimjwajin']);
     ok(h.fire && h.cheers >= 3, `모닥불, 만세 ${h.cheers}`);
+    ok(h.facing >= 0.8, `D-45: 만세 부르는 대원들의 얼굴이 보인다 ${h.facing}`);
     eq(s.w.level.children.length, n0, '무대를 치웠다');
     eq(s.w.bounds, b0, '걷는 곳도 마을로');
   } finally { bot.stop(); s.done(); }

@@ -8,7 +8,7 @@ import { buildArena, labelSprite } from '../../kit/play.js';
 import { cheerFlag } from '../../kit/town.js';
 import { gateLeaves, nameBoard } from '../../kit/gate.js';
 import { walkInAndTalk, anyOrderTalk } from '../../kit/talk.js';
-import { wait, person, ease, face, stationMarks, walkStations, sayer, classroom, meet, minigameWithMeet } from '../../kit/walk.js';
+import { wait, person, ease, face, stationMarks, walkStations, sayer, classroom, meet, minigameWithMeet, facingShare } from '../../kit/walk.js';
 import { setCarry, mat } from '../../../core/people.js';
 import { placePlayer } from '../../joseon/common.js';
 import script from './script.js';
@@ -66,7 +66,7 @@ export async function gwangjuScene(ctx) {
   world.closeView = true;
   await ctx.fade?.(true);
   const a = buildArena(world, A), g = a.group;
-  const hook = ctx.testHooks.gwangju = { students: 0, walked: 0, fists: 0, camFront: false };
+  const hook = ctx.testHooks.gwangju = { students: 0, walked: 0, fists: 0, camFront: false, facing: 0 };
   const looks = ['student', 'schoolgirl', 'student', 'student', 'schoolgirl', 'student', 'student', 'schoolgirl', 'student', 'schoolgirl', 'student', 'student'];
   const crowd = looks.map((look, i) => person(g, look, -2.7 + (i % 4) * 1.8 + (Math.floor(i / 4) % 2) * 0.5, -13 + Math.floor(i / 4) * 1.6, 0));
   hook.students = crowd.length;
@@ -86,6 +86,7 @@ export async function gwangjuScene(ctx) {
     await say(L[1], lead);
     dialogue.close();
     front();
+    hook.facing = facingShare(world, crowd);
     for (let n = 0; n < 3; n++) { // 다 함께 주먹을 든다
       ctx.audio?.play?.('tap');
       await wait(world, 0.9, k => crowd.forEach((p, i) => cheerFlag(p, Math.sin(Math.min(1, Math.max(0, k * 1.15 - (i % 4) * 0.05)) * Math.PI))));

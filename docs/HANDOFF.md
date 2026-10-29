@@ -48,6 +48,9 @@
 - 커밋 메시지는 한국어, 끝에 Co-Authored-By 줄(계정이 바뀌면 그 계정 안내를 따른다).
 - 고친 파일마다 `node --check`. 새 기능은 테스트 먼저(`tests/<장>.test.js`, `tests/index.html` 목록에 넣기).
 - 화면 확인: `python3 -m http.server <포트>` + Playwright(`--use-angle=swiftshader`), 1000×560, `index.html?debug=<장>-intro|explore|minigame|quiz`.
+- **얼굴이 보이게(D-45)**: 만세·환호·함께 외치기 장면에서 사람들이 등을 보이면 안 된다. 카메라를 사람들 앞쪽에 두거나 사람들이 카메라를 보게 하고, `facingShare(world, people)`(chapters/kit/walk.js)를 테스트 훅에 남겨 0.8 이상인지 테스트한다. 팔은 앞으로 든다(`rotation.x` 음수). 태극기는 `holdFlag`·`cheerFlag`(chapters/kit/town.js).
+- **전투(D-45)**: 총에 맞은 적은 옆으로 쓰러져 잠시 누웠다가 사라진다(피 없음). 공용 `PLAY.ambush`가 그렇게 하고, 장면을 새로 짤 때도 같게 한다.
+- 장면 사진: 스크래치패드 `botshot.cjs`(테스트 봇으로 장면 함수를 돌리며 캔버스를 찍는다, `node botshot.cjs <폴더> /chapters/.../chapter.js <함수|ambush> 300 400`). 게임 화면 흐름 대신 이 방법이 빠르고 확실하다.
 
 ## 6. 남은 묵은 일 (`docs/STATUS.md` 3절과 같음)
 - 실제 갤럭시 탭 측정(`docs/tablet-measure-guide.md`), 교과서 대조, 출처 S66~S70 주소 확인, 배경음악 들어 보기, 첫 화면 병사가 버튼 뒤에 겹침, 별점 규칙.

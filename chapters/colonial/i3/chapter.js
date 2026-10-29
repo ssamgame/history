@@ -9,7 +9,7 @@ import { buildArena } from '../../kit/play.js';
 import { flagMesh } from '../../kit/town.js';
 import { gateLeaves, nameBoard } from '../../kit/gate.js';
 import { walkInAndTalk, anyOrderTalk } from '../../kit/talk.js';
-import { wait, person, ease, face, stationMarks, walkStations, sayer, meet, minigameWithMeet } from '../../kit/walk.js';
+import { wait, person, ease, face, stationMarks, walkStations, sayer, meet, minigameWithMeet, facingShare } from '../../kit/walk.js';
 import { setCarry, mat } from '../../../core/people.js';
 import { placePlayer } from '../../joseon/common.js';
 import script from './script.js';
@@ -21,7 +21,7 @@ const xy = (list, pts) => list.map((it, i) => ({ ...it, ...pts[i] }));
 const paper = (w = 0.5, d = 0.36, color = 0xf2ecd8) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, 0.02, d), new THREE.MeshLambertMaterial({ color })); m.castShadow = true; return m; };
 
 // 만세: 두 팔을 번쩍 들었다 내린다(k 0~1)
-const cheerPose = (p, k) => { const a = p.userData.arms; if (!a) return; const u = Math.sin(k * Math.PI); a[1].rotation.x = Math.PI * 0.95 * u; a[0].rotation.x = Math.PI * 0.95 * u; };
+const cheerPose = (p, k) => { const a = p.userData.arms; if (!a) return; const u = Math.sin(k * Math.PI); a[1].rotation.x = -Math.PI * 0.95 * u; a[0].rotation.x = -Math.PI * 0.95 * u; }; // 팔은 앞으로 들어 올린다(음수, D-45)
 
 // ── 무대(마을에서 떨어진 x 400) ──
 const ALLEY = { edge: { style: 'shanghai', seed: 546 }, center: [{ type: 'lamp', x: -14, z: 12 }, { type: 'cargo', x: 14, z: 6, kind: 'crate', n: 4 }, { type: 'cargo', x: -15, z: -14, kind: 'barrel', n: 3 }], // 상하이 골목: 담과 가게 사이로 몰래
@@ -72,13 +72,13 @@ export async function launchScene(ctx) {
   world.closeView = true;
   await ctx.fade?.(true);
   const g = new THREE.Group(); g.name = 'i3Launch'; world.level.add(g);
-  const hook = ctx.testHooks.launch = { crowd: 0, flagFrom: scene.flag.position.y, flagTo: 0, cheers: 0 };
+  const hook = ctx.testHooks.launch = { crowd: 0, flagFrom: scene.flag.position.y, flagTo: 0, cheers: 0, facing: 0 };
   const kimgu = world.npcs.get('kimgu'), ahn = world.npcs.get('ahnchangho');
   const ahn0 = ahn.mesh.position.clone(), ahnRy = ahn.mesh.rotation.y;
   kimgu.mesh.position.set(1.5, 0, -4.6); kimgu.mesh.rotation.y = 0;
   ahn.mesh.position.set(-0.6, 0, -4.8); ahn.mesh.rotation.y = 0;
   const looks = ['citizen', 'student', 'gentleman', 'woman', 'scholarModern', 'citizen', 'schoolgirl', 'worker', 'gentleman', 'student'];
-  const crowd = looks.map((look, i) => { const r = i < 5 ? 0 : 1, c = i % 5; const p = person(g, look, -5 + c * 1.4 + r * 0.7, -1.2 + r * 1.5); face(p, 0.5, -4.6); return p; }); // 왼쪽에 모여 오른쪽 앞(학생·카메라 자리)은 비운다
+  const crowd = looks.map((look, i) => { const r = i < 5 ? 0 : 1, c = i % 5; const p = person(g, look, -5 + c * 1.4 + r * 0.7, 0.2 + r * 1.5); face(p, 0.5, -4.6); return p; }); // 왼쪽에 모여 오른쪽 앞(학생·카메라 자리)은 비운다
   hook.crowd = crowd.length;
   raiseFlag(0);
   placePlayer(world, [4.6, -0.4], Math.PI * 0.85);
@@ -97,7 +97,8 @@ export async function launchScene(ctx) {
     world.setFixedCamera([6.5, 4.2, 5.5], [0.8, 1.8, -4]);
     await dialogue.say(L[2]);
     dialogue.close();
-    world.setFixedCamera([-5.5, 3, 4.5], [0.4, 1.6, -2.6]); // 반대쪽에서 만세를 부르는 동포들
+    world.setFixedCamera([-1.8, 3.7, -4.3], [-1.6, 1.2, 0.8]); // 청사 앞(동포들 앞쪽)에서 만세를 부르는 얼굴을 마주 본다(D-45)
+    hook.facing = facingShare(world, crowd);
     for (let n = 0; n < 3; n++) {
       ctx.audio?.play?.('tap');
       await wait(world, 0.9, k => crowd.forEach((p, i) => cheerPose(p, Math.min(1, Math.max(0, k * 1.15 - (i % 4) * 0.04)))));

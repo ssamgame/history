@@ -89,6 +89,7 @@ test('i2 D-39: 독립 선언서 낭독 장면 — 팔각정에서 읽고, 모두
     ok(h.reader, '선언서를 읽는 학생');
     ok(h.flags >= 8, `꺼낸 태극기 ${h.flags}`);
     ok(h.cheers >= 3, `만세 ${h.cheers}번`);
+    ok(h.facing >= 0.8, `D-45: 만세 부르는 사람들의 얼굴이 보인다 ${h.facing}`);
     ok(h.held, 'D-43: 태극기는 손에 쥐고 가슴 앞에');
     ok(h.raisedY > 2, `D-43: 만세 때 깃발이 머리 위로 ${h.raisedY.toFixed(2)}`);
     ok(h.camZ < -2, `D-43: 카메라가 사람들 앞쪽(팔각정 쪽)에서 얼굴을 본다 z ${h.camZ.toFixed(1)}`);

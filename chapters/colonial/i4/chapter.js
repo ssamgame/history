@@ -8,7 +8,7 @@ import { buildArena, proneShooter, muzzleFire } from '../../kit/play.js';
 import { gateLeaves, nameBoard } from '../../kit/gate.js';
 import { walkInAndTalk, anyOrderTalk } from '../../kit/talk.js';
 import { burning } from '../../kit/fire.js';
-import { wait, person, ease, face, stationMarks, walkStations, sayer, meet, minigameWithMeet } from '../../kit/walk.js';
+import { wait, person, ease, face, stationMarks, walkStations, sayer, meet, minigameWithMeet, facingShare } from '../../kit/walk.js';
 import { LOOKS } from '../../../content/characters.js';
 import { placePlayer } from '../../joseon/common.js';
 import script from './script.js';
@@ -22,7 +22,7 @@ const JAPAN = { ...LOOKS.gendarme, gear: 'rifle' };
 const AIM = (x, z) => ({ x, z, ry: Math.atan2(-x, -1 - z), look: 'independenceArmy', band: false });
 const SHOOTERS = [AIM(-4.4, 9), AIM(-5.8, 10.2), AIM(-4, 11.4), AIM(4.4, 8.6), AIM(5.9, 9.8), AIM(4.2, 11.2)];
 // 만세: 두 팔을 번쩍 들었다 내린다(k 0~1)
-const cheerPose = (p, k) => { const a = p.userData.arms; if (!a) return; const u = Math.sin(k * Math.PI); a[1].rotation.x = Math.PI * 0.95 * u; a[0].rotation.x = Math.PI * 0.95 * u; };
+const cheerPose = (p, k) => { const a = p.userData.arms; if (!a) return; const u = Math.sin(k * Math.PI); a[1].rotation.x = -Math.PI * 0.95 * u; a[0].rotation.x = -Math.PI * 0.95 * u; }; // 팔은 앞으로 들어 올린다(음수, D-45)
 
 // ── 무대(마을에서 떨어진 x 400) ──
 const FOREST = { edge: { style: 'forest', seed: 836 }, center: [{ type: 'firepit', x: -15, z: 5 }, { type: 'rifles', x: 16, z: 10 }, { type: 'woodpile', x: 17, z: -6, ry: 0.5 }, { type: 'cargo', x: -15, z: -15, kind: 'crate', n: 3 }, { type: 'rifles', x: 7, z: 18 }],
@@ -62,7 +62,7 @@ export async function bongoScene(ctx) {
   world.closeView = true;
   await ctx.fade?.(true);
   const a = buildArena(world, A), g = a.group;
-  const hook = ctx.testHooks.bongo = { prone: 0, enemies: 0, volleys: 0, retreated: false };
+  const hook = ctx.testHooks.bongo = { prone: 0, enemies: 0, volleys: 0, fallen: 0, retreated: false };
   const shooters = A.shooters.map((sp, i) => proneShooter(g, { seed: i + 3, ...sp })); hook.prone = shooters.length;
   const hong = person(g, 'hongbeomdo', ...A.hong, Math.PI);
   const kim = person(g, 'kimjwajin', A.watch[0] + 1.4, A.watch[1] + 0.3, Math.PI);
@@ -83,16 +83,19 @@ export async function bongoScene(ctx) {
     await say(L[1], hong);
     dialogue.close();
     wide();
-    for (let v = 0; v < 3; v++) { // 양쪽 숲에서 세 번 쏜다
+    const front = [...enemy].sort((p, q) => q.position.z - p.position.z); // 앞줄부터
+    for (let v = 0; v < 3; v++) { // 양쪽 숲에서 세 번 쏘고, 맞은 앞줄 일본군이 뒤로 쓰러진다(D-45, 피는 없다)
       shooters.forEach((sh, i) => { if ((i + v) % 2 === 0 || v === 2) muzzleFire(g, sh, ctx); });
       ctx.audio?.play?.('shot');
       hook.volleys += 1;
-      await wait(world, 0.7, k => enemy.forEach((p, i) => { p.position.z -= (v + 1) * 0.02 * (i % 3 + 1); }));
+      const hit = front.slice(v * 2, v * 2 + 2);
+      await wait(world, 0.7, k => hit.forEach((p, i) => { const u = Math.min(1, Math.max(0, k * 1.6 - i * 0.2)); p.rotation.x = -Math.PI / 2 * u * u; }));
+      hook.fallen += hit.length;
     }
-    const z1 = enemy.map(p => p.position.z);
-    enemy.forEach(p => { p.rotation.y = Math.PI; });
-    await wait(world, 3, k => enemy.forEach((p, i) => { p.position.z = z1[i] - 24 * ease(k); })); // 일본군이 크게 지고 물러난다
-    hook.retreated = enemy.every((p, i) => p.position.z < z1[i] - 10);
+    const left = front.slice(6), z1 = left.map(p => p.position.z);
+    left.forEach(p => { p.rotation.y = Math.PI; });
+    await wait(world, 3, k => left.forEach((p, i) => { p.position.z = z1[i] - 24 * ease(k); })); // 남은 일본군은 크게 지고 물러난다
+    hook.retreated = left.every((p, i) => p.position.z < z1[i] - 10);
     await dialogue.say(L[2]);
     await say(L[3], kim);
     dialogue.close();
@@ -123,8 +126,10 @@ const ACT = {
     const { world } = ctx;
     const F = a.at(...CAMP.fire), S = a.at(-2.4, -3.4);
     placePlayer(world, [S.x, S.z], Math.PI * 0.85); // 학생은 불 왼쪽 앞으로 비켜 선다(카메라를 가리지 않게)
-    const view = () => world.setFixedCamera([F.x + 3.2, 3.4, F.z + 6.8], [F.x, 1.2, F.z - 1]);
+    const view = () => world.setFixedCamera([F.x + 1.6, 2.9, F.z + 6.4], [F.x, 1.4, F.z - 1.4]); // 불 앞(남쪽)에서 대원들을 마주 본다
     view();
+    set.ring.forEach(p => face(p, F.x - a.at(0, 0).x + 1.6, F.z - a.at(0, 0).z + 6.4)); // 모두 카메라 쪽을 본다
+    hook.facing = facingShare(world, set.ring);
     for (let n = 0; n < 3; n++) {
       ctx.audio?.play?.('correct');
       await wait(world, 0.9, k => set.ring.forEach((p, i) => cheerPose(p, Math.min(1, Math.max(0, k * 1.15 - (i % 3) * 0.05)))));
@@ -141,14 +146,14 @@ export async function victoryWalk(ctx) {
   world.closeView = true;
   await ctx.fade?.(true);
   const a = buildArena(world, A), g = a.group;
-  const hook = ctx.testHooks.victory = { used: [], pressed: 0, met: [], cheers: 0, fire: false };
+  const hook = ctx.testHooks.victory = { used: [], pressed: 0, met: [], cheers: 0, fire: false, facing: 0 };
   const hong = person(g, 'hongbeomdo', -7.6, 4.6, Math.PI / 4);
   const kim = person(g, 'kimjwajin', 7.8, -0.2, -Math.PI / 4);
   const [fx, fz] = A.fire;
   const fire = burning(world, { parent: g, x: fx, y: 0.2, z: fz, size: 0.6, level: 1 }); hook.fire = true;
   const ring = [];
-  for (let i = 0; i < 7; i++) { // 불 북쪽 반원(학생·카메라 쪽은 비운다)
-    const t = Math.PI * (-0.55 + i * 0.18), p = person(g, 'independenceArmy', fx + Math.sin(t) * 2.4, fz - Math.cos(t) * 2.4); face(p, fx, fz); ring.push(p); }
+  for (let i = 0; i < 7; i++) { // 불 북쪽에 활처럼 둘러서서 모두 남쪽(학생·카메라 쪽)을 본다(D-45: 만세는 얼굴이 보이게)
+    const t = Math.PI * (-0.42 + i * 0.14), p = person(g, 'independenceArmy', fx + Math.sin(t) * 2.6, fz - Math.cos(t) * 2.2 - 0.6, 0); ring.push(p); }
   const marks = stationMarks(a, g, P.stations, A.stations);
   const p0 = a.at(...A.from); placePlayer(world, [p0.x, p0.z], Math.PI);
   const set = { hong, kim, ring };
