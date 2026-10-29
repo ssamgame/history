@@ -121,3 +121,33 @@ test('i1 D-36: 시대별 체험 걷기 — 1910년대 → 1920년대 → 1930년
     eq(s.w.bounds, b0, '걷는 곳도 마을로');
   } finally { bot.stop(); s.done(); }
 }, { timeout: 180000 });
+
+// D-40: 헌병의 감시 불빛은 헌병이 걷는 쪽을 비추고, 돌아서면 함께 돈다(들키는 판정과 같은 쪽)
+import * as THREE from 'three';
+import { PLAY } from '../chapters/kit/play.js';
+test('i1 D-40: 감시 불빛이 헌병이 걷는 방향을 따라간다', async () => {
+  const part = i1.parts.find(p => p.type === 'sneak');
+  const s = touchSetup(script.speakers);
+  try {
+    i1.buildScene(s.w);
+    PLAY.sneak(s.ctx, part, false);
+    const guards = s.ctx.testHooks.sneak.guards;
+    ok(guards.length >= 3, '헌병 셋');
+    const dirs = new Map();
+    for (let f = 0; f < 600; f++) {
+      s.w.step(1 / 30, { x: 0, z: 0 });
+      if (f % 20) continue;
+      for (const [i, gd] of guards.entries()) {
+        gd.body.updateMatrixWorld(true);
+        const geo = gd.cone.geometry; geo.computeBoundingBox();
+        const c = geo.boundingBox.getCenter(new THREE.Vector3()).applyMatrix4(gd.cone.matrixWorld);
+        const b = gd.body.getWorldPosition(new THREE.Vector3());
+        const light = Math.atan2(c.x - b.x, c.z - b.z), walk = gd.body.rotation.y;
+        const diff = Math.abs(Math.atan2(Math.sin(light - walk), Math.cos(light - walk)));
+        ok(diff < 0.35, `헌병 ${i}: 불빛 ${light.toFixed(2)} / 걷는 쪽 ${walk.toFixed(2)}`);
+        dirs.set(i, (dirs.get(i) || new Set()).add(Math.round(Math.cos(walk))));
+      }
+    }
+    ok(dirs.get(0)?.size > 1, '돌아서면 불빛도 반대쪽을 비춘다');
+  } finally { s.done(); }
+}, { timeout: 60000 });

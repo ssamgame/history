@@ -790,10 +790,11 @@ export function sneak(ctx, part, easy) {
     const body = makePerson(LOOKS[gd.look || 'gendarme']); g.add(body);
     const range = (gd.range || 5) * (easy ? 0.75 : 1);
     const cone = new THREE.Mesh(new THREE.CircleGeometry(range, 24, -0.55, 1.1).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xffe08a, transparent: true, opacity: 0.32, depthWrite: false }));
-    cone.rotation.y = Math.PI / 2; // 원 조각의 가운데가 앞(+z)을 보게
+    cone.rotation.y = -Math.PI / 2; // 원 조각의 가운데(+x)가 헌병의 앞(+z)을 보게(D-40: 예전에는 뒤를 비췄다)
     cone.position.y = 0.06; body.add(cone);
     return { ...gd, body, range, ph: Math.random() * 6, cone };
   });
+  ctx.testHooks.sneak = { guards };
   // 숨을 곳(덤불·짐더미): 안에 들어가 있으면 감시원 불빛에 들키지 않는다
   const hides = (part.hides || []).map(hd => {
     const hg = new THREE.Group(); hg.position.set(hd.x, 0, hd.z); g.add(hg);
@@ -811,7 +812,10 @@ export function sneak(ctx, part, easy) {
       const [[ax, az], [bx, bz]] = gd.path;
       const k = (Math.sin((el + gd.ph) * (gd.speed || 0.5)) + 1) / 2, dk = Math.cos((el + gd.ph) * (gd.speed || 0.5));
       gd.body.position.set(ax + (bx - ax) * k, 0, az + (bz - az) * k);
-      gd.body.rotation.y = dk >= 0 ? Math.atan2(bx - ax, bz - az) : Math.atan2(ax - bx, az - bz);
+      const want = dk >= 0 ? Math.atan2(bx - ax, bz - az) : Math.atan2(ax - bx, az - bz); // 걷는 쪽으로 천천히 돌아선다(불빛도 함께 돈다)
+      if (gd.ry === undefined) gd.ry = want;
+      gd.ry += Math.atan2(Math.sin(want - gd.ry), Math.cos(want - gd.ry)) * Math.min(1, dt * 5);
+      gd.body.rotation.y = gd.ry;
       if (caught || hidden(p)) continue;
       const gp = s.at(gd.body.position.x, gd.body.position.z), dx = p.x - gp.x, dz = p.z - gp.z, d = Math.hypot(dx, dz);
       let diff = Math.atan2(dx, dz) - gd.body.rotation.y; diff = Math.atan2(Math.sin(diff), Math.cos(diff));
