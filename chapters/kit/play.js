@@ -12,7 +12,8 @@
 //   find   : 곳곳에 선 팻말 가운데 맞는 것만 찾아 대화 버튼을 누른다. 틀린 것이면 해설을 듣고 이어서 고른다.
 //            { arena?, from, items: [{ text, correct, x, z }] }
 //   ambush : 위에서 내려다보는 골짜기(바다)에 적이 들어오면 그 위의 버튼을 눌러 물리친다(연기를 내며 물러난다).
-//            { arena?, camera: { pos, target }, path: [[x, z], [x, z]], zone: { x, z, r }, enemies, need, interval, speed, unit: 'soldier'|'ship', label }
+//            { arena?, camera: { pos, target }, path: [[x, z], [x, z]], zone: { x, z, r }, enemies, need, interval, speed, unit: 'soldier'|'ship'|'target', label }
+//            unit 'target'(사격 훈련, D-46): 쏘는 사람 쪽(+z)을 보는 과녁 판이 썰매에 실려 지나가고, 맞으면 뒤로 넘어간다
 //   sneak  : 순찰하는 감시원의 불빛을 피해 숨을 곳을 차례로 지나 목적지까지 간다. 들키면 앞 숨을 곳으로. hides(덤불) 안에서는 들키지 않는다.
 // 이야기: drive·sneak의 지점, stops의 자리, find·deliver의 정답에 talk(대화 줄)를 달면 그때 대화가 나오고 시간이 멈춘다.
 //         drive 지점의 hold(초)는 그 안에서 버텨야 지나가고, pickups(줍기)·needPickups로 가는 길에 모을 것을 둔다. ambush는 waves로 여러 차례.
@@ -710,7 +711,7 @@ export function ambush(ctx, part, easy) {
   const taps = createTapTargets(ctx);
   s.cleanup(() => taps.dispose());
   const shooters = (part.shooters || []).map((sp, i) => proneShooter(g, { seed: i + 1, ...sp }));
-  const hook = ctx.testHooks.ambush = { prone: shooters.length, shots: 0, flashes: 0, headbands: shooters.filter(x => x.headband).length, aimPose: shooters.length > 0 && shooters.every(x => x.aim), flag: false, fallen: 0, lying: 0 };
+  const hook = ctx.testHooks.ambush = { prone: shooters.length, shots: 0, flashes: 0, headbands: shooters.filter(x => x.headband).length, aimPose: shooters.length > 0 && shooters.every(x => x.aim), flag: false, fallen: 0, lying: 0, targets: 0 };
   const fire = u => { // 다가온 적과 가까운 둘이 쏜다
     const near = shooters.map(sh => ({ sh, d: sh.group.position.distanceTo(u.position) })).sort((a, b) => a.d - b.d).slice(0, 2);
     near.forEach(({ sh }) => { muzzleFire(g, sh, ctx); hook.flashes += 1; });
@@ -731,18 +732,26 @@ export function ambush(ctx, part, easy) {
   const spawn = () => {
     const W = wave();
     const u = new THREE.Group(); g.add(u);
+    let unit0 = null;
     if (part.unit === 'ship') { add(u, box(2.6, 1.6, 7), 0x3a3f46, 0, 0.5, 0); add(u, box(1.6, 2, 2.4), 0x2b2f36, 0, 2, -0.6); add(u, new THREE.CylinderGeometry(0.08, 0.08, 4, 5), 0x2b241c, 0, 3.4, 0.8); }
+    else if (part.unit === 'target') { // 썰매 위 나무틀에 둥근 과녁 판(앞이 +z)
+      add(u, box(1.6, 0.12, 0.9), 0x6b4a32, 0, 0.06, 0);
+      const board = new THREE.Group(); board.position.y = 0.12; u.add(board);
+      for (const sx of [-1, 1]) add(board, box(0.1, 1.9, 0.1), 0x5e4330, sx * 0.62, 0.95, 0);
+      [[0.78, 0xd2b07a], [0.55, 0xe6dcc3], [0.3, 0xb8452f], [0.1, 0xe6dcc3]].forEach(([r, c], k) => { const d = add(board, new THREE.CylinderGeometry(r, r, 0.06, 18), c, 0, 1.45, 0.06 + k * 0.015); d.rotation.x = Math.PI / 2; });
+      u.scale.setScalar(1.4); unit0 = board; // 멀리서도 잘 보이게 조금 크게
+    }
     else for (let i = 0; i < 3; i++) { const p = makePerson(LOOKS[W.look || part.look || 'gendarme']); p.position.set((i - 1) * 0.9, 0, -i * 0.6); u.add(p); }
     if (part.flag && spawned === 0) { const f = risingSunFlag(); f.position.set(0.45, 0, 0.6); u.add(f); hook.flag = true; } // 차례마다 맨 앞 부대가 깃발을 든다
     const [[ax, az], [bx, bz]] = paths[(spawned + wi) % paths.length];
-    u.rotation.y = Math.atan2(bx - ax, bz - az);
-    const unit = { u, k: 0, state: 'come', t: null, smoke: null, a: [ax, az], b: [bx, bz], len: Math.hypot(bx - ax, bz - az), speed: (W.speed || part.speed || 2.2) * (easy ? 0.7 : 1) };
+    u.rotation.y = part.unit === 'target' ? 0 : Math.atan2(bx - ax, bz - az); // 과녁은 늘 쏘는 쪽을 본다
+    const unit = { u, board: unit0, k: 0, state: 'come', t: null, smoke: null, a: [ax, az], b: [bx, bz], len: Math.hypot(bx - ax, bz - az), speed: (W.speed || part.speed || 2.2) * (easy ? 0.7 : 1) };
     unit.t = taps.add(u, { label: part.label || '공격!', onTap: () => {
       if (unit.state !== 'come') return;
-      unit.state = part.unit === 'ship' ? 'back' : 'down'; unit.down = 0; hits += 1; waveHits += 1; if (shooters.length) fire(u); audio.play('correct'); count(); // 맞은 병사는 뒤로 쓰러진다(D-45, 배는 물러난다)
+      unit.state = part.unit === 'ship' ? 'back' : part.unit === 'target' ? 'hit' : 'down'; unit.down = 0; if (unit.state === 'hit') hook.targets += 1; hits += 1; waveHits += 1; if (shooters.length) fire(u); audio.play('correct'); count(); // 맞은 병사는 뒤로 쓰러진다(D-45, 배는 물러난다)
       if (unit.state === 'down') hook.fallen += u.children.filter(c => c.userData?.arms).length;
       const puff = new THREE.Mesh(new THREE.SphereGeometry(1.4, 10, 8), new THREE.MeshBasicMaterial({ color: 0xdedad2, transparent: true, opacity: 0.7 }));
-      puff.position.set(0, 1.5, 0); u.add(puff); unit.smoke = puff;
+      puff.position.set(0, 1.5, 0); if (unit.board) puff.scale.setScalar(0.45); u.add(puff); unit.smoke = puff; // 과녁은 작은 흙먼지
     } });
     unit.t.btn.hidden = true;
     units.push(unit); spawned += 1;
@@ -756,6 +765,11 @@ export function ambush(ctx, part, easy) {
       const [ax, az] = unit.a, [bx, bz] = unit.b, len = unit.len;
       if (unit.state === 'come') unit.k += (unit.speed * dt) / len;
       else if (unit.state === 'back') { unit.k -= (unit.speed * 1.6 * dt) / len; unit.u.rotation.y = Math.atan2(ax - bx, az - bz); }
+      else if (unit.state === 'hit') { // 맞은 과녁 판은 뒤로 넘어가고 썰매는 그대로 지나간다
+        unit.down += dt; unit.k += (unit.speed * dt) / len;
+        const k = Math.min(1, unit.down / 0.4); unit.board.rotation.x = -Math.PI / 2 * k * k;
+        if (unit.k >= 1) { unit.state = 'away'; unit.u.visible = false; }
+      }
       else if (unit.state === 'down') { // 쓰러져 잠시 누워 있다가(피는 없다) 땅속으로 사라진다
         unit.down += dt;
         unit.u.children.forEach((c, i) => {
