@@ -111,7 +111,7 @@ test('stage3-text: B14·B15 역사책 앞뒤 말이 역사책 쪽 글을 그대�
 });
 
 test('stage3-text: B20 긴 역사책 문장을 두 줄로 나눴다(같은 출처)', async () => {
-  const pages = [['h6', 'april19', ['S58']], ['h5', 'peddler', ['S51']]]; // i1·i2·h2 역사책은 D-36·D-39·D-48에 뺐다
+  const pages = [['h6', 'april19', ['S58']]]; // i1·i2·h2·h5 역사책은 D-36·D-39·D-48·D-52에 뺐다
   for (const [id, pic, src] of pages) {
     const s = await load(id);
     const pg = Object.values(s.parts).filter(p => p.type === 'book').flatMap(p => p.pages).find(p => p.pic === pic);

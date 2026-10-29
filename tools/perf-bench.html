@@ -96,7 +96,7 @@
     a.dispose();
   }
   async function book() {
-    const mod = await load('h5'); // D-34·D-36·D-48·D-51: 근대 5장·일제 1장·현대 2·4장은 역사책을 뺐다
+    const mod = await load('h6'); // D-34·D-36·D-48·D-51·D-52: 근대 5장·일제 1장·현대 2·4·5장은 역사책을 뺐다
     const part = Object.values(mod.script.parts).find(p => p.type === 'book');
     const ui = document.createElement('div'); document.body.append(ui);
     stats.setQuality('-', false); stats.segment('역사책 첫 쪽 (현대 2장, 미리 찍기 없이)');
@@ -134,7 +134,7 @@
       await village('k3'); world.player.position.set(0, 0, 8); await measure('근대 3장 동학 마을(탐험)', [{ x: 0, z: 8 }, { x: -6, z: 2 }, { x: 6, z: -2 }, { x: 0, z: 8 }]);
       await arenaOf('k3', 0, '근대 3장 동학 마을(무대: 농민군 모으기)');
       await arenaOf('k5', 1, '근대 5장 전차 길(무대)');
-      await arenaOf('h5', 0, '현대 5장 피란민 마을(무대)');
+      await arenaOf('i4', 0, '일제 4장 숲(무대)'); // D-52: 현대 5장 물 나르기 무대는 뺐다
       await book();
       status('다 쟀어요. 결과를 복사하거나 파일로 저장해 주세요.');
     } catch (e) { status(`측정 중 문제가 생겼어요: ${e.message}`); stats.time(`오류: ${e.message}`, 0); }
