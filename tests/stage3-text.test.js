@@ -102,8 +102,8 @@ test('stage3-text: D13 사실을 말하는 대사에 출처가 달렸다', async
 test('stage3-text: B14·B15 역사책 앞뒤 말이 역사책 쪽 글을 그대로 되풀이하지 않는다', async () => {
   const k4 = await load('k4'), i2 = await load('i2');
   const norm = t => t.replace(/[\s,.()·]/g, '');
-  const k4Pages = k4.parts.flow.pages.flatMap(p => p.lines.map(l => norm(l.text)));
-  for (const l of k4.parts.flow.done || []) {
+  const k4Pages = (k4.parts.flow?.pages || []).flatMap(p => p.lines.map(l => norm(l.text))); // D-33: 근대 4장은 역사책을 뺐다(만민 공동회로)
+  for (const l of k4.parts.flow?.done || []) {
     ok(!k4Pages.some(t => t.includes(norm(l.text).slice(10, 30))), `k4 done: ${l.text}`);
   }
   const i2Pages = i2.parts.flow.pages.flatMap(p => p.lines.map(l => bare(l.text)));
