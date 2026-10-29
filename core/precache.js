@@ -1,5 +1,5 @@
 // 서비스 워커가 처음 설치될 때 기기에 저장해 둘 파일 목록. 장을 추가하면 여기에도 넣는다.
-export const CACHE = 'goryeo-v66'; // 배포할 때마다 올린다 (학생 기기에 새 판이 반영되도록)
+export const CACHE = 'goryeo-v67'; // 배포할 때마다 올린다 (학생 기기에 새 판이 반영되도록)
 
 export const PRECACHE = [
   'index.html', 'styles.css', 'vendor/three.module.min.js', 'content/sources.js', 'content/review.js',
@@ -24,7 +24,7 @@ export const PRECACHE = [
   'chapters/kit/chapter.js', 'chapters/kit/town.js', 'chapters/kit/play.js', 'chapters/kit/buildings.js', 'chapters/kit/terrain.js', 'chapters/kit/gate.js', 'chapters/kit/lead.js', 'chapters/kit/talk.js', 'chapters/kit/fire.js', 'chapters/kit/diorama.js', 'chapters/joseon/ships.js', 'chapters/joseon/j2/pictures.js', 'chapters/modern/pictures.js', 'chapters/modern/dioramas.js',
   'chapters/modern/k1/chapter.js', 'chapters/modern/k1/script.js',
   'chapters/modern/k2/chapter.js', 'chapters/modern/k2/script.js',
-  'chapters/modern/k3/chapter.js', 'chapters/modern/k3/script.js',
+  'chapters/modern/k3/chapter.js', 'chapters/modern/k3/script.js', 'chapters/modern/k3/stage.js',
   'chapters/modern/k4/chapter.js', 'chapters/modern/k4/script.js',
   'chapters/modern/k5/chapter.js', 'chapters/modern/k5/script.js',
   'chapters/modern/k6/chapter.js', 'chapters/modern/k6/script.js',
