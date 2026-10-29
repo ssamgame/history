@@ -27,6 +27,7 @@ export function addJoints(person) {
   const u = person.userData;
   if (u.jointed) return person;
   u.legs.forEach(l => {
+    if (l.userData.knee) return; // 모든 인물에 무릎이 생겼다(D-32): 다리는 그대로 쓴다
     const [box, shoe] = l.children, m = box.material;
     l.clear();
     const thigh = new THREE.Mesh(new THREE.BoxGeometry(0.21, 0.3, 0.23), m); thigh.position.y = -0.15; thigh.castShadow = true; l.add(thigh);

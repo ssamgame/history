@@ -59,7 +59,7 @@ test('C-05: waitInteract는 그 자리에 가서 대화 버튼을 눌러야 끝�
   } finally { bot.stop(); s.done(); }
 }, { timeout: 20000 });
 
-test('C-03: 도입 장면은 해설을 자막으로 띄우고, 누르면 다음 문장, 건너뛰기로 끝난다', async () => {
+test('C-03/D-32: 도입 장면은 해설을 자막으로 띄우고, 건너뛸 수 없이 끝까지 본다', async () => {
   const s = touchSetup({});
   try {
     const lines = [{ who: 'narr', text: '첫 문장' }, { who: 'narr', text: '둘째 문장' }];
@@ -70,7 +70,10 @@ test('C-03: 도입 장면은 해설을 자막으로 띄우고, 누르면 다음 
     ok(!s.w.player.visible, 'student hidden during the film');
     s.ctx.testHooks.intro.next();
     eq(s.ui.querySelector('.intro-sub-text').textContent, '둘째 문장');
-    s.ui.querySelector('.intro-skip').click();
+    ok(!s.ui.querySelector('.intro-skip'), 'no skip button (D-32)');
+    s.ui.querySelector('.intro-film').click(); await sleep(20);
+    eq(s.ui.querySelector('.intro-sub-text').textContent, '둘째 문장', 'tapping does not skip');
+    s.ctx.testHooks.intro.skip(); // 테스트에서만 끝낸다
     await done;
     eq(acted, 2); ok(finished); ok(!s.ui.querySelector('.intro-film'));
     ok(s.w.player.visible); eq(s.w.camMode, 'follow');
@@ -94,4 +97,35 @@ test('C-04: 퀴즈 정답은 연두, 오답은 분홍 바탕', async () => {
     eq(getComputedStyle(box).backgroundColor, 'rgb(220, 245, 192)');
     d.advance(); await run;
   } finally { d.dispose(); ui.remove(); }
+});
+
+// D-32(2026-10-29 선생님): 가장 뒤의 산이 이리저리 움직이던 오류. 장면을 지은 뒤 시간이 흘러도 먼 산·땅(큰 조각)은 움직이지 않는다
+test('D-32: 14장 모두 먼 산과 땅은 가만히 있다', async () => {
+  const { CHAPTERS, JOSEON, MODERN } = await import('../chapters/index.js');
+  const { testWorld } = await import('./bot.js');
+  for (const c of [...CHAPTERS, ...JOSEON, MODERN[0], MODERN[1]]) {
+    const mod = (await c.load()).default;
+    const w = testWorld();
+    try {
+      mod.buildScene(w, { world: w, testHooks: {} });
+      w.level.updateMatrixWorld(true);
+      const big = [];
+      w.level.traverse(o => { if (!o.isMesh || !o.geometry) return; o.geometry.computeBoundingSphere(); if (o.geometry.boundingSphere.radius > 60) big.push([o, o.matrixWorld.clone()]); });
+      for (let i = 0; i < 40; i++) w.step(0.05, { x: 0, z: 0 });
+      w.level.updateMatrixWorld(true);
+      for (const [o, m0] of big) ok(o.matrixWorld.equals(m0), `${c.id}: ${o.geometry.type} r${Math.round(o.geometry.boundingSphere.radius)} moved`);
+    } finally { w.dispose(); }
+  }
+}, { timeout: 120000 });
+
+test('D-32: 모든 인물은 다리에 무릎 관절이 있고 걸을 때 굽힌다', async () => {
+  const { makePerson, gaitPose } = await import('../core/people.js');
+  const { LOOKS } = await import('../content/characters.js');
+  for (const [name, look] of Object.entries(LOOKS)) {
+    const p = makePerson(look);
+    ok(p.userData.legs.every(l => l.userData.knee), `${name} knees`);
+  }
+  const p = makePerson(LOOKS.soldier);
+  gaitPose(p, Math.PI, 1);
+  ok(Math.max(...p.userData.legs.map(l => l.userData.knee.rotation.x)) > 0.8, 'a knee bends mid-stride');
 });

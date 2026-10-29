@@ -1,7 +1,7 @@
 // 장 도입 장면(C-03, 2026-10-28 선생님): 예전 해설 카드 대신, 해설 문장을 화면 아래 자막으로 띄우며 그 장면을 3D로 재현한다.
 // 장 모듈의 introScene(ctx)이 { shots, done? }를 돌려준다. shots[i]는 해설 i번째 문장의 장면:
 //   { cam: [x,y,z], look: [x,y,z], to?: { cam, look } (그 문장 동안 카메라가 천천히 옮겨 감), act?(ctx) (그 문장이 시작될 때 인물을 움직임), ms? }
-// 문장보다 장면이 많으면 남은 장면은 자막 없이 이어 보인다. 화면을 누르면 다음 문장, '건너뛰기'는 바로 끝.
+// 문장보다 장면이 많으면 남은 장면은 자막 없이 이어 보인다. 건너뛸 수 없고 끝까지 본다(D-32). testHooks.intro는 테스트 전용
 import * as THREE from 'three';
 
 const h = (tag, attrs = {}, ...kids) => { const e = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) { if (k === 'class') e.className = v; else if (k.startsWith('on')) e.addEventListener(k.slice(2), v); else e.setAttribute(k, v); } e.append(...kids.filter(k => k != null)); return e; };
@@ -23,11 +23,10 @@ export function playIntro(ctx, meta, lines, scene) {
   world.player.visible = false;
   if (ctx.input) ctx.input.enabled = false;
   const sub = h('p', { class: 'intro-sub-text' });
-  const skip = h('button', { class: 'btn intro-skip', type: 'button' }, '건너뛰기 ▸▸');
   const el = h('div', { class: 'intro-film', role: 'dialog', 'aria-label': `${meta.no}장 시작` },
     h('div', { class: 'intro-bar top' }), h('div', { class: 'intro-bar bottom' }),
     h('div', { class: 'intro-title' }, h('div', { class: 'eyebrow' }, `${meta.no}장 · ${meta.years} · ${meta.event}`), h('h2', {}, meta.title)),
-    h('div', { class: 'intro-sub' }, sub, h('span', { class: 'intro-tap' }, '눌러서 계속 ▸')), skip);
+    h('div', { class: 'intro-sub' }, sub)); // 건너뛰기·눌러서 넘기기 없음: 끝까지 본다(2026-10-29 선생님)
   ui.appendChild(el);
   ui.classList.add('filming'); // 퀘스트·메뉴 칸을 장면 동안 숨긴다
   const cam = new THREE.Vector3(), look = new THREE.Vector3(), a = new THREE.Vector3(), b = new THREE.Vector3(), la = new THREE.Vector3(), lb = new THREE.Vector3();
@@ -56,17 +55,15 @@ export function playIntro(ctx, meta, lines, scene) {
   let onKey = null;
   return new Promise(resolve => {
     finish = () => {
-      finish = null; off(); el.remove(); ui.classList.remove('filming'); removeEventListener('keydown', onKey);
+      finish = null; off(); el.remove(); ui.classList.remove('filming'); removeEventListener('keydown', onKey, true);
       try { scene?.done?.(ctx); } catch (e) { console.warn('intro done', e); }
       world.player.visible = wasVisible;
       if (ctx.input) ctx.input.enabled = wasInput;
       world.camMode = 'follow'; world.snapCamera?.();
       resolve();
     };
-    el.addEventListener('click', e => { if (e.target === skip) return; if (t > 400) go(k + 1); });
-    skip.addEventListener('click', e => { e.stopPropagation(); finish?.(); });
-    onKey = e => { if (!finish) return; if (e.code === 'Escape') finish(); else if ((e.code === 'Space' || e.code === 'Enter' || e.code === 'KeyE') && t > 400) go(k + 1); };
-    addEventListener('keydown', onKey);
+    onKey = e => { e.stopPropagation(); }; // 장면 동안 키는 무시한다(대화 넘기기 키가 게임에 새지 않게)
+    addEventListener('keydown', onKey, true);
     ctx.testHooks && (ctx.testHooks.intro = { skip: () => finish?.(), next: () => go(k + 1) });
     go(0);
   });

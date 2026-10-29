@@ -103,9 +103,13 @@ export function makePerson({ robe, hat, trim = 0x2b241c, face = {}, gear = null,
   const g = new THREE.Group();
   const legs = [], arms = [];
   for (const sx of [-0.16, 0.16]) {
+    // 다리는 허벅지와 정강이 두 토막, 사이에 무릎 관절(2026-10-29 선생님: 모든 인물에 다리 관절, gaitPose가 굽힌다)
     const piv = new THREE.Group(); piv.position.set(sx, 0.55, 0); g.add(piv);
-    part(new THREE.BoxGeometry(0.2, 0.55, 0.22), 0x2b241c, 0, -0.28, 0, piv);
-    part(new THREE.BoxGeometry(0.24, 0.12, 0.34), 0x1e1a16, 0, -0.5, 0.05, piv, 'grain').name = 'shoe'; // 신발
+    part(new THREE.BoxGeometry(0.2, 0.29, 0.22), 0x2b241c, 0, -0.14, 0, piv).name = 'thigh';
+    const knee = new THREE.Group(); knee.name = 'knee'; knee.position.y = -0.275; piv.add(knee);
+    part(new THREE.BoxGeometry(0.2, 0.29, 0.22), 0x2b241c, 0, -0.14, 0, knee).name = 'shin';
+    part(new THREE.BoxGeometry(0.24, 0.12, 0.34), 0x1e1a16, 0, -0.225, 0.05, knee, 'grain').name = 'shoe'; // 신발
+    piv.userData.knee = knee;
     legs.push(piv);
   }
   part(new THREE.CylinderGeometry(0.38, 0.58, 1.25, 7), robe, 0, 1.12, 0, g);

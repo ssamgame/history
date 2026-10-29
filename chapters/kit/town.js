@@ -326,7 +326,7 @@ export function buildTown(world, layout) {
   for (const p of layout.props || []) {
     const g = new THREE.Group(); g.position.set(p.x, p.y || 0, p.z); g.rotation.y = p.ry || 0; if (p.scale) g.scale.setScalar(p.scale); L.add(g); // y: 축대 위에 올린 부품
     const r = BUILD[p.type](g, p);
-    if (p.type === 'crowd') BLD.bakeStatic(g, m => m.material.map === flagTex); // 서 있는 무리는 한 덩어리로(태블릿 성능), 깃발은 그대로 흔들린다
+    if (p.type === 'crowd') BLD.bakeStatic(g, m => !!flagTex && m.material.map === flagTex); // 서 있는 무리는 한 덩어리로(태블릿 성능), 깃발은 그대로 흔들린다
     if (r && p.solid !== false) addFootprint(world, p, r);
     if (p.name) named[p.name] = g;
     if (p.type === 'hanok' && layout.dress !== false) dressHouse(world, L, p, layout);
@@ -338,7 +338,8 @@ export function buildTown(world, layout) {
   const weather = layout.weather ? createWeather(world, layout.weather, { count: 700 }) : null;
   // 깃발이 바람에 흔들린다
   const flags = Object.values(named).map(g => g.userData.flag).filter(Boolean);
-  L.traverse(o => { if (o.isMesh && o.material && o.material.map === flagTex && !flags.includes(o)) flags.push(o); });
+  // 깃발 그림이 아직 없으면(flagTex null) 무늬 없는 산·땅·물까지 '깃발'로 잡혀 흔들리던 오류(D-32)를 막는다
+  if (flagTex) L.traverse(o => { if (o.isMesh && o.material && o.material.map === flagTex && !flags.includes(o)) flags.push(o); });
   world.onUpdate((dt, t) => { flags.forEach((f, i) => { f.rotation.y = Math.sin(t * 2.5 + i) * 0.25; }); });
   return { named, weather, start: layout.start };
 }
