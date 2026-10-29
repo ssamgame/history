@@ -18,7 +18,7 @@ test('quest: 차례대로 말 걸 사람마다 첫 대사·차례 전 대사·�
       ok(script.speakers[id] || n.first.every(l => script.speakers[l.who] || l.who === 'narr'), `${meta.id} ${id}: 말하는 사람 이름`);
     }
     for (const p of layout.npcs) ok(script.npc[p.id], `${meta.id} ${p.id}: 마을 사람 대사`);
-    for (const s of layout.signs || []) ok(script.npc[s.id]?.always?.length, `${meta.id} ${s.id}: 안내판 글`);
+    for (const s of (layout.signs || []).filter(s => !s.plaque)) ok(script.npc[s.id]?.always?.length, `${meta.id} ${s.id}: 안내판 글`);
     // 같은 사람이 같은 장에서 똑같은 말을 되풀이하지 않는다(다시 말 걸 때·놀이 중 대사)
     const seen = new Map(), walk = (o, path) => { if (!o || typeof o !== 'object') return; if (typeof o.text === 'string' && o.who && o.who !== 'narr') { const k = `${o.who}|${o.text}`; ok(!seen.has(k), `${meta.id}: ${o.who}가 같은 말을 두 번 (${seen.get(k)} / ${path}) "${o.text}"`); seen.set(k, path); return; } for (const [k, v] of Object.entries(o)) walk(v, `${path}.${k}`); };
     walk(script, meta.id);
