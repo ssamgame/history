@@ -67,7 +67,7 @@ const raiseFlag = k => { const f = scene?.flag; if (!f) return; f.position.y = F
 // ── 탐험 끝 장면: 청사 앞에 동포들이 모이고, 김구가 임시 정부가 세워졌음을 알리자 깃대에 태극기가 오르고 모두 만세 ──
 export async function launchScene(ctx) {
   const { world, dialogue } = ctx;
-  const L = script.launch.lines, say = sayer(ctx);
+  const L = script.launch.lines;
   ctx.setGoal(script.goals[2]);
   world.closeView = true;
   await ctx.fade?.(true);
@@ -78,17 +78,19 @@ export async function launchScene(ctx) {
   kimgu.mesh.position.set(1.5, 0, -4.6); kimgu.mesh.rotation.y = 0;
   ahn.mesh.position.set(-0.6, 0, -4.8); ahn.mesh.rotation.y = 0;
   const looks = ['citizen', 'student', 'gentleman', 'woman', 'scholarModern', 'citizen', 'schoolgirl', 'worker', 'gentleman', 'student'];
-  const crowd = looks.map((look, i) => { const r = i < 5 ? 0 : 1, c = i % 5; const p = person(g, look, -3.4 + c * 1.6 + r * 0.7, -1.2 + r * 1.5); face(p, 0.5, -4.6); return p; });
+  const crowd = looks.map((look, i) => { const r = i < 5 ? 0 : 1, c = i % 5; const p = person(g, look, -5 + c * 1.4 + r * 0.7, -1.2 + r * 1.5); face(p, 0.5, -4.6); return p; }); // 왼쪽에 모여 오른쪽 앞(학생·카메라 자리)은 비운다
   hook.crowd = crowd.length;
   raiseFlag(0);
-  placePlayer(world, [3.6, 0.6], Math.PI * 0.9);
+  placePlayer(world, [4.6, -0.4], Math.PI * 0.85);
+  const front = () => world.setFixedCamera([3.7, 2.0, -2.3], [1.1, 1.7, -4.8]); // 오른쪽 앞에서 김구와 청사 간판을 함께
   try {
     world.setFixedCamera([6.5, 4.2, 5.5], [0.8, 1.8, -4]); // 비스듬히 위에서 청사와 모인 사람들을 함께
     await ctx.fade?.(false);
     await dialogue.say(L[0]);
-    await say(L[1], kimgu.mesh);
+    front();
+    await dialogue.say(L[1]);
     dialogue.close();
-    world.setFixedCamera([1.5, 2.2, 3.2], [POLE[0] - 0.6, 3, POLE[1]]); // 깃대 쪽을 올려다본다
+    world.setFixedCamera([8, 1.8, 0.6], [POLE[0] - 0.4, 2.8, POLE[1]]); // 오른쪽에서 깃대를 올려다본다(동포들 앞을 가리지 않게)
     ctx.audio?.play?.('correct');
     await wait(world, 3, k => raiseFlag(ease(k)));
     hook.flagTo = scene.flag.position.y;
@@ -103,7 +105,8 @@ export async function launchScene(ctx) {
       if (n === 0) { await dialogue.say(L[3]); dialogue.close(); }
     }
     await dialogue.say(L[4]);
-    await say(L[5], kimgu.mesh);
+    front();
+    await dialogue.say(L[5]);
     dialogue.close();
   } finally {
     await ctx.fade?.(true);
@@ -144,7 +147,7 @@ const ACT = {
     ctx.dialogue.close();
     const P = a.at(...OFFICE.press);
     world.player.rotation.y = Math.PI / 2;
-    world.setFixedCamera([P.x - 4.6, 3.2, P.z - 3.2], [P.x + 0.2, 1.3, P.z + 1.2]);
+    world.setFixedCamera([P.x - 4, 3.4, P.z - 4.5], [P.x, 1.2, P.z + 1.6]); // 남서쪽에서 인쇄기와 신문 쌓이는 책상을 함께(학생은 옆으로 비킨다)
     const S = OFFICE.stack;
     for (let i = 0; i < 3; i++) { // 세 번 눌러 세 장을 찍어 책상에 쌓는다
       await wait(world, 0.5, k => { const u = Math.sin(k * Math.PI); set.press.lever.rotation.z = -0.5 * u; set.press.platen.position.y = 1.6 - 0.66 * u; });
@@ -162,7 +165,7 @@ const ACT = {
     world.player.rotation.y = -Math.PI / 2;
     await say(st.lines[0], set.kimgu);
     ctx.dialogue.close();
-    world.setFixedCamera([D.x + 6, 3, D.z + 4.5], [D.x + 0.5, 1.1, D.z - 0.5]);
+    world.setFixedCamera([D.x + 5, 3.4, D.z - 4.5], [D.x + 0.8, 1.1, D.z + 0.4]); // 북동쪽에서 책상과 줄 선 동포들
     for (const [i, p] of set.donors.entries()) {
       p.visible = true;
       const p0 = p.position.clone(), to = new THREE.Vector3(OFFICE.bondDesk[0] + 1.1, 0, OFFICE.bondDesk[1] - 1.4 + i * 0.1);
