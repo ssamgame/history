@@ -46,7 +46,7 @@ export function taegukgiTexture() {
   flagTex = new THREE.CanvasTexture(cv); flagTex.colorSpace = THREE.SRGBColorSpace;
   return flagTex;
 }
-function flagMesh(w = 1.2, h = 0.8, color = null) {
+export function flagMesh(w = 1.2, h = 0.8, color = null) {
   const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h).translate(w / 2, 0, 0),
     color == null ? new THREE.MeshLambertMaterial({ map: taegukgiTexture(), side: THREE.DoubleSide }) : new THREE.MeshLambertMaterial({ color, side: THREE.DoubleSide }));
   m.castShadow = true; return m;
