@@ -156,7 +156,7 @@ export function animateWalkers(dt, root) {
     const moved = u.last ? Math.hypot(wp.x - u.last.x, wp.z - u.last.z) / dt : 0;
     if (!u.last) u.last = new THREE.Vector3();
     u.last.copy(wp);
-    animateWalk(g, !u.noWalk && g.visible && moved > 0.4, dt);
+    animateWalk(g, !u.noWalk && g.visible && moved > 0.12, dt); // 천천히 움직여도 걷는다(미끄러지듯 떠가지 않게)
   }
 }
 

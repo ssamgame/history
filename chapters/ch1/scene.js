@@ -6,7 +6,8 @@ import { BUILD } from '../kit/town.js';
 import { gateLeaves, nameBoard } from '../kit/gate.js';
 import { makeFire } from '../../core/fire.js';
 import { groundMaterial } from '../../core/textures.js';
-import { mat, makePerson, labelSprite, gaitPose, horseGait } from '../../core/people.js';
+import { mat, makePerson, labelSprite, gaitPose } from '../../core/people.js';
+import { makeHorse, mount } from '../../core/horse.js';
 import { scatter } from '../../core/props.js';
 import { LOOKS, look } from '../../content/characters.js';
 
@@ -23,30 +24,7 @@ function groundH(x, z) {
 }
 function seeded(s) { return () => (s = (s * 16807) % 2147483647) / 2147483647; }
 
-// 소손녕이 타는 말(로우폴리). 머리가 +z 쪽, 다리 넷은 걸을 때 흔든다(D-7)
-function makeHorse() {
-  const g = new THREE.Group(); g.name = 'horse';
-  const p = (geo, color, x, y, z, parent = g) => { const m = new THREE.Mesh(geo, mat(color)); m.position.set(x, y, z); m.castShadow = true; parent.add(m); return m; };
-  const coat = 0x6b4a32, dark = 0x2e2219;
-  p(new THREE.BoxGeometry(0.62, 0.62, 1.6), coat, 0, 1.08, 0); // 몸통
-  // 목·갈기·머리·귀는 목 밑동(0, 1.3, 0.62)을 축으로 묶는다: 걸을 때 머리를 살짝 끄덕인다(D-9)
-  const head = new THREE.Group(); head.position.set(0, 1.3, 0.62); g.add(head);
-  p(new THREE.BoxGeometry(0.34, 0.85, 0.4), coat, 0, 0.25, 0.16, head).rotation.x = 0.5; // 목
-  p(new THREE.BoxGeometry(0.12, 0.75, 0.14), dark, 0, 0.38, -0.02, head).rotation.x = 0.5; // 갈기
-  p(new THREE.BoxGeometry(0.3, 0.32, 0.64), coat, 0, 0.62, 0.5, head); // 머리
-  for (const sx of [-0.09, 0.09]) p(new THREE.ConeGeometry(0.05, 0.16, 4), dark, sx, 0.83, 0.3, head);
-  p(new THREE.BoxGeometry(0.12, 0.7, 0.12), dark, 0, 1.0, -0.88).rotation.x = -0.35; // 꼬리
-  p(new THREE.BoxGeometry(0.66, 0.1, 0.62), 0x7a2a22, 0, 1.43, 0); // 안장
-  const legs = [];
-  for (const [x, z] of [[-0.2, 0.62], [0.2, 0.62], [-0.2, -0.62], [0.2, -0.62]]) {
-    const piv = new THREE.Group(); piv.position.set(x, 0.85, z); g.add(piv);
-    p(new THREE.BoxGeometry(0.16, 0.78, 0.18), coat, 0, -0.39, 0, piv);
-    p(new THREE.BoxGeometry(0.18, 0.1, 0.2), dark, 0, -0.8, 0, piv);
-    legs.push(piv);
-  }
-  g.userData.legs = legs; g.userData.head = head;
-  return g;
-}
+// 소손녕이 타는 말: 공용 말(core/horse.js). 움직인 빠르기에 맞춰 스스로 걷는다(2026-10-30 말 걸음 개선)
 
 // 물러나는 거란 병사 다리에 무릎을 단다(D-9, 1장만): 다리 한 토막을 허벅지와 정강이로 나누고 신발은 정강이에
 function addKnees(person) {
@@ -62,8 +40,9 @@ function addKnees(person) {
   person.userData.manual = true; // 걷기 자동 움직임(animateWalkers) 대신 아래 marchGait로 움직인다
 }
 
-// 행군 걸음은 모든 인물이 같이 쓰는 core/people.js의 gaitPose·horseGait(D-11에서 이 장의 걸음을 공용으로 옮김)
-const marchGait = (o, ph) => gaitPose(o, ph);
+// 행군 걸음은 모든 인물이 같이 쓰는 core/people.js의 gaitPose(D-11). 걸음 박자는 실제로 걸은 거리에서 나온다(한 걸음 0.8m, 2026-10-30 종종걸음 고침)
+const STEP = 0.8, AMP = Math.asin(STEP / 1.1);
+const marchGait = (o, ph) => gaitPose(o, ph, 1, AMP, 0.2);
 
 export function buildCh1Scene(world) {
   const L = world.level, q = world.quality, rand = seeded(7);
@@ -228,7 +207,7 @@ export function buildCh1Scene(world) {
   const sonn = makePerson(LOOKS.sonn);
   sonn.position.set(0, 0, -36); sonn.rotation.y = 0; khitanGroup.add(sonn); // 강 쪽(서희와 학생이 다가오는 쪽)을 바로 본다
   // 소손녕의 말: 천막 옆에 매어 두었다가 군대를 물릴 때 올라탄다(D-7)
-  const horse = makeHorse(); horse.position.set(-2.8, 0, -37.6); horse.rotation.y = 0.5; khitanGroup.add(horse);
+  const horse = makeHorse({ coat: 0x6b4a32 }); horse.position.set(-2.8, 0, -37.6); horse.rotation.y = 0.5; khitanGroup.add(horse);
   const guards = [];
   [-20, -16, -12, -8, -4, 13, 17, 21, 25].forEach((x, i) => { // 다리에서 소손녕 앞으로 가는 길은 비워 둔다
     const k = makePerson(LOOKS.khitan);
@@ -290,8 +269,7 @@ export function buildCh1Scene(world) {
   scene.startRetreat = () => {
     if (march.length) return scene.army;
     khitanCamp.visible = false;
-    horse.add(sonn); sonn.position.set(0, 0.88, 0); sonn.rotation.y = 0;
-    sonn.userData.noWalk = true; sonn.userData.legs.forEach((l, i) => { l.rotation.set(0, 0, i ? -0.75 : 0.75); });
+    mount(horse, sonn);
     [guards[0], horse, ...guards.slice(1)].forEach((o, i) => {
       const row = i < 2 ? i : 2 + Math.floor((i - 2) / 2);
       const side = i < 2 ? 0 : ((i - 2) % 2 ? 0.9 : -0.9), along = i === 0 ? 5 : i === 1 ? 2.5 : -(row - 2) * 1.6;
@@ -330,9 +308,10 @@ export function buildCh1Scene(world) {
         if (k < 0 || !o.visible) continue;
         const e = Math.min(1, k / 0.55); o.rotation.y = FACE * e * e * (3 - 2 * e); // 몸을 돌린다
         if (e < 1) continue;
-        o.position.x += DX * MARCH * dt; o.position.z += DZ * MARCH * dt;
-        const ph = marchT * 7.5 + u.ph;
-        o.position.y = Math.max(0, groundH(o.position.x, o.position.z)) + (o === horse ? horseGait(horse, ph) : marchGait(o, ph));
+        const sp = MARCH * Math.min(1, (k - 0.55) / 0.9); // 돌아선 뒤 천천히 빨라진다
+        o.position.x += DX * sp * dt; o.position.z += DZ * sp * dt; u.dist = (u.dist || 0) + sp * dt;
+        const ph = u.dist * Math.PI / STEP + u.ph; // 반 바퀴가 한 걸음
+        o.position.y = Math.max(0, groundH(o.position.x, o.position.z)) + (o === horse ? 0 : marchGait(o, ph) * Math.min(1, u.dist)); // 말 걸음은 core/horse.js가 맡는다
         const a = Math.min(1, Math.max(0, (o.position.z - GONE) / (FADE_FROM - GONE)));
         for (const m of u.mats) m.opacity = a;
         if (o.position.z < GONE) { o.visible = false; continue; }

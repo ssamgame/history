@@ -4,6 +4,7 @@ import { curvedHipRoof, tree, wall, hanok, boat, straw, woodpile } from '../kit/
 import { backdropMountains } from '../kit/terrain.js';
 import { groundMaterial } from '../../core/textures.js';
 import { mat, makePerson } from '../../core/people.js';
+import { makeHorse, mount } from '../../core/horse.js';
 import { scatter } from '../../core/props.js';
 import { LOOKS } from '../../content/characters.js';
 import { gateLeaves, nameBoard } from '../kit/gate.js';
@@ -15,6 +16,8 @@ const SPAWN_R = 34;      // 몽골군이 나타나는 거리
 const WALL_TOP = 2.4;    // 처인성 흙성 위 높이(학생이 걷는 곳)
 export const PALACE_GATE_Z = 28; // 개경 궁궐 앞 남문(D-13 시작 장면)
 // 처인성 흙성 오르는 비탈(D-13): 성 안 북서쪽에서 성 중심을 향해 뻗은 흙 비탈. RAMP_A 방향으로 RAMP_R0 ~ 성벽까지
+// 들판 땅 높이(아래 '넓은 풀밭'과 같은 식): 처인성 둘레에서 사람·말을 땅 위에 세울 때 쓴다(2026-10-30 몽골군이 땅에 묻히지 않게)
+export const fieldH = (x, z) => { const far = Math.max(0, Math.abs(z) - 45); return 0.12 * Math.sin(x * 0.3) * Math.cos(z * 0.25) + Math.min(far * far * 0.02, 12); };
 export const CHEOIN = { x: CHEOIN_X, z: 0, R: CHEOIN_R, top: WALL_TOP, rampA: Math.PI + 0.42, ramp0: CHEOIN_R - 7, arc: [Math.PI + 0.42, Math.PI * 2 - 0.42] };
 // 처인성에서 학생이 설 수 있는 곳(비탈 또는 성벽 위)으로 자리를 옮기고 그 높이를 돌려준다
 export function cheoinPlace(p) {
@@ -260,17 +263,29 @@ export function buildCh4Scene(world) {
       p.rotation.y = Math.atan2(Math.cos(a), Math.sin(a)); cheoin.add(p);
     }
   }
-  // 다가오는 몽골군 8명 (처음엔 숨김). 들판 북쪽 반원에서 나타나 성으로 걸어온다.
+  // 다가오는 몽골군 8명 (처음엔 숨김). 들판 북쪽 반원에서 나타나 성으로 다가온다.
+  // 기마병 중심(2026-10-30 선생님): 여섯은 말 탄 기마병(활·창), 둘은 깃발을 든 걷는 병사. 말과 기수는 함께 움직이고 화살을 맞으면 기수가 말에서 떨어진다
   const mongols = [];
   for (let i = 0; i < 8; i++) {
-    const g = new THREE.Group(); g.visible = false; g.scale.setScalar(1.6); L.add(g); // 멀리서도 보이게 크게
-    g.rotation.order = 'YXZ'; // 화살을 맞으면 rotation.x로 뒤로 쓰러진다
-    const p = makePerson(LOOKS.mongol); g.add(p);
-    mk(new THREE.CylinderGeometry(0.05, 0.05, 3.4, 4), 0x3a2c20, 0.6, 1.7, 0, g);
-    const f = mk(new THREE.PlaneGeometry(0.9, 0.7), 0x2a3550, 1.05, 3.1, 0, g); f.material = new THREE.MeshLambertMaterial({ color: 0x2a3550, side: THREE.DoubleSide });
-    const top = new THREE.Object3D(); top.position.set(0, 3.6, 0); g.add(top);
+    const g = new THREE.Group(); g.visible = false; L.add(g);
+    g.rotation.order = 'YXZ'; // 걷는 병사는 화살을 맞으면 rotation.x로 뒤로 쓰러진다
+    const mounted = i % 4 !== 3, top = new THREE.Object3D();
+    let horse = null, rider = null;
+    if (mounted) {
+      g.scale.setScalar(1.25); // 멀리서도 보이게 조금 크게(말 탄 사람은 이미 크다)
+      horse = makeHorse({ coat: [0x7a5232, 0xb09a72, 0x4a3426, 0x9a7a52][i % 4] }); g.add(horse);
+      rider = makePerson(i % 2 ? LOOKS.mongolLancer : LOOKS.mongolArcher); mount(horse, rider);
+      top.position.set(0, 3.9, 0);
+    } else {
+      g.scale.setScalar(1.6);
+      const p = makePerson(LOOKS.mongol); g.add(p);
+      mk(new THREE.CylinderGeometry(0.05, 0.05, 3.4, 4), 0x3a2c20, 0.6, 1.7, 0, g);
+      const f = mk(new THREE.PlaneGeometry(0.9, 0.7), 0x2a3550, 1.05, 3.1, 0, g); f.material = new THREE.MeshLambertMaterial({ color: 0x2a3550, side: THREE.DoubleSide });
+      top.position.set(0, 3.6, 0);
+    }
+    g.add(top);
     const a = Math.PI * 1.5 - 0.5 + (i / 7) * 1.0; // D-14: 성 앞 들판(북쪽, -z) 좁은 부채꼴에서만 나온다(성벽 위 카메라에 처음부터 보이게)
-    mongols.push({ group: g, top, angle: a });
+    mongols.push({ group: g, top, angle: a, horse, rider });
   }
   // 몽골군 진영(D-16): 몽골군이 나오는 들판 너머의 둥근 천막. 고려군의 불화살에 두 채가 타고 연기가 오른다(화살·길을 가리지 않는 먼 곳)
   const campFires = [];
@@ -321,7 +336,7 @@ export function buildCh4Scene(world) {
   const cheoinFit = {
     target: [CHEOIN_X, 1, -12], dir: [0, 16, 15],
     points: [[CHEOIN_X - CHEOIN_R, 0, CHEOIN_R], [CHEOIN_X + CHEOIN_R, 0, CHEOIN_R],
-      ...mongols.map(m => [CHEOIN_X + Math.cos(m.angle) * SPAWN_R, 3.6 * 1.6, Math.sin(m.angle) * SPAWN_R])],
+      ...mongols.map(m => [CHEOIN_X + Math.cos(m.angle) * SPAWN_R, 5, Math.sin(m.angle) * SPAWN_R])],
   };
 
   // 4) 충주성 마당: 성벽, 관노 문서 더미, 불

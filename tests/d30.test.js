@@ -80,7 +80,7 @@ test('C-03/D-32: 도입 장면은 해설을 자막으로 띄우고, 건너뛸 �
   } finally { s.done(); }
 });
 
-test('C-04: 퀴즈 정답은 연두, 오답은 분홍 바탕', async () => {
+test('C-04: 퀴즈 정답 해설은 보통 대화창 색(연두 없음), 오답은 분홍 바탕', async () => {
   const ui = document.createElement('div'); document.body.appendChild(ui);
   const d = createDialogue(ui, {}, { typeMs: 0 });
   try {
@@ -94,7 +94,10 @@ test('C-04: 퀴즈 정답은 연두, 오답은 분홍 바탕', async () => {
     ok(!box.classList.contains('dlg-wrong'), 'reset while choosing again');
     d.pick(0); await sleep(20);
     ok(box.classList.contains('dlg-right'));
-    eq(getComputedStyle(box).backgroundColor, 'rgb(220, 245, 192)');
+    const plain = getComputedStyle(document.documentElement).getPropertyValue('--hanji').trim();
+    ok(getComputedStyle(box).backgroundColor !== 'rgb(220, 245, 192)', 'no green');
+    ok(!/220, 245, 192|106, 168, 79/.test(getComputedStyle(box).borderColor), 'no green border');
+    ok(plain, 'hanji token');
     d.advance(); await run;
   } finally { d.dispose(); ui.remove(); }
 });

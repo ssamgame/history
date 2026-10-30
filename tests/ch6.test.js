@@ -136,3 +136,25 @@ test('ch6 D-19: full run uses no cards, low camera on land, sailing camera only 
     eq(r.firstTryCorrect, 2); eq(r.quizCorrect, 2);
   } finally { off(); bot.stop(); s.done(); }
 }, { timeout: 200000 });
+
+// 2026-10-30 선생님: 뱃사공이 배에 타서 노를 젓는다. 손은 노 손잡이를 쥐고, 배가 움직일 때만 젓는다
+test('ch6: 뱃사공의 두 손이 노 손잡이에 붙어 있고, 배가 서면 노도 쉰다', async () => {
+  const s = touchSetup(ch6Script.speakers);
+  try {
+    const sc = ch6.buildScene(s.w, s.ctx);
+    ch6.enterStage(s.ctx, 'minigame');
+    sailLeg(s.ctx, sc.legs[0], false);
+    const rig = sc.boat.userData.rower, hands = rig.person.userData.arms.map(a => a.getObjectByName('hand')), h = new THREE.Vector3(), g = new THREE.Vector3();
+    let worst = 0, ph0 = rig.ph;
+    for (let i = 0; i < 60; i++) {
+      s.w.step(0.05, { x: 0, z: -1 });
+      if (i < 10) continue;
+      rig.oar.updateWorldMatrix(true, false);
+      hands.forEach((hd, k) => { hd.getWorldPosition(h); rig.oar.localToWorld(g.set(k ? 0.11 : -0.11, 0, rig.grip.z)); worst = Math.max(worst, h.distanceTo(g)); });
+    }
+    ok(rig.ph - ph0 > 3, `노를 젓는다 ${(rig.ph - ph0).toFixed(1)}`);
+    ok(worst < 0.12, `손과 노 손잡이 사이 ${worst.toFixed(3)}m`);
+    for (let i = 0; i < 60; i++) s.w.step(0.05, { x: 0, z: 0 });
+    ok(rig.k < 0.25, `배가 서면 노를 쉰다 ${rig.k.toFixed(2)}`);
+  } finally { s.done(); }
+});

@@ -107,7 +107,9 @@ test('ch4 D-13: archers rise; walking to the spot Kim Yun-hu points at makes an 
     eq(s.ctx.testHooks.cheoinShot, 1, 'shot');
     ok(sc.arrows.some(a => a.visible), 'an arrow flies');
     step(24);
-    ok(target.group.rotation.x < -0.6, `falls backward (rx ${target.group.rotation.x.toFixed(2)})`);
+    const rx = target.horse ? target.rider.rotation.x : target.group.rotation.x;
+    ok(rx < -0.6, `falls backward (rx ${rx.toFixed(2)})`);
+    if (target.horse) { const wp = new THREE.Vector3(); target.rider.getWorldPosition(wp); ok(wp.y < target.group.position.y + 1, `기수가 말에서 떨어져 땅에 ${wp.y.toFixed(2)}`); }
     ok(s.w.player.position.y > 2, 'student stays on the wall');
   } finally { s.done(); }
 });
@@ -268,5 +270,20 @@ test('ch4 D-16: the Mongol camp beyond the field burns and the archers shoot fir
     ok(sc.campFires.length >= 2 && sc.campFires.every(f => f.visible), 'camp fires');
     for (const f of sc.campFires) ok(Math.hypot(f.position.x - A.center[0], f.position.z) > A.spawnR + 8, 'behind where the Mongols appear');
     ok(sc.arrows.every(a => a.getObjectByName('fireTip')), 'fire arrows');
+  } finally { s.done(); }
+});
+
+// 2026-10-30 선생님: 몽골군은 기마병 중심, 땅(들판 높이)에 묻히지 않는다
+test('ch4: 처인성에 다가오는 몽골군은 기마병이 대부분이고, 다가오는 동안 발이 땅 높이에 있다', async () => {
+  const { putOnCheoinWall, cheoinDefense } = await import('../chapters/ch4/chapter.js');
+  const { fieldH } = await import('../chapters/ch4/scene.js');
+  const s = touchSetup(ch4Script.speakers);
+  try {
+    const sc = ch4.buildScene(s.w, s.ctx);
+    ok(sc.mongols.filter(m => m.horse).length >= 6, `기마병 ${sc.mongols.filter(m => m.horse).length}/8`);
+    putOnCheoinWall(s.ctx); cheoinDefense(s.ctx, false);
+    let worst = 0, seen = 0;
+    for (let i = 0; i < 200; i++) { s.w.step(0.05, { x: 0, z: 0 }); for (const m of sc.mongols) if (m.group.visible && !m.fall) { seen += 1; const p = m.group.position; worst = Math.max(worst, Math.abs(p.y - fieldH(p.x, p.z))); } }
+    ok(seen > 20, 'approached'); ok(worst < 0.01, `땅 높이와 차이 ${worst.toFixed(3)}`);
   } finally { s.done(); }
 });

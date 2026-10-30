@@ -226,6 +226,7 @@ export function buildJ6Scene(world) {
     else if (u.arms) u.arms.forEach(a => { a.rotation.set(-1.25 * crouch, 0, 0); });
     p.position.y = -0.38 * crouch;
   };
+  const CARRY_STEP = 0.62, CARRY_AMP = Math.asin(CARRY_STEP / 1.1); // 돌을 안은 사람의 한 걸음(보통보다 조금 짧게)
   const stepCarrier = (p, dt) => {
     const u = p.userData, j = u.job;
     if (j.wait > 0) { j.wait -= dt; return; }
@@ -247,8 +248,8 @@ export function buildJ6Scene(world) {
       else if (next === 0) { j.phase = 'pick'; p.rotation.y = Math.atan2(9 - p.position.x, 0.8 - p.position.z); } // 동쪽 돌 더미를 보고 든다
     } else { p.position.x += (goal.x - p.position.x) / d * v; p.position.z += (goal.z - p.position.z) / d * v; }
     u.walking = true;
-    j.ph += dt * 7.2 * (fwd ? 0.85 : 1) * (0.94 + (j.speed - 1.5) * 0.4);
-    p.position.y = gaitPose(p, j.ph, 1);
+    j.ph += Math.min(d, v) * Math.PI / CARRY_STEP; // 걸음 박자는 실제로 걸은 거리에서(반 바퀴가 한 걸음, 2026-10-30 종종걸음 고침)
+    p.position.y = gaitPose(p, j.ph, 1, CARRY_AMP);
   };
   let carriersOn = true;
   world.onUpdate((dt, t) => {

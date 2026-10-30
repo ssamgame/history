@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { QUALITY } from './quality.js';
 import { makePerson, animateWalk, animateWalkers, markerSprite } from './people.js';
+import { animateHorses } from './horse.js';
 import { LOOKS } from '../content/characters.js';
 
 // 장면 분위기. 2~6장 값은 다음 계획에서 채운다.
@@ -379,6 +380,7 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
       } else goalArrow.visible = false;
       for (const fn of [...updaters]) fn(dt, elapsed); // 도중에 해제해도 안전하도록 복사본을 돈다
       animateWalkers(dt, scene); // 움직인 인물(따라오는 사람·감시원 등)은 다리를 흔든다
+      animateHorses(dt, scene); // 말: 움직인 빠르기에 맞는 걸음새(core/horse.js)
       if (world.camMode === 'fixed' && fit && fit.aspect !== camera.aspect) applyFit();
       if (world.camMode === 'talk') {
         const a = 1 - Math.exp(-dt * (world.closeView ? 3 : 5)); // 가까운 시점은 더 천천히 다가간다

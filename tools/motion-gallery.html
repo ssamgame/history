@@ -20,6 +20,7 @@
   import { makePerson, setCarry, setStyle, setTalking } from '../core/people.js';
   import { walkTo, turnTo, handshake, giveItem, escort, strike, block, pickUp, putDown } from '../core/interact.js';
   import { LOOKS } from '../content/characters.js';
+  import { makeHorse, mount } from '../core/horse.js';
   import { setHairEra } from '../core/hairstyle.js';
   setHairEra(new URLSearchParams(location.search).get('era'), new URLSearchParams(location.search).get('ch') || '');
   const q = new URLSearchParams(location.search), act = q.get('act') || 'walk';
@@ -119,6 +120,18 @@
       phase('건네기'); await giveItem(world, a, b, item, { style: 'side' });
       phase('악수'); await handshake(world, a, b);
       phase('돌아서 걸어감'); await walkTo(world, a, [-8, 5], { speed: 1.8 }); phase('끝');
+    },
+    async horse() { // 말: 서 있기 → 평보 → 속보 → 구보 → 서기, 기수가 함께 흔들린다. &close=1이면 한 마리를 옆에서 가까이
+      const close = q.get('close');
+      const hs = (close ? [['mongol', 0]] : [['mongol', 0], ['yanggyu', 3], ['mongol', -3]]).map(([lk, z], i) => { const h = makeHorse({ armor: i === 1 ? 0x6a5a40 : null }); h.position.set(-12, 0, z); h.rotation.y = Math.PI / 2; g.add(h); mount(h, makePerson(LOOKS[lk])); return h; });
+      window.__hooks.horse = hs[0];
+      if (close) track(hs[0], q.get('front') === '2' ? [5, 1.7, 0.01] : q.get('front') ? [4.5, 1.8, 4.5] : [0.4, 1.6, 6.5]); else cam([0, 4, 16], [0, 1.2, 0]);
+      const ride = (h, x, sp) => walkTo(world, h, [x, h.position.z], { speed: sp, accel: 0.5 });
+      phase('서 있기'); await sleep(1.2);
+      phase('평보'); await Promise.all(hs.map(h => ride(h, -6, 1.5)));
+      phase('속보'); await Promise.all(hs.map(h => ride(h, 2, 3.4)));
+      phase('구보'); await Promise.all(hs.map(h => ride(h, 13, 6)));
+      phase('서기'); await sleep(2); phase('끝');
     },
   };
   await scenes[act]();

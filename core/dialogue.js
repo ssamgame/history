@@ -40,7 +40,7 @@ export function createDialogue(root, speakers, { typeMs = 26, reduceMotion = fal
   function say(line) {
     return new Promise(resolve => {
       show(line.who, line);
-      el.classList.toggle('dlg-right', line.mood === 'right'); // 퀴즈 맞음: 연두 바탕(C-04)
+      el.classList.toggle('dlg-right', line.mood === 'right'); // 퀴즈 맞음(색은 보통 대화창 그대로, 2026-10-30)
       el.classList.toggle('dlg-wrong', line.mood === 'wrong'); // 퀴즈 틀림: 분홍 바탕
       if (onSay) onSay(line);
       choicesEl.hidden = true; nextEl.hidden = false;

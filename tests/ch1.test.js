@@ -287,7 +287,7 @@ test('ch1 D-7: the Khitan army turns and marches away in a column (flag first, S
   const army = s.startRetreat();
   ok(army.length >= 8, `${army.length} units`);
   eq(army[0].name, 'flagBearer');
-  eq(s.sonn.parent, army[1], 'Sonn rides the horse');
+  ok(s.sonn.parent?.parent === army[1] && s.sonn.userData.mounted === army[1], 'Sonn rides the horse (안장 위, 말 몸통의 자식)');
   eq(army[1].name, 'horse');
   const wp = new THREE.Vector3(), z0 = army.map(o => o.getWorldPosition(wp).z);
   for (let i = 0; i < 60; i++) {

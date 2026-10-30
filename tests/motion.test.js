@@ -178,3 +178,48 @@ test('motion: 학생 빠르기(6.5m/s)로 움직여도 몸이 폴짝거리지 �
   ok(hi - lo < 0.04, `들썩임 ${(hi - lo).toFixed(3)}m`);
   const strides = (p.userData.walk - w0) / Math.PI; ok(13 / strides > 1.1, `한 걸음 ${(13 / strides).toFixed(2)}m`);
 });
+
+// 2026-10-30 선생님(종종걸음): 걸음 박자는 실제로 간 거리에서 나온다. 느리게 가는 사람도 다리만 바쁘게 움직이지 않고, 한 걸음이 다리 벌린 폭만큼 나아간다(발이 미끄러지지 않게)
+const LEGLEN = 0.55;
+test('motion: 느린 걸음·보통·빠른 걸음 모두 한 걸음에 간 거리 ≈ 다리를 벌린 폭(종종걸음·미끄럼 없음)', () => {
+  for (const v of [0.6, 0.9, 1.4, 2.2]) {
+    const p = makePerson(LOOKS.villager, { track: false }); p.scale.setScalar(1); walkAt(p, v, 45); const w = walkAt(p, v, 90);
+    const per = v * 3 / (w.steps / Math.PI), span = 2 * LEGLEN * Math.sin(w.amp);
+    ok(per / span > 0.8 && per / span < 1.25, `${v}m/s: 한 걸음 ${per.toFixed(2)}m, 다리 폭 ${span.toFixed(2)}m`);
+    ok(w.steps / Math.PI / 3 < (v > 2 ? 3.1 : 2.4), `${v}m/s: 1초에 ${(w.steps / Math.PI / 3).toFixed(2)}걸음`);
+  }
+});
+
+test('motion: 제자리에 선 사람은 moving이어도 발만 계속 움직이지 않는다', () => {
+  const p = makePerson(LOOKS.villager, { track: false }); p.scale.setScalar(1); walkAt(p, 1.4, 30);
+  for (let i = 0; i < 45; i++) animateWalk(p, true, 1 / 30);
+  ok(Math.abs(p.userData.legs[0].rotation.x) < 0.06, `다리 ${p.userData.legs[0].rotation.x.toFixed(2)}`);
+});
+
+// 2026-10-30 선생님: 말 걸음(평보·속보·구보)은 빠르기에 맞고, 발굽이 미끄러지거나 땅에 박히거나 뜨지 않으며, 기수는 안장 위에 붙어 함께 흔들린다
+test('horse: 빠르기에 따라 평보·속보·구보, 디딘 발굽은 미끄러지지 않고 땅 위에, 기수는 안장에', async () => {
+  const { makeHorse, mount, animateHorse } = await import('../core/horse.js');
+  const scene = new THREE.Scene();
+  for (const [v, want] of [[1.4, 'walk'], [3.5, 'trot'], [6.2, 'canter']]) {
+    const h = makeHorse(), r = makePerson(LOOKS.mongol); mount(h, r); h.rotation.y = Math.PI / 2; scene.add(h); // +x 쪽을 보고 +x로 간다
+    const hoofs = h.userData.legs.map(l => l.userData.knee.children[1]), wp = new THREE.Vector3(), seat = new THREE.Vector3();
+    for (let i = 0; i < 90; i++) { h.position.x += v / 30; h.updateMatrixWorld(true); animateHorse(h, 1 / 30); }
+    eq(h.userData.gaitName, want, `${v}m/s`);
+    let slip = 0, travel = 0, lo = Infinity, hi = -Infinity, prev = null, s0 = null, sd = 0;
+    for (let i = 0; i < 90; i++) {
+      h.position.x += v / 30; h.updateMatrixWorld(true); animateHorse(h, 1 / 30); h.updateMatrixWorld(true);
+      const ys = hoofs.map(f => { f.getWorldPosition(wp); return { y: wp.y - 0.04 * h.scale.y, x: wp.x }; }), low = ys.reduce((a, b) => (a.y < b.y ? a : b));
+      lo = Math.min(lo, low.y); hi = Math.max(hi, low.y);
+      if (prev && prev.i === ys.indexOf(low) && low.y < 0.02 && prev.y < 0.02) { slip += Math.abs(low.x - prev.x); travel += v / 30; } // 땅에 디딘 발굽만(속보·구보는 네 발이 다 뜬 순간이 있다)
+      prev = { x: low.x, y: low.y, i: ys.indexOf(low) };
+      r.getWorldPosition(seat); h.userData.body.updateMatrixWorld(); const local = h.userData.body.worldToLocal(seat.clone()); if (!s0) s0 = local.clone(); sd = Math.max(sd, local.distanceTo(s0));
+    }
+    ok(travel > v * 0.8 && slip < travel * 0.3, `${v}m/s 발굽 미끄럼 ${slip.toFixed(2)} / 간 거리 ${travel.toFixed(2)}`);
+    ok(lo > -0.05 && hi < 0.08, `${v}m/s 가장 낮은 발굽 높이 ${lo.toFixed(3)}~${hi.toFixed(3)}`);
+    ok(sd < 0.01, `기수는 안장에서 움직이지 않는다 ${sd.toFixed(3)}`);
+    scene.remove(h);
+  }
+  const h = makeHorse(); scene.add(h); for (let i = 0; i < 30; i++) { h.position.x += 0.05; animateHorse(h, 1 / 30); }
+  for (let i = 0; i < 60; i++) animateHorse(h, 1 / 30);
+  eq(h.userData.gaitName, 'stand'); ok(h.userData.legs.every(l => Math.abs(l.rotation.x) < 0.05), '서면 다리를 모은다');
+});

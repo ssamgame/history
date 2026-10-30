@@ -1,7 +1,8 @@
 // 4장 「강화도 천도와 처인성·충주성」(D-13): 저고여 사건 → 개경 궁궐 앞 문을 열고 들어옴 → 백성·관리 이야기 → 도읍 고르기 → 강화도 →
 // 김윤후를 따라 처인성 성벽에 올라 가리킨 곳으로 걸어가 막기 → 김윤후를 따라 충주성 관청 마당에서 노비 문서를 가져다 놓기(불꽃·연기·재, 만세, D-14) → 퀴즈.
 import * as THREE from 'three';
-import { buildCh4Scene, cheoinPlace, cheoinHeight, CHEOIN } from './scene.js';
+import { buildCh4Scene, cheoinPlace, cheoinHeight, CHEOIN, fieldH } from './scene.js';
+import { mount } from '../../core/horse.js';
 import { roam } from '../../core/flow.js';
 import { showHowTo, runWithRetries, pickOnMap } from '../../core/minigame.js';
 import { enterThroughGate } from '../kit/gate.js';
@@ -92,6 +93,27 @@ export function putOnCheoinWall(ctx) {
 // 몽골군이 들판에서 다가오면 김윤후가 가장 급한 적 쪽 성벽 위 자리를 "저기다!" 하고 가리키고(빛나는 원·화살표),
 // 학생이 그 자리에 가까이 가면 가장 가까운 궁수가 화살을 쏜다. 맞은 몽골군은 뒤로 쓰러진다.
 // 쉬운 방식은 몽골군이 느리게 오고, 가리킨 자리가 학생 가까이에 나온다.
+// 말 탄 몽골군이 화살을 맞으면: 기수는 뒤로 넘어가며 말에서 떨어져 땅에 눕고, 말은 놀라 들판 쪽으로 달아난다(피는 넣지 않는다, D-45)
+function fallFromHorse(m, dt) {
+  const r = m.rider, h = m.horse, g = m.group;
+  if (r.parent !== g) { // 말에서 떼어 무리(group)에 둔다: 안장 자리에서 시작
+    const p = new THREE.Vector3(); r.getWorldPosition(p); g.worldToLocal(p);
+    g.add(r); r.position.copy(p); r.rotation.set(0, 0, 0); r.scale.setScalar(1); r.userData.from = p.clone();
+    r.rotation.order = 'YXZ';
+  }
+  const k = m.fall, f = r.userData.from;
+  r.position.set(f.x, f.y * (1 - k) * (1 - k) + 0.1 * k, f.z - 1.1 * k); // 뒤로 넘어가며 내려온다
+  r.rotation.x = -1.45 * k;
+  // 말: 몸을 돌려 성에서 멀어진다
+  h.rotation.y += (Math.PI - h.rotation.y) * Math.min(1, dt * 3);
+  h.position.z -= Math.cos(h.rotation.y) * dt * 3.2; h.position.x -= Math.sin(h.rotation.y) * dt * 3.2;
+}
+function unfall(m) {
+  const r = m.rider, h = m.horse;
+  h.position.set(0, 0, 0); h.rotation.set(0, 0, 0);
+  if (r.parent !== h.userData.body) { r.rotation.set(0, 0, 0); r.rotation.order = 'XYZ'; mount(h, r); }
+}
+
 const FLY = 0.85, FALL = 0.5, LIE = 1.0, RISE = 0.6; // 화살 나는 시간, 쓰러지는 시간, 누워 있는 시간, 궁수가 올라오는 시간
 const SPOT_R = 1.6;
 const angleOf = (p, cx) => { let a = Math.atan2(p.z, p.x - cx); if (a < 0) a += Math.PI * 2; return a; };
@@ -103,7 +125,7 @@ export function cheoinDefense(ctx, easy) {
   ctx.testHooks.cheoinAttempts = (ctx.testHooks.cheoinAttempts || 0) + 1;
   const kim = world.npcs.get('kimyunhu'), km = kim.mesh.position, label = kimLabel(world), ring = scene.spotRing;
   const reset = () => {
-    for (const m of scene.mongols) { m.group.visible = false; m.group.rotation.x = 0; }
+    for (const m of scene.mongols) { m.group.visible = false; m.group.rotation.x = 0; m.fall = 0; if (m.horse) unfall(m); }
     for (const ar of scene.arrows) ar.visible = false;
     for (const ar of scene.archers) { ar.group.visible = false; ar.group.position.y = 0; ar.group.rotation.y = ar.rest; }
     ring.visible = false; label.visible = false;
@@ -119,7 +141,7 @@ export function cheoinDefense(ctx, easy) {
     g.rotation.y = Math.atan2(p.x - g.position.x, p.z - g.position.z); // 몽골군 쪽으로 돌아선다
     const arrow = scene.arrows.find(a => !a.visible) || scene.arrows[0];
     arrow.visible = true;
-    hit.set(m, { t: 0, arrow, from: v(g.position.x, g.position.y + 2.2, g.position.z), to: v(p.x, 2.2, p.z) });
+    hit.set(m, { t: 0, arrow, from: v(g.position.x, g.position.y + 2.2, g.position.z), to: v(p.x, p.y + (m.horse ? 3.3 : 2.2), p.z) }); // 말 탄 사람은 더 높이
     audio.play('whoosh');
   };
   const spotAngle = m => { // 가리킬 성벽 위 자리의 각도
@@ -147,7 +169,7 @@ export function cheoinDefense(ctx, easy) {
         if (free.length) {
           seed = (seed * 16807) % 2147483647;
           const m = free[seed % free.length];
-          m.group.visible = true; m.group.rotation.x = 0;
+          m.group.visible = true; m.group.rotation.x = 0; m.fall = 0; if (m.horse) unfall(m);
           active.set(m, { d: 0, spot: spotAngle(m) });
         }
       }
@@ -161,14 +183,15 @@ export function cheoinDefense(ctx, easy) {
           h.arrow.position.copy(pos); h.arrow.lookAt(ahead);
         } else {
           h.arrow.visible = false;
-          m.group.rotation.x = -1.45 * Math.min(1, (h.t - FLY) / FALL);
-          if (h.t >= FLY + FALL + LIE) { m.group.visible = false; m.group.rotation.x = 0; hit.delete(m); }
+          m.fall = Math.min(1, (h.t - FLY) / FALL);
+          if (m.horse) fallFromHorse(m, dt); else m.group.rotation.x = -1.45 * m.fall;
+          if (h.t >= FLY + FALL + LIE) { m.group.visible = false; m.group.rotation.x = 0; if (m.horse) unfall(m); hit.delete(m); }
         }
       }
       for (const [m, a] of active) {
         a.d += speed * dt;
         const r = A.spawnR - a.d;
-        m.group.position.set(cx + Math.cos(m.angle) * r, 0, Math.sin(m.angle) * r);
+        { const x = cx + Math.cos(m.angle) * r, z = Math.sin(m.angle) * r; m.group.position.set(x, fieldH(x, z), z); } // 들판 높이 위에(발굽·발이 땅에 묻히지 않게)
         m.group.rotation.y = Math.atan2(-Math.cos(m.angle), -Math.sin(m.angle)); // 성 쪽을 바라본다
         if (a.d >= travel) {
           breaches += 1; audio.play('wrong');

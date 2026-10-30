@@ -28,6 +28,11 @@ for (const id of IDS) {
         ok(h && h.shown, `${id}/${name}: 보였다`);
         ok(h.lines >= 1, `${id}/${name}: 대사 ${h.lines}`);
         ok(h.facing >= 0.8, `${id}/${name}: 얼굴이 보인다(D-45) ${h.facing}`);
+        if (h.sunk != null) ok(h.sunk < 0.05, `${id}/${name}: 사람·말이 땅에 박히지 않는다 ${h.sunk.toFixed(2)}m`); // 2026-10-30 몽골군이 산에 박힌 오류
+        if (h.minGap != null) ok(h.minGap > 0.55, `${id}/${name}: 사람·말이 서로 겹치지 않는다 ${h.minGap.toFixed(2)}`);
+        if (h.weaponsFacing != null) ok(h.weaponsFacing, `${id}/${name}: 찌르는 쪽이 상대를 향한다`);
+        if (h.phases) ok(['defend', 'advance', 'clash', 'collapse', 'after'].every(k => h.phases.includes(k)), `${id}/${name}: 저항→진격→전투→무너짐→끝 ${h.phases}`);
+        if (h.mongolRiders != null) ok(h.mongolRiders / h.mongols >= 0.6, `${id}/${name}: 몽골군은 기마병 중심 ${h.mongolRiders}/${h.mongols}`);
         eq(s.w.level.children.length, n0, `${id}/${name}: 무대를 치웠다`);
         eq(s.w.level.children.filter(o => o.visible).length, vis, `${id}/${name}: 마을을 다시 보인다`);
         eq(JSON.stringify(s.w.bounds), b0, `${id}/${name}: 걷는 곳`);

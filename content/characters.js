@@ -28,8 +28,13 @@ export const LOOKS = {
   artisan: { role: 'merchant', robe: 0xc8b89a, outfit: 'short', pants: 0xb8a888, hat: 'topknot', trim: 0x6b4a32, skin: 'tan', face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache' , build: { shape: 'wide', eye: 'narrow', brow: 'arched', nose: 'button', mouth: 'full', mood: 'gentle' } } },
   baejungson: { named: true, robe: 0x2a3a5a, outfit: 'armor', armor: 0x5a5a5e, hat: 'general', gear: 'sword', trim: 0xb8452f, skin: 'tan', face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache', brow: 'thick' } },
   kimtongjeong: { named: true, robe: 0x4a3a2a, outfit: 'armor', armor: 0x7a6a4a, hat: 'general', gear: 'sword', trim: 0xd9a441, skin: 'tan', face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'full' } },
+  goryeoCommander: { robe: 0x6a2a20, outfit: 'armor', armor: 0x8a7a5a, hat: 'general', gear: 'sword', trim: 0xd9a441, skin: 'tan', face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'full' } }, // 이름 없는 고려 장수(관군 지휘관)
   sambyeolcho: { robe: 0x3a2f2a, outfit: 'armor', armor: 0x4e4a44, hat: 'helmet', gear: 'spear', trim: 0xb8452f, skin: 'tan', face: { eyes: 'stern', brows: 'stern', mouth: 'flat', stubble: true } },
   mongol: { robe: 0x3e4a5c, outfit: 'deel', hat: 'mongol', trim: 0x8a6a42, skin: 'tan', face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'thin' } },
+  // 몽골 기마병(2026-10-30 선생님: 몽골군은 기마병 중심): 등에 활을 멘 기마 궁수, 창을 든 기마병, 장수(붉은 옷·금빛 깃, 투구)
+  mongolArcher: { robe: 0x4a4a3a, outfit: 'deel', hat: 'mongol', gear: 'bow', trim: 0x8a6a42, skin: 'tan', face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'thin' } },
+  mongolLancer: { robe: 0x3a4250, outfit: 'deel', hat: 'mongol', gear: 'spear', trim: 0x6a5a3a, skin: 'tan', face: { eyes: 'stern', brows: 'stern', mouth: 'flat', stubble: true } },
+  mongolGeneral: { robe: 0x8a2a22, outfit: 'deel', hat: 'helmet', armor: 0x5a4a3a, gear: 'sword', trim: 0xd9a441, skin: 'tan', face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'full', brow: 'thick' } },
   // 조선편. 임금·세자는 익선관, 양반·학자는 갓, 조선 군사는 전립
   yiseonggye: { outfit: 'armor', armor: 0x7a6a50, named: true, robe: 0x7a2a1e, hat: 'general', gear: 'bow', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'full' } },
   joseonSoldier: { outfit: 'jeonbok', sleeve: 0xb8452f, pants: 0xd8cfbf, robe: 0x3c4c6a, hat: 'jeollip', gear: 'spear', trim: 0xb8452f, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },

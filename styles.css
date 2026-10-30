@@ -30,7 +30,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
   display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; align-items: start;
 }
 .dlg[hidden] { display: none; }
-.dlg.dlg-right { background: #dcf5c0; border-color: #6aa84f; } /* 퀴즈 맞음: 연두(C-04) */
+.dlg.dlg-right { background: var(--hanji); border-color: #3b2f22; } /* 퀴즈 맞음: 해설은 보통 대화창 색 그대로(2026-10-30 선생님: 연두 빼기). 맞음은 글머리 ○로 안다 */
 .dlg.dlg-wrong { background: #ffd9e4; border-color: #d97a98; } /* 퀴즈 틀림: 분홍 */
 .dlg-portrait { grid-row: span 3; width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-display); font-size: 26px; color: var(--hanji); border: 2px solid #3b2f22; }
 .dlg-name { font-family: var(--font-display); font-weight: 700; color: var(--dan-red); font-size: 18px; }

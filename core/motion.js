@@ -11,6 +11,7 @@
 import * as THREE from 'three';
 
 export const HIP = 1.05; // 몸통 관절(upper) 높이: 상체·팔·머리·든 물건은 이 관절의 자식
+const LEGLEN = 0.55;    // 다리(골반 관절~발바닥) 길이: makePerson의 다리 관절 높이
 const LEG = 0.45;        // 걸음에서 몸이 내려앉는 높이를 잴 때 쓰는 다리 길이(무릎이 조금 굽어 실제 다리보다 짧게)
 const v3 = new THREE.Vector3();
 const ss = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
@@ -150,19 +151,22 @@ export function animateWalk(person, moving, dt) {
   if (m.last) raw = Math.hypot(v3.x - m.last.x, v3.z - m.last.z) / dt; else m.last = new THREE.Vector3();
   m.last.copy(v3);
   if (raw > 14) raw = 0;
-  const sc = person.scale.y || 1, target = moving ? Math.max(raw, 1.7 * sc) : 0;
+  const e = person.matrixWorld.elements, sc = Math.hypot(e[4], e[5], e[6]) || person.scale.y || 1, target = moving ? raw : 0; // sc: 실제 크기(작게 줄인 지도 위 군대·크게 키운 먼 병사도 제 걸음으로) // 걸음은 실제로 간 빠르기만 따른다(느리게 가면 느린 걸음, 제자리면 멈춤. 2026-10-30 종종걸음 고침)
   m.v += (target - m.v) * Math.min(1, dt * (target > m.v ? 5 : 6));
   if (!moving && m.v < 0.03) m.v = 0;
   const v = m.v / sc, st = styleOf(person, u), c0 = u.carry ? (CARRY[u.carry.style] || CARRY.arms) : null;
   const heavy = c0 ? Math.max(c0.heavy, u.carry.obj.userData.heavy ? 1 : 0) : 0;
-  const k = ss(0, 0.9, v), run = ss(3.2, 5, v) * (1 - heavy * 0.7);
-  const amp = (0.52 + 0.2 * Math.min(1, v / 2.5) + 0.06 * run) * st.stride * (1 - heavy * 0.25);
-  const step = (0.5 + 0.2 * Math.min(1, v / 2.5) + 0.5 * run) * st.stride * (1 - heavy * 0.25); // 한 걸음 보폭(m)
+  const k = ss(0, 0.25, v), run = ss(3.2, 5, v) * (1 - heavy * 0.7);
+  // 한 걸음 보폭(m): 느리면 짧게, 빠르면 길게. 달리기는 두 발이 뜬 사이만큼 더 나아간다
+  const sf = st.stride * (1 - heavy * 0.25) * (0.95 + ((u.ph * 7.3) % 1) * 0.1), walkStep = (0.36 + 0.3 * Math.min(1, v / 1.5) + 0.2 * ss(1.2, 2.8, v)) * sf, step = walkStep + 0.55 * run * sf;
+  // 다리를 벌리는 각도는 그 보폭에서 바로 나온다: 디딘 발이 땅에 붙은 채 몸이 한 걸음 나아가려면 2 × 다리 길이 × sin(각도) = 보폭
+  const amp = Math.asin(Math.min(0.78, walkStep / (2 * LEGLEN))) * (1 - 0.25 * run) + 0.06 * run; // 달릴 때는 뜬 사이에 나아가므로 다리를 덜 벌린다
   const was = u.stride || 0;
   u.stride = was + ((moving ? 1 : 0) - was) * Math.min(1, dt * 6);
   if (u.stride < 0.002 && !moving) u.stride = 0;
   const kk = Math.min(u.stride, k + (moving ? 0 : u.stride * 0.6));
-  if (moving || u.stride > 0) u.walk = (u.walk || 0) + dt * Math.max(Math.PI * Math.max(v, 1.2) / step, 3) * (0.94 + ((u.ph * 7.3) % 1) * 0.12);
+  // 걸음 박자 = 간 거리 ÷ 보폭(반 바퀴가 한 걸음). 멈추는 동안만 남은 걸음을 마저 디딘다
+  if (moving || u.stride > 0) u.walk = (u.walk || 0) + dt * Math.max(Math.PI * v / step, moving ? 0 : 2.5);
   const ph = (u.walk || 0) + u.ph, s = Math.sin(ph), c = Math.cos(ph);
   const working = !moving && u.work;
   // 들썩임: 몸은 다리가 곧게 선 순간 가장 높고 두 다리가 벌어진 순간 내려앉는다(발이 땅에 붙어 있게). 지난 프레임에 더한 값을 빼고 새 값을 더한다
@@ -225,6 +229,7 @@ export function animateWalk(person, moving, dt) {
     if (A.t >= A.dur) { u.act = null; if (!u.carry && !A.keep) { u.armRest = !u.grip; m.settle = 0.8; } A.resolve(); } // 끝나면 팔은 쉬는 자세로 천천히(장이 이어서 정하면 그 자세로)
   }
   applyBlend(u, dt);
+  if (u.mounted) { ux += u.leanAdd || 0; uz += u.rollAdd || 0; } // 말 탄 사람: 말의 흔들림을 허리로 받는다(core/horse.js)
   if (u.upper) u.upper.rotation.set(ux, uy, uz);
   if (u.spear && !u.spearHeld) u.spear.rotation.x = -u.arms[1].rotation.x - ux; // 창은 팔을 들든 흔들든 곧게 선 채로(손에 쥔 자리에서)
   // ④ 머리: 바라볼 곳 → 경계(둘레 살피기) → 서 있을 때 두리번거리기. 몸통 비틀림·기울기는 덜어 시선을 앞에 둔다

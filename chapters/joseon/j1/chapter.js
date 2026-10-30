@@ -194,7 +194,7 @@ export async function marchOnMap(ctx) {
   const mv = { moving: false, gait: 1, heading: army.rotation.y };
   const offGait = world.onUpdate((dt, t) => {
     army.rotation.y += wrapAngle(mv.heading - army.rotation.y) * Math.min(1, dt * 2.5);
-    for (const p of people) animateWalk(p, mv.moving, dt * mv.gait);
+    for (const p of people) animateWalk(p, mv.moving, dt); // 걸음 박자는 실제로 간 거리(지도 크기에 맞춘 빠르기)에서 나온다
     flags.forEach((f, i) => { f.rotation.y = Math.sin(t * 3 + i * 1.7) * 0.25; });
   });
   await ctx.fade(false);

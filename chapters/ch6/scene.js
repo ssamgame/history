@@ -7,6 +7,7 @@ import { LOOKS } from '../../content/characters.js';
 import { tent, pier, hanok, tree } from '../kit/buildings.js';
 import { BUILD } from '../kit/town.js';
 import { gateLeaves, nameBoard } from '../kit/gate.js';
+import { addSculler, rowStep } from '../kit/row.js';
 
 const PORT_Z = 70, JINDO = [-10, 4], JEJU = [6, -74];
 // 배에서 내려 걷는 땅(D-19): 바다 지도와 떨어진 곳에 진도 용장성 앞, 제주 항파두리 앞을 따로 짓고 짧은 장면 전환으로 옮긴다
@@ -117,14 +118,20 @@ export function buildCh6Scene(world) {
   // 플레이어가 탄 배 (항해 중에만 보인다)
   const boat = makeBoat(mk, 0x6b4a32, 0xe8e2d6, L); boat.visible = false;
   boat.getObjectByName('rig').visible = false; // 학생 배는 돛을 내리고 노를 젓는다(낮은 시점에서 앞을 가리지 않게)
-  const crew = makePerson(LOOKS.sambyeolcho); crew.scale.setScalar(0.8); crew.position.set(0, 0.0, 0.5); crew.userData.noWalk = true; crew.userData.manual = true; boat.add(crew); // 배 안에 앉아(다리는 뱃전 아래) 걷지 않고 노를 젓는다
+  // 뱃사공(2026-10-30 선생님): 고물에 서서 긴 노를 좌우로 저어 배를 몬다. 두 손은 노 손잡이를 쥐고, 배가 빠를수록 잦게 젓는다(kit/row.js)
+  for (const o of boat.userData.oars) o.visible = false;
+  const rower = addSculler(boat, { look: 'sambyeolcho', deckY: 0.42, sternZ: -1.75, side: 0.3, scale: 0.8 });
+  boat.userData.oars = [rower.oar]; boat.userData.rower = rower;
   // 뒤쫓는 배 3척
   // 뒤쫓는 배에는 몽골 군사 두 명이 타고 있다(창을 든 병사)
   const pursuers = [0, 1, 2].map(() => {
     const b = makeBoat(mk, 0x2a2a30, 0x3e4a5c, L); b.visible = false;
-    for (const [x, z] of [[-0.35, 0.6], [0.35, -0.9]]) {
+    for (const [x, z] of [[-0.35, 0.9], [0.35, 0.1]]) { // 앞쪽에 창을 든 군사 둘
       const m = makePerson({ ...LOOKS.mongol, gear: 'spear' }); m.scale.setScalar(0.8); m.position.set(x, 0.4, z); m.userData.noWalk = true; m.name = 'enemy'; b.add(m);
     }
+    for (const o of b.userData.oars) o.visible = false;
+    b.userData.rower = addSculler(b, { look: 'mongol', deckY: 0.42, sternZ: -1.75, side: 0.3, scale: 0.8 }); // 고물의 사공
+    b.userData.oars = [b.userData.rower.oar];
     return b;
   });
 
@@ -186,7 +193,6 @@ export function buildCh6Scene(world) {
 
   const sp = seaGeo.attributes.position;
   let sailing = false;
-  const row = { ph: 0, k: 0 };
   world.onUpdate((dt, t) => {
     if (world.quality.water === 'waves') {
       for (let i = 0; i < sp.count; i++) sp.setY(i, Math.sin(sp.getX(i) * 0.15 + t * 1.2) * 0.18 + Math.cos(sp.getZ(i) * 0.2 + t) * 0.12);
@@ -194,16 +200,13 @@ export function buildCh6Scene(world) {
     }
     if (ring.visible) ring.material.opacity = 0.55 + Math.sin(t * 4) * 0.3;
     if (sailing) {
-      const p = world.player.position, moved = Math.hypot(p.x - boat.position.x, p.z - boat.position.z) > 0.001;
-      row.k += ((moved ? 1 : 0) - row.k) * Math.min(1, dt * 4); // 움직일 때만 힘껏 젓는다
-      row.ph += dt * 5 * row.k;
+      const p = world.player.position;
       world.player.visible = false; // 배를 타는 동안 학생 몸은 늘 숨긴다(대화 뒤 되살아나지 않게)
       boat.position.set(p.x, -0.3 + Math.sin(t * 2) * 0.08, p.z);
       boat.rotation.y = world.player.rotation.y;
-      rowBoat(boat, row.ph, row.k);
-      const a = crew.userData.arms; if (a) for (const arm of a) arm.rotation.x = -1.0 + Math.sin(row.ph) * 0.45 * row.k; // 노 젓는 팔
+      rowStep(rower, dt); // 배가 실제로 나아가는 빠르기만큼 젓는다
     }
-    pursuers.forEach((b, i) => { if (b.visible) rowBoat(b, t * 5 + i * 1.3); });
+    pursuers.forEach(b => { if (b.visible) rowStep(b.userData.rower, dt); });
   });
 
   return {
