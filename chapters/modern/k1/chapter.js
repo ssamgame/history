@@ -11,6 +11,7 @@ import { makePerson } from '../../../core/people.js';
 import { waitInteract } from '../../../core/portal.js';
 import { LOOKS } from '../../../content/characters.js';
 import script from './script.js';
+import { treatyScene } from './story.js';
 
 const PEOPLE = ['elder', 'scholar'];
 const GATE_Z = 12.5, INTRO_FROM = [0, 15.5];
@@ -177,6 +178,7 @@ const base = makeKitChapter({
     // 둘째 놀이부터는 마을의 그 사람에게 가서 말을 걸어야 시작한다(D-30 C-05, intro 앞의 meet)
     { ...script.parts.coast, goal: script.goals[3], arena: COAST, from: [0, 21], intro: meet('elder', '마을 어르신과 이야기하기', script.parts.coast.intro),
       route: xy(script.parts.coast.route, [{ x: -4, z: 12 }, { x: -12, z: 0 }, { x: 6, z: -2 }, { x: 6, z: 14 }]).map((r, i) => i === 1 ? { ...r, scene: warshipArrives, holdCenter: true } : r) }, // 망루: 남은 시간을 화면 가운데 크게(D-02)
+    { type: 'scene', title: '1876년 연무당', goal: script.goals[4], play: ctx => treatyScene(ctx) }, // 이야기 장면(D-58): 조약을 맺는 모습
     { ...script.parts.paper, goal: script.goals[4], arena: YEONMU, from: [0, -3.6], view: { eye: [2.5, 3.2, -1.2], at: [0, 1, -6.5] }, scroll: true, // 연무당 탁자 앞에서 낡은 두루마리 조약문을 읽는다(D-05)
       intro: meet('official', '조선 관리와 이야기하기', script.parts.paper.intro) },
     { ...script.parts.rumor, goal: script.goals[5], arena: YEONMU, from: [0, 11], mark: '!', intro: meet('scholar', '젊은 선비와 이야기하기', script.parts.rumor.intro), // 머리 위는 느낌표(D-06)
@@ -231,6 +233,7 @@ export default {
   ...base,
   anyOrder: true, // 마을 사람은 아무 차례로(차례 전 대사 tooEarly가 없다, tests/quest.test.js)
   introScene,
+  stories: { treaty: treatyScene }, // 이야기 장면(D-58)
   portal: { at: [5, 5.5], ry: -Math.PI / 2 }, // 미니게임 뒤 빛나는 문(C-02): 큰길 동쪽 빈 마당, 앞면은 큰길(서쪽) 쪽
   buildScene(world) { scene = base.buildScene(world); return scene; },
   enterStage(ctx, stage) { scene.gate.setOpen(0); ctx.world.closeView = true; base.enterStage(ctx, stage); },
