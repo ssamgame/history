@@ -51,21 +51,21 @@ export const LOOKS = {
   joseonOfficial: { outfit: 'danryeong', badge: 0x1e2440, robe: 0x55608a, hat: 'official', face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache' } },
   worker: { outfit: 'short', pants: 0xd8cfbf, robe: 0xc8b89a, hat: 'topknot', trim: 0x6b4a32, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   // 근대·일제 강점기·현대편
-  daewongun: { named: true, robe: 0x4f5f86, hat: 'official', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'goatee', beardColor: '#cfc9bd', age: 'old', shape: 'long', browColor: '#8a847a' } },
-  gojong: { named: true, robe: 0xc99a2e, hat: 'ikseon', trim: 0xa8392b, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'goatee', shape: 'long' } },
+  daewongun: { outfit: 'danryeong', badge: 0x1e2440, named: true, robe: 0x4f5f86, hat: 'official', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'goatee', beardColor: '#cfc9bd', age: 'old', shape: 'long', browColor: '#8a847a' } },
+  gojong: { outfit: 'danryeong', royal: true, named: true, robe: 0xc99a2e, hat: 'ikseon', trim: 0xa8392b, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'goatee', shape: 'long' } },
   // 왕이던 때(1897년 황제가 되기 전)의 고종: 붉은 곤룡포 (역사책 아관 파천 쪽)
-  gojongKing: { named: true, robe: 0xa3262a, hat: 'ikseon', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'goatee', shape: 'long' } },
-  kimokgyun: { named: true, robe: 0xc9d4d8, hat: 'gat', trim: 0x2b241c, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'thin', shape: 'round' } },
-  jeonbongjun: { named: true, robe: 0xe6dcc3, hat: 'topknot', trim: 0x8a2f24, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'goatee', shape: 'long' } },
-  peasant: { robe: 0xddd2bb, hat: 'topknot', trim: 0x7a4e32, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
+  gojongKing: { outfit: 'danryeong', royal: true, named: true, robe: 0xa3262a, hat: 'ikseon', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'goatee', shape: 'long' } },
+  kimokgyun: { outfit: 'dopo', cord: 0x2f4a6b, named: true, robe: 0xc9d4d8, hat: 'gat', trim: 0x2b241c, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'thin', shape: 'round' } },
+  jeonbongjun: { outfit: 'short', pants: 0xe6dcc3, named: true, robe: 0xe6dcc3, hat: 'topknot', trim: 0x8a2f24, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'goatee', shape: 'long' } },
+  peasant: { outfit: 'short', pants: 0xe0d6c0, robe: 0xddd2bb, hat: 'topknot', trim: 0x7a4e32, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   seojaepil: { named: true, robe: 0x2b2f36, outfit: 'suit', hat: 'short', trim: 0x2b2f36, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'thin' } },
   gentleman: { robe: 0x3a3530, outfit: 'suit', hat: 'fedora', trim: 0x3a3530, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache' } },
-  student: { role: 'youth', robe: 0x22262e, hat: 'cap', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', age: 'young' } },
-  schoolgirl: { robe: 0xe9e4da, hat: 'braid', trim: 0x2c3a5a, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
+  student: { outfit: 'uniform', role: 'youth', robe: 0x22262e, hat: 'cap', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', age: 'young' } },
+  schoolgirl: { outfit: 'chima', pants: 0x22262e, robe: 0xe9e4da, hat: 'braid', trim: 0x2c3a5a, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   woman: { outfit: 'chima', pants: 0x2f4a5e, robe: 0xb8768a, hat: 'bun', trim: 0x2f4a5e, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
-  uibyeong: { robe: 0xd8d0bc, hat: 'topknot', gear: 'rifle', trim: 0x6b4a32, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache' } },
+  uibyeong: { outfit: 'short', pants: 0xd8d0bc, robe: 0xd8d0bc, hat: 'topknot', gear: 'rifle', trim: 0x6b4a32, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache' } },
   // 안중근: 짧은 머리와 짙은 콧수염
-  ahnjunggeun: { named: true, robe: 0x2b2f36, hat: 'short', trim: 0xe6dcc3, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'thick' } },
+  ahnjunggeun: { outfit: 'suit', named: true, robe: 0x2b2f36, hat: 'short', trim: 0xe6dcc3, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'thick' } },
   ahnchangho: { named: true, robe: 0x3a3a44, outfit: 'suit', hat: 'short', trim: 0x3a3a44, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache', shape: 'round' } },
   yugwansun: { named: true, robe: 0xf2efe6, hat: 'braid', trim: 0x2b241c, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', shape: 'round' } },
   // 김구: 널리 알려진 사진처럼 둥근 얼굴, 검은 동그란 안경, 아주 짧게 깎은 희끗한 머리, 짙은 두루마기
@@ -80,15 +80,15 @@ export const LOOKS = {
   scholarModern: { robe: 0x4a4f5a, outfit: 'suit', hat: 'short', trim: 0x4a4f5a, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache', glasses: 'round' } },
   gendarme: { robe: 0x55603f, hat: 'cap', trim: 0xb8452f, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   // 1930년대 학교의 제복 입은 교사(칼은 차지 않음)
-  teacherUniform: { robe: 0x2f3540, hat: 'cap', trim: 0xc9a040, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache' } },
+  teacherUniform: { outfit: 'uniform', robe: 0x2f3540, hat: 'cap', trim: 0xc9a040, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache' } },
   rokSoldier: { robe: 0x5a6448, hat: 'steel', gear: 'rifle', trim: 0x3a3f2c, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   unSoldier: { robe: 0x6b6a4a, hat: 'steel', gear: 'rifle', trim: 0x3a3f2c, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
-  citizen: { robe: 0x5d7a9a, hat: 'short', trim: 0xe6dcc3, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
-  grandma: { robe: 0xd8cfbf, hat: 'bun', hairColor: '#b8b2a8', trim: 0x6b4a32, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', age: 'old' } },
+  citizen: { outfit: 'short', pants: 0xd8cfbf, robe: 0x5d7a9a, hat: 'short', trim: 0xe6dcc3, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
+  grandma: { outfit: 'chima', pants: 0x5a4a3a, robe: 0xd8cfbf, hat: 'bun', hairColor: '#b8b2a8', trim: 0x6b4a32, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', age: 'old' } },
   nkSoldier: { robe: 0x6b6a3a, hat: 'cap', gear: 'rifle', trim: 0x8a2f24, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   builder: { robe: 0x8a7a5a, hat: 'steel', trim: 0x3a3f2c, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   // 1950년대 아이: 상투 없이 짧게 깎은 머리, 무명 셔츠
-  kidModern: { robe: 0xcfc6b0, hat: 'short', trim: 0x5a6a7a, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
+  kidModern: { outfit: 'short', pants: 0xbfb6a0, robe: 0xcfc6b0, hat: 'short', trim: 0x5a6a7a, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
 };
 
 export const look = (id, extra = {}) => ({ ...LOOKS[id], ...extra });
