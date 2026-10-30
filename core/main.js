@@ -190,10 +190,17 @@ function boot() {
   async function main() {
     const debug = new URLSearchParams(location.search).get('debug');
     // 개발용: ?debug=ch2-scene 처럼 장면만 띄운다. ?debug=ch2-minigame 은 미니게임부터, ?debug=ch2-quiz 는 퀴즈부터 시작한다. 조선편은 ?debug=j1-scene, 근대·일제 강점기·현대편은 k1·i1·h1.
-    const dm = /^(ch\d|[jkih]\d)-(scene|intro|explore|minigame|quiz)$/.exec(debug || ''); // intro: 도입 장면부터
+    const dm = /^(ch\d|[jkih]\d)-(scene|intro|explore|minigame|quiz|story)$/.exec(debug || ''); // intro: 도입 장면부터, story: 이야기 장면만(&s=이름, 장 모듈의 stories)
     const meta = dm && ALL_CHAPTERS.find(c => c.id === dm[1] && c.load);
     if (meta) {
       window.__world = world; window.__ctx = ctx; // 개발용(?debug=…)에서만: 콘솔로 장면과 진행을 살펴본다
+      if (dm[2] === 'story') { // 개발용: 이야기 장면(D-58)만 띄운다. 대화창을 눌러 넘긴다
+        const mod = (await meta.load()).default; curMeta = meta;
+        world.setMood(mod.mood); world.setPlayerLook(roleLook(meta.id, mod.player), ROLES[meta.id]?.scale ?? 1); mod.buildScene(world, ctx);
+        dialogue = createDialogue(ui, mod.script.speakers, { reduceMotion });
+        const name = new URLSearchParams(location.search).get('s'), run = mod.stories?.[name] || Object.values(mod.stories || {})[0];
+        inChapter = true; await run?.(ctx); window.__storyDone = true; return;
+      }
       if (dm[2] !== 'scene') { let nx = await playChapter(meta, dm[2]); while (nx && nx.load) nx = await playChapter(nx, 'intro'); return mapLoop(); }
       const mod = (await meta.load()).default;
       world.setMood(mod.mood); world.setPlayerLook(roleLook(meta.id, mod.player), ROLES[meta.id]?.scale ?? 1); const sc = mod.buildScene(world, ctx);

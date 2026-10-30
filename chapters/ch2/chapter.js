@@ -7,6 +7,7 @@ import { enterThroughGate } from '../kit/gate.js';
 import { waitInteract } from '../../core/portal.js';
 import { labelSprite } from '../kit/play.js';
 import script from './script.js';
+import { gwakjuScene, lastStandScene } from './story.js';
 import * as THREE from 'three';
 
 const EXPLORE_BOUNDS = { x0: -10.5, x1: 10.5, z0: -10.5, z1: 7 };
@@ -397,6 +398,7 @@ export default {
   mood: 'snow',
   script,
   quizzes: script.quizzes,
+  stories: { gwakju: gwakjuScene, lastStand: lastStandScene }, // 이야기 장면(D-58)
 
   buildScene(world) {
     scene = buildCh2Scene(world); rescued = [];
@@ -477,6 +479,7 @@ export default {
     await sayAll(dialogue, script.wall.done);
     dialogue.close();
     world.followOffset = null; world.followLookY = null;
+    await gwakjuScene(ctx); // 이야기 장면(D-58): 양규가 곽주를 되찾는다
 
     await ctx.fade(true);
     scene.khitan.visible = false;
@@ -503,8 +506,8 @@ export default {
     showAftermath(ctx); // 들판에 멈춰 선 백성·거란 병사를 치운다(퀴즈 내내 서 있지 않게)
     await ctx.fade(false);
     await sayAll(dialogue, script.rescue.done);
-    await sayAll(dialogue, script.result);
     dialogue.close();
+    await lastStandScene(ctx); // 끝 해설 장면(D-58): 거란군이 물러가고 양규는 끝까지 싸운다
     return { firstTryCorrect: [a, b].filter(x => x.first).length, firstTryTotal: 2, easyModeUsed: a.easyModeUsed || b.easyModeUsed };
   },
 };

@@ -73,9 +73,21 @@ export default {
     },
     failHint: '백성을 네 무리 이상 구해야 해요. 다시 해 봐요.',
     home: [{ who: 'guide', text: '구한 백성들과 함께 성으로 돌아가자.' }],
-    done: [{ who: 'narr', text: '양규는 거란군이 차지한 곽주를 되찾고, 물러가는 거란군을 공격해 끌려가던 많은 백성을 구했어요.', src: ['S15'] }],
+    done: [{ who: 'narr', text: '양규는 물러가는 거란군을 공격해 끌려가던 많은 백성을 구했어요.', src: ['S15'] }],
   },
 
+  // 이야기 장면(D-58): 양규가 거란군이 차지한 곽주를 되찾는다(chapters/ch2/story.js)
+  gwakju: {
+    lines: [
+      { who: 'narr', text: '흥화진을 지켜 낸 양규는 군사를 이끌고 나가, 거란군이 차지한 곽주를 되찾았어요.', src: ['S15'] },
+      { who: 'yanggyu', expr: 'tension', text: '성문을 열어라! 성안에 갇힌 백성들을 구하라!' },
+      { who: 'villager', expr: 'joy', text: '살았어요! 양규 님 군사들이 우리를 구해 주셨어요!' },
+      { who: 'narr', text: '하지만 물러가는 거란군은 고려 백성들을 끌고 가고 있었어요.', src: ['S15'] },
+    ],
+  },
+
+  // 끝 해설 장면(D-58, chapters/ch2/story.js lastStandScene): result 두 문장을 장면 위에 띄운다
+  lastStand: { line: { who: 'yanggyu', expr: 'tension', text: '물러서지 마라! 끌려가는 백성을 한 사람이라도 더 구하라!' } },
   result: [
     { who: 'narr', text: '현종이 거란에 직접 찾아가겠다고 약속하자, 거란군은 물러갔어요.', src: ['S66', 'S15'] },
     { who: 'narr', text: '양규는 끝까지 싸우다 전사했어요.', src: ['S15'] },

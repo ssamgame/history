@@ -3,6 +3,7 @@ import { buildCh1Scene } from './scene.js';
 import { roam } from '../../core/flow.js';
 import script from './script.js';
 import { enterThroughGate } from '../kit/gate.js';
+import { gangdongScene } from './story.js';
 import { waitInteract } from '../../core/portal.js';
 import * as THREE from 'three';
 
@@ -117,6 +118,7 @@ export default {
   mood: 'sunset',
   script,
   quizzes: script.quizzes,
+  stories: { gangdong: gangdongScene }, // 이야기 장면(D-58, 개발용 ?debug=ch1-story&s=gangdong과 테스트)
 
   buildScene(world) { scene = buildCh1Scene(world); return scene; },
 
@@ -205,6 +207,7 @@ export default {
     scene.gangdongPillars.visible = true;
     await sayAll(dialogue, script.retreat);
     dialogue.close();
+    await gangdongScene(ctx); // 이야기 장면(D-58): 압록강 동쪽에 성을 쌓는다
     await ctx.fade(true);
     glide?.(); showAftermath(world);
     world.bounds = { ...scene.campBounds };

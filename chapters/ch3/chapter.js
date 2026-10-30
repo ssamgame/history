@@ -11,6 +11,7 @@ import { labelSprite } from '../kit/play.js';
 import { setCarry, mat } from '../../core/people.js';
 import * as THREE from 'three';
 import script from './script.js';
+import { retreatScene } from './story.js';
 
 const EXPLORE_BOUNDS = { x0: -28, x1: 28, z0: -3.5, z1: 14 };
 export const INTRO_FROM = [0, 31]; // 장 시작 장면: 남문 밖 길
@@ -321,6 +322,7 @@ export default {
   mood: 'storm',
   script,
   quizzes: script.quizzes,
+  stories: { retreat: retreatScene }, // 이야기 장면(D-58)
 
   buildScene(world) {
     scene = buildCh3Scene(world); labels.clear();
@@ -443,6 +445,8 @@ export default {
     await playGujuBattle(ctx); // 깃발이 북쪽으로 휘날리자 고려군이 몰아쳐 이긴다
     for (const k of scene.gujuKhitan) k.visible = false;
     await sayAll(dialogue, script.guju.done);
+    dialogue.close();
+    await retreatScene(ctx); // 이야기 장면(D-58): 물러가는 거란군과 기뻐하는 고려군
     await sayAll(dialogue, script.result);
     dialogue.close();
     await ctx.fade(true);

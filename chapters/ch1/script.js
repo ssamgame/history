@@ -8,6 +8,7 @@ export default {
     archer: { name: '궁수', mark: '弓', color: '#5d6b3e', look: 'archer' },
     seohui: { name: '서희', mark: '徐', color: '#2b4c7e', look: 'seohui' },
     sonn: { name: '소손녕', mark: '蕭', color: '#5b4a36', look: 'sonn' },
+    mason: { name: '성 쌓는 일꾼', mark: '工', color: '#7d7466', look: 'villager' },
   },
 
   intro: [
@@ -87,9 +88,16 @@ export default {
   },
 
   retreat: [
-    { who: 'narr', text: '고려는 압록강 동쪽에 흥화진, 용주, 통주, 철주, 귀주(구주), 곽주를 쌓아 강동 6주를 얻었어요.', src: ['S1'] },
     { who: 'narr', text: '서희는 싸우지 않고 말로 거란군을 물러나게 했어요.', src: ['S19'] },
   ],
+  // 이야기 장면(D-58): 압록강 동쪽에 성을 쌓아 강동 6주를 얻는다(chapters/ch1/story.js)
+  gangdong: {
+    lines: [
+      { who: 'narr', text: '고려는 압록강 동쪽에 흥화진, 용주, 통주, 철주, 귀주(구주), 곽주를 쌓아 강동 6주를 얻었어요.', src: ['S1'] },
+      { who: 'mason', expr: 'tension', text: '돌을 단단히 쌓아라! 압록강 쪽을 지킬 성이다.' },
+      { who: 'seohui', text: '싸우지 않고 얻은 땅이다. 이 성들이 고려의 북쪽을 지켜 줄 것이다.' },
+    ],
+  },
 
   quizzes: [
     { kind: 'quiz', year: 993, question: '서희가 담판으로 얻은 땅은?', options: ['동북 9성', '강동 6주', '강화도'], answer: 1, explain: '압록강 동쪽의 흥화진, 용주, 통주, 철주, 귀주, 곽주예요.', src: ['S1'] },
