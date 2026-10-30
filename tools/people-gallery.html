@@ -16,13 +16,20 @@
 <body>
 <div id="row"></div>
 <script type="module">
-  // 개발용: 등장인물 생김새를 한 줄로 세워 본다(D-54 생김새 바꾸기). ?ids=soldier,monk(없으면 모두)&per=8(한 줄 인원)&angle=0.35(돌려 보는 각)&zoom=2(크게)&heads=1(얼굴만)
+  // 개발용: 등장인물 생김새를 한 줄로 세워 본다(D-54 생김새 바꾸기). ?ids=soldier,monk(없으면 모두)&per=8(한 줄 인원)&angle=0.35(돌려 보는 각)&zoom=2(크게)&heads=1(얼굴만)&same=1(옷·모자·피부를 똑같이 두고 얼굴만 견주기)&expr=anger(표정)&n=1(군중 번호)
   import * as THREE from 'three';
   import { makePerson } from '../core/people.js';
   import { LOOKS } from '../content/characters.js';
   import { portraitURL } from '../core/faces.js';
+  import { buildFace } from '../core/facebuild.js';
+  import { setExpression } from '../core/people.js';
   const q = new URLSearchParams(location.search);
-  const ids = (q.get('ids') || Object.keys(LOOKS).join(',')).split(',').filter(id => LOOKS[id]);
+  const ids = (q.get('ids') || Object.keys(LOOKS).join(',')).split(',').filter(id => LOOKS[id.split(':')[0]]);
+  const same = q.get('same') === '1', expr = q.get('expr');
+  // id 뒤에 :번호를 붙이면 그 군중 번호의 얼굴(soldier:3). same이면 옷·모자·피부를 같게 하고 얼굴 짜임만 그 인물 것으로
+  const lookOf = id => { const [k, n] = id.split(':'), L = { ...LOOKS[k], _n: +n || 0 };
+    if (!same) return L;
+    return { ...L, robe: 0x8a8478, trim: 0x5a5650, outfit: null, hat: 'short', gear: null, skin: 'base', named: true, face: { ...L.face, build: buildFace(L, L._n), beard: L.face.beard ? L.face.beard : null } }; };
   const per = +(q.get('per') || 8), angle = +(q.get('angle') || 0.35), zoom = +(q.get('zoom') || 1), W = per * 150 * zoom, rows = Math.ceil(ids.length / per), heads = q.get('heads') === '1', CH = heads ? 120 : 330, H = rows * CH * zoom, U = 52 * zoom;
   const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); renderer.setSize(W, H); renderer.shadowMap.enabled = true;
   document.body.prepend(renderer.domElement);
@@ -31,7 +38,7 @@
   const sun = new THREE.DirectionalLight(0xfff2dc, 1.6); sun.position.set(4, 10, 8); scene.add(sun);
   const cam = new THREE.OrthographicCamera(-W / 2 / U, W / 2 / U, H / 2 / U, -H / 2 / U, 0.1, 100); cam.position.set(0, 1.6, 20); cam.lookAt(0, 1.6, 0);
   ids.forEach((id, i) => {
-    const p = makePerson(LOOKS[id], { track: false });
+    const p = makePerson(lookOf(id), { track: false, stable: true });
     const col = i % per, row = Math.floor(i / per);
     p.position.set((col - (per - 1) / 2) * (150 * zoom / U), 1.6 + H / 2 / U - CH * zoom / U * (row + 0.5) - (heads ? 2.15 : -0.6 - CH * zoom / U / 2), 0); p.rotation.y = angle;
     scene.add(p);
@@ -42,7 +49,7 @@
     const grid = document.createElement('div'); grid.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;padding:6px'; document.body.prepend(grid);
     scene.children.filter(o => o.userData?.legs).forEach(o => { o.visible = false; });
     ids.forEach(id => {
-      const p = makePerson(LOOKS[id], { track: false }); p.scale.setScalar(1); p.rotation.y = angle * 0.6; scene.add(p);
+      const p = makePerson(lookOf(id), { track: false, stable: true }); if (expr) setExpression(p, expr); p.scale.setScalar(1); p.rotation.y = angle * 0.6; scene.add(p);
       const top = p.getObjectByName('headGroup').getWorldPosition(new THREE.Vector3());
       hc.position.set(top.x, top.y + 0.05, 20); hc.lookAt(top.x, top.y + 0.05, 0);
       renderer.render(scene, hc);
@@ -51,7 +58,7 @@
     });
   } else renderer.render(scene, cam);
   const rowEl = document.getElementById('row');
-  for (const id of ids) { const d = document.createElement('div'); d.className = 'cell'; d.innerHTML = `<img src="${portraitURL(id)}"><div>${id}</div>`; rowEl.append(d); }
+  for (const id of ids) { const d = document.createElement('div'); d.className = 'cell'; d.innerHTML = `<img src="${portraitURL(lookOf(id), expr || 'neutral')}"><div>${id}</div>`; rowEl.append(d); }
   document.title = 'done';
 </script>
 </body>

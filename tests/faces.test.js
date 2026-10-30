@@ -1,7 +1,7 @@
 import { test, eq, ok } from './harness.js';
 import * as THREE from 'three';
 import { LOOKS } from '../content/characters.js';
-import { portraitURL, faceTexture } from '../core/faces.js';
+import { portraitURL, faceTexture, FACE_LAYOUT, faceTheta } from '../core/faces.js';
 import { makePerson } from '../core/people.js';
 import { createDialogue } from '../core/dialogue.js';
 import ch1 from '../chapters/ch1/script.js';
@@ -104,15 +104,16 @@ test('faces: 콧수염·안경·주름이 들어간 얼굴은 서로 다르게 �
 // 2026-10-26 선생님: 투구·모자·갓 등에 얼굴이 가리면 안 된다. 눈썹·눈 자리를 앞(대화 카메라)과 비스듬히 위(탐험 카메라)에서 겨눠
 // 맨 먼저 맞는 것이 얼굴이어야 한다(모자 아래 끝이 눈썹보다 위).
 export function faceBlockers(look) {
-  const p = makePerson(look, { track: false });
+  const p = makePerson(look, { track: false, stable: true });
   p.updateMatrixWorld(true);
   const hg = p.getObjectByName('headGroup');
   const meshes = []; p.traverse(o => { if (o.isMesh && !['glasses', 'ears', 'nose'].includes(o.parent?.name) && o.name !== 'nose') meshes.push(o); });
   const ray = new THREE.Raycaster(), bad = [];
-  // 얼굴 무늬의 눈썹(위 끝)·눈 높이를 머리 구 위 각도로 옮긴다(faceTexture: cy 118, R 108, 256px, 얼굴 구 theta 0.62~2.07, phi 폭 2.3)
-  const spots = [['눈썹', 118 - 0.38 * 108], ['눈', 118 - 0.06 * 108]];
+  // 얼굴 무늬의 눈썹(위 끝)·눈 높이를 머리 곡면 위 각도로 옮긴다(D-55: 배치는 core/faces.js FACE_LAYOUT, phi 폭 2.3)
+  const { cy, R } = FACE_LAYOUT;
+  const spots = [['눈썹', cy - 0.38 * R], ['눈', cy - 0.06 * R]];
   for (const [what, py] of spots) for (const sx of [-1, 1]) {
-    const theta = 0.62 + (py / 256) * 1.45, phi = sx * (0.33 * 108 / 256) * 2.3;
+    const theta = faceTheta(py), phi = sx * (0.33 * R) * 2.3;
     const local = new THREE.Vector3(0.326 * Math.sin(theta) * Math.sin(phi), 0.326 * Math.cos(theta), 0.326 * Math.sin(theta) * Math.cos(phi));
     const target = hg.localToWorld(local.clone());
     for (const [cam, down] of [['대화', 0.16], ['탐험', 0.5]]  /* 대화: 높이 2.9에서 3.8m, 탐험: 8.5 위 12 뒤(27도) */) {
@@ -127,7 +128,8 @@ export function faceBlockers(look) {
 
 test('faces: 모자·투구·갓을 쓴 모든 인물의 눈썹과 눈이 대화·탐험 카메라에서 가리지 않는다', () => {
   const bad = [];
-  for (const [id, look] of Object.entries(LOOKS)) { const b = faceBlockers(look); if (b.length) bad.push(`${id}(${look.hat}): ${b[0]}`); }
+  // D-55: 기본 얼굴(0)과 군중 얼굴 여섯(1~6) 모두 얼굴형·이목구비 자리가 달라서 다 본다
+  for (const [id, look] of Object.entries(LOOKS)) for (let n = 0; n <= 6; n++) { const b = faceBlockers({ ...look, _n: n }); if (b.length) { bad.push(`${id}:${n}(${look.hat}): ${b[0]}`); break; } }
   eq(bad.length, 0, bad.join(' | '));
 });
 

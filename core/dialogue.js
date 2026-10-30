@@ -28,7 +28,7 @@ export function createDialogue(root, speakers, { typeMs = 26, reduceMotion = fal
     if (s.look) {            // 사람: 만화풍 얼굴 그림
       pic.textContent = '';
       pic.style.backgroundColor = '';
-      pic.style.backgroundImage = `url(${portraitURL(s.look)})`;
+      pic.style.backgroundImage = `url(${portraitURL(s.look, line?.expr || 'neutral')})`; // 대사에 expr(놀람·걱정 등, core/facebuild.js)이 있으면 그 표정으로
     } else {                 // 해설·안내: 글자 표시
       pic.style.backgroundImage = '';
       pic.textContent = s.mark;
