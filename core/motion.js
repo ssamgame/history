@@ -61,7 +61,7 @@ function applyBlend(u, dt) {
 export function gaitPose(person, ph, k = 1, amp = 0.75, run = 0) {
   const u = person.userData, s = Math.sin(ph) * k, c = Math.cos(ph);
   u.legs[0].rotation.x = s * amp; u.legs[1].rotation.x = -s * amp;
-  const k0 = u.legs[0].userData.knee, k1 = u.legs[1].userData.knee, lift = 1.1 + run * 0.5;
+  const k0 = u.legs[0].userData.knee, k1 = u.legs[1].userData.knee, lift = 1.1 + run * 0.2;
   if (k0) k0.rotation.x = (0.1 + Math.max(0, -c) * lift) * k; // 앞으로 내딛는(뒤에서 앞으로 오는) 다리의 무릎을 굽힌다
   if (k1) k1.rotation.x = (0.1 + Math.max(0, c) * lift) * k;
   if (u.carry) carryPose(person, ph, k);
@@ -156,8 +156,8 @@ export function animateWalk(person, moving, dt) {
   const v = m.v / sc, st = styleOf(person, u), c0 = u.carry ? (CARRY[u.carry.style] || CARRY.arms) : null;
   const heavy = c0 ? Math.max(c0.heavy, u.carry.obj.userData.heavy ? 1 : 0) : 0;
   const k = ss(0, 0.9, v), run = ss(3.2, 5, v) * (1 - heavy * 0.7);
-  const amp = (0.52 + 0.2 * Math.min(1, v / 2.5) + 0.1 * run) * st.stride * (1 - heavy * 0.25);
-  const step = (0.5 + 0.2 * Math.min(1, v / 2.5) + 0.4 * run) * st.stride * (1 - heavy * 0.25); // 한 걸음 보폭(m)
+  const amp = (0.52 + 0.2 * Math.min(1, v / 2.5) + 0.06 * run) * st.stride * (1 - heavy * 0.25);
+  const step = (0.5 + 0.2 * Math.min(1, v / 2.5) + 0.65 * run) * st.stride * (1 - heavy * 0.25); // 한 걸음 보폭(m)
   const was = u.stride || 0;
   u.stride = was + ((moving ? 1 : 0) - was) * Math.min(1, dt * 6);
   if (u.stride < 0.002 && !moving) u.stride = 0;
@@ -172,7 +172,7 @@ export function animateWalk(person, moving, dt) {
     gaitPose(person, ph, kk, amp, run);
     // 두 다리가 가장 벌어진 순간 발이 땅에 닿는 높이(0)로, 다리가 곧게 선 순간 그만큼 올라간다(땅 아래로 꺼지지 않게)
     const drop = LEG * (Math.cos(amp * s * kk) - Math.cos(amp * kk)) * 0.8;
-    u.bob = drop + run * Math.max(0, Math.abs(c) - 0.5) * 0.08;
+    u.bob = drop * (1 - 0.7 * run); // 달릴 때는 무릎으로 받아 몸이 거의 오르내리지 않는다(폴짝거리지 않게, 2026-10-30 선생님)
   } else u.bob = 0;
   p.y = base + u.bob; u.bobY = p.y;
   const easeX = (o, val) => { o.rotation.x += (val - o.rotation.x) * 0.3; };
@@ -193,7 +193,7 @@ export function animateWalk(person, moving, dt) {
   m.roll += (Math.max(-0.1, Math.min(0.1, -turnRate * v * 0.012)) - m.roll) * Math.min(1, dt * 6);
   const still = 1 - kk, breathe = Math.sin(u.t * 1.6 + u.ph) * 0.012 * still;
   const shift = Math.sin(u.t * 0.37 + u.ph * 3) * 0.022 * st.idle * still; // 서 있을 때 이쪽저쪽 다리로 무게를 옮긴다
-  let ux = st.lean + (0.05 * Math.min(1, v / 2.5) + 0.12 * run) * kk - heavy * 0.06 * (c0?.at[2] > 0 ? 1 : -0.5) + breathe;
+  let ux = st.lean + (0.05 * Math.min(1, v / 2.5) + 0.08 * run) * kk - heavy * 0.06 * (c0?.at[2] > 0 ? 1 : -0.5) + breathe;
   let uy = s * 0.075 * kk * (1 + run * 0.5) * (u.carry && c0.arms[0] ? 0.4 : 1) + m.lag * 0.7;
   let uz = Math.cos(ph) * 0.022 * kk + m.roll + shift;
   // ③ 팔: 무기 쥔 자세(grip)는 makePerson이 정했다. 걷지 않을 때 내려놓은 팔은 천천히 내린다

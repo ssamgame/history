@@ -168,3 +168,13 @@ test('interact: 찌르기·막기·밀기는 준비 → 실행 → 회복으로 
     ok(Math.abs(bb.min.y - pb.max.y) < 0.02, `놓을 곳 위에 앉는다 ${(bb.min.y - pb.max.y).toFixed(3)}`);
   } finally { w.dispose(); }
 });
+
+// 2026-10-30 선생님: 학생 캐릭터가 움직일 때 폴짝폴짝 뛰는 느낌 → 빠르게 움직여도 몸은 거의 오르내리지 않는다
+test('motion: 학생 빠르기(6.5m/s)로 움직여도 몸이 폴짝거리지 않는다(들썩임 4cm 안쪽, 한 걸음 1.1m 이상)', () => {
+  const p = makePerson(LOOKS.soldier, { track: false }); p.scale.setScalar(1);
+  for (let i = 0; i < 30; i++) { p.position.x += 6.5 / 30; animateWalk(p, true, 1 / 30); }
+  let lo = Infinity, hi = -Infinity; const w0 = p.userData.walk;
+  for (let i = 0; i < 60; i++) { p.position.x += 6.5 / 30; animateWalk(p, true, 1 / 30); lo = Math.min(lo, p.position.y); hi = Math.max(hi, p.position.y); }
+  ok(hi - lo < 0.04, `들썩임 ${(hi - lo).toFixed(3)}m`);
+  const strides = (p.userData.walk - w0) / Math.PI; ok(13 / strides > 1.1, `한 걸음 ${(13 / strides).toFixed(2)}m`);
+});
