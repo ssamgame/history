@@ -29,6 +29,7 @@ for (const id of IDS) {
         ok(h.lines >= 1, `${id}/${name}: 대사 ${h.lines}`);
         ok(h.facing >= 0.8, `${id}/${name}: 얼굴이 보인다(D-45) ${h.facing}`);
         if (h.sunk != null) ok(h.sunk < 0.05, `${id}/${name}: 사람·말이 땅에 박히지 않는다 ${h.sunk.toFixed(2)}m`); // 2026-10-30 몽골군이 산에 박힌 오류
+        if (h.kingFeet != null) ok(Math.abs(h.kingFeet - h.daisTop) < 0.02, `${id}/${name}: 왕의 발이 단 윗면에 ${h.kingFeet.toFixed(3)} / ${h.daisTop.toFixed(3)}`);
         if (h.minGap != null) ok(h.minGap > 0.55, `${id}/${name}: 사람·말이 서로 겹치지 않는다 ${h.minGap.toFixed(2)}`);
         if (h.weaponsFacing != null) ok(h.weaponsFacing, `${id}/${name}: 찌르는 쪽이 상대를 향한다`);
         if (h.phases) ok(['defend', 'advance', 'clash', 'collapse', 'after'].every(k => h.phases.includes(k)), `${id}/${name}: 저항→진격→전투→무너짐→끝 ${h.phases}`);

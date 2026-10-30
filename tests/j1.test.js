@@ -190,3 +190,27 @@ test('j1 H-02: the march has no "나", about 24 marching soldiers with flags, re
     ok(sc.army.position.z > 20, 'camp army is gone south afterwards');
   } finally { bot.stop(); s.done(); }
 }, { timeout: 150000 });
+
+// 2026-10-30 선생님: 진영을 돌며 군사 여섯의 말을 듣고 이성계에게 돌아와 가리기, 한양을 정한 뒤 위화도로 돌아가지 않고 궁궐 마당에서 잇기(새로고침해도)
+test('j1: 진영 곳곳의 여섯 군사를 찾아 듣고 이성계에게 돌아와 가린 뒤, 한양 궁궐 마당에서 관리를 만나며, 이어 하기도 궁궐 마당', async () => {
+  const s = touchSetup(j1Script.speakers);
+  const bot = touchBot(s, { answers });
+  try {
+    const sc = j1.buildScene(s.w, s.ctx);
+    ok(sc.extra.length >= 10, `진영 군사 ${sc.extra.length}`);
+    j1.enterStage(s.ctx, 'minigame');
+    await j1.minigame(s.ctx);
+    eq(s.ctx.testHooks.rumors.heard.length, 6, '여섯 군사의 말을 모두 들었다');
+    const p = s.w.player.position, { COURT } = await import('../chapters/joseon/j1/scene.js');
+    ok(Math.abs(p.x - COURT.x) < 15, `궁궐 마당에 있다 x ${p.x.toFixed(1)}`);
+    const king = s.w.npcs.get('yiseonggye').mesh;
+    ok(Math.abs(king.position.y - COURT.top) < 0.01, '왕이 된 이성계는 단 윗면에 선다');
+    const portal = typeof j1.portal === 'function' ? j1.portal(s.ctx) : j1.portal; ok(Math.abs(portal.at[0] - COURT.x) < 15, '다음 문도 궁궐 마당에');
+  } finally { bot.stop(); s.done(); }
+  const t = touchSetup(j1Script.speakers);
+  try {
+    j1.buildScene(t.w, t.ctx); j1.enterStage(t.ctx, 'quiz');
+    const { COURT } = await import('../chapters/joseon/j1/scene.js');
+    ok(Math.abs(t.w.player.position.x - COURT.x) < 15, '퀴즈부터 이어 해도 궁궐 마당');
+  } finally { t.done(); }
+}, { timeout: 150000 });

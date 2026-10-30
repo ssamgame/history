@@ -1,6 +1,6 @@
 // 조선편 1장 「위화도 회군과 조선 건국」(D-22): 목책 문으로 들어와 군사들의 걱정(아무 차례) → 이성계 → 이성계가 직접 말하는 4불가론, 까닭과 소문 가려내기 →
 // 이성계의 결심 → 회군 지도 장면 → 관리를 따라 한양 터 둘러보기 → 궁궐·종묘·사직단 짓기 → 퀴즈.
-import { buildJ1Scene } from './scene.js';
+import { buildJ1Scene, buildCourt, COURT, groundH } from './scene.js';
 import { roam } from '../../../core/flow.js';
 import { showHowTo, runWithRetries } from '../../../core/minigame.js';
 import { PLAY, buildArena, mapSpot, labelSprite } from '../../kit/play.js';
@@ -247,6 +247,91 @@ export async function marchOnMap(ctx) {
   await ctx.fade(false);
 }
 
+// 진영 곳곳에서 이성계의 말을 전하는 군사 여섯(R.people): 마을 안 자리
+export const RUMOR_SPOTS = [[-10.5, 0.4, 0.6], [-3.6, 6.6, 2.6], [5.2, 4.2, -2.4], [8.6, 0.8, -1.2], [7.4, 9.4, 3.0], [-17, -2.2, 1.4]];
+const rumorId = i => `rumor${i}`;
+function addRumorPeople(world) {
+  script.reasons.people.forEach((p, i) => {
+    if (world.npcs.has(rumorId(i))) return;
+    const [x, z, ry] = RUMOR_SPOTS[i], base = LOOKS[p.look];
+    world.addNpc(rumorId(i), { ...base, robe: new THREE.Color(base.robe).offsetHSL(0, 0, (i % 3 - 1) * 0.05).getHex() }, x, z, ry);
+    world.npcs.get(rumorId(i)).mesh.position.y = groundH(x, z);
+  });
+}
+
+// 까닭과 소문 가려내기(마을 탐색): ① 진영을 돌며 여섯 군사(느낌표)의 말을 듣는다 ② 이성계에게 돌아가면 들은 말을 하나씩 '까닭/소문'으로 가린다.
+// 틀리면 그 까닭을 듣고 같은 말을 다시 가린다(실패로 끝나지 않는다). 한 번도 틀리지 않으면 first
+export async function rumorWalk(ctx) {
+  const { world, dialogue, hud } = ctx, R = script.reasons, N = R.people.length;
+  addRumorPeople(world);
+  const heard = [], yi = world.npcs.get('yiseonggye');
+  const ids = R.people.map((_, i) => rumorId(i));
+  const mark = () => {
+    ids.forEach((id, i) => { world.npcs.get(id).mark.visible = !heard.includes(i); });
+    yi.mark.visible = heard.length === N;
+    hud.setCounter(`${R.heardAs} ${heard.length}/${N}`);
+    const p = world.player.position, left = ids.map((id, i) => [i, world.npcs.get(id).mesh.position]).filter(([i]) => !heard.includes(i));
+    const next = left.length ? left.sort((a, b) => a[1].distanceTo(p) - b[1].distanceTo(p))[0][1] : yi.mesh.position;
+    world.setGoal({ x: next.x, z: next.z });
+    ctx.setGoal(script.goals[2]);
+  };
+  ctx.testHooks.rumors = { heard };
+  mark();
+  ctx.input.enabled = true;
+  await new Promise(resolve => {
+    const stop = roam(ctx, {
+      async onTalk(id) {
+        const i = ids.indexOf(id);
+        if (i >= 0) {
+          await sayAll(dialogue, R.people[i].talk);
+          if (!heard.includes(i)) heard.push(i);
+          if (heard.length === N) await dialogue.say(R.back);
+          mark(); return;
+        }
+        if (id !== 'yiseonggye') return;
+        if (heard.length < N) { await dialogue.say(R.notYet); return; }
+        stop(); setTimeout(resolve, 0);
+      },
+    });
+  });
+  ctx.input.enabled = false;
+  world.setGoal(null); hud.setCounter(null); yi.mark.visible = false;
+  world.setTalkCamera(yi.mesh);
+  await dialogue.say(R.judgeIntro);
+  let first = true;
+  for (const i of heard) { // 들은 차례대로
+    const P = R.people[i], text = P.talk.map(l => l.text).join(' ');
+    for (;;) {
+      ctx.testHooks.choice = P.correct ? 0 : 1;
+      const pick = await dialogue.choose(`「${text}」 ${R.question}`, R.options);
+      if ((pick === 0) === P.correct) { await dialogue.say({ who: 'guide', text: `○ 맞아요. ${P.correct ? '이성계가 직접 든 까닭이에요.' : '이성계가 하지 않은 말, 떠도는 소문이에요.'}` }); break; }
+      first = false;
+      await dialogue.say({ who: 'guide', text: `× 다시 생각해 봐요. ${P.why || R.fail}` });
+    }
+  }
+  ctx.testHooks.choice = null;
+  ids.forEach(id => { world.npcs.get(id).mesh.visible = false; world.npcs.get(id).mark.visible = false; });
+  dialogue.close(); world.camMode = 'follow';
+  return { first };
+}
+
+// 한양 궁궐 마당으로: 마당을 짓고(한 번만), 이성계(곤룡포를 입은 왕)를 단 위에 세우고, 학생을 마당 남쪽에 둔다
+function toCourt(ctx) {
+  const { world } = ctx;
+  if (!scene.court) scene.court = buildCourt(world);
+  const C = scene.court;
+  const yi = world.npcs.get('yiseonggye');
+  if (!yi.mesh.userData.king) { // 왕이 된 이성계: 곤룡포와 익선관, 얼굴은 이성계
+    const king = makePerson({ ...LOOKS.sejong, face: LOOKS.yiseonggye.face, named: true }, { stable: true });
+    king.userData.king = true; king.add(yi.mark); yi.mesh.removeFromParent(); world.level.add(king); yi.mesh = king;
+  }
+  yi.mesh.position.set(C.dais[0], COURT.top, C.dais[1]); yi.mesh.rotation.y = 0; yi.collider.x = C.dais[0]; yi.collider.z = C.dais[1];
+  scene.rain.points.visible = false; world.setMood?.('morning');
+  world.bounds = C.bounds;
+  placePlayer(world, C.start, Math.PI);
+  return C;
+}
+
 export default {
   id: 'j1',
   mood: 'monsoon',
@@ -274,12 +359,13 @@ export default {
       done: () => { off?.(); scene.setTurn(0); scene.army.position.copy(a0); },
     };
   },
-  // 미니게임 뒤 빛나는 문(C-02): 군대가 떠난 동쪽 통로, 학생 쪽(서쪽)을 본다
-  portal: { at: [6, -0.5], ry: -Math.PI / 2 },
+  // 미니게임 뒤 빛나는 문(C-02): 군대가 떠난 동쪽 통로, 학생 쪽(서쪽)을 본다.
+  // 한양 궁궐 마당으로 옮긴 뒤에는 마당 동쪽(학생 쪽을 본다)에 선다(2026-10-30)
+  portal: () => (scene?.court ? { at: [COURT.x + 7, COURT.z + 8], ry: -Math.PI / 2 } : { at: [6, -0.5], ry: -Math.PI / 2 }),
 
   enterStage(ctx, stage) {
     if (stage === 'minigame') { scene.gate.setOpen(0); placePlayer(ctx.world, [0, 1.5]); }
-    if (stage === 'quiz') { scene.setTurn(1); placePlayer(ctx.world, [0, 1.5]); }
+    if (stage === 'quiz') { scene.setTurn(1); toCourt(ctx); } // 새로고침해도 한양 궁궐 마당에서 잇는다
   },
 
   async explore(ctx) {
@@ -327,14 +413,10 @@ export default {
     await sayAll(dialogue, script.npc.yiseonggye.reasons);
     dialogue.close(); world.camMode = 'follow';
     let tries = 0, firstTryCorrect = 0;
-    await showHowTo(ctx.ui, { title: '까닭과 소문 가려내기', steps: ['비 내리는 진영의 병사 여섯 명에게 가서 이야기를 들어요.', '이성계가 든 까닭인지, 떠도는 소문인지 골라요.'] });
     const R = script.reasons;
-    const a = await runWithRetries(ctx, async easy => {
-      tries += 1;
-      const ok = await PLAY.judge(ctx, { arena: CAMP, from: [0, 12], fail: R.fail, question: R.question, options: R.options, counter: '들은 이야기', items: R.people.map((p, i) => ({ ...p, ...REASON_SPOTS[i], ry: Math.PI * 0.1 * (i % 3 - 1) })) }, easy);
-      if (ok === true && tries === 1) firstTryCorrect += 1; // 틀렸다가 고쳐 끝낸 것('missed')은 첫 시도 성공이 아니다
-      return ok;
-    }, { failHint: R.fail });
+    await showHowTo(ctx.ui, R.howto);
+    const a = await rumorWalk(ctx); // 진영을 돌며 여섯 군사의 말을 듣고, 이성계에게 돌아와 하나씩 가린다(2026-10-30)
+    if (a.first) firstTryCorrect += 1;
     await sayAll(dialogue, R.done);
     dialogue.close();
     // 다음 놀이는 저절로 시작하지 않는다: 이성계에게 가서 말을 걸어야 회군이 시작된다(C-05)
@@ -376,9 +458,17 @@ export default {
     await sayAll(dialogue, script.hanyang.done);
     dialogue.close();
 
+    // 한양에 도읍을 정한 뒤에는 위화도로 돌아가지 않는다: 이성계가 왕이 된 한양 궁궐 마당으로 옮겨, 관리가 다음 일을 알려 준다(2026-10-30)
     await ctx.fade(true);
-    placePlayer(world, [0, 1.5]);
+    toCourt(ctx);
     await ctx.fade(false);
-    return { firstTryCorrect, firstTryTotal: 2, easyModeUsed: a.easyModeUsed || b.easyModeUsed };
+    const co = world.npcs.get('courtOfficial');
+    co.mark.visible = true;
+    await waitInteract(ctx, { pos: co.mesh.position, quest: script.court.goal, label: '관리와 이야기하기', mark: false });
+    co.mark.visible = false;
+    world.setTalkCamera(co.mesh);
+    await sayAll(dialogue, script.court.official);
+    dialogue.close(); world.camMode = 'follow';
+    return { firstTryCorrect, firstTryTotal: 2, easyModeUsed: !!b.easyModeUsed };
   },
 };

@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import * as BLD from '../../kit/buildings.js';
 import { storyScene, person, wait, face, troop, ease } from '../../kit/story.js';
+import { playAction } from '../../../core/people.js';
 import script from './script.js';
 import { LOOKS } from '../../../content/characters.js';
 
@@ -14,8 +15,9 @@ export function coronationScene(ctx) {
     const t = new THREE.Group(); t.position.set(0, 0, -6); g.add(t); BLD.terrace(t, { w: 12, d: 5, h: 1.2 });
     const hall = new THREE.Group(); hall.position.set(0, 1.2, -7.4); g.add(hall); BLD.hanok(hall, { tile: true, seed: 9 }); hall.scale.setScalar(1.5);
     
-    const dais = new THREE.Group(); dais.position.y = 1.2; g.add(dais); // 단 위(걸음 흔들기가 높이를 바꾸지 않게 무리째 올린다)
-    person(dais, { ...LOOKS.sejong, face: LOOKS.yiseonggye.face, named: true }, 0, -4.4, 0); // 왕이 된 이성계: 곤룡포와 익선관, 얼굴은 이성계
+    const dais = new THREE.Group(); dais.position.y = 1.2 + 0.095; g.add(dais); // 단 윗면(축대 덮개 윗면, 2026-10-30: 발이 덮개에 묻히지 않게). 걸음 흔들기가 높이를 바꾸지 않게 무리째 올린다
+    const king = person(dais, { ...LOOKS.sejong, face: LOOKS.yiseonggye.face, named: true }, 0, -4.4, 0); king.userData.noWalk = true;
+    hook.kingFeet = king.getWorldPosition(new THREE.Vector3()).y; hook.daisTop = t.position.y + 1.2 + 0.095; // 발바닥 = 단 윗면 // 왕이 된 이성계: 곤룡포와 익선관, 얼굴은 이성계
     // 마당 양쪽에 줄지어 선 신하들(가운데 길을 보며 선다)
     const left = troop(g, ['joseonOfficial', 'minister', 'scholar'], -4.5, 0, { cols: 1, rows: 4, gap: 1.6, ry: Math.PI / 2, jitter: 0.1 });
     const right = troop(g, ['minister', 'joseonOfficial', 'scholar'], 4.5, 0, { cols: 1, rows: 4, gap: 1.6, ry: -Math.PI / 2, jitter: 0.1 });
@@ -25,9 +27,12 @@ export function coronationScene(ctx) {
     cam([0, 3.2, 13], [0, 2.2, -4]);
     await fadeIn();
     await glide([0, 3.2, 13], [0, 2.2, -4], [0, 3.6, 6], [0, 2.6, -4], 2.2); // 단 위 이성계에게 다가간다
-    // 신하들이 일제히 허리를 굽혀 절한다(두 번)
-    for (let n = 0; n < 2; n++) await wait(world, 1.1, k => all.forEach(p => { p.rotation.x = Math.sin(k * Math.PI) * 0.45; }));
-    hook.bows = 2;
+    // 신하들이 왕을 향해 허리와 고개를 숙여 예를 갖춘다(2026-10-30): 앞줄부터 조금씩 늦게, 몸통(허리)과 고개를 함께 숙이고, 숙인 채 잠시 머물렀다가 천천히 편다.
+    // 발은 땅에 붙어 있다(몸 전체를 기울이지 않는다)
+    all.forEach(p => face(p, 0, -4.4));
+    const bow = (p, d) => playAction(p, { dur: 2.4, fadeIn: 0.5, fadeOut: 0.6, name: 'bow', pose: () => ({ upper: [0.62, 0, 0], head: [0.35, 0], arms: [[-0.55, 0, 0.35], [-0.55, 0, -0.35]] }) }).then(() => d);
+    await Promise.all(all.map((p, i) => wait(world, (i % 4) * 0.22 + (i < 4 ? 0 : 0.1) + Math.sin(i * 7.1) * 0.05).then(() => bow(p))));
+    hook.bows = all.length; hook.bowedUpper = true;
     await say(T[2]);
     hook.king = true;
   } });

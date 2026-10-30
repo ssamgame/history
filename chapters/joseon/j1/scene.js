@@ -2,7 +2,9 @@
 // 회군 때 군사들은 돌아서서 남쪽 물길을 건너 개경 쪽으로 간다.
 import * as THREE from 'three';
 import { backdropMountains } from '../../kit/terrain.js';
-import { tent, tree, boat, spearRack } from '../../kit/buildings.js';
+import { tent, tree, boat, spearRack, terrace, hanok, banner, wall } from '../../kit/buildings.js';
+import { walkTo } from '../../../core/interact.js';
+import { setStyle } from '../../../core/people.js';
 import { BUILD } from '../../kit/town.js';
 import { groundMaterial } from '../../../core/textures.js';
 import { mat, makePerson } from '../../../core/people.js';
@@ -126,6 +128,15 @@ export function buildJ1Scene(world) {
   const gate = gateLeaves(L, { x: 0, z: GATE_Z, y: -0.1, width: 3.7, height: 2, color: 0x6b4a32, inward: 1 });
   nameBoard(L, '위화도', 2.8, 11); // S23
 
+  // 진영의 군사들(2026-10-30 선생님: 군사적 분위기): 문을 지키는 창병, 진영을 도는 순찰, 강가를 살피는 보초, 천막 앞에 모여 선 군사들
+  const extra = [];
+  const putSoldier = (lk, x, z, ry, style) => { const p = makePerson(typeof lk === 'string' ? LOOKS[lk] : lk); p.position.set(x, groundH(x, z), z); p.rotation.y = ry; L.add(p); if (style) setStyle(p, style); extra.push(p); return p; };
+  putSoldier('soldier', -2.9, 12.4, Math.PI, 'guard'); putSoldier('soldier', 2.9, 12.4, Math.PI, 'guard'); // 문지기(바깥을 본다)
+  for (const [x, z] of [[-17, -9], [18, -8.5], [-18.5, 5]]) putSoldier(x > 0 ? 'archer' : 'soldier', x, z, Math.atan2(x, z), 'guard'); // 물가 보초
+  for (const [x, z, ry, lk] of [[-11.2, 6.2, 2.4, 'soldier'], [-9.8, 7.4, -2.6, 'archer'], [-10.4, 5, 0.3, 'soldier'], [17.5, 1, -1.9, 'soldier'], [15.8, 2.4, 2.6, 'archer']]) putSoldier(lk, x, z, ry, 'soldier'); // 천막 앞에 모여 이야기하는 군사들
+  const patrol = (lk, path) => { const p = putSoldier(lk, path[0][0], path[0][1], 0, 'guard'); (async () => { for (let i = 1; p.parent; i = (i + 1) % path.length) await walkTo(world, p, path[i], { speed: 1.1 }); })(); return p; };
+  patrol('soldier', [[-6, 8], [-17, 8], [-17, -1], [-6, 1]]); patrol('archer', [[18, -6], [18, 7], [9, 9], [9, -6]]); // 진영을 도는 순찰(동쪽 통로는 비켜서)
+
   world.addNpc('archer', LOOKS.archer, -8, 3, Math.PI * 0.25);
   world.addNpc('soldier', look('soldier', { robe: 0x6b3a2e }), 14, -9, -Math.PI * 0.7);
   world.addNpc('yiseonggye', LOOKS.yiseonggye, 0, -2.4, 0);
@@ -136,9 +147,26 @@ export function buildJ1Scene(world) {
 
   backdropMountains(world.level, { color: 0x5a6e4a, radius: 130 }); // 먼 산줄기(깊이감)
   return {
-    army, setTurn, rain, flags, gate,
+    army, setTurn, rain, flags, gate, extra,
     start: [0, 9], introFrom: [0, 16.5],
     turnCam: { pos: [26, 12, 16], target: [6, 0, 2] },
     turnTarget: [0, 0, 6],
   };
+}
+
+// 한양 궁궐 마당(2026-10-30 선생님: 한양 천도 뒤 위화도로 돌아가지 않고 이성계가 왕이 된 곳에서 잇는다). 위화도 진영과 떨어진 곳(x 200)에 짓는다.
+// 높은 단(월대)과 전각, 양옆 행랑, 줄지어 선 신하들. 단 윗면 높이는 terrace의 덮개 윗면(발이 박히지 않게, top)
+export const COURT = { x: 200, z: 0, top: 1.2 + 0.095 };
+export function buildCourt(world) {
+  const L = world.level, g = new THREE.Group(); g.name = 'court'; g.position.set(COURT.x, 0, COURT.z); L.add(g);
+  const m = (w, h, d, c, x, y, z, kind = 'stone') => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(c, kind)); o.position.set(x, y, z); o.receiveShadow = true; o.castShadow = h > 0.3; g.add(o); return o; };
+  m(44, 0.1, 38, 0xb3ab99, 0, -0.04, 0); // 박석 마당
+  const t = new THREE.Group(); t.position.set(0, 0, -6); g.add(t); terrace(t, { w: 12, d: 5, h: 1.2 });
+  const hall = new THREE.Group(); hall.position.set(0, 1.2, -7.4); hall.scale.setScalar(1.5); g.add(hall); hanok(hall, { tile: true, seed: 9 });
+  for (const sx of [-1, 1]) { const w = new THREE.Group(); w.position.set(sx * 15, 0, 0); w.rotation.y = Math.PI / 2; g.add(w); wall(w, { w: 26, h: 2.6, color: 0x8a5a3a }); } // 양옆 행랑 담
+  for (const x of [-8, 8]) { const f = new THREE.Group(); f.position.set(x, 0, -2); banner(f, { color: 0xd9a441, h: 3.6 }); g.add(f); }
+  const officials = [];
+  for (let i = 0; i < 6; i++) { const side = i < 3 ? -1 : 1, k = i % 3; const p = makePerson(LOOKS[k === 1 ? 'minister' : 'joseonOfficial'] || LOOKS.minister); p.position.set(COURT.x + side * 4.6, 0, COURT.z + 0.5 + k * 2.2); p.rotation.y = Math.atan2(-side * 4.6, -4.4 - 0.5 - k * 2.2); L.add(p); officials.push(p); }
+  world.addNpc('courtOfficial', LOOKS.minister, COURT.x + 2.6, COURT.z + 6.5, Math.PI);
+  return { group: g, officials, start: [COURT.x, COURT.z + 11], bounds: { x0: COURT.x - 13, x1: COURT.x + 13, z0: COURT.z - 2.6, z1: COURT.z + 15 }, dais: [COURT.x, COURT.z - 4.4] };
 }
