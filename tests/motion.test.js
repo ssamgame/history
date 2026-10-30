@@ -249,3 +249,15 @@ test('horse: 말 탄 사람의 몸통이 비어 보이지 않는다(델·단령�
   // 같은 기수를 말에서 내리지 않은 보통 사람과 비교: 걸어 다니는 사람은 그대로(긴 옷을 숨기지 않는다)
   const walker = makePerson(LOOKS.mongol); ok(walker.children.some(c => c.name === 'robe' && c.visible), '걷는 사람의 긴 옷은 그대로');
 });
+
+// 2026-10-30 점검(자동 플레이): 깃발을 든 군중(일제 2장·현대 1·6장)의 빈 팔이 NaN이 되어 굳힌 조각에서 사라지던 오류
+test('motion: 걷기 전에 물건을 들려도(깃발·짐) 팔·몸 각도가 모두 숫자다', async () => {
+  const { holdFlag } = await import('../chapters/kit/town.js');
+  for (const style of ['flag', 'arms', 'side', 'shoulder', 'back']) {
+    const p = makePerson(LOOKS.commoner);
+    if (style === 'flag') holdFlag(p); else setCarry(p, new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.3, 0.3)), style);
+    p.updateMatrixWorld(true);
+    let bad = 0; p.traverse(o => { if (o.matrixWorld.elements.some(Number.isNaN)) bad += 1; });
+    eq(bad, 0, `${style}: NaN인 조각`);
+  }
+});

@@ -73,7 +73,7 @@ export function gaitPose(person, ph, k = 1, amp = 0.75, run = 0) {
 function armSwing(u, i, x, run) {
   const a = u.arms[i], hold = u.grip?.[i];
   if (hold) { a.rotation.set(hold[0] + x * 0.12, 0, hold[1]); return; }
-  a.rotation.set(x, 0, (i ? -1 : 1) * (0.05 + run * 0.12) * Math.min(1, Math.abs(x) * 4 + u.stride));
+  a.rotation.set(x, 0, (i ? -1 : 1) * (0.05 + run * 0.12) * Math.min(1, Math.abs(x) * 4 + (u.stride || 0))); // 아직 한 걸음도 걷지 않은 사람(stride 없음)도 숫자가 되게(2026-10-30 점검: 깃발 든 군중의 팔이 NaN으로 사라지던 오류)
 }
 
 // 든 물건 자세: 팔은 물건을 받치고, 물건은 손 자리에 붙어 걸음에 맞춰 살짝 흔들린다(D-18). 물건은 몸통 관절(upper)의 자식
