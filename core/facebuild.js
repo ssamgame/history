@@ -81,6 +81,7 @@ export const ROLES = {
   official: { shape: ['long', 'oval', 'square', 'heart'], eye: ['narrow', 'deep', 'almond', 'upturned'], brow: ['angled', 'arched', 'straight', 'thin'], nose: ['long', 'high', 'small'], mouth: ['thin', 'firm', 'down'], mood: ['stern', 'calm'], cheekbone: 0.3 },
   monk:     { shape: ['round', 'oval', 'long'], eye: ['narrow', 'droopy', 'almond'], brow: ['thin', 'falling', 'arched'], nose: ['small', 'long', 'button'], mouth: ['small', 'thin', 'firm'], mood: ['calm', 'gentle'] },
   elder:    { shape: ['long', 'oval', 'square'], eye: ['droopy', 'deep', 'small', 'narrow'], brow: ['falling', 'bushy', 'thin'], nose: ['long', 'broad', 'high'], mouth: ['down', 'thin', 'firm'], mood: ['gentle', 'calm', 'stern'], lines: 1, cheekbone: 0.5 },
+  youth:    { shape: ['oval', 'long', 'heart', 'round', 'square'], eye: ['almond', 'round', 'narrow', 'upturned'], brow: ['straight', 'thin', 'angled', 'short'], nose: ['small', 'long', 'button', 'high'], mouth: ['firm', 'small', 'thin', 'full'], mood: ['calm', 'stern'] }, // 학생·젊은이(수염·주름 없음)
   child:    { shape: ['round', 'oval', 'heart'], eye: ['round', 'almond', 'small'], brow: ['thin', 'short', 'straight'], nose: ['button', 'small'], mouth: ['small', 'full'], mood: ['calm'] },
   woman:    { shape: ['oval', 'heart', 'round', 'long'], eye: ['almond', 'round', 'narrow', 'droopy'], brow: ['arched', 'thin', 'straight'], nose: ['small', 'button', 'long'], mouth: ['full', 'small', 'firm'], mood: ['calm', 'gentle', 'stern'] },
   foreign:  { shape: ['wide', 'square', 'round', 'long'], eye: ['narrow', 'upturned', 'small', 'deep'], brow: ['bushy', 'angled', 'straight', 'short'], nose: ['broad', 'high', 'flat'], mouth: ['wide', 'firm', 'down'], mood: ['fierce', 'stern'], stubble: 0.55, scar: 0.2, cheekbone: 0.5 },
@@ -88,7 +89,7 @@ export const ROLES = {
 
 // 생김새 묶음에서 역할을 정한다(LOOKS에 role이 있으면 그것)
 export function roleOf(L = {}) {
-  if (L.role) return L.role;
+  if (L.role) return L.role; // 학생·젊은이는 role: 'youth'
   const f = L.face || {};
   if (f.age === 'young') return 'child';
   if (f.sex === 'f') return 'woman';

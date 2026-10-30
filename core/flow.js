@@ -1,4 +1,5 @@
 // 한 장을 단계(해설 → 탐험 → 미니게임 → 퀴즈) 순서로 실행하고, 단계마다 체크포인트를 남긴다.
+import { setHairEra, eraOfChapter } from './hairstyle.js';
 import { computeStars } from './save.js';
 import { bakeLevel } from './bake.js';
 import { showQuizView, endQuizView } from './quizview.js';
@@ -32,6 +33,7 @@ export async function runChapter(meta, chapter, ctx, save, { resumeStage = 'intr
       if (!film) await ctx.screens.showIntroCard(meta, chapter.script.intro);
     }
     const perf = ctx.world?.perf, t1 = performance.now(); // perf: 개발용 성능 측정(?perf=1)일 때만 있다
+    setHairEra(eraOfChapter(chapter.id || meta?.id || '')); // 이 장의 시대 머리 모양으로 인물을 짓는다(D-56)
     const built = chapter.buildScene(ctx.world, ctx);
     const t2 = performance.now();
     if (chapter.bake !== false && ctx.world?.level && ctx.world.npcs) bakeLevel(ctx.world, built); // 움직이지 않는 조각을 재질별로 합쳐 태블릿에서 가볍게

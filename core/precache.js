@@ -5,7 +5,7 @@ export const PRECACHE = [
   'index.html', 'styles.css', 'vendor/three.module.min.js', 'content/sources.js', 'content/review.js',
   'core/main.js', 'core/bake.js', 'core/perf.js', 'core/fire.js', 'core/storage.js', 'core/save.js', 'core/content.js', 'core/dialogue.js', 'core/input.js',
   'core/quality.js', 'core/audio.js', 'core/world.js', 'core/people.js', 'core/screens.js', 'core/flow.js', 'core/portal.js', 'core/intro.js',
-  'core/precache.js',
+  'core/precache.js', 'core/facebuild.js', 'core/hairstyle.js',
   'core/minigame.js', 'core/weather.js', 'core/faces.js', 'core/music.js', 'core/textures.js', 'core/props.js', 'content/characters.js', 'content/glyphs.js',
   'core/quizview.js', 'content/roles.js',
   'chapters/index.js', 'chapters/ch1/chapter.js', 'chapters/ch1/scene.js', 'chapters/ch1/script.js',

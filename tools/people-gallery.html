@@ -16,16 +16,18 @@
 <body>
 <div id="row"></div>
 <script type="module">
-  // 개발용: 등장인물 생김새를 한 줄로 세워 본다(D-54 생김새 바꾸기). ?ids=soldier,monk(없으면 모두)&per=8(한 줄 인원)&angle=0.35(돌려 보는 각)&zoom=2(크게)&heads=1(얼굴만)&same=1(옷·모자·피부를 똑같이 두고 얼굴만 견주기)&expr=anger(표정)&n=1(군중 번호)
+  // 개발용: 등장인물 생김새를 한 줄로 세워 본다(D-54 생김새 바꾸기). ?ids=soldier,monk(없으면 모두)&per=8(한 줄 인원)&angle=0.35(돌려 보는 각)&zoom=2(크게)&heads=1(얼굴만)&same=1(옷·모자·피부를 똑같이 두고 얼굴만 견주기)&expr=anger(표정)&n=1(군중 번호)&era=joseon(시대)
   import * as THREE from 'three';
   import { makePerson } from '../core/people.js';
   import { LOOKS } from '../content/characters.js';
   import { portraitURL } from '../core/faces.js';
   import { buildFace } from '../core/facebuild.js';
   import { setExpression } from '../core/people.js';
+  import { setHairEra } from '../core/hairstyle.js';
   const q = new URLSearchParams(location.search);
   const ids = (q.get('ids') || Object.keys(LOOKS).join(',')).split(',').filter(id => LOOKS[id.split(':')[0]]);
   const same = q.get('same') === '1', expr = q.get('expr');
+  setHairEra(q.get('era')); // &era=goryeo·joseon·modern·colonial·present(시대 머리 모양)
   // id 뒤에 :번호를 붙이면 그 군중 번호의 얼굴(soldier:3). same이면 옷·모자·피부를 같게 하고 얼굴 짜임만 그 인물 것으로
   const lookOf = id => { const [k, n] = id.split(':'), L = { ...LOOKS[k], _n: +n || 0 };
     if (!same) return L;

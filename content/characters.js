@@ -60,7 +60,7 @@ export const LOOKS = {
   peasant: { robe: 0xddd2bb, hat: 'topknot', trim: 0x7a4e32, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   seojaepil: { named: true, robe: 0x2b2f36, outfit: 'suit', hat: 'short', trim: 0x2b2f36, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'thin' } },
   gentleman: { robe: 0x3a3530, outfit: 'suit', hat: 'fedora', trim: 0x3a3530, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache' } },
-  student: { robe: 0x22262e, hat: 'cap', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
+  student: { role: 'youth', robe: 0x22262e, hat: 'cap', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', age: 'young' } },
   schoolgirl: { robe: 0xe9e4da, hat: 'braid', trim: 0x2c3a5a, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   woman: { robe: 0xb8768a, hat: 'bun', trim: 0x2f4a5e, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   uibyeong: { robe: 0xd8d0bc, hat: 'topknot', gear: 'rifle', trim: 0x6b4a32, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache' } },

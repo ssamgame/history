@@ -1,6 +1,8 @@
 // 코드로 만드는 로우폴리 인물과 걷기 동작, 머리 위 표시.
 import * as THREE from 'three';
 import { faceTexture, faceVariant } from './faces.js';
+import { roleOf } from './facebuild.js';
+import { hairStyle } from './hairstyle.js';
 import { worldMapped } from './textures.js';
 
 // 장면에서 쓰는 색 → 어울리는 무늬. 무늬를 따로 말하지 않으면 색으로 고른다(성벽 회색은 돌, 지붕 먹색은 기와, 갈색 목재는 나뭇결).
@@ -134,9 +136,13 @@ let personCount = 0;
 // 이름난 인물은 LOOKS에 named: true(어디서 만들어도 같은 얼굴).
 export function makePerson(look = {}, { track = true, stable = false } = {}) {
   const vary = !stable && !look.named;
-  const { trim = 0x2b241c, face = {}, gear = null, outfit = null, hairColor = null, armor = 0x6b665e, pants = null, skin = null } = look;
+  const { trim = 0x2b241c, gear = null, outfit = null, hairColor = null, armor = 0x6b665e, pants = null, skin = null } = look;
   let { robe, hat } = look;
   const crowdN = vary ? personCount % 6 + 1 : (look._n || 0); // 같은 생김새 묶음마다 여섯 가지 얼굴을 돌려 쓴다(얼굴 그림 수를 줄여 태블릿 메모리를 아낀다)
+  const hv = hairStyle(look, crowdN, roleOf(look)); // 시대별 머리 모양(D-56, core/hairstyle.js)
+  if (hv.beard !== undefined) look = { ...look, face: { ...look.face, beard: hv.beard } }; // 군중 수염(시대·역할 범위 안에서)
+  const face = look.face || {};
+  hat = hv.hat; // 시대에 맞는 머리 종류(예: 현대편 상투 → 짧은 머리)
   const fv = faceVariant({ ...look, _n: crowdN }), S = fv.S, F = fv.F; // 얼굴 짜임(D-55, core/facebuild.js)
   if (vary && robe != null) robe = new THREE.Color(robe).offsetHSL((F.tone * 0.37 % 1) * 0.03, 0, F.tone * 0.05).getHex(); // 옷빛도 조금씩
   const g = new THREE.Group();
@@ -253,7 +259,11 @@ export function makePerson(look = {}, { track = true, stable = false } = {}) {
     const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.012, 0.012), frame); bridge.position.set(0, 0.03, 0.33); gl.add(bridge);
   }
   // 머리카락 색(흰머리·희끗한 머리)
-  const hc = hairColor ? new THREE.Color(hairColor).getHex() : 0x1e1c1a;
+  // 머리카락 빛깔과 머리 모양(D-56, core/hairstyle.js): 시대·집단의 기본형, 군중은 일부만 한 가지씩 다르게
+  const hc = new THREE.Color(hv.color || hairColor || '#1e1c1a').getHex();
+  const hm = (geo, x, y, z, parent = hg) => part(geo, hc, x, y, z, parent, 'grain'); // 머리 묶음 기준 자리(y 0 = 머리 가운데)
+  const band = (color, y, r0 = 0.29, r1 = 0.31, hgt = 0.06) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(r0, r1, hgt, 16, 1, true), mat(color, 'cloth', 'object')); m.material.side = THREE.DoubleSide; m.position.y = y; hg.add(m); return m; };
+  const sideburns = () => { for (const sx of [-1, 1]) { const b = hm(new THREE.CylinderGeometry(0.016, 0.01, 0.1, 4), sx * 0.31, 0.05, 0.04); b.scale.z = 1.6; } }; // 구레나룻(귀 앞 가는 머리, 얼굴 무늬 밖)
   if (hat === 'buzz') { // 아주 짧게 깎은 머리: 머리 모양을 따라 얇게
     const hz = new THREE.Group(); hz.name = 'hat:buzz'; hg.add(hz);
     part(HAIR_TOP(0.327), hc, 0, 0.04, -0.012, hz, 'grain'); part(HAIR_BACK(0.326), hc, 0, 0.04, -0.014, hz, 'grain');
@@ -277,29 +287,58 @@ export function makePerson(look = {}, { track = true, stable = false } = {}) {
     hg.add(helmetGuard(0x8a8478)); // 투구 드림
   } else if (hat === 'fur') {
     hp(new THREE.CylinderGeometry(0.4, 0.36, 0.34, 8), 0x5a4130, 0, 2.43, 0); // 털모자(눈썹이 보이게 조금 높이)
-  } else if (hat === 'kunfa') {     // 거란 곤발: 정수리를 깎고 양쪽 귀 앞의 머리만 길게 늘어뜨린다
+  } else if (hat === 'kunfa') {     // 거란 곤발: 정수리를 깎고 귀 앞 머리 타래를 늘어뜨린다(lock 머리 타래 길이)
     const hz = new THREE.Group(); hz.name = 'hat:kunfa'; hg.add(hz);
-    for (const sx of [-1, 1]) { part(new THREE.CylinderGeometry(0.05, 0.03, 0.42, 5), hc, sx * 0.29, 0.02 - 0.13, 0.1, hz, 'grain'); part(new THREE.SphereGeometry(0.08, 6, 4), hc, sx * 0.29, 0.13, 0.08, hz, 'grain'); }
-    part(new THREE.SphereGeometry(0.327, 12, 6, 0, Math.PI * 2, Math.PI / 2.6, 0.5), hc, 0, 0, -0.02, hz, 'grain').scale.set(1, 1, 0.98); // 뒤통수 아래 머리
-  } else if (hat === 'mongol') {    // 몽골 모자: 털 두른 챙과 둥글게 솟은 모자, 꼭대기 술
+    const ln = 0.42 * (hv.lock || 1);
+    for (const sx of [-1, 1]) { part(new THREE.CylinderGeometry(0.05, 0.03, ln, 5), hc, sx * 0.29, 0.13 - ln / 2 - 0.02, 0.1, hz, 'grain'); part(new THREE.SphereGeometry(0.08, 6, 4), hc, sx * 0.29, 0.13, 0.08, hz, 'grain'); }
+    part(new THREE.SphereGeometry(0.327, 12, 6, Math.PI, Math.PI, Math.PI / 2.6, 0.5), hc, 0, 0, -0.02, hz, 'grain').scale.set(1, 1, 0.98); // 뒤통수 아래 머리
+  } else if (hat === 'mongol') {    // 몽골 모자: 털 두른 챙과 둥글게 솟은 모자, 꼭대기 술. loops: 귀 뒤로 땋아 늘어뜨린 고리
     const hz = new THREE.Group(); hz.name = 'hat:mongol'; hg.add(hz);
     part(new THREE.CylinderGeometry(0.4, 0.42, 0.12, 12), 0x6a5038, 0, 0.35, 0, hz, 'grain');
     part(new THREE.SphereGeometry(0.3, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), trim, 0, 0.39, 0, hz, 'grain');
     part(new THREE.SphereGeometry(0.06, 6, 4), 0xb8452f, 0, 0.71, 0, hz, 'grain');
-  } else if (hat === 'daenggi') {   // 혼인 전 아이·젊은이: 가운데 가르마, 뒤로 길게 땋은 머리와 붉은 댕기
-    const hz = new THREE.Group(); hz.name = 'hat:daenggi'; hg.add(hz);
+    if (hv.loops) for (const sx of [-1, 1]) { const t = part(new THREE.TorusGeometry(0.07, 0.022, 4, 8), hc, sx * 0.31, -0.06, -0.08, hz, 'grain'); t.rotation.y = Math.PI / 2; }
+  } else if (hat === 'daenggi' || hat === 'braid') { // 땋은 머리와 댕기(가운데 가르마). braids 2면 양 갈래, short면 짧게 땋은 머리
+    const hz = new THREE.Group(); hz.name = `hat:${hat}`; hg.add(hz);
     part(HAIR_TOP(), hc, 0, 0.06, -0.01, hz, 'grain');
     part(HAIR_BACK(), hc, 0, 0.06, -0.014, hz, 'grain'); // 뒤통수
-    part(new THREE.CylinderGeometry(0.055, 0.04, 0.6, 6), hc, 0, -0.3, -0.3, hz, 'grain');
-    part(new THREE.BoxGeometry(0.1, 0.16, 0.03), 0xb8282c, 0, -0.62, -0.31, hz, 'grain');
-  } else if (hat === 'topknot') {   // 맨머리에 상투와 망건(이마 위 검은 띠)
+    const rib = { red: 0xb8282c, purple: 0x6a2a5a, black: 0x22201e }[hv.ribbon || 'red'];
+    const len = hv.short ? 0.36 : 0.6, two = hv.braids === 2;
+    for (const sx of two ? [-1, 1] : [0]) {
+      const bx = sx * 0.2, bz = two ? -0.22 : -0.3;
+      part(new THREE.CylinderGeometry(0.05, 0.035, len, 6), hc, bx, -0.03 - len / 2, bz, hz, 'grain');
+      part(new THREE.BoxGeometry(0.09, 0.14, 0.03), rib, bx, -0.06 - len, bz - 0.01, hz, 'grain');
+    }
+  } else if (hat === 'topknot') {   // 맨머리에 상투(knot 자리·크기), 조선 뒤에는 망건(이마 위 검은 띠), towel 흰 수건 머리띠
     hp(HAIR_TOP(), hc, 0, 2.08, -0.01); // 이마 위까지 빗어 올린 머리
     hp(HAIR_BACK(), hc, 0, 2.08, -0.014); // 뒤통수
-    hp(new THREE.SphereGeometry(0.1, 8, 6), hc, 0, 2.42, -0.02);
-    const mg = new THREE.Mesh(new THREE.CylinderGeometry(0.29, 0.31, 0.06, 16, 1, true), mat(0x141210, 'cloth', 'object')); mg.material.side = THREE.DoubleSide; mg.position.y = 0.19; // 망건은 이마 위(눈썹보다 높게) mg.name = 'manggeon'; hg.add(mg);
-  } else if (JOSEON_HATS[hat]) {    // 조선 모자: 묶음 하나(hat:이름)로 만든다
+    const ky = { high: 0.44, mid: 0.4, low: 0.33 }[hv.knot || 'mid'], kz = { high: 0, mid: -0.02, low: -0.12 }[hv.knot || 'mid'];
+    hm(new THREE.SphereGeometry(0.1 * (hv.knotSize || 1), 8, 6), 0, ky, kz).name = 'sangtu';
+    if (hv.manggeon && !hv.towel) band(0x141210, 0.235, 0.27, 0.285, 0.035).name = 'manggeon'; // 이마 위 머리 선에 걸친 가는 띠
+    if (hv.towel) band(0xe8e4d8, 0.225, 0.275, 0.3, 0.06).name = 'towel';
+    if (hv.sideburn) sideburns();
+  } else if (hat === 'short' && hv.cut) { // 짧은 머리: crop 상고머리, side 가르마, buzz 까까머리, back 뒤로 넘긴 머리
+    const hz = new THREE.Group(); hz.name = 'hat:short'; hg.add(hz);
+    const thin = hv.cut === 'buzz';
+    part(HAIR_TOP(thin ? 0.326 : 0.335), hc, 0, thin ? 0.04 : 0.06, -0.01, hz, 'grain'); part(HAIR_BACK(thin ? 0.325 : 0.333), hc, 0, thin ? 0.04 : 0.06, -0.014, hz, 'grain');
+    if (hv.cut === 'side') { const s = part(new THREE.BoxGeometry(0.2, 0.05, 0.22), hc, 0.1, 0.29, 0.05, hz, 'grain'); s.rotation.z = -0.4; } // 한쪽으로 빗은 가르마
+    if (hv.cut === 'back') part(new THREE.SphereGeometry(0.18, 8, 5), hc, 0, 0.24, -0.12, hz, 'grain');
+    if (hv.sideburn) sideburns();
+  } else if (hat === 'bun' && hv.perm) { // 1950년대 파마머리: 짧고 곱슬한 머리
+    const hz = new THREE.Group(); hz.name = 'hat:perm'; hg.add(hz);
+    part(HAIR_TOP(0.34), hc, 0, 0.06, -0.01, hz, 'grain'); part(HAIR_BACK(0.34), hc, 0, 0.06, -0.016, hz, 'grain');
+    for (let k = 0; k < 7; k++) { const a = Math.PI * (0.05 + k * 0.15); part(new THREE.SphereGeometry(0.08, 6, 4), hc, Math.cos(a) * 0.31, -0.02 - (k % 2) * 0.04, Math.sin(a) * -0.27 - 0.03, hz, 'grain'); } // 옆과 뒤의 곱슬(얼굴 앞에는 두지 않는다)
+  } else if (JOSEON_HATS[hat]) {    // 모자·머리 묶음 하나(hat:이름)로 만든다
     const hatG = new THREE.Group(); hatG.name = `hat:${hat}`; hg.add(hatG);
-    for (const [geo, color, x, y, z] of JOSEON_HATS[hat]()) part(geo, hairColor && color === 0x1e1c1a ? hc : color, x, y - HEAD_Y, z, hatG, 'grain'); // 머리카락은 hairColor로
+    for (const [geo, color, x, y, z] of JOSEON_HATS[hat]()) part(geo, color === 0x1e1c1a ? hc : color, x, y - HEAD_Y, z, hatG, 'grain'); // 머리카락은 머리 빛깔로
+    if (hat === 'bun') { // 쪽: 크기, 비녀
+      const bun = hatG.children.find(m => m.geometry.type === 'SphereGeometry' && m.geometry.parameters.radius === 0.13); if (bun) bun.scale.setScalar(hv.bun || 1);
+      const pin = { silver: 0xc8c8c4, wood: 0x6b4a32, jade: 0x5a8a6a }[hv.pin || 'silver'];
+      const b = part(new THREE.CylinderGeometry(0.014, 0.014, 0.36, 5), pin, 0, 1.98 - HEAD_Y, -0.33, hatG, 'grain'); b.rotation.z = Math.PI / 2; b.name = 'binyeo';
+    }
+    if (hv.manggeon) band(0x141210, 0.235, 0.27, 0.285, 0.035).name = 'manggeon'; // 갓·전립 밑으로 보이는 망건
+    if (hv.sideburn) sideburns();
+    if (hv.nape) hm(new THREE.SphereGeometry(0.325, 10, 3, Math.PI * 1.1, Math.PI * 0.8, Math.PI / 1.85, 0.32), 0, 0.02, -0.01); // 모자 밑 뒷머리
   }
   // 들고 있는 무기
   if (gear === 'spear') { // 오른손에 세워 든 창
