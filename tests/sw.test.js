@@ -58,3 +58,16 @@ test('sw: nothing saved yet, it waits for the network', async () => {
   const r = await networkFirst({ fetch: () => new Promise(ok => setTimeout(() => ok(res('new')), 60)), match: async () => undefined, put: () => {}, timeoutMs: 10 });
   eq(r.body, 'new');
 });
+
+// 게임이 불러오는 모든 코드 파일(import를 따라가며 모음)이 PRECACHE에 있어야 미리보기·오프라인에서 빠지지 않는다
+test('sw: PRECACHE lists every module reachable by import', async () => {
+  const seen = new Set(), todo = ['core/main.js'], missing = [];
+  while (todo.length) {
+    const f = todo.pop(); if (seen.has(f)) continue; seen.add(f);
+    if (!PRECACHE.includes(f)) missing.push(f);
+    const src = await (await fetch('../' + f)).text();
+    for (const m of src.matchAll(/(?:from\s*|import\s*\(\s*)['"](\.{1,2}\/[^'"]+\.js)['"]/g)) todo.push(new URL(m[1], 'http://x/' + f).pathname.slice(1));
+  }
+  ok(seen.size > 90, `found ${seen.size}`);
+  ok(!missing.length, 'missing ' + missing.join(' '));
+});
