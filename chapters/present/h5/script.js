@@ -56,11 +56,11 @@ export default {
     grandpa: {
       wait: [{ who: 'grandpa', text: '마을 사람들 이야기를 먼저 모두 들어 보게. 다들 어렵게 살고 있다네.' }],
       first: [
-        { who: 'grandpa', text: '나는 북쪽 황해도에서 내려왔네. 피란길에 그만 어린 동생 손을 놓치고 말았지.' },
+        { who: 'grandpa', expr: 'worry', text: '나는 북쪽 황해도에서 내려왔네. 피란길에 그만 어린 동생 손을 놓치고 말았지.' },
         { who: 'grandpa', text: '언젠가 꼭 동생을 다시 만나고 싶네. 그때까지 이 마을에서 함께 버텨야지.' },
         { who: 'me', text: '할아버지, 동생분을 꼭 다시 만나실 수 있게 제가 도울게요!' },
       ],
-      later: [{ who: 'grandpa', text: '고맙네. 그 마음만으로도 힘이 나는구먼.' }],
+      later: [{ who: 'grandpa', expr: 'joy', text: '고맙네. 그 마음만으로도 힘이 나는구먼.' }],
     },
   },
   // 탐험 끝 장면: 구호물품 밀가루 포대를 나눠 받는 줄
@@ -111,7 +111,7 @@ export default {
       wall: { act: '벽보 붙이기', line: { who: 'grandpa', text: '이렇게 많은 사람이 가족을 찾고 있구먼.' } },
       studio: { act: '방송에 나가기', lines: [
         { who: 'host', text: '황해도 해주에서 오신 할아버지, 1·4 후퇴 때 동생을 잃으셨다고요?' },
-        { who: 'sister', text: '오빠! 저예요, 순이예요! 해주에서 피란 오다 오빠 손을 놓쳤어요!' },
+        { who: 'sister', expr: 'surprise', text: '오빠! 저예요, 순이예요! 해주에서 피란 오다 오빠 손을 놓쳤어요!' },
         { who: 'grandpa', text: '순이야! 정말 너로구나!' },
       ] },
       done: [

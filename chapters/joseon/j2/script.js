@@ -20,12 +20,12 @@ export default {
   npc: {
     commoner: {
       first: [
-        { who: 'commoner', text: '저는 한자를 몰라서 하고 싶은 말을 글로 적을 수가 없어요.', src: ['S27'] },
+        { who: 'commoner', expr: 'worry', text: '저는 한자를 몰라서 하고 싶은 말을 글로 적을 수가 없어요.', src: ['S27'] },
         { who: 'commoner', text: '저 큰 전각은 근정전이에요. 1395년 경복궁을 지을 때 세운 으뜸 전각이지요.', src: ['S46'] },
         { who: 'commoner', text: '왕의 즉위식 같은 나라의 큰 의식을 근정전에서 치른답니다.', src: ['S46'] },
       ],
       bridge: { who: 'commoner', text: '학자님들이 바쁘신 걸 보셨어요? 저 같은 사람에게도 글자가 있으면 좋겠어요.' },
-      later: [{ who: 'commoner', text: '누구나 쓸 수 있는 글자가 있으면 얼마나 좋을까요.' }],
+      later: [{ who: 'commoner', expr: 'worry', text: '누구나 쓸 수 있는 글자가 있으면 얼마나 좋을까요.' }],
     },
     scholar: {
       first: [

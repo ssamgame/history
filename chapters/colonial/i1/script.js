@@ -29,8 +29,8 @@ export default {
   npc: {
     farmer: {
       first: [
-        { who: 'farmer', text: '일제가 토지 조사 사업을 벌여서 많은 땅을 빼앗겼어요.', src: ['S51'] },
-        { who: 'farmer', text: '살길이 막막해진 사람들은 고향을 떠나 만주나 연해주로 옮겨 가기도 했지요.', src: ['S51'] },
+        { who: 'farmer', expr: 'worry', text: '일제가 토지 조사 사업을 벌여서 많은 땅을 빼앗겼어요.', src: ['S51'] },
+        { who: 'farmer', expr: 'worry', text: '살길이 막막해진 사람들은 고향을 떠나 만주나 연해주로 옮겨 가기도 했지요.', src: ['S51'] },
       ],
       bridge: { who: 'farmer', text: '다른 분들 이야기도 들었군요. 우리 농민들 사정도 들어 보세요.' },
       later: [{ who: 'farmer', text: '내 손으로 지은 쌀인데 우리 식구는 잡곡으로 버텨요.' }],
@@ -55,7 +55,7 @@ export default {
       wait: [{ who: 'teacher', text: '마을 사람들 이야기를 먼저 모두 듣고 오렴. 그다음에 내가 이야기해 주마.' }],
       first: [
         { who: 'teacher', text: '마을 사람들 이야기를 다 들었구나. 일제의 통치는 시기마다 모습이 달랐단다.' },
-        { who: 'teacher', text: '쉿, 저기 헌병들이 온다. 길가로 비켜서자.' },
+        { who: 'teacher', expr: 'tension', text: '쉿, 저기 헌병들이 온다. 길가로 비켜서자.' },
         { who: 'me', text: '시대마다 무엇이 달라졌는지 직접 알아보겠습니다!' },
       ],
       later: [{ who: 'teacher', text: '우리말과 우리 역사를 잊어서는 안 된다.' }],
@@ -85,7 +85,7 @@ export default {
           { id: 'survey', label: '땅 재는 곳', act: '땅 재는 모습 보기', lines: [
             { who: 'farmer', text: '저 사람들이 우리 논에 막대를 꽂고 재고 있어요!' },
             { who: 'narr', text: '일제가 토지 조사 사업을 벌여서 많은 농민이 땅을 빼앗겼어요.', src: ['S51'] },
-            { who: 'narr', text: '살길이 막막해진 사람들은 고향을 떠나 만주나 연해주로 옮겨 가기도 했어요.', src: ['S51'] },
+            { who: 'narr', expr: 'worry', text: '살길이 막막해진 사람들은 고향을 떠나 만주나 연해주로 옮겨 가기도 했어요.', src: ['S51'] },
           ] },
           { id: 'sword', label: '1910년대 학교', act: '교실 들여다보기', lines: [
             { who: 'narr', text: '1910년대에는 헌병이 경찰 일을 맡아 한국인에게 태형을 내리기도 했어요.', src: ['S51'] },
@@ -123,11 +123,11 @@ export default {
       howto: '헌병의 불빛을 피해 파란 고리를 차례로 지나 선생님께 책을 전해요. 짐 더미(덤불) 뒤에 숨으면 들키지 않아요.',
       intro: [ // 선생님에게 말을 걸면(C-05)
         { who: 'teacher', text: '학교에서는 우리 역사를 가르칠 수 없게 되었단다.' },
-        { who: 'teacher', text: '이 우리 역사책을 마을 끝 서당까지 몰래 가져가 주겠니? 나는 서당에서 기다리마. 헌병에게 들키면 안 된다.' },
+        { who: 'teacher', expr: 'tension', text: '이 우리 역사책을 마을 끝 서당까지 몰래 가져가 주겠니? 나는 서당에서 기다리마. 헌병에게 들키면 안 된다.' },
       ],
       waypoints: [
         { label: '쌀가마 뒤' },
-        { label: '담 모퉁이', talk: [{ who: 'farmer', text: '쉿, 헌병이 지나가요. 불빛이 지나간 뒤에 움직여요.' }] },
+        { label: '담 모퉁이', talk: [{ who: 'farmer', expr: 'tension', text: '쉿, 헌병이 지나가요. 불빛이 지나간 뒤에 움직여요.' }] },
         { label: '우물가' },
         { label: '서당', talk: [{ who: 'teacher', text: '고맙다. 우리말과 우리 역사를 잊으면 안 된다. 아이들에게 꼭 가르치마.' }] },
       ],

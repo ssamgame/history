@@ -24,7 +24,7 @@ export default {
   npc: {
     peasant: {
       first: [
-        { who: 'peasant', text: '세금이 자꾸 늘어서 먹고살기가 너무 힘들어요.', src: ['S51'] },
+        { who: 'peasant', expr: 'worry', text: '세금이 자꾸 늘어서 먹고살기가 너무 힘들어요.', src: ['S51'] },
         { who: 'peasant', text: '고부 군수는 백성을 괴롭히기만 해요.', src: ['S51'] },
       ],
       bridge: { who: 'peasant', text: '농민군 이야기는 들으셨군요. 우리 같은 농민 사정도 들어 보세요.' },

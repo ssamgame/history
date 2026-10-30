@@ -30,7 +30,7 @@ export default {
         { who: 'elder', text: '서양 나라들이 교류하자고 했지만 모두 거절하셨다네.', src: ['S51'] },
       ],
       bridge: { who: 'elder', text: '선비 양반한테 나랏일을 들었구먼. 나는 그 앞의 일을 들려주지.' },
-      later: [{ who: 'elder', text: '저런 배가 자꾸 나타나니 고기잡이 나가기도 겁이 난다네.' }],
+      later: [{ who: 'elder', expr: 'worry', text: '저런 배가 자꾸 나타나니 고기잡이 나가기도 겁이 난다네.' }],
     },
     scholar: {
       first: [

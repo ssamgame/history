@@ -29,12 +29,12 @@ export default {
     soldier: {
       first: [
         { who: 'soldier', text: '거란 왕이 직접 대군을 이끌고 왔대!', src: ['S3'] },
-        { who: 'soldier', text: '흥화진은 압록강 가까이 있어서 거란군이 가장 먼저 쳐들어왔어.', src: ['S2'] },
+        { who: 'soldier', expr: 'tension', text: '흥화진은 압록강 가까이 있어서 거란군이 가장 먼저 쳐들어왔어.', src: ['S2'] },
       ],
       later: [{ who: 'soldier', text: '양규 님은 성벽 계단 앞에 계셔. 어서 가 봐!' }],
     },
     villager: {
-      first: [{ who: 'villager', text: '임금(현종)께서는 남쪽 나주까지 피란하셨대요.', src: ['S14'] }],
+      first: [{ who: 'villager', expr: 'worry', text: '임금(현종)께서는 남쪽 나주까지 피란하셨대요.', src: ['S14'] }],
       later: [{ who: 'villager', text: '양규 님이 계시니 이 성은 꼭 버텨 낼 거예요.' }],
     },
     // 양규의 첫 말(D-8): 아무 이야기도 안 들었으면 먼저 들어 보라 하고, 들었으면 들은 말을 이어받아 '이곳이 무너지면 안 된다'로 모은다
@@ -46,7 +46,7 @@ export default {
         villager: { who: 'yanggyu', text: '임금께서도 남쪽 나주까지 피란하셨다.', src: ['S14'] },
       },
       land: [{ who: 'yanggyu', text: '흥화진은 압록강에서 가장 가까운 성이다. 이곳이 무너지면 안 된다.', src: ['S2'] }],
-      go: [{ who: 'yanggyu', text: '나를 따라 성벽에 오르자. 적이 어디까지 왔는지 함께 보자.' }],
+      go: [{ who: 'yanggyu', expr: 'tension', text: '나를 따라 성벽에 오르자. 적이 어디까지 왔는지 함께 보자.' }],
     },
   },
 

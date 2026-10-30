@@ -30,10 +30,10 @@ export default {
     worker: {
       first: [
         { who: 'worker', text: '1794년 정월에 성 쌓는 공사를 시작했어.', src: ['S39'] },
-        { who: 'worker', text: '돌이 너무 무거워! 정약용 나리가 만든 기계가 있대.' },
+        { who: 'worker', expr: 'worry', text: '돌이 너무 무거워! 정약용 나리가 만든 기계가 있대.' },
       ],
       bridge: { who: 'worker', text: '관리 나리 말씀은 들었지? 우리는 돌 나르느라 정신이 없어.' },
-      later: [{ who: 'worker', text: '영차, 영차! 이 돌 하나 옮기는 데도 여럿이 붙어야 해.' }],
+      later: [{ who: 'worker', expr: 'tension', text: '영차, 영차! 이 돌 하나 옮기는 데도 여럿이 붙어야 해.' }],
     },
     jeongyakyong: {
       first: [

@@ -35,7 +35,7 @@ export default {
         { who: 'student', text: '품속에 태극기를 숨겨 왔어요. 신호가 오면 꺼낼 거예요.' },
       ],
       bridge: { who: 'student', text: '다른 분들 이야기도 들으셨군요. 저도 말씀드릴게요.' },
-      later: [{ who: 'student', text: '쉿, 조금만 기다리면 시작이에요!' }],
+      later: [{ who: 'student', expr: 'tension', text: '쉿, 조금만 기다리면 시작이에요!' }],
     },
     yugwansun: {
       first: [
@@ -97,7 +97,7 @@ export default {
       ],
       route: [
         { label: '탑골 공원 문', hold: 5, holdLabel: '사람들이 모이는 중', holdSay: '사람들이 공원 문으로 모여들어요. 다 모일 때까지 기다려요.',
-          talk: [{ who: 'student', text: '대한 독립 만세! 우리나라는 독립한 나라이고, 우리가 이 나라의 주인이다!' }] },
+          talk: [{ who: 'student', expr: 'joy', text: '대한 독립 만세! 우리나라는 독립한 나라이고, 우리가 이 나라의 주인이다!' }] },
         { label: '종로 거리', talk: [{ who: 'student', text: '학생과 시민, 상인이 모두 함께 만세를 불러요!' }] },
         { label: '시장', say: '장날에 모인 사람들도 만세를 외쳤어요.' },
         { label: '큰길', talk: [{ who: 'yugwansun', text: '오늘 들은 만세 소리를 고향 천안 사람들에게도 꼭 전할 거예요.' }] },

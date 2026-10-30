@@ -44,8 +44,8 @@ export default {
     },
     refugee: {
       first: [
-        { who: 'refugee', text: '서울에 살았는데, 전쟁이 일어나고 3일 만에 서울을 빼앗겼어요.', src: ['S57'] },
-        { who: 'refugee', text: '짐 보따리 하나만 들고 여기까지 피란을 내려왔지요.' },
+        { who: 'refugee', expr: 'worry', text: '서울에 살았는데, 전쟁이 일어나고 3일 만에 서울을 빼앗겼어요.', src: ['S57'] },
+        { who: 'refugee', expr: 'worry', text: '짐 보따리 하나만 들고 여기까지 피란을 내려왔지요.' },
       ],
       bridge: { who: 'refugee', text: '군인들 이야기를 들었군요. 우리 같은 피란민 이야기도 들어 보세요.' },
       later: [{ who: 'refugee', text: '언제쯤 서울 집에 돌아갈 수 있을까요?' }],

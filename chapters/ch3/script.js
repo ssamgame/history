@@ -27,13 +27,13 @@ export default {
 
   npc: {
     soldier: {
-      first: [{ who: 'soldier', text: '거란 장수 소배압이 10만 대군을 이끌고 쳐들어왔대!', src: ['S3'] }],
+      first: [{ who: 'soldier', expr: 'surprise', text: '거란 장수 소배압이 10만 대군을 이끌고 쳐들어왔대!', src: ['S3'] }],
       later: [{ who: 'soldier', text: '강감찬 님은 진영 가운데 깃발 앞에 계셔. 어서 가 봐!' }],
       after: [{ who: 'soldier', text: '쇠가죽을 다 모으면 냇물 위쪽 둑으로 가져가! 비 때문에 물이 많이 불었어.' }],
     },
     scout: {
       first: [{ who: 'scout', text: '거란군이 이 냇물을 건너올 것 같아. 강 건너를 잘 지켜보고 있어.', src: ['S3', 'S5'] }],
-      later: [{ who: 'scout', text: '강감찬 님께 어서 알려 드려.' }],
+      later: [{ who: 'scout', expr: 'tension', text: '강감찬 님께 어서 알려 드려.' }],
     },
     // 강감찬의 첫 말(D-10): 아무 이야기도 안 들었으면 먼저 들어 보라 하고, 들었으면 들은 말을 이어받아 '쇠가죽으로 물을 막아 두자'로 모은다
     gangamchan: {
@@ -43,9 +43,9 @@ export default {
         soldier: { who: 'gangamchan', text: '병사 말대로, 소배압이 10만 대군을 끌고 왔다.', src: ['S3'] },
         scout: { who: 'gangamchan', text: '척후병 말대로, 적은 이 냇물을 건너려 할 것이다.', src: ['S3', 'S5'] },
       },
-      plan: [{ who: 'gangamchan', text: '적이 반드시 이 냇물을 건널 것이다. 쇠가죽을 꿰어 물을 막아 두어라.', src: ['S3', 'S5'] }],
+      plan: [{ who: 'gangamchan', expr: 'tension', text: '적이 반드시 이 냇물을 건널 것이다. 쇠가죽을 꿰어 물을 막아 두어라.', src: ['S3', 'S5'] }],
       go: [{ who: 'gangamchan', text: '진영 곳곳의 쇠가죽 묶음을 모아 냇물 위쪽 둑으로 가져가라.' }],
-      later: [{ who: 'gangamchan', text: '서둘러라. 적이 곧 냇물에 닿는다. 하나라도 빠뜨리면 안 된다.' }],
+      later: [{ who: 'gangamchan', expr: 'tension', text: '서둘러라. 적이 곧 냇물에 닿는다. 하나라도 빠뜨리면 안 된다.' }],
     },
   },
 

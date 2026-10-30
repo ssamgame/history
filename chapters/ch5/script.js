@@ -36,7 +36,7 @@ export default {
     ],
     monk: {
       open: [
-        { who: 'monk', text: '몽골군이 불태운 대장경을 다시 만들어야 하오.', src: ['S9'] },
+        { who: 'monk', expr: 'worry', text: '몽골군이 불태운 대장경을 다시 만들어야 하오.', src: ['S9'] },
         { who: 'monk', text: '부처의 힘으로 나라를 지키려는 마음을 모아 만드는 것이오.', src: ['S7'] },
         { who: 'monk', text: '1번부터 4번까지 장인 네 사람에게 경판 만드는 법을 들어 보시오.' },
       ],
@@ -60,7 +60,7 @@ export default {
       { id: 'lacquer', title: '옻칠하기', who: 'narr', text: '벌레가 먹지 않도록 옻칠을 해요.', src: ['S8'] },
     ],
     failHint: { who: 'monk', text: '장인들에게 들은 순서를 떠올려 보시오. 지금은 빛나는 곳으로 가야 하오.' },
-    done: [{ who: 'monk', text: '옻칠까지 마쳤으니 경판이 다 되었소.' }],
+    done: [{ who: 'monk', expr: 'joy', text: '옻칠까지 마쳤으니 경판이 다 되었소.' }],
   },
 
   carving: {

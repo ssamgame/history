@@ -38,7 +38,7 @@ export default {
     student: {
       first: [
         { who: 'student', text: '일제가 이토 히로부미를 보내 을사늑약을 맺었대요.', src: ['S51'] },
-        { who: 'student', text: '이제 대한 제국은 외교권을 빼앗겨서 다른 나라와 마음대로 외교를 할 수 없대요.', src: ['S51'] },
+        { who: 'student', expr: 'worry', text: '이제 대한 제국은 외교권을 빼앗겨서 다른 나라와 마음대로 외교를 할 수 없대요.', src: ['S51'] },
       ],
       bridge: { who: 'student', text: '다른 분들 이야기도 들으셨군요. 저도 들은 게 있어요.' },
       later: [{ who: 'student', text: '이제 우리나라는 어떻게 되는 걸까요?' }],
@@ -53,7 +53,7 @@ export default {
     },
     uibyeong: {
       first: [
-        { who: 'uibyeong', text: '나라를 이대로 빼앗길 수는 없네. 우리는 무기를 들고 싸울 것이네.' },
+        { who: 'uibyeong', expr: 'anger', text: '나라를 이대로 빼앗길 수는 없네. 우리는 무기를 들고 싸울 것이네.' },
         { who: 'uibyeong', text: '유학자, 농민, 여성, 어린이까지 여러 사람이 의병으로 나섰네.', src: ['S51'] },
       ],
       bridge: { who: 'uibyeong', text: '자네도 소식을 들었구먼. 내 이야기도 들어 보게.' },
@@ -74,7 +74,7 @@ export default {
     lines: [
       { who: 'guide', text: '신문사 앞으로 사람들이 모여들어. 다들 신문을 들여다보고 있어.' },
       { who: 'narr', text: '일제는 이토 히로부미를 보내 1905년 을사늑약을 맺고 대한 제국의 외교권을 빼앗았어요.', src: ['S51'] },
-      { who: 'citizen', text: '이럴 수가… 나라의 외교권을 빼앗기다니!' },
+      { who: 'citizen', expr: 'surprise', text: '이럴 수가… 나라의 외교권을 빼앗기다니!' },
       { who: 'merchant', text: '오늘은 도저히 장사를 할 마음이 나지 않소. 가게 문을 닫아야겠소.' },
       { who: 'ahnchangho', text: '슬퍼만 하고 있을 수는 없소. 나라를 지킬 길을 함께 찾아봅시다.' },
       { who: 'me', text: '네, 함께 가겠습니다!' },
@@ -135,7 +135,7 @@ export default {
         { enemies: 5, need: 4, interval: 1.6, speed: 3, talk: [{ who: 'uibyeong', text: '더 많은 군대가 온다! 물러서지 말게!' }] },
       ],
       fail: '빛나는 고갯길에 들어왔을 때 눌러야 해요. 다시 해 봐요.',
-      done: [{ who: 'uibyeong', text: '잘 막아 냈네! 하지만 일본군은 점점 더 많이 몰려오고 있네.' }],
+      done: [{ who: 'uibyeong', expr: 'tension', text: '잘 막아 냈네! 하지만 일본군은 점점 더 많이 몰려오고 있네.' }],
     },
     // 만주·연해주로(D-35): 의병들과 함께 강가로 걸어가 마을 할머니와 인사하고 나룻배를 탄다(장면)
     exile: {

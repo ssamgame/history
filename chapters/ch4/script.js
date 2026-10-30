@@ -31,7 +31,7 @@ export default {
 
   npc: {
     villager: {
-      first: [{ who: 'villager', text: '몽골이 사신 저고여가 죽은 일을 고려 탓으로 돌리며 쳐들어왔대요.', src: ['S22', 'S10'] }],
+      first: [{ who: 'villager', expr: 'worry', text: '몽골이 사신 저고여가 죽은 일을 고려 탓으로 돌리며 쳐들어왔대요.', src: ['S22', 'S10'] }],
       later: [{ who: 'villager', text: '궁궐 계단 앞의 관리께 여쭈어 보세요.' }],
     },
     // 관리의 첫 말(D-13): 백성 이야기를 안 들었으면 먼저 들어 보라 하고, 들었으면 그 말을 이어받아 도읍 고르기로 잇는다
@@ -73,7 +73,7 @@ export default {
       { who: 'kimyunhu', text: '성 안의 백성과 함께 이 성을 지키자. 나를 따라 성벽 위로 오르라.' },
       { who: 'guide', text: '김윤후가 앞장서서 흙 비탈을 올라가. 뒤따라가자.' },
     ],
-    start: [{ who: 'kimyunhu', text: '몽골군이 다가온다! 내가 "저기다!" 하고 가리키는 곳으로 가면 궁수가 활을 쏠 것이다.' }],
+    start: [{ who: 'kimyunhu', expr: 'tension', text: '몽골군이 다가온다! 내가 "저기다!" 하고 가리키는 곳으로 가면 궁수가 활을 쏠 것이다.' }],
     point: '저기다!',
     howto: {
       title: '처인성 방어',

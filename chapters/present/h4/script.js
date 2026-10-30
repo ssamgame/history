@@ -29,7 +29,7 @@ export default {
     soldier: {
       first: [
         { who: 'soldier', text: '압록강 가까이까지 갔는데, 중국군이 내려와서 다시 물러나야 했어.', src: ['S51'] },
-        { who: 'soldier', text: '곧 이 마을도 위험해져. 서둘러 남쪽으로 떠나야 해.' },
+        { who: 'soldier', expr: 'tension', text: '곧 이 마을도 위험해져. 서둘러 남쪽으로 떠나야 해.' },
       ],
       bridge: { who: 'soldier', text: '마을 사람들 이야기를 들었구나. 내 이야기도 들어 봐.' },
       later: [{ who: 'soldier', text: '피란민들을 안전하게 도와줘!' }],
@@ -44,7 +44,7 @@ export default {
     },
     grandpa: {
       first: [
-        { who: 'grandpa', text: '지난여름에도 피란을 갔다가 겨우 돌아왔는데, 또 떠나야 한다는구나.' },
+        { who: 'grandpa', expr: 'worry', text: '지난여름에도 피란을 갔다가 겨우 돌아왔는데, 또 떠나야 한다는구나.' },
         { who: 'grandpa', text: '이 추운 겨울에 어린아이들까지 데리고 집을 떠나야 하다니.', src: ['S51'] },
       ],
       bridge: { who: 'grandpa', text: '군인 양반들 이야기를 들었구나. 이 늙은이 이야기도 들어 보렴.' },
@@ -57,14 +57,14 @@ export default {
         { who: 'mother', text: '먼 길을 걸어가야 하니 꼭 필요한 것만 싸야 해. 짐 꾸리는 것 좀 도와주렴.' },
         { who: 'me', text: '네! 아이들과 함께 무사히 떠날 수 있게 도울게요!' },
       ],
-      later: [{ who: 'mother', text: '고맙다, 정말 고마워.' }],
+      later: [{ who: 'mother', expr: 'joy', text: '고맙다, 정말 고마워.' }],
     },
   },
   // 탐험 끝 장면: 눈 내리는 마을 길로 국군과 유엔군이 남쪽으로 물러난다
   retreat: {
     lines: [
       { who: 'narr', text: '중국군의 공격을 막아 내지 못한 국군과 유엔군은 남쪽으로 물러났어요.', src: ['S51'] },
-      { who: 'soldier', text: '서둘러요! 남쪽으로 가는 길은 이쪽입니다!' },
+      { who: 'soldier', expr: 'tension', text: '서둘러요! 남쪽으로 가는 길은 이쪽입니다!' },
       { who: 'mother', text: '우리도 어서 짐을 싸야겠구나.' },
     ],
   },

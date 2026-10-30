@@ -53,7 +53,7 @@ export default {
         { who: 'kimgu', text: '통일 정부가 가망 없다고 단독 정부를 세울 수는 없소.', src: ['S51'] },
       ],
       bridge: { who: 'kimgu', text: '다른 이들의 생각도 들었구려. 내 생각도 들어 보시오.' },
-      later: [{ who: 'kimgu', text: '나라가 둘로 나뉘는 것이 나는 가장 걱정이오.' }],
+      later: [{ who: 'kimgu', expr: 'worry', text: '나라가 둘로 나뉘는 것이 나는 가장 걱정이오.' }],
     },
     reporter: {
       wait: [{ who: 'reporter', text: '광장 사람들의 이야기를 먼저 모두 들어 보세요. 서로 생각이 어떻게 다른지 알아야 기사를 쓰지요.' }],

@@ -32,13 +32,13 @@ export default {
     soldier: {
       first: [
         { who: 'soldier', text: '거란 장수 소손녕이 항복하라고 한대.', src: ['S16'] },
-        { who: 'soldier', text: '80만 대군이라고 큰소리를 친대.', src: ['S16'] },
+        { who: 'soldier', expr: 'worry', text: '80만 대군이라고 큰소리를 친대.', src: ['S16'] },
       ],
-      later: [{ who: 'soldier', text: '서희 님은 왼쪽 지휘소에 계셔. 오늘따라 말씀이 적으셔서 다들 숨죽이고 있어.' }],
+      later: [{ who: 'soldier', expr: 'tension', text: '서희 님은 왼쪽 지휘소에 계셔. 오늘따라 말씀이 적으셔서 다들 숨죽이고 있어.' }],
     },
     officer: {
       always: [
-        { who: 'officer', text: '조정에서는 땅을 떼어 주고 거란을 달래자는 말까지 나왔다네.', src: ['S17'] },
+        { who: 'officer', expr: 'worry', text: '조정에서는 땅을 떼어 주고 거란을 달래자는 말까지 나왔다네.', src: ['S17'] },
         { who: 'officer', text: '하지만 서희 님은 땅을 내주면 안 된다고 하셨지.', src: ['S17'] },
       ],
     },
@@ -54,7 +54,7 @@ export default {
         officer: { who: 'seohui', text: '조정에서 땅을 떼어 주고 거란을 달래자는 말까지 나왔다는 것도 들었구나.', src: ['S17'] },
         archer: { who: 'seohui', text: '거란이 송나라와 다투고 있어서 송과 가까운 고려를 경계한다는 것도 알았구나.', src: ['S19'] },
       },
-      land: [{ who: 'seohui', text: '하지만 땅을 떼어 주고 달랠 수는 없다. 땅을 내줄 수는 없다는 것이 내 뜻이다.', src: ['S17'] }],
+      land: [{ who: 'seohui', expr: 'tension', text: '하지만 땅을 떼어 주고 달랠 수는 없다. 땅을 내줄 수는 없다는 것이 내 뜻이다.', src: ['S17'] }],
       go: [{ who: 'seohui', text: '내가 직접 소손녕을 만나 담판을 짓겠다. 나를 따라오너라.' }],
     },
   },

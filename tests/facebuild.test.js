@@ -52,3 +52,24 @@ test('facebuild D-55: 상황 표정은 눈 크기·눈꺼풀·입까지 바꾸�
   setExpression(p, 'worry'); ok(face.material !== m0, '걱정 얼굴로 바뀜');
   setExpression(p, 'neutral'); eq(face.material, m0, '평소 얼굴로 돌아옴');
 });
+
+// D-57: 상황 표정을 장면 대사에 넣는다(대화창 얼굴과 말하는 사람의 3D 얼굴이 함께 바뀌고, 다음 대사·창이 닫히면 평소 얼굴로)
+test('facebuild D-57: 대사의 표정은 정한 표정 가운데 하나이고, 편마다 표정 대사가 있다', async () => {
+  const { ALL_CHAPTERS } = await import('../chapters/index.js');
+  const { EXPRESSIONS } = await import('../core/facebuild.js');
+  const per = {};
+  const walk = (o, id) => { if (!o || typeof o !== 'object') return; if (Array.isArray(o)) return o.forEach(x => walk(x, id));
+    if (o.expr) { ok(EXPRESSIONS[o.expr], `${id}: ${o.expr}`); ok(typeof o.who === 'string', `${id}: 표정 대사에 말하는 사람`); per[id[0] === 'c' ? 'ch' : id[0]] = (per[id[0] === 'c' ? 'ch' : id[0]] || 0) + 1; }
+    for (const v of Object.values(o)) walk(v, id); };
+  for (const m of ALL_CHAPTERS) walk((await m.load()).default.script, m.id);
+  for (const c of ['ch', 'j', 'k', 'i', 'h']) ok((per[c] || 0) >= 4, `${c}편 표정 대사 ${per[c] || 0}`);
+});
+
+test('facebuild D-57: 대화창이 닫히면 onClose를 부른다(3D 얼굴을 평소로 되돌리는 자리)', async () => {
+  const { createDialogue } = await import('../core/dialogue.js');
+  const root = document.createElement('div'); document.body.append(root);
+  let said = null, closed = 0;
+  const d = createDialogue(root, { a: { name: 'A', look: 'soldier' } }, { typeMs: 0, onSay: l => { said = l.expr; }, onClose: () => { closed += 1; } });
+  const p = d.say({ who: 'a', text: '앗!', expr: 'surprise' }); eq(said, 'surprise');
+  d.close(); eq(closed, 1); d.dispose(); root.remove(); void p;
+});

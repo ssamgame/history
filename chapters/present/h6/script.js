@@ -29,7 +29,7 @@ export default {
   npc: {
     student: {
       first: [
-        { who: 'student', text: '1960년 3월 15일 선거에서 정부가 표를 속이는 부정 선거를 저질렀어요.', src: ['S58'] },
+        { who: 'student', expr: 'anger', text: '1960년 3월 15일 선거에서 정부가 표를 속이는 부정 선거를 저질렀어요.', src: ['S58'] },
         { who: 'student', text: '학생과 시민이 거리로 나와 맞섰고, 4월 19일 시위가 크게 번졌어요. 결국 이승만 대통령이 물러났지요. 이것이 4·19 혁명이에요.', src: ['S58'] },
       ],
       bridge: { who: 'student', text: '다른 분들 이야기도 들었군요. 제 이야기도 들어 보세요.' },
@@ -65,7 +65,7 @@ export default {
   opening: {
     lines: [
       { who: 'narr', text: '경부고속도로는 서울과 부산을 잇는 고속도로로 1970년 7월에 개통되었어요.', src: ['S60'] },
-      { who: 'builder', text: '줄을 끊는다! 이제 서울에서 부산까지 하루에 오갈 수 있네!' },
+      { who: 'builder', expr: 'joy', text: '줄을 끊는다! 이제 서울에서 부산까지 하루에 오갈 수 있네!' },
       { who: 'narr', text: '길과 공장이 늘면서 경제가 빠르게 성장했어요.', src: ['S60'] },
     ],
   },

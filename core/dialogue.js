@@ -4,8 +4,8 @@ import { portraitURL } from './faces.js';
 const NARR = { name: '해설', mark: '史', color: '#5a5248' };
 const CLICK_GUARD_MS = 250; // 선택지가 열린 직후의 탭은 앞 대사를 넘기려던 탭이므로 무시
 
-// onSay(line): 대사가 나올 때마다 부른다
-export function createDialogue(root, speakers, { typeMs = 26, reduceMotion = false, onSay = null } = {}) {
+// onSay(line): 대사가 나올 때마다 부른다, onClose(): 대화창이 닫힐 때
+export function createDialogue(root, speakers, { typeMs = 26, reduceMotion = false, onSay = null, onClose = null } = {}) {
   const all = { narr: NARR, ...speakers };
   const el = document.createElement('div');
   el.className = 'dlg';
@@ -137,7 +137,7 @@ export function createDialogue(root, speakers, { typeMs = 26, reduceMotion = fal
     pick(i) { if (pickFn && !choicesEl.children[i]?.disabled) pickFn(i); }, // 막아 둔(이미 틀린) 답은 고를 수 없다
     isOpen() { return !el.hidden; },
     isChoosing() { return !!pickFn; },
-    close() { clearInterval(timer); timer = null; advanceFn = pickFn = null; el.hidden = true; },
+    close() { clearInterval(timer); timer = null; advanceFn = pickFn = null; el.hidden = true; if (onClose) onClose(); },
     dispose() { dialogue.close(); window.removeEventListener('keydown', onKey); el.remove(); },
   };
   return dialogue;

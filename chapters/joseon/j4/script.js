@@ -35,14 +35,14 @@ export default {
         { who: 'commoner', text: '곽재우 같은 사람들이 고향을 지키려고 스스로 의병을 일으켰대요.', src: ['S34'] },
       ],
       bridge: { who: 'commoner', text: '바다 쪽 이야기는 들으셨군요. 육지 소식도 들어 보세요.' },
-      later: [{ who: 'commoner', text: '육지 소식은 늘 나빠요. 바다만큼은 꼭 지켜 주세요.' }],
+      later: [{ who: 'commoner', expr: 'worry', text: '육지 소식은 늘 나빠요. 바다만큼은 꼭 지켜 주세요.' }],
     },
     yisunsin: {
       wait: [{ who: 'yisunsin', text: '먼저 포구 사람들의 이야기를 모두 듣고 오너라.' }],
       first: [
         { who: 'yisunsin', text: '적의 배들이 견내량에 모여 있다.', src: ['S35'] },
         { who: 'yisunsin', text: '견내량은 좁고 암초가 많다. 적을 넓은 한산도 앞바다로 끌어내자.', src: ['S35'] },
-        { who: 'yisunsin', text: '너는 앞장선 배를 몰아 적을 꾀어내라. 출전이다!' },
+        { who: 'yisunsin', expr: 'tension', text: '너는 앞장선 배를 몰아 적을 꾀어내라. 출전이다!' },
       ],
     },
   },
@@ -56,7 +56,7 @@ export default {
   },
   wing: {
     howto: { title: '학익진', steps: ['우리 배들이 학이 날개를 편 모양으로 펼쳐져요.', '날개에 빈자리(빛나는 원)를 찾아 배를 몰아 넣어요.'] },
-    call: [{ who: 'yisunsin', text: '적을 잘 꾀어냈다. 이제 넓은 바다에서 적을 둘러쌀 차례다.' }],
+    call: [{ who: 'yisunsin', expr: 'joy', text: '적을 잘 꾀어냈다. 이제 넓은 바다에서 적을 둘러쌀 차례다.' }],
     spread: { who: 'yisunsin', text: '학이 날개를 편 모양으로 배를 늘어세워라! 너는 날개의 빈자리를 채워라.' },
     fail: '학이 날개를 펼친 것처럼 둥글게 휜 줄의 빈자리(빛나는 원)에 넣어요.',
     done: [{ who: 'narr', text: '이순신은 거북선을 앞세우고, 학이 날개를 편 모양으로 배를 늘어세우는 학익진으로 적을 둘러쌌어요.', src: ['S35', 'S43'] }],

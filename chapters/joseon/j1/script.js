@@ -23,7 +23,7 @@ export default {
     archer: {
       first: [
         { who: 'archer', text: '여기 위화도는 압록강에 있는 섬이야. 요동으로 가던 우리 군대가 여기 머물고 있지.', src: ['S23'] },
-        { who: 'archer', text: '비가 그치지 않아. 활을 붙인 아교가 풀어질 지경이야.', src: ['S23'] },
+        { who: 'archer', expr: 'worry', text: '비가 그치지 않아. 활을 붙인 아교가 풀어질 지경이야.', src: ['S23'] },
         { who: 'archer', text: '덥고 비가 많으니 군사들 사이에 병이 돌까 걱정이야.', src: ['S23'] },
       ],
       bridge: { who: 'archer', text: '병사 말대로 왜구도 걱정이지만, 이 비도 큰일이야.' },
@@ -33,7 +33,7 @@ export default {
       first: [
         { who: 'soldier', text: '요동 정벌에는 5만여 명의 군사와 2만여 필의 말이 나섰어.', src: ['S23'] },
         { who: 'soldier', text: '이성계와 조민수가 군대를 나누어 이끌고 있어.', src: ['S23'] },
-        { who: 'soldier', text: '우리가 북쪽으로 간 사이 남쪽 바닷가에 왜구가 쳐들어오면 어쩌지?', src: ['S23'] },
+        { who: 'soldier', expr: 'worry', text: '우리가 북쪽으로 간 사이 남쪽 바닷가에 왜구가 쳐들어오면 어쩌지?', src: ['S23'] },
       ],
       bridge: { who: 'soldier', text: '궁수 말대로 비도 걱정이지만, 걱정이 하나 더 있어.' },
       later: [{ who: 'soldier', text: '지휘 천막은 진영 가운데에 있어. 장군님도 밤새 고민하셨대.' }],
@@ -43,7 +43,7 @@ export default {
     yiseonggye: {
       wait: [{ who: 'yiseonggye', text: '먼저 군사들의 이야기를 모두 들어 보아라.' }],
       first: [
-        { who: 'yiseonggye', text: '군사들의 걱정을 들었구나. 나는 이 싸움에 반대했다.', src: ['S23'] },
+        { who: 'yiseonggye', expr: 'tension', text: '군사들의 걱정을 들었구나. 나는 이 싸움에 반대했다.', src: ['S23'] },
       ],
       // 4불가론(H-01): 이성계가 네 까닭을 직접 말한다(S23)
       reasons: [

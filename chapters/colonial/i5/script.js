@@ -86,7 +86,7 @@ export default {
         { label: '서점 앞', talk: [{ who: 'historian', text: '우리말을 지키는 일은 우리 민족을 지키는 일이네.' }] },
         { label: '학교 담장', say: '학생들도 우리말 낱말을 모아 보내 주었어요.' },
         { label: '조선어 학회', needPickups: true, needSay: '아직 모으지 못한 원고가 있어요! 화살표를 따라가 봐요.',
-          talk: [{ who: 'linguist', text: '고맙다! 이 원고로 「우리말 큰사전」을 펴낼 거란다.' }] },
+          talk: [{ who: 'linguist', expr: 'joy', text: '고맙다! 이 원고로 「우리말 큰사전」을 펴낼 거란다.' }] },
       ],
       pickups: [{ label: '원고' }, { label: '원고' }, { label: '원고' }, { label: '원고' }, { label: '원고' }],
       bump: '경찰과 마주쳤어요! 앞 지점에서 다시 가요.',
@@ -115,7 +115,7 @@ export default {
           { who: 'narr', text: '신채호와 박은식 같은 역사학자들은 우리 역사가 스스로의 힘으로 발전해 왔다고 강조했어요.', src: ['S51'] },
         ] },
         { id: 'poem', label: '시인의 책상', act: '시 읽기', lines: [
-          { who: 'poet', text: '빼앗긴 나라를 생각하며 이 시를 썼소.' },
+          { who: 'poet', expr: 'worry', text: '빼앗긴 나라를 생각하며 이 시를 썼소.' },
           { who: 'narr', text: '이육사, 윤동주, 한용운 같은 문학가들은 저항 의식을 담은 작품을 썼어요.', src: ['S51'] },
         ] },
         { id: 'dict', label: '조선어 학회', act: '사전 원고 쌓기', lines: [

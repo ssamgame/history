@@ -13,6 +13,7 @@ import { showTitle, askName, showCourses, showMap, showIntroCard, showChapterRes
 import { perfEnabled, createPerfStats, createPerfPanel } from './perf.js';
 import { ALL_CHAPTERS, COURSES, courseById, courseOfChapter, isSessionDone } from '../chapters/index.js';
 import { LOOKS } from '../content/characters.js';
+import { setExpression } from './people.js';
 import { ROLES, roleLook } from '../content/roles.js';
 
 const PREF_QUALITY = 'goryeo-game:quality';
@@ -118,7 +119,11 @@ function boot() {
     world.setPlayerLook(roleLook(meta.id, mod.player), role ? role.scale : 1); // 장마다 학생 역할(고려 병사, 궁궐 심부름하는 아이 등): 생김새와 키
     curMeta = meta; curGoals = Array.isArray(mod.script.goals) ? mod.script.goals : [];
     ctx.spotState = { found: new Set(), read: new Set() }; // 새 장: 발견·읽은 안내판을 새로 센다
-    dialogue = createDialogue(ui, mod.script.speakers, { reduceMotion });
+    // 대사에 expr(놀람·걱정·분노·기쁨·긴장·말하기)이 있으면 말하는 사람의 3D 얼굴도 그 표정으로, 다음 대사·대화창이 닫히면 평소 얼굴로(D-57)
+    let exprOn = null;
+    const calm = () => { if (exprOn) { setExpression(exprOn, 'neutral'); exprOn = null; } };
+    const onSay = line => { calm(); const m = !line.expr ? null : line.who === 'me' ? world.player : world.npcs.get(line.who)?.spot ? null : world.npcs.get(line.who)?.mesh; if (m) { setExpression(m, line.expr); exprOn = m; } };
+    dialogue = createDialogue(ui, mod.script.speakers, { reduceMotion, onSay, onClose: calm });
     hud.show(meta);
     hud.setTouchVisible(true);
     inChapter = true; input.enabled = true;

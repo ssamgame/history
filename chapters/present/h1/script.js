@@ -42,7 +42,7 @@ export default {
         { who: 'grandma', text: '그런데 아직 문 옆에 일본식 이름 문패를 그대로 단 집들이 있구나.' },
       ],
       bridge: { who: 'grandma', text: '여러 사람을 만나고 왔구나. 이 할미 이야기도 들어 보렴.' },
-      later: [{ who: 'grandma', text: '내 이름을 다시 부를 수 있어서 얼마나 좋은지 몰라.' }],
+      later: [{ who: 'grandma', expr: 'joy', text: '내 이름을 다시 부를 수 있어서 얼마나 좋은지 몰라.' }],
     },
     newsboy: {
       first: [
@@ -90,7 +90,7 @@ export default {
       ],
       wrong: '집주인이 말한 이름을 다시 떠올려 봐요.',
       fail: '집주인이 말한 이름과 똑같은 문패를 골라요.',
-      done: [{ who: 'grandma', text: '온 마을이 우리 이름을 되찾았구나. 고맙다, 얘야.' }],
+      done: [{ who: 'grandma', expr: 'joy', text: '온 마을이 우리 이름을 되찾았구나. 고맙다, 얘야.' }],
     },
     // 첫 한글 수업(D-47, 새 놀이): 책상마다 일본어 교과서를 걷고 한글 교과서를 놓아 준다
     school: {

@@ -31,7 +31,7 @@ export default {
   npc: {
     citizen: {
       first: [
-        { who: 'citizen', text: '임금께서 러시아 공사관에 머무신다니 나라 꼴이 말이 아니에요.', src: ['S51'] },
+        { who: 'citizen', expr: 'worry', text: '임금께서 러시아 공사관에 머무신다니 나라 꼴이 말이 아니에요.', src: ['S51'] },
         { who: 'citizen', text: '그래도 요즘엔 신문으로 나라 안팎의 소식을 알 수 있어요.', src: ['S51'] },
       ],
       bridge: { who: 'citizen', text: '선비님 이야기는 들으셨군요. 우리 같은 시민 이야기도 들어 보세요.' },

@@ -37,7 +37,7 @@ export default {
     hongbeomdo: {
       first: [
         { who: 'hongbeomdo', text: '나는 독립군 부대를 이끌고 만주에서 일본군과 맞서 싸우고 있네.', src: ['S51'] },
-        { who: 'hongbeomdo', text: '일본군이 봉오동 골짜기 쪽으로 온다는 소식이 들어왔네. 우리 부대는 골짜기 양쪽 숲에 숨어 기다릴 것이네.' },
+        { who: 'hongbeomdo', expr: 'tension', text: '일본군이 봉오동 골짜기 쪽으로 온다는 소식이 들어왔네. 우리 부대는 골짜기 양쪽 숲에 숨어 기다릴 것이네.' },
       ],
       bridge: { who: 'hongbeomdo', text: '여러 사람을 만나고 왔구먼. 내 이야기도 들어 보게.' },
       later: [{ who: 'hongbeomdo', text: '김좌진 장군에게도 가 보게.' }],
@@ -78,11 +78,11 @@ export default {
         { who: 'kimjwajin', text: '흩어진 부대를 모아 청산리 골짜기로 가자!' },
       ],
       route: [
-        { label: '첫째 진지', talk: [{ who: 'soldier', text: '장군님, 저희도 함께 싸우겠습니다!' }] },
+        { label: '첫째 진지', talk: [{ who: 'soldier', expr: 'tension', text: '장군님, 저희도 함께 싸우겠습니다!' }] },
         { label: '둘째 진지', talk: [{ who: 'hongbeomdo', text: '잘 왔네. 우리 부대도 김좌진 장군의 부대와 함께 청산리로 가겠네.' }] },
         { label: '셋째 진지', say: '흩어졌던 부대가 다시 모였어요.' },
         { label: '청산리 골짜기 입구', needPickups: true, needSay: '아직 숲에 남은 대원이 있어요! 화살표를 따라가 봐요.',
-          talk: [{ who: 'kimjwajin', text: '모두 골짜기 양쪽 산에 숨어 기다려라. 적이 깊이 들어오면 공격한다!' }] },
+          talk: [{ who: 'kimjwajin', expr: 'tension', text: '모두 골짜기 양쪽 산에 숨어 기다려라. 적이 깊이 들어오면 공격한다!' }] },
       ],
       pickups: [{ label: '대원', follow: 'independenceArmy' }, { label: '대원', follow: 'independenceArmy' }, { label: '대원', follow: 'independenceArmy' }],
       fail: '화살표가 가리키는 빛나는 곳으로 가요.',

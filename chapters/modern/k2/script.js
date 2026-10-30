@@ -25,7 +25,7 @@ export default {
     merchant: {
       first: [
         { who: 'merchant', text: '나라에서 개화 정책을 편다지만 크게 달라진 게 없어요.', src: ['S51'] },
-        { who: 'merchant', text: '게다가 청나라가 우리 일에 이래라저래라 간섭을 한다니까요.', src: ['S51'] },
+        { who: 'merchant', expr: 'anger', text: '게다가 청나라가 우리 일에 이래라저래라 간섭을 한다니까요.', src: ['S51'] },
       ],
       bridge: { who: 'merchant', text: '우정총국 잔치 이야기는 들으셨구먼요. 시장 사정도 한번 들어 보세요.' },
       later: [{ who: 'merchant', text: '높은 분들이 잔치에 모인다니 오늘은 일찍 가게 문을 닫아야겠어요.' }],
@@ -58,7 +58,7 @@ export default {
     a: [
       { label: '우정총국 축하 잔치', talk: [{ who: 'clerk', text: '우리나라 최초로 우편 업무를 맡은 우정총국이 생긴 것을 축하하는 잔치라네.', src: ['S51'] }] },
       { label: '정변을 일으킴', talk: [
-        { who: 'kimokgyun', text: '지금이오! 청에 의지하는 세력을 몰아내고 새로운 조선을 만들 것이오!', src: ['S51'] },
+        { who: 'kimokgyun', expr: 'tension', text: '지금이오! 청에 의지하는 세력을 몰아내고 새로운 조선을 만들 것이오!', src: ['S51'] },
         { who: 'kimokgyun', text: '궁으로 가야 하오. 놓치지 말고 따라오시오.' },
       ] },
       { label: '창덕궁으로', talk: [{ who: 'kimokgyun', text: '궁 안으로 들어갑시다. 오늘 밤 조선이 달라질 것이오.' }] },

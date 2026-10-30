@@ -21,7 +21,7 @@ export default {
   // 포구 사람들: 어느 차례로 들어도 "개경으로 돌아간다는데…"가 이어져 배중손의 결심으로 모인다(D-19)
   npc: {
     minister: [{ who: 'minister', text: '조정은 몽골과 싸움을 멈추고 개경으로 돌아가기로 했소.', src: ['S21'] }],
-    sambyeolcho: [{ who: 'sambyeolcho', text: '개경으로 돌아간다니! 우리 삼별초는 이에 반대하오. 끝까지 싸울 것이오.', src: ['S21'] }],
+    sambyeolcho: [{ who: 'sambyeolcho', expr: 'anger', text: '개경으로 돌아간다니! 우리 삼별초는 이에 반대하오. 끝까지 싸울 것이오.', src: ['S21'] }],
     villager: [{ who: 'villager', text: '개경으로 돌아간다는데, 배중손이 군사와 백성을 이끌고 남쪽으로 간다고 하오.', src: ['S21'] }],
     baejungson: {
       wait: [{ who: 'baejungson', text: '포구 사람들의 이야기를 모두 들어 보게.' }],
@@ -41,14 +41,14 @@ export default {
     talk: [
       { who: 'narr', text: '삼별초는 진도 용장성을 근거지로 9개월 동안 맞섰어요.', src: ['S12'] },
       { who: 'narr', text: '1271년 5월 용장성이 무너지자, 김통정이 남은 군사를 이끌고 제주로 건너갔어요.', src: ['S12'] },
-      { who: 'kimtongjeong', text: '남은 군사는 나를 따라 제주로 가자!' },
+      { who: 'kimtongjeong', expr: 'tension', text: '남은 군사는 나를 따라 제주로 가자!' },
     ],
   },
 
   jeju: {
     arrive: [{ who: 'guide', text: '제주에 닿았어. 흙으로 쌓은 성을 따라 김통정에게 가 보자.' }],
     talk: [
-      { who: 'kimtongjeong', text: '이 항파두리에 흙으로 성을 쌓고 끝까지 맞설 것이다.', src: ['S13'] },
+      { who: 'kimtongjeong', expr: 'tension', text: '이 항파두리에 흙으로 성을 쌓고 끝까지 맞설 것이다.', src: ['S13'] },
       { who: 'narr', text: '삼별초는 1273년 고려와 몽골의 연합군에게 진압되었어요.', src: ['S12', 'S13'] },
     ],
   },

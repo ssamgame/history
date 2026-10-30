@@ -32,7 +32,7 @@ export default {
     messenger: {
       first: [
         { who: 'messenger', text: '임시 정부는 비밀 조직을 두어 나라 안팎의 독립운동 단체와 연락해요.', src: ['S51'] },
-        { who: 'messenger', text: '그래서 저는 편지를 옷 속에 숨기고 다녀요. 일본 경찰에게 들키면 안 되거든요.' },
+        { who: 'messenger', expr: 'tension', text: '그래서 저는 편지를 옷 속에 숨기고 다녀요. 일본 경찰에게 들키면 안 되거든요.' },
       ],
       bridge: { who: 'messenger', text: '다른 분들도 만나셨군요. 저는 몰래 소식을 나르는 일을 해요.' },
       later: [{ who: 'messenger', text: '오늘도 몰래 전할 편지가 한가득이에요.' }],
@@ -133,7 +133,7 @@ export default {
           { who: 'narr', text: '임시 정부는 다른 나라에 외교 기관을 두어 독립을 도와 달라고 요청했어요.', src: ['S51'] },
         ] },
         { id: 'army', label: '독립군', act: '독립군 배웅하기', lines: [
-          { who: 'fighter', text: '우리는 만주로 가서 싸우겠습니다!' },
+          { who: 'fighter', expr: 'tension', text: '우리는 만주로 가서 싸우겠습니다!' },
           { who: 'narr', text: '임시 정부는 독립군 단체를 아래에 두고 만주 지역에서 투쟁을 벌이기도 했어요.', src: ['S51'] },
         ] },
       ],
