@@ -7,6 +7,8 @@ import { enterThroughGate } from '../kit/gate.js';
 import { waitInteract } from '../../core/portal.js';
 import { labelSprite } from '../kit/play.js';
 import script from './script.js';
+import { setStyle } from '../../core/motion.js';
+import { strike } from '../../core/interact.js';
 import { gwakjuScene, lastStandScene } from './story.js';
 import * as THREE from 'three';
 
@@ -238,6 +240,7 @@ function wallDefense(ctx, easy) {
       audio.play('tap'); active.delete(l); falling.set(l, { k: 0, from: l.pivot.rotation.x });
       scene.wallRings[scene.ladders.indexOf(l)].visible = false;
       gauge(l).visible = false; horde.pushed(l);
+      if (!world.player.userData.act) strike(world.player, 'push'); // 두 손으로 사다리를 밀어낸다(준비 → 밀기 → 돌아오기, 2026-10-30 움직임 개선)
     };
     const off = world.onUpdate(dt => {
       if (done) return;
@@ -322,7 +325,7 @@ function rescue(ctx, easy) {
   const speed = easy ? 0.3 : 0.6, duration = 90, need = 4, f = scene.field;
   rescued = [];
   const groups = scene.captives.map(c => {
-    c.group.visible = true; c.escort.visible = true;
+    c.group.visible = true; c.escort.visible = true; c.group.children.forEach(v => setStyle(v, v === c.escort ? 'guard' : 'captive')); // 다시 하기 때 다시 끌려가는 걸음으로
     c.group.position.set(c.start[0], 0, c.start[1]); c.group.rotation.y = 0;
     return { c, state: 'walking' };
   });
@@ -347,7 +350,7 @@ function rescue(ctx, easy) {
         const gp = g.c.group.position;
         gp.z -= speed * dt;
         const d = Math.hypot(p.x - gp.x, p.z - gp.z);
-        if (d < 2.0) { g.state = 'saved'; rescued.push(g.c); g.c.escort.visible = false; audio.play('correct'); }
+        if (d < 2.0) { g.state = 'saved'; rescued.push(g.c); g.c.escort.visible = false; g.c.group.children.forEach(v => setStyle(v, 'weary')); audio.play('correct'); } // 풀려난 백성은 지친 걸음으로 따라온다
         else if (gp.z < f.lostZ) { g.state = 'lost'; g.c.group.visible = false; }
         else if (d < nd) { nd = d; nearest = gp; }
       }

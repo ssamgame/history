@@ -2,7 +2,7 @@
 // 역사책·가져다 놓기를 체험으로 바꾼 장(k6 두 갈래 길·나룻배, i1 시대별 걷기)이 같이 쓴다. 다음 놀이 앞에서 사람에게 말 걸기(C-05)도 여기에.
 import * as THREE from 'three';
 import { labelSprite } from './play.js';
-import { makePerson, setCarry, mat, setExpression } from '../../core/people.js';
+import { makePerson, setCarry, mat, setExpression, setTalking } from '../../core/people.js';
 import { waitInteract } from '../../core/portal.js';
 import { LOOKS } from '../../content/characters.js';
 
@@ -49,8 +49,10 @@ export function sayer(ctx) {
   return async (line, who = null) => {
     if (who) { const m = who.getWorldPosition(new THREE.Vector3()), pp = world.player.position; who.rotation.y = Math.atan2(pp.x - m.x, pp.z - m.z); world.setTalkCamera({ position: m }); }
     if (who && line?.expr) setExpression(who, line.expr); // 대사의 표정을 3D 얼굴에도(D-55)
+    if (who) setTalking(who, line?.expr || 'talk'); // 손짓·끄덕임(2026-10-30 움직임 개선)
     await dialogue.say(line);
     if (who && line?.expr) setExpression(who, 'neutral');
+    if (who) setTalking(who, null);
   };
 }
 

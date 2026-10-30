@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { buildArena } from './play.js';
 import { wait, person, ease, face, facingShare } from './walk.js';
-import { setExpression, mat } from '../../core/people.js';
+import { setExpression, setTalking, mat } from '../../core/people.js';
 
 export { wait, person, ease, face, facingShare };
 
@@ -29,8 +29,10 @@ export async function storyScene(ctx, { key, arena, mood = null, run }) {
   const say = async (line, who = null) => {
     hook.lines += 1;
     if (who && line.expr) setExpression(who, line.expr);
+    if (who) setTalking(who, line.expr || 'talk'); // 말하는 사람의 손짓·끄덕임(2026-10-30 움직임 개선)
     await dialogue.say(line);
     if (who && line.expr) setExpression(who, 'neutral');
+    if (who) setTalking(who, null);
   };
   const people = []; // facingShare를 잴 사람들(여럿이 한마음으로 하는 장면은 얼굴이 보이게, D-45)
   try {
@@ -66,10 +68,15 @@ export function troop(g, looks, x, z, { cols = 4, rows = 2, gap = 1.2, ry = 0, j
 }
 
 // 사람들을 sec초 동안 (dx, dz)만큼 걸어가게 한다(걸음은 인물이 스스로 흔든다). 바라보는 방향도 가는 쪽으로
+// 출발할 때 천천히 빨라지고 멈출 때 천천히 느려진다(가운데는 고른 빠르기). 방향은 그쪽으로 부드럽게 돌아서며 출발한다(2026-10-30 움직임 개선)
+const glideK = k => { const a = 0.18; return k < a ? k * k / (2 * a * (1 - a)) : k > 1 - a ? 1 - (1 - k) * (1 - k) / (2 * a * (1 - a)) : (k - a / 2) / (1 - a); };
 export function march(world, list, dx, dz, sec, { turn = true } = {}) {
-  const p0 = list.map(p => p.position.clone());
-  if (turn) list.forEach(p => { p.rotation.y = Math.atan2(dx, dz); });
-  return wait(world, sec, k => list.forEach((p, i) => { p.position.set(p0[i].x + dx * k, p0[i].y, p0[i].z + dz * k); }));
+  const p0 = list.map(p => p.position.clone()), y0 = list.map(p => p.rotation.y), want = Math.atan2(dx, dz);
+  return wait(world, sec, k => list.forEach((p, i) => {
+    const e = glideK(k);
+    p.position.set(p0[i].x + dx * e, p0[i].y, p0[i].z + dz * e);
+    if (turn) p.rotation.y = y0[i] + Math.atan2(Math.sin(want - y0[i]), Math.cos(want - y0[i])) * Math.min(1, k * sec / 0.35);
+  }));
 }
 
 // 땅 위에 놓는 간단한 상자 조각(무대 소품)

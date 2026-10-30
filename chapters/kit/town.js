@@ -65,7 +65,7 @@ export function cheerFlag(person, u) {
   const a = person.userData.arms, c = person.userData.carry; if (!a) return;
   const t = -1.0 + (-Math.PI * 0.95 + 1.0) * u;
   a[1].rotation.set(t, 0, 0); a[0].rotation.set(-Math.PI * 0.62 * u, 0, 0);
-  if (c?.style === 'flag') c.obj.position.set(0.5, 1.65 - 0.78 * Math.cos(t), -0.78 * Math.sin(t));
+  if (c?.style === 'flag') c.obj.position.set(0.5, 1.65 - 0.78 * Math.cos(t) - (c.obj.parent === person.userData.upper ? 1.05 : 0), -0.78 * Math.sin(t)); // 깃발은 몸통 관절(골반 높이 1.05)의 자식
 }
 
 // 부품마다 만드는 법. 모두 (0,0,0) 기준, 앞은 +z.

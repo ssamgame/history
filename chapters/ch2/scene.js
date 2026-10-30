@@ -7,6 +7,7 @@ import { BUILD } from '../kit/town.js';
 import { makeFire } from '../../core/fire.js';
 import { groundMaterial } from '../../core/textures.js';
 import { mat, makePerson } from '../../core/people.js';
+import { setStyle } from '../../core/motion.js';
 import { scatter } from '../../core/props.js';
 import { LOOKS, look } from '../../content/characters.js';
 import { createWeather } from '../../core/weather.js';
@@ -145,9 +146,9 @@ export function buildCh2Scene(world) {
     const g = new THREE.Group(); g.visible = false; L.add(g);
     for (let k = 0; k < 3; k++) {
       const v = makePerson(look('villager', { robe: [0xe8e2d6, 0xd8cfbf, 0xc9bda8][k] }));
-      v.position.set((k - 1) * 0.9, 0, (k % 2) * 0.6); v.rotation.y = Math.PI; g.add(v);
+      v.position.set((k - 1) * 0.9, 0, (k % 2) * 0.6); v.rotation.y = Math.PI; setStyle(v, 'captive'); g.add(v); // 끌려가는 걸음: 움츠린 어깨, 숙인 고개, 앞으로 모은 손(2026-10-30 움직임 개선)
     }
-    const escort = makePerson(LOOKS.khitan); escort.position.set(0, 0, -1.4); escort.rotation.y = Math.PI; g.add(escort);
+    const escort = makePerson(LOOKS.khitan); escort.position.set(0, 0, -1.4); escort.rotation.y = Math.PI; setStyle(escort, 'guard'); g.add(escort); // 호송병: 경계하며 둘레를 살핀다
     captives.push({ group: g, escort, start: [-18 + i * 7.2 + (rand() - 0.5) * 2, FIELD_Z - 6 + rand() * 6] }); // 플레이어보다 앞(북쪽)에서 출발
   }
   // 눈 위로 드러난 바위와 마른 풀 (성 밖 들판)

@@ -25,7 +25,8 @@ import * as THREE from 'three';
 import { BUILD, addFootprint, taegukgiTexture, addNature } from './town.js';
 import { bakeStatic } from './buildings.js';
 import { terrainField, terrainMesh, hillColorFor } from './terrain.js';
-import { mat, makePerson, setCarry } from '../../core/people.js';
+import { mat, makePerson, setCarry, playAction } from '../../core/people.js';
+import { turnTo } from '../../core/interact.js';
 import { createTapTargets } from '../../core/minigame.js';
 import { MAP_OUTLINE } from '../../core/screens.js';
 import { LOOKS } from '../../content/characters.js';
@@ -356,7 +357,18 @@ export function drive(ctx, part, easy) {
   s.cleanup(() => { if (carried) setCarry(world.player, null); });
   const giveBundle = r => {
     const b = new THREE.Group(); for (let k = 0; k < 5; k++) add(b, box(0.7, 0.07, 0.5), k % 2 ? 0xf2ede0 : 0xe6dfcc, 0, k * 0.075, 0); add(b, box(0.08, 0.42, 0.52), 0x8a6a48, 0, 0.18, 0);
-    const from = r.person ? r.person.position.clone().add(new THREE.Vector3(0, 1.3, 0)) : new THREE.Vector3(r.x, 1.3, r.z);
+    if (r.person) { // 그 자리 사람이 학생 쪽으로 돌아서 두 손으로 내밀고, 학생 손에 닿을 때 넘겨준다(꾸러미가 날아오지 않게, 2026-10-30 움직임 개선)
+      const giver = r.person; b.scale.setScalar(1.3); setCarry(giver, b, 'arms');
+      (async () => {
+        await turnTo(world, giver, world.player.getWorldPosition(new THREE.Vector3()), { speed: 6 });
+        await playAction(giver, { dur: 0.45, pose: t => { const k = Math.min(1, t / 0.45); return { arms: [[-1.0 - 0.45 * k, 0, 0.33], [-1.0 - 0.45 * k, 0, -0.33]], carryAt: [0, 1.3, 0.6 + 0.4 * k], upper: [0.1 * k, 0, 0] }; }, fadeIn: 0.1, fadeOut: 0.01, name: 'give' });
+        if (s.done) return;
+        giver.userData.carry = null; giver.userData.armRest = true;
+        setCarry(world.player, b, 'arms'); carried = b; // 두 팔로 안고 다닌다(D-18). 내민 자리에서 학생 손으로 이어 옮겨 온다
+      })();
+      return;
+    }
+    const from = new THREE.Vector3(r.x, 1.3, r.z);
     b.position.copy(from); g.add(b);
     const to = new THREE.Vector3(); let k = 0;
     const off = world.onUpdate(dt => { // 사람 손에서 학생 손으로 날아온다

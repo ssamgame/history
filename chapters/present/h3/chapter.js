@@ -13,6 +13,7 @@ import { waitInteract } from '../../../core/portal.js';
 import { mat, setCarry } from '../../../core/people.js';
 import { placePlayer } from '../../joseon/common.js';
 import script from './script.js';
+import { handshake } from '../../../core/interact.js';
 
 const PEOPLE = ['soldier', 'unSoldier', 'refugee'];
 const GATE_Z = 14.5, INTRO_FROM = [0, 17.5], SPOT = [0, 7];
@@ -114,6 +115,9 @@ export async function arrivalScene(ctx) {
     greet.forEach((p, i) => { if (p.userData.carry) cheerFlag(p, 0.8); else face(p, 0, -3); });
     await say(L[3], officer);
     dialogue.close();
+    // 지휘관이 가장 가까운 유엔군 병사와 악수한다(바라보기 → 다가서기 → 손 뻗기 → 흔들기 → 놓기, 2026-10-30 움직임 개선)
+    const near = troops.reduce((b, p) => (p.position.distanceTo(officer.position) < b.position.distanceTo(officer.position) ? p : b));
+    hook.handshake = await handshake(world, officer, near);
   } finally {
     await ctx.fade?.(true);
     a.dispose();

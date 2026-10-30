@@ -13,7 +13,7 @@ import { showTitle, askName, showCourses, showMap, showIntroCard, showChapterRes
 import { perfEnabled, createPerfStats, createPerfPanel } from './perf.js';
 import { ALL_CHAPTERS, COURSES, courseById, courseOfChapter, isSessionDone } from '../chapters/index.js';
 import { LOOKS } from '../content/characters.js';
-import { setExpression } from './people.js';
+import { setExpression, setTalking } from './people.js';
 import { ROLES, roleLook } from '../content/roles.js';
 
 const PREF_QUALITY = 'goryeo-game:quality';
@@ -120,9 +120,19 @@ function boot() {
     curMeta = meta; curGoals = Array.isArray(mod.script.goals) ? mod.script.goals : [];
     ctx.spotState = { found: new Set(), read: new Set() }; // 새 장: 발견·읽은 안내판을 새로 센다
     // 대사에 expr(놀람·걱정·분노·기쁨·긴장·말하기)이 있으면 말하는 사람의 3D 얼굴도 그 표정으로, 다음 대사·대화창이 닫히면 평소 얼굴로(D-57)
-    let exprOn = null;
-    const calm = () => { if (exprOn) { setExpression(exprOn, 'neutral'); exprOn = null; } };
-    const onSay = line => { calm(); const m = !line.expr ? null : line.who === 'me' ? world.player : world.npcs.get(line.who)?.spot ? null : world.npcs.get(line.who)?.mesh; if (m) { setExpression(m, line.expr); exprOn = m; } };
+    // 대화 몸짓(2026-10-30 움직임 개선): 말하는 사람은 표정에 맞는 손짓과 끄덕임, 듣는 사람(학생 또는 학생이 말할 때 앞의 사람)은 가끔 끄덕인다
+    let exprOn = null, talkers = [];
+    const calm = () => { if (exprOn) { setExpression(exprOn, 'neutral'); exprOn = null; } talkers.forEach(t => setTalking(t, null)); talkers = []; };
+    const onSay = line => {
+      calm();
+      const npc = world.npcs.get(line.who), m = line.who === 'me' ? world.player : npc && !npc.spot ? npc.mesh : null;
+      if (m && line.expr) { setExpression(m, line.expr); exprOn = m; }
+      if (m && m.visible) {
+        setTalking(m, line.expr || 'talk'); talkers.push(m);
+        const listener = m === world.player ? [...world.npcs.values()].find(n => !n.spot && n.mesh.visible && n.mesh.position.distanceTo(world.player.position) < 4)?.mesh : world.player.position.distanceTo(m.position) < 6 ? world.player : null;
+        if (listener) { setTalking(listener, 'talk', 'listen'); talkers.push(listener); }
+      }
+    };
     dialogue = createDialogue(ui, mod.script.speakers, { reduceMotion, onSay, onClose: calm });
     hud.show(meta);
     hud.setTouchVisible(true);

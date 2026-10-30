@@ -4,6 +4,8 @@ import { faceTexture, faceVariant } from './faces.js';
 import { roleOf } from './facebuild.js';
 import { hairStyle } from './hairstyle.js';
 import { worldMapped } from './textures.js';
+import { animateWalk, HIP } from './motion.js';
+export { gaitPose, carryPose, setCarry, animateWalk, setWork, setStyle, setLook, setTalking, playAction, blendArms, CARRY, HIP } from './motion.js';
 
 // 장면에서 쓰는 색 → 어울리는 무늬. 무늬를 따로 말하지 않으면 색으로 고른다(성벽 회색은 돌, 지붕 먹색은 기와, 갈색 목재는 나뭇결).
 const AUTO = new Map([
@@ -149,6 +151,7 @@ export function animateWalkers(dt, root) {
     if (top !== root) { if (g.userData.seen) walkers.delete(g); continue; } // 장면에서 치운 인물은 놓아준다
     const u = g.userData; u.seen = true;
     if (u.manual) continue; // 장이 직접 걸음 동작을 맡은 인물(고려 1장 물러나는 거란군)
+    if (!g.visible) { u.last = null; continue; } // 숨긴 인물은 계산하지 않는다(다시 보일 때 움직임을 새로 잰다)
     g.getWorldPosition(wp);
     const moved = u.last ? Math.hypot(wp.x - u.last.x, wp.z - u.last.z) / dt : 0;
     if (!u.last) u.last = new THREE.Vector3();
@@ -399,7 +402,14 @@ export function makePerson(look = {}, { track = true, stable = false } = {}) {
   personCount += 1;
   const k = Math.sin(personCount * 12.9898) * 43758.5453, rnd = k - Math.floor(k);
   if (track) g.scale.setScalar(0.95 + rnd * 0.1);
-  g.userData = { legs, arms, walk: 0, head: hg, ph: rnd * 20 };
+  // 몸통 관절(2026-10-30 움직임 개선, core/motion.js): 골반 높이에서 상체(윗옷·갑옷·깃)·두 팔·머리를 함께 돌린다. 긴 옷자락·다리·허리 칼은 그대로
+  const upper = new THREE.Group(); upper.name = 'upper'; upper.position.y = HIP;
+  for (const c of [...g.children]) if (arms.includes(c) || c === hg || (c.position.y > 1.28 && !legs.includes(c))) { g.remove(c); c.position.y -= HIP; upper.add(c); }
+  g.add(upper);
+  // 무기를 쥔 팔의 기본 자세(grip: [앞뒤, 안팎]): 창은 오른손으로 곧게 세워 쥐고, 칼은 왼손을 칼자루에 얹는다. 쥔 팔은 걸을 때 거의 흔들지 않는다
+  const grip = gear === 'spear' ? [null, [-0.25, -0.04]] : gear === 'sword' ? [[-0.2, 0.12], null] : null;
+  if (gear === 'spear') { const sp = arms[1].getObjectByName('spear'); if (sp) sp.rotation.x = 0.25; } // 팔을 앞으로 든 만큼 창을 세운다
+  g.userData = { legs, arms, walk: 0, head: hg, upper, grip, gear, lookAge: face.age, ph: rnd * 20, spear: gear === 'spear' ? arms[1].getObjectByName('spear') : null };
   if (track) walkers.add(g);
   return g;
 }
@@ -411,53 +421,6 @@ export function setExpression(person, expr = 'neutral') {
   person.userData.expr = expr;
 }
 
-// 걸음 한 박자(ph)의 자세(D-9 고려 1장 물러나는 거란군 걸음을 모든 인물에, D-11): 다리를 앞뒤로 크게, 무릎이 있는 인물은
-// 앞으로 내딛는 다리의 무릎을 굽히고, 팔은 다리와 반대로 흔든다. k(0~1)는 걸음 세기(멈출 때 줄어든다). 돌려주는 값은 들썩이는 높이.
-// 새 메시는 만들지 않고 관절 몇 개만 돌린다(무릎이 없는 인물은 무릎 없이).
-export function gaitPose(person, ph, k = 1) {
-  const u = person.userData, s = Math.sin(ph) * k, c = Math.cos(ph);
-  u.legs[0].rotation.x = s * 0.75; u.legs[1].rotation.x = -s * 0.75;
-  const k0 = u.legs[0].userData.knee, k1 = u.legs[1].userData.knee;
-  if (k0) k0.rotation.x = (0.1 + Math.max(0, -c) * 1.1) * k;
-  if (k1) k1.rotation.x = (0.1 + Math.max(0, c) * 1.1) * k;
-  if (u.carry) carryPose(person, ph, k); // 물건을 들었으면 팔은 물건을 받치고, 물건과 함께 살짝 흔들린다(D-18)
-  else if (u.arms) { u.arms[0].rotation.x = -s * 0.65; u.arms[1].rotation.x = s * 0.65; }
-  return Math.abs(c) * 0.08 * k;
-}
-
-// 물건 들기(D-18, 모든 장 공통): 든 물건을 몸에 붙이고 팔이 받치는 자세가 된다. style:
-//   'arms'(두 팔로 가슴 앞에 안기: 꾸러미·판) · 'side'(굽힌 오른팔 위에 얹어 옆구리에 끼기: 두루마리) · 'shoulder'(오른손으로 어깨에 멘 것을 잡기: 쇠가죽 묶음) · 'flag'(오른손에 깃대)
-// at: 물건 자리(몸 기준), arms: [왼팔, 오른팔]의 [앞뒤, 안팎] 각도(null이면 걸을 때 흔드는 팔)
-const CARRY = {
-  arms: { at: [0, 1.22, 0.6], arms: [[-1.0, 0.33], [-1.0, -0.33]] },
-  side: { at: [0.56, 1.42, 0.45], arms: [null, [-1.1, 0.05]] },
-  shoulder: { at: [0.48, 2.0, -0.08], arms: [null, [-2.9, -0.15]] },
-  flag: { at: [0.5, 1.23, 0.66], arms: [null, [-1.0, 0]] }, // 깃대를 오른손에 쥐고 팔을 굽혀 가슴 앞에 든다(D-43, 왼팔은 걸을 때 흔든다)
-  back: { at: [0, 1.5, -0.42], arms: [[-0.35, 0.18], [-0.35, -0.18]] }, // 보따리를 등에 지고 두 손으로 멜빵을 잡는다(D-51 피란길)
-};
-export function carryPose(person, ph = 0, k = 0) {
-  const u = person.userData, c = u.carry; if (!c || !u.arms) return;
-  const P = CARRY[c.style] || CARRY.arms, sway = Math.sin(ph * 2) * 0.04 * k;
-  P.arms.forEach((a, i) => {
-    if (a) u.arms[i].rotation.set(a[0] + sway, 0, a[1]);
-    else u.arms[i].rotation.set(-Math.sin(ph) * k * 0.65 * (i ? -1 : 1), 0, 0); // 빈 팔은 걸음에 맞춰 흔든다
-  });
-  c.obj.position.set(P.at[0], P.at[1] + Math.abs(Math.cos(ph)) * 0.035 * k, P.at[2]);
-  c.obj.rotation.z = c.rz + Math.sin(ph) * 0.05 * k;
-}
-// 물건을 든다(obj) / 내려놓는다(null). 들던 것이 있으면 먼저 내려놓는다. 물건은 사람의 자식이 되어 함께 움직인다
-export function setCarry(person, obj, style = 'arms') {
-  const u = person.userData, prev = u.carry;
-  if (prev && prev.obj !== obj && prev.obj.parent === person) person.remove(prev.obj);
-  if (!obj) {
-    u.carry = null;
-    if (u.arms) for (const a of u.arms) a.rotation.set(0, 0, 0);
-    return;
-  }
-  person.add(obj);
-  u.carry = { obj, style, rz: prev && prev.obj === obj ? prev.rz : obj.rotation.z };
-  carryPose(person);
-}
 // 네 다리 짐승(말)의 걸음: 대각선 짝(앞왼·뒤오른 / 앞오른·뒤왼)이 번갈아 나가고 머리를 걸음에 맞춰 끄덕인다. 들썩이는 높이를 돌려준다
 export function horseGait(horse, ph) {
   const s = Math.sin(ph) * 0.6;
@@ -465,41 +428,6 @@ export function horseGait(horse, ph) {
   if (horse.userData.head) horse.userData.head.rotation.x = Math.sin(ph * 2) * 0.08;
   return Math.abs(Math.cos(ph)) * 0.05;
 }
-
-// 걷기: gaitPose로 걷는다. 사람마다 박자(ph)와 빠르기가 조금씩 달라 줄지어 걸어도 똑같이 움직이지 않는다.
-// 멈추면 걸음 세기가 부드럽게 줄어 제자리로 돌아온다. 들썩임은 높이에 더했다 빼는 방식이라 장이 높이를 정해도(둑·성벽 위) 쌓이지 않는다.
-export function animateWalk(person, moving, dt) {
-  const u = person.userData;
-  if (!u.legs) return;
-  u.t = (u.t || 0) + dt;
-  const was = u.stride || 0;
-  u.stride = was + ((moving ? 1 : 0) - was) * Math.min(1, dt * 8);
-  if (u.stride < 0.002 && !moving) u.stride = 0;
-  if (moving || u.stride > 0) u.walk += dt * 7.5 * (0.92 + ((u.ph * 7.3) % 1) * 0.16);
-  const ph = u.walk + u.ph;
-  const working = !moving && u.work;
-  // 들썩임: 지난 프레임에 더한 값을 빼고 새 값을 더한다(그 사이 장이 높이를 새로 정했으면 그 높이를 바탕으로)
-  const p = person.position, base = u.bobY !== undefined && p.y === u.bobY ? p.y - (u.bob || 0) : p.y;
-  if (u.stride > 0) {
-    if (working) u.bob = 0; // 일하는 동작은 아래에서 따로 움직인다(걸음이 막 끝난 참이면 다리·팔은 그쪽으로 천천히 돌아간다)
-    else u.bob = gaitPose(person, ph, u.stride);
-  } else u.bob = 0;
-  p.y = base + u.bob; u.bobY = p.y;
-  const ease = (o, v) => { o.rotation.x += (v - o.rotation.x) * 0.3; };
-  if (working) { // 일하는 동작: 망치질(오른팔을 들었다 내리기), 나르기(두 팔을 앞으로 모아 들기), 쓸기(두 팔을 함께 흔들기)
-    ease(u.legs[0], 0); ease(u.legs[1], 0);
-    const w = u.t * (u.work === 'hammer' ? 5 : 2.2) + u.ph;
-    if (u.work === 'hammer') { ease(u.arms[1], -1.6 + Math.max(0, Math.sin(w)) * 1.4); ease(u.arms[0], -0.3); }
-    else if (u.work === 'carry') { ease(u.arms[0], -1.1); ease(u.arms[1], -1.1); }
-    else { const s = Math.sin(w) * 0.45; ease(u.arms[0], -0.6 + s); ease(u.arms[1], -0.6 + s); }
-  }
-  if (u.head) { // 서 있을 때는 천천히 두리번거리고(걸을 때는 앞을 본다)
-    const look = moving ? 0 : Math.sin(u.t * 0.45 + u.ph) * 0.35 * Math.max(0, Math.sin(u.t * 0.21 + u.ph * 2));
-    u.head.rotation.y += (look - u.head.rotation.y) * Math.min(1, dt * 3);
-  }
-}
-// 일하는 사람으로 정한다: 'hammer'(망치질) 'carry'(짐 들기) 'sweep'(쓸기·노 젓기). 장면 굳히기(core/bake.js)에서 빠져 계속 움직인다.
-export function setWork(person, kind) { person.userData.work = kind; return person; }
 
 export function markerSprite(text = '!', bg = '#d9a441') {
   const cv = document.createElement('canvas'); cv.width = cv.height = 64;

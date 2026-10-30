@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>motion gallery</title>
+<link rel="stylesheet" href="../styles.css">
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+<style>#bar { position: fixed; z-index: 99; left: 4px; top: 4px; font: 14px sans-serif; color: #fff; background: #0009; padding: 3px 8px; }</style>
+</head>
+<body>
+<div id="stage"></div>
+<div id="bar"></div>
+<script type="module">
+  // 개발용: 인물 움직임(2026-10-30 움직임 개선)을 한 마당에서 본다. ?act=walk|turn|weapons|carry|handshake|give|escort|strike|talk|chain
+  // window.__t(초)·window.__phase(지금 하는 일)를 보고 사진을 찍는다(scratchpad motion.cjs)
+  import * as THREE from 'three';
+  import { createWorld } from '../core/world.js';
+  import { buildArena } from '../chapters/kit/play.js';
+  import { makePerson, setCarry, setStyle, setTalking } from '../core/people.js';
+  import { walkTo, turnTo, handshake, giveItem, escort, strike, block, pickUp, putDown } from '../core/interact.js';
+  import { LOOKS } from '../content/characters.js';
+  const q = new URLSearchParams(location.search), act = q.get('act') || 'walk';
+  const world = createWorld(document.getElementById('stage'), { quality: 'medium' });
+  world.setMood('morning'); world.player.visible = false;
+  const arena = buildArena(world, { origin: [0, 0], ground: 'earth', groundColor: 0x9a8a68, hill: 0.5, bounds: { x0: -14, x1: 14, z0: -10, z1: 10 }, nature: false });
+  const g = arena.group;
+  const P = (look, x, z, ry = 0) => { const p = makePerson(typeof look === 'string' ? LOOKS[look] : look); p.position.set(x, 0, z); p.rotation.y = ry; g.add(p); return p; };
+  const box = (w = 0.6, h = 0.35, d = 0.45, c = 0x8a6a48) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshLambertMaterial({ color: c })); m.castShadow = true; return m; };
+  const bar = document.getElementById('bar'), phase = t => { window.__phase = t; bar.textContent = `${act}: ${t}`; };
+  const cam = (pos, look) => world.setFixedCamera(pos, look);
+  window.__hooks = {};
+  let last = performance.now(); window.__t = 0;
+  let follow = null; const track = (p, off = [0, 1.4, 5.5]) => { follow = { p, off }; }; // 걷는 사람을 옆에서 따라가며 본다
+  const loop = now => { const dt = Math.min(0.05, (now - last) / 1000); last = now; window.__t += dt; world.step(dt, { x: 0, z: 0 }); if (follow) { const v = follow.p.getWorldPosition(new THREE.Vector3()); world.setFixedCamera([v.x + follow.off[0], follow.off[1] + 0.6, v.z + follow.off[2]], [v.x, 1.3, v.z]); } world.render(); requestAnimationFrame(loop); };
+  requestAnimationFrame(loop);
+  const sleep = s => new Promise(r => setTimeout(r, s * 1000));
+  const scenes = {
+    async gait() { // 한 사람의 걸음 한 바퀴를 가까이(옆에서 따라가며). &v=빠르기 &look=생김새 &style=captive|guard|weary &carry=arms|shoulder|back
+      const look = q.get('look') || 'villager', a = P(look, -12, 0, Math.PI / 2);
+      if (q.get('style')) setStyle(a, q.get('style'));
+      if (q.get('carry')) setCarry(a, box(0.6, 0.4, 0.5), q.get('carry'));
+      track(a, [0.6, 1.0, 4.2]);
+      phase(`v ${q.get('v') || 1.6}`); await walkTo(world, a, [13, 0], { speed: +(q.get('v') || 1.6) }); phase('끝');
+    },
+    async walk() { // 걷기 → 빠른 걸음 → 달리기 → 멈춤(가속·감속), 옆에서 본다
+      cam([0, 2.4, 11], [0, 1.2, 0]);
+      const a = P('villager', -12, 0, Math.PI / 2), b = P('soldier', -12, -3, Math.PI / 2), c = P({ ...LOOKS.villager, face: { ...LOOKS.villager.face, age: 'old' } }, -12, 3, Math.PI / 2);
+      track(a, [0, 1.4, 6.5]);
+      phase('걷기'); await Promise.all([walkTo(world, a, [-4, 0], { speed: 1.5 }), walkTo(world, b, [-4, -3], { speed: 1.5 }), walkTo(world, c, [-6, 3], { speed: 1.1 })]);
+      phase('빠른 걸음'); await Promise.all([walkTo(world, a, [3, 0], { speed: 2.8 }), walkTo(world, b, [3, -3], { speed: 2.8 })]);
+      phase('달리기'); await Promise.all([walkTo(world, a, [12, 0], { speed: 5.5, accel: 0.6 }), walkTo(world, b, [12, -3], { speed: 5.5, accel: 0.6 })]);
+      phase('멈춤'); await sleep(1.5); phase('끝');
+    },
+    async turn() { // 방향 바꾸며 걷기와 제자리 돌기, 도착해서 방향 맞추기
+      cam([0, 6, 12], [0, 0.8, 0]);
+      const a = P('commoner', -8, 4, Math.PI / 2);
+      phase('ㄱ자로 걷기'); await walkTo(world, a, [0, 4], { speed: 1.6 }); await walkTo(world, a, [0, -4], { speed: 1.6 }); await walkTo(world, a, [6, -4], { speed: 1.6, face: { x: 6, z: 10 } });
+      phase('돌아서기'); await turnTo(world, a, { x: -6, z: -4 }); await sleep(0.8); phase('끝');
+    },
+    async weapons() { // 창·칼·활·총을 든 사람이 함께 걷다가 선다
+      cam([0, 2.6, 9], [0, 1.4, 0]);
+      const ppl = ['soldier', 'yanggyu', 'archer', 'independenceArmy'].map((l, i) => P(l, -11, -3 + i * 2, Math.PI / 2));
+      phase('무기 들고 걷기'); await Promise.all(ppl.map((p, i) => walkTo(world, p, [0, -3 + i * 2], { speed: 1.6 })));
+      phase('멈춰 서기'); await sleep(1.6); phase('끝');
+    },
+    async carry() { // 짐 집기 → 무거운 짐을 안고 걷기 → 내려놓기, 어깨에 메고 걷기
+      cam([0, 2.8, 9], [0, 1.1, 0]);
+      const a = P('worker', -6, 0, Math.PI / 2), crate = box(0.7, 0.45, 0.5); crate.position.set(-4.4, 0.23, 0); g.add(crate);
+      const b = P('villager', -9, -3, Math.PI / 2), hide = box(0.4, 0.3, 0.9, 0x6b4a32); setCarry(b, hide, 'shoulder');
+      const spot = box(1, 0.05, 1, 0x5a4a3a); spot.position.set(4, 0.03, 0); g.add(spot);
+      phase('집기'); await pickUp(world, a, crate, { from: [-5.2, 0] });
+      phase('안고 걷기'); const wb = walkTo(world, b, [6, -3], { speed: 1.5 }); await walkTo(world, a, [3.2, 0], { speed: 1.4, face: { x: 4, z: 0 } });
+      phase('내려놓기'); await putDown(world, a, spot); await wb; await sleep(1); phase('끝');
+    },
+    async handshake() {
+      cam([1.6, 2.4, 5.2], [0, 1.6, 0]);
+      const a = P('seojaepil', -1.6, 0.4, Math.PI / 2), b = P('gentleman', 2.6, -0.8, -Math.PI / 2);
+      phase('악수'); window.__hooks.handshake = await handshake(world, a, b); await sleep(1); phase('끝');
+    },
+    async give() {
+      cam([0.2, 2.4, 5], [0, 1.4, 0]);
+      const a = P('commoner', -1.2, 0, Math.PI / 2), b = P('woman', 1.2, 0, -Math.PI / 2), parcel = box(0.5, 0.25, 0.4, 0xc8b8a0);
+      setCarry(a, parcel, 'arms');
+      await sleep(0.6); phase('건네기'); window.__hooks.give = await giveItem(world, a, b, parcel); await sleep(0.8);
+      phase('받아 들고 걷기'); await walkTo(world, b, [5, 2], { speed: 1.4 }); phase('끝');
+    },
+    async escort() { // 포로 호송: 앞뒤로 호송병, 가운데 포로
+      cam([0, 4, 12], [0, 1, 0]);
+      const caps = [P('villager', -10, 0.6, Math.PI / 2), P('villager', -10.8, -0.5, Math.PI / 2), P('kid', -11.6, 0.5, Math.PI / 2)];
+      const gs = [P('khitan', -8.6, -0.8, Math.PI / 2), P('khitanBright', -13, 0, Math.PI / 2)];
+      phase('호송'); window.__hooks.escort = await escort(world, { captives: caps, guards: gs, path: [[-2, 0], [2, -4], [8, -4]], speed: 1.1 }); await sleep(1); phase('끝');
+    },
+    async strike() { // 창 찌르기 · 막기 · 밀기
+      cam([0, 2.4, 7], [0, 1.4, 0]);
+      const a = P('soldier', -1.4, 0, Math.PI / 2), b = P('khitan', 1.4, 0, -Math.PI / 2), c = P('villager', 3.8, -2, -Math.PI / 2);
+      for (let n = 0; n < 2; n++) { phase('찌르기·막기'); await Promise.all([strike(a, 'spear'), (async () => { await sleep(0.2); await block(b); })()]); await sleep(0.4); }
+      phase('밀기'); await strike(c, 'push'); await sleep(0.8); phase('끝');
+    },
+    async talk() { // 대화: 말하는 사람의 손짓·끄덕임, 듣는 사람의 끄덕임(표정마다 다른 손짓)
+      cam([0, 2.4, 5.5], [0, 1.6, 0]);
+      const a = P('yanggyu', -1.2, 0, Math.PI / 2), b = P('villager', 1.2, 0, -Math.PI / 2);
+      for (const e of ['talk', 'worry', 'anger', 'joy', 'tension', 'surprise']) { phase(`대화 ${e}`); setTalking(a, e); setTalking(b, 'talk', 'listen'); await sleep(1.6); }
+      setTalking(a, null); setTalking(b, null); phase('대화 끝'); await sleep(1); phase('끝');
+    },
+    async chain() { // 이어서 하기: 걷다가 → 집고 → 걸어가 → 건네고 → 악수 → 돌아서 걸어감
+      cam([0, 5, 12], [0, 1, 0]);
+      const a = P('commoner', -10, 2, Math.PI / 2), b = P('scholar', 6, 0, -Math.PI / 2), item = box(0.5, 0.25, 0.4, 0xc8b8a0); item.position.set(-5, 0.13, 2); g.add(item);
+      phase('걸어가 집기'); await pickUp(world, a, item, { from: [-5.7, 2] });
+      phase('걸어가기'); await walkTo(world, a, [3.4, 0.4], { speed: 1.6 });
+      phase('건네기'); await giveItem(world, a, b, item, { style: 'side' });
+      phase('악수'); await handshake(world, a, b);
+      phase('돌아서 걸어감'); await walkTo(world, a, [-8, 5], { speed: 1.8 }); phase('끝');
+    },
+  };
+  await scenes[act]();
+</script>
+</body>
+</html>

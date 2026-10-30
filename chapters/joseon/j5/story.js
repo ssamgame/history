@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { storyScene, person, wait, march, face, troop, facingShare } from '../../kit/story.js';
 import { LOOKS } from '../../../content/characters.js';
+import { setStyle } from '../../../core/motion.js';
 import script from './script.js';
 
 export const NORTH_ROAD = { origin: [400, 0], ground: 'earth', groundColor: 0xe2e4e8, hill: 1, bounds: { x0: -18, x1: 18, z0: -10, z1: 12 }, edge: { style: 'snow' } };
@@ -19,6 +20,7 @@ export function hostageScene(ctx) {
     cam([0, 4.6, 15], [0, 1.2, -1]);
     await fadeIn();
     hook.facing = facingShare(world, folk);
+    princes.forEach(p => setStyle(p, 'weary')); guards.forEach(p => setStyle(p, 'guard')); // 끌려가는 왕자는 지친 걸음, 청 군사는 둘레를 살피는 걸음(2026-10-30 움직임 개선)
     const go = march(world, [...princes, ...guards], 22, 0, 9, { turn: false });
     await say(script.hostage.line, folk[1]);
     ctx.dialogue.close();

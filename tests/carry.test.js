@@ -16,7 +16,7 @@ const handsNear = (p, obj) => {
 test('carry: 두 팔로 안으면 물건이 두 손 사이에 붙고, 걸어도 팔을 휘젓지 않고 살짝 흔들리며, 내려놓으면 팔이 돌아온다', () => {
   const p = makePerson(LOOKS.villager, { track: false }), b = box();
   setCarry(p, b, 'arms');
-  eq(b.parent, p);
+  ok(b.parent === p.userData.upper, '몸통 관절(upper)에 붙는다'); // 2026-10-30: 든 물건은 상체와 함께 움직이게 몸통 관절의 자식
   const u = p.userData;
   ok(u.arms.every(a => a.rotation.x < -0.6), 'both arms forward');
   ok(handsNear(p, b).every(d => d < 0.6), `hands at the object ${handsNear(p, b).map(d => d.toFixed(2))}`);
@@ -28,6 +28,7 @@ test('carry: 두 팔로 안으면 물건이 두 손 사이에 붙고, 걸어도 
   ok(legMax > 0.3, `legs still walk ${legMax.toFixed(2)}`);
   setCarry(p, null);
   ok(!b.parent, 'put down');
+  for (let i = 0; i < 20; i++) animateWalk(p, false, 0.05); // 내려놓으면 팔이 천천히 내려온다(2026-10-30 움직임 개선: 갑자기 꺾이지 않게)
   ok(u.arms.every(a => Math.abs(a.rotation.x) < 0.01 && Math.abs(a.rotation.z) < 0.01), 'arms back');
 });
 
@@ -57,6 +58,7 @@ test('carry: 고려 4장 노비 문서를 받으면 옆구리에 끼고, 더미�
     setupChungju(s.ctx);
     carryDocuments(s.ctx);
     const g1 = s.w.getGoal(); s.w.player.position.set(g1.x, 0, g1.z); s.w.step(0.05, { x: 0, z: 0 });
+    for (let i = 0; i < 8; i++) s.w.step(0.05, { x: 0, z: 0 }); // 집어 든 물건은 0.3초 동안 손으로 옮겨 온다(순간이동하지 않게)
     const c = s.w.player.userData.carry;
     ok(c && c.obj === sc.bundles[0], 'carrying the bundle');
     ok(handsNear(s.w.player, sc.bundles[0])[1] < 0.7, 'in hand');
