@@ -12,6 +12,7 @@ import { leadWalk } from '../../kit/lead.js';
 import { LOOKS } from '../../../content/characters.js';
 import { sayAll, placePlayer, tryPart, sumParts } from '../common.js';
 import script from './script.js';
+import { hostageScene } from './story.js';
 
 // 행궁 마당(마을에서 떨어진 x 400): 왼쪽에 김상헌(척화), 오른쪽에 최명길(주화). 말을 그 생각을 한 사람에게 가져간다.
 const HALL = {
@@ -354,6 +355,7 @@ export default {
   player: PLAYER,
   script,
   quizzes: script.quizzes,
+  stories: { hostage: hostageScene }, // 이야기 장면(D-58)
 
   buildScene(world) {
     scene = buildJ5Scene(world);
@@ -456,7 +458,8 @@ export default {
     // 3) 행궁 앞의 인조에게 가서 하소연을 듣고(N-04), 인조를 따라 서문을 나서 삼전도로(삼궤구고두례)
     await followInjo(ctx);
     await samjeondo(ctx);
-    await sayAll(dialogue, script.result.slice(2)); // 볼모
+    dialogue.close();
+    await hostageScene(ctx); // 끝 해설 장면(D-58): 볼모로 끌려가는 두 왕자(result[2])
     dialogue.close();
     placePlayer(world, END);
     return sumParts(parts);

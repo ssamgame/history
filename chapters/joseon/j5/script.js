@@ -116,6 +116,8 @@ export default {
     { who: 'narr', text: '인조는 단 아래에서 세 번 무릎을 꿇고, 꿇을 때마다 세 번씩 머리를 땅에 조아렸어요. 이렇게 아홉 번 머리를 조아리는 예(삼궤구고두례)를 올리며 항복했어요.', src: ['S63'] },
   ],
 
+  // 끝 해설 장면(D-58, chapters/joseon/j5/story.js): result 셋째 문장(볼모)을 눈길 행렬 장면 위에
+  hostage: { line: { who: 'keeper', expr: 'worry', text: '세자 저하와 대군께서 청나라로 끌려가신다니…' } },
   result: [
     { who: 'narr', text: '강화도가 청군에게 함락되자 인조는 항복하기로 했어요.', src: ['S38'] },
     { who: 'narr', text: '1637년 1월, 인조는 남한산성에서 나와 삼전도에서 청나라에 항복했어요.', src: ['S38'] },

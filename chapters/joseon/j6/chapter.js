@@ -12,6 +12,7 @@ import { enterThroughGate, closeGate } from '../../kit/gate.js';
 import { sayAll, placePlayer, tryPart, sumParts, visitAny } from '../common.js';
 import { holdPress, dragStone } from './hold.js';
 import script from './script.js';
+import { uigweScene } from './story.js';
 
 const PEOPLE = ['official', 'worker'];
 const SPOT = [-2, 2];
@@ -136,14 +137,18 @@ export async function hwaseongTour(ctx) {
   world.player.visible = false;
   // 높은 곳에서 성벽·장안문·거중기를 한눈에(학생과 정조 뒤에서 내려다보며 천천히 옆으로). 둘은 같은 곳(성 밖 북쪽)을 바라본다
   let t = 0;
+  let story = false;
   const off = world.onUpdate(dt => {
+    if (story) return; // 이야기 장면 동안은 둘러보기 카메라를 멈춘다
     t += dt; const a = -0.25 + Math.min(1, t / 16) * 0.5;
     jj.mesh.rotation.y = 0; me.rotation.y = 0; // 둘 다 성 밖(북쪽)을 바라본다(카메라는 뒤에서)
     world.setFixedCamera([-12 + Math.sin(a) * 20, 17, WALL_Z + Math.cos(a) * 20], [-9, 1.5, WALL_Z - 4]);
   });
   await ctx.fade(false);
   await sayAll(dialogue, script.tour);
-  await sayAll(dialogue, script.result);
+  dialogue.close();
+  story = true; await uigweScene(ctx); story = false; // 끝 해설 장면(D-58): 완성된 화성과 의궤를 적는 관리들(result 앞 두 문장)
+  await sayAll(dialogue, script.result.slice(2));
   dialogue.close();
   off();
   await ctx.fade(true);
@@ -162,6 +167,7 @@ export default {
   player: LOOKS.worker,
   script,
   quizzes: script.quizzes,
+  stories: { uigwe: uigweScene }, // 이야기 장면(D-58)
 
   buildScene(world) {
     scene = buildJ6Scene(world);
