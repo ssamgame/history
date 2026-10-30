@@ -23,17 +23,18 @@ const ERA_SWAP = {
 // 머리 종류 × 시대 → 기본형(군중이 나눠 쓴다)과 한 가지씩 얹는 변형(vary: 확률)
 // 기본형 항목: knot 상투 자리(high·mid·low), knotSize, manggeon 망건, cut 짧은 머리 모양(crop 상고머리·side 가르마·buzz 까까머리·back 넘긴 머리),
 //   bun 쪽 크기, pin 비녀 빛깔, perm 파마머리, braids 땋은 갈래 수, ribbon 댕기 빛깔, lock 곤발 머리 타래 길이, fringe 곤발 앞이마 머리, loops 몽골 땋은 고리
+// front 이마 선(straight·round·m·part, 머리 모양 윤곽 core/people.js hairCap)
 // 변형: towel 흰 수건 머리띠(일꾼·농민, 조선 뒤), sideburn 구레나룻, nape 모자 밑 뒷머리, gray 희끗한 머리
 export const HAIR_RULES = {
   topknot: {
-    goryeo:   { bases: [{ knot: 'mid' }, { knot: 'high' }, { knot: 'mid', knotSize: 1.25 }], vary: { gray: 0.15, sideburn: 0.15 } },
-    joseon:   { bases: [{ knot: 'mid', manggeon: true }, { knot: 'high', manggeon: true }, { knot: 'mid', knotSize: 1.25, manggeon: true }], vary: { towel: 0.2, gray: 0.15 } },
-    modern:   { bases: [{ knot: 'mid', manggeon: true }, { knot: 'high', manggeon: true }], vary: { towel: 0.3, gray: 0.15 } }, // 동학 농민군의 흰 수건
+    goryeo:   { bases: [{ knot: 'mid' }, { knot: 'high', front: 'round' }, { knot: 'mid', knotSize: 1.25, front: 'm' }], vary: { gray: 0.15, sideburn: 0.15 } },
+    joseon:   { bases: [{ knot: 'mid', manggeon: true }, { knot: 'high', manggeon: true, front: 'round' }, { knot: 'mid', knotSize: 1.25, manggeon: true, front: 'm' }], vary: { towel: 0.2, gray: 0.15 } },
+    modern:   { bases: [{ knot: 'mid', manggeon: true }, { knot: 'high', manggeon: true, front: 'round' }], vary: { towel: 0.3, gray: 0.15 } }, // 동학 농민군의 흰 수건
     colonial: { bases: [{ knot: 'mid', manggeon: true }], vary: { towel: 0.25, gray: 0.25 } },                          // 1910~20년대 시골 어른
   },
   short: {
-    modern:   { bases: [{ cut: 'crop' }, { cut: 'side' }], vary: { gray: 0.1 } },                                  // 단발령(1895) 뒤 짧게 자른 머리
-    colonial: { bases: [{ cut: 'crop' }, { cut: 'side' }, { cut: 'buzz' }], vary: { gray: 0.1 } },                  // 상고머리·가르마·까까머리
+    modern:   { bases: [{ cut: 'crop' }, { cut: 'side' }, { cut: 'side', front: 'round' }], vary: { gray: 0.1 } },                                  // 단발령(1895) 뒤 짧게 자른 머리
+    colonial: { bases: [{ cut: 'crop' }, { cut: 'side' }, { cut: 'buzz' }, { cut: 'crop', front: 'round' }], vary: { gray: 0.1 } },                  // 상고머리·가르마·까까머리
     present:  { bases: [{ cut: 'side' }, { cut: 'crop' }, { cut: 'buzz' }, { cut: 'back' }], vary: { gray: 0.12 } },
   },
   bun: { // 쪽진 머리(혼인한 여자)
@@ -103,6 +104,7 @@ export function hairStyle(L = {}, n = 0, role = 'farmer', e = era) {
     if (vs.length) { const [k, p] = vs[Math.floor(r() * vs.length)]; if (r() < p * 1.6) { if (k === 'gray') out.gray = true; else out[k] = true; } }
   }
   h ^= Math.imul(n + 7, 0x85ebca6b);
+  if (old && !out.front && !fem) out.front = 'm'; // 나이 든 남자는 양쪽 이마가 들어간 머리선
   if (!out.color) out.color = old ? HAIR_COLORS.white[Math.floor(r() * 2)] : out.gray ? HAIR_COLORS.gray[Math.floor(r() * 2)] : HAIR_COLORS.black[Math.floor(r() * 4)];
   // 수염: 어른 남자 군중만, 생김새에 수염을 정하지 않은 사람, 그 시대·역할의 범위 안에서
   const br = e && BEARD_RULES[e] && (BEARD_RULES[e][role] || BEARD_RULES[e].farmer);

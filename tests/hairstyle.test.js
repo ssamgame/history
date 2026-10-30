@@ -58,3 +58,24 @@ test('hairstyle D-56: 머리 모양을 더해도 인물 조각 수가 크게 늘
   setHairEra(null);
   for (const e of Object.keys(BEARD_RULES)) ok(ERAS.includes(e), e);
 });
+
+// 2026-10-30 선생님: 투구 뒷모습에 구멍(맨살)이 보이지 않게, 머리 모양이 반원 바가지만 되지 않게
+test('hairstyle: 투구 뒤가 비지 않는다(받침 두건과 목덜미까지 내려오는 드림)', () => {
+  for (const id of ['soldier', 'yanggyu']) {
+    const p = makePerson(LOOKS[id], { track: false, stable: true });
+    ok(p.getObjectByName('helmetLiner'), `${id}: 투구 밑 받침`);
+    const g = p.getObjectByName('neckGuard'); g.geometry.computeBoundingBox();
+    ok(g.position.y + g.geometry.boundingBox.min.y < -0.2, `${id}: 드림이 목덜미까지`);
+  }
+});
+
+test('hairstyle: 머리 모양마다 윤곽이 다르다(이마 선·정수리·뒤통수)', async () => {
+  const { hairCap } = await import('../core/people.js');
+  const box = o => { const g = hairCap(0.335, o); g.computeBoundingBox(); const b = g.boundingBox; return [b.max.y, b.min.y, b.min.z].map(v => v.toFixed(3)).join(); };
+  const shapes = new Set([{}, { front: 'part' }, { flat: 0.12 }, { crown: 0.28 }, { lift: 0.14 }, { side: 1.5, back: 2.25 }].map(box));
+  ok(shapes.size >= 5, `윤곽 ${shapes.size}가지`);
+  // 뒤통수는 귀 높이 아래까지, 이마는 눈썹 위(바가지처럼 한 높이로 잘리지 않는다)
+  const g = hairCap(0.335, {}), pa = g.attributes.position; let front = 1, back = 1;
+  for (let i = 0; i < pa.count; i++) { const z = pa.getZ(i), y = pa.getY(i); if (z > 0.25) front = Math.min(front, y); if (z < -0.2) back = Math.min(back, y); }
+  ok(front > 0.12 && back < -0.1, `이마 끝 ${front.toFixed(2)}, 뒤통수 끝 ${back.toFixed(2)}`);
+});
