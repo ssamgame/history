@@ -38,7 +38,8 @@ const fs = require('fs'), path = require('path');
     if (s !== sig) { sig = s; sigAt = Date.now(); }
     else if (Date.now() - sigAt > 60000) { R.stuck.push({ chapter: st.chapter, state: s, sec: Math.round((Date.now() - t0) / 1000) }); console.log('막힘', s); await shot('stuck'); sigAt = Date.now(); }
     if (Date.now() - shotAt > 15000) { shotAt = Date.now(); await shot((st.scr.split(' ')[1] || 'play').slice(0, 12)); }
-    if (/\bsession\b/.test(st.scr)) { console.log('끝:', st.endText); await shot('end'); break; } // 편 결과 카드(여섯 장을 마침)
+    if (/\bsession\b/.test(st.scr) && !R.sessions?.includes(st.chapter)) { (R.sessions = R.sessions || []).push(st.chapter); console.log('편 끝:', st.chapter); await shot('session'); } // 편 결과 카드(여섯 장을 마침). 게임은 다음 편으로 이어진다
+    if (R.chapters.length && Date.now() - shotAt < 2100) fs.writeFileSync(path.join(out, 'log.json'), JSON.stringify(R, null, 1)); // 중간에 멈춰도 기록이 남게
   }
   if (cur && R.chapters.length) R.chapters[R.chapters.length - 1].sec = Math.round((Date.now() - R.chapters[R.chapters.length - 1].at) / 1000);
   try { R.fps = await p.evaluate(() => window.__fps); } catch { /* 무시 */ }

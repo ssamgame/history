@@ -11,7 +11,7 @@ async function loadAnswers() {
   for (const c of ALL_CHAPTERS) if (c.load) { try { walk((await c.load()).default.script); } catch (e) { E.log.push('answer load ' + c.id + ' ' + e.message); } }
 }
 loadAnswers();
-const vis = el => el && !el.hidden && el.offsetParent !== null && getComputedStyle(el).visibility !== 'hidden';
+const vis = el => el && !el.hidden && el.getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden'; // 화면 카드는 position: fixed라 offsetParent로는 알 수 없다
 // 손가락처럼: 버튼 한가운데에 그 버튼이 맨 위에 있는지 보고 누른다(덮였으면 기록)
 const tap = b => {
   const r = b.getBoundingClientRect(), top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
@@ -62,7 +62,13 @@ function tick() {
     return;
   }
   seenDlg = 0;
-  const tapTarget = [...ui.querySelectorAll('.tap-target, .big-action')].find(b => vis(b) && !b.disabled); if (tapTarget) { tap(tapTarget); }
+  const tapTarget = [...ui.querySelectorAll('.tap-target, .big-action')].find(b => vis(b) && !b.disabled);
+  if (tapTarget && /길게/.test(tapTarget.textContent)) { // 길게 누르기: 1.6초 동안 누르고 있다가 뗀다
+    if (!E.holding) { E.holding = performance.now(); const r = tapTarget.getBoundingClientRect(); E.holdXY = [r.left + r.width / 2, r.top + r.height / 2]; tapTarget.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 9, bubbles: true, clientX: E.holdXY[0], clientY: E.holdXY[1] })); }
+    else if (performance.now() - E.holding > 1600) { tapTarget.dispatchEvent(new PointerEvent('pointerup', { pointerId: 9, bubbles: true, clientX: E.holdXY[0], clientY: E.holdXY[1] })); E.holding = 0; }
+    return;
+  }
+  if (tapTarget) { tap(tapTarget); }
   if (ctx.testHooks.pressing) { release(); action(); return; }
   const g = w.getGoal?.() || ctx.testHooks.walkTo;
   if (g && w.camMode === 'follow' && ctx.input.enabled) {

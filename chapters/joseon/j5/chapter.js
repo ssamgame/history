@@ -233,10 +233,12 @@ async function samjeondo(ctx) {
       await all(0.9, (h, e) => kowtowPose(h, 1, e));                                 // 손을 짚고, 허리를 굽히고, 머리를 조아린다
       await ctx.wait(200);
       await all(0.8, (h, e) => kowtowPose(h, 1, 1 - e)); done.bows += 1;              // 다시 몸을 든다
+      ctx.hud?.setCounter?.(`무릎 꿇기 ${done.kneels}/3 · 머리 조아리기 ${done.bows}/9`); // 말없이 길게 이어지는 의식이 멈춘 것처럼 보이지 않게(2026-10-30 점검)
     }
     await all(1.2, (h, e) => kowtowPose(h, 1 - e, 0));                                 // 일어선다
   }
   ctx.testHooks.samjeondo = done;
+  ctx.hud?.setCounter?.(null);
   await ctx.wait(500);
   await ctx.fade(true);
   arena.dispose();
