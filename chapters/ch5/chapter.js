@@ -12,10 +12,11 @@ import { LOOKS } from '../../content/characters.js';
 import * as THREE from 'three';
 import script from './script.js';
 import { tripitakaScene } from './story.js';
-import { doWork, shelveFirstPerson } from './work.js';
+import { doWork, shelveFirstPerson, carryPlank } from './work.js';
 
 const ARTISANS = ['artisan1', 'artisan2', 'artisan3', 'artisan4'];
-const NEAR = 1.3;      // 빛나는 자리에 닿았다고 보는 거리
+const NEAR = 1.3;      // 서가 앞 빛나는 자리에 닿았다고 보는 거리
+const WORK_NEAR = 1.0; // 일하는 자리(작은 빛나는 원) 위에서 E를 누를 수 있는 거리: 일할 자리까지 몇 걸음만 걷는다
 const WRONG_NEAR = 0.9, WRONG_STAY = 0.5; // 차례가 아닌 자리에 이만큼 가까이 이만큼 머물면 스님이 알려 준다
 let scene = null;
 
@@ -43,11 +44,13 @@ export function artisanTalk(id, heard) {
 }
 
 // 판을 학생 두 팔에 안긴다
-function hold(world) { scene.plank.visible = true; scene.plank.scale.setScalar(1); scene.plank.rotation.set(0, 0, 0); setCarry(world.player, scene.plank, 'arms'); }
+function hold(world) { scene.plank.visible = true; scene.plank.rotation.set(0, 0, 0); carryPlank(world.player, scene.plank); }
 
-// 과정 그림(D-32): 그 자리의 일을 그린 그림과 그 아래 설명 한 줄. '다음'(또는 E)을 누르면 닫힌다
+// 과정 그림(D-32): 그 자리의 일을 그린 그림과 그 아래 설명 한 줄. '다음'(또는 E)을 누르면 닫힌다.
+// i는 일하는 자리 차례(그림 모양), 글은 그 자리의 id로 찾는다(글자 새기기는 직접 새기므로 그림이 없다)
 export function showStepPicture(ctx, i) {
-  const P = script.making.pictures[i];
+  const P = script.making.pictures.find(p => p.id === scene.stations[i].id);
+  if (!P) return Promise.resolve();
   return new Promise(resolve => {
     const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
     const screen = el('section', 'screen doc ch5-step'); screen.dataset.step = P.id;
@@ -56,7 +59,7 @@ export function showStepPicture(ctx, i) {
     cv.setAttribute('role', 'img'); cv.setAttribute('aria-label', P.title);
     Object.assign(cv.style, { display: 'block', justifySelf: 'center', width: 'clamp(140px, calc((100dvh - 300px) * 1.43), 360px)', height: 'auto', borderRadius: '4px', border: '2px solid #6b4a32' });
     const ok = el('button', 'btn primary doc-ok', '다음'); ok.type = 'button';
-    card.append(el('div', 'eyebrow', `경판 만들기 ${i + 1} / ${script.making.pictures.length}`), el('h2', null, P.title), cv, el('p', null, P.text), ok);
+    card.append(el('div', 'eyebrow', `경판 만들기 ${i + 1} / ${scene.stations.length}`), el('h2', null, P.title), cv, el('p', null, P.text), ok);
     screen.append(card); ctx.ui.append(screen);
     let unbind = null, done = false;
     const close = () => { if (done) return; done = true; clearTimeout(arm); unbind?.(); screen.remove(); resolve(); };
@@ -79,7 +82,7 @@ async function carve(ctx) {
 // 다른 자리에 머물면 스님이 짧게 알려 준다(실패로 세지 않고 다시 하기도 없다). 한 번도 틀리지 않으면 first: true
 export async function makeBlock(ctx) {
   const { world, hud, dialogue, audio } = ctx;
-  const S = scene.stations, P = script.making.pictures;
+  const S = scene.stations;
   let k = 0, first = true, busy = false;
   const stay = new Map(), told = new Set(); // 다른 자리에 머문 시간, 이번에 머무는 동안 이미 알려 준 자리
   scene.setStage(0); scene.setCarved(0); hold(world); // 스님이 나무판을 건넨다
@@ -104,7 +107,9 @@ export async function makeBlock(ctx) {
   while (k < S.length) {
     busy = false; show();
     const st = S[k];
-    await waitInteract(ctx, { pos: { x: st.spot[0], z: st.spot[1] }, label: P[k].title, r: NEAR + 0.3, mark: false });
+    ctx.testHooks.closer = true; // 테스트 봇: 작은 원 위까지 걸어 들어간다
+    await waitInteract(ctx, { pos: { x: st.spot[0], z: st.spot[1] }, label: script.making.steps[k], r: WORK_NEAR, mark: false });
+    ctx.testHooks.closer = false;
     busy = true; show();
     const was = ctx.input.enabled; ctx.input.enabled = false;
     ctx.testHooks.work = ctx.testHooks.work || {};

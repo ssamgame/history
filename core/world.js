@@ -197,7 +197,7 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
   const camTarget = new THREE.Vector3();
   const tmp = new THREE.Vector3();
   const updaters = [];
-  let goal = null, elapsed = 0, fit = null;
+  let goal = null, elapsed = 0, fit = null, lastPP = null;
   const talkPos = new THREE.Vector3(), talkTarget = new THREE.Vector3(), offsetVec = new THREE.Vector3();
   const projected = new THREE.Vector3();
   let talkFov = FOV, hidForTalk = false;
@@ -370,7 +370,8 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
         diff = Math.atan2(Math.sin(diff), Math.cos(diff));
         player.rotation.y += diff * Math.min(1, dt * 12);
       }
-      animateWalk(player, moving, dt);
+      const mv = lastPP ? Math.hypot(p.x - lastPP.x, p.z - lastPP.z) / dt : 0; lastPP = { x: p.x, z: p.z };
+      animateWalk(player, moving || (mv > 0.12 && mv < 8), dt); // 장이 학생을 몇 걸음 옮길 때(walkTo)도 다리를 움직인다(미끄러지듯 떠가지 않게)
       for (const n of world.npcs.values()) if (n.mark.visible) n.mark.position.y = (n.spot ? (n.mesh.userData.markY ?? 3.1) : 3.5) + Math.sin(elapsed * 3) * 0.12;
       if (goal) {
         const dx = goal.x - p.x, dz = goal.z - p.z;

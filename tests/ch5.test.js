@@ -143,12 +143,12 @@ function inkColors(cv) { // 캔버스에 실제로 그렸는지: 서로 다른 �
 
 test('ch5 D-32: each work place waits for E (talk button), then shows a drawn picture of that step with one sourced line; a wrong place gets a hint, not a fail', async () => {
   const P = ch5Script.making.pictures;
-  eq(P.length, 6);
+  eq(P.length, 5); // 2026-10-30 선생님: 글자 새기기는 大藏經을 직접 새기므로 그림·해설을 뺐다
   for (const p of P) { eq(p.who, 'narr'); ok(p.src.length && p.src.every(x => ['S8', 'S9'].includes(x)), p.id); ok(!p.text.includes('\n') && p.title); }
   const s = touchSetup(ch5Script.speakers);
   try {
     const sc = ch5.buildScene(s.w, s.ctx);
-    eq(P.map(p => p.id), sc.stations.map(x => x.id), 'one picture per work place in order');
+    eq(P.map(p => p.id), sc.stations.map(x => x.id).filter(id => id !== 'carve'), 'one picture per work place in order (carving has none)');
     ch5.enterStage(s.ctx, 'minigame');
     let res = null;
     makeBlock(s.ctx).then(r => { res = r; });
@@ -212,7 +212,7 @@ test('ch5 D-32: 1 -> 2 -> 3 work places, the letters 大藏經 are carved right 
     });
     const r = await makeBlock(s.ctx);
     off(); mo.disconnect();
-    eq(order, ['soak', 'boil', 'dry', 'carve', 'ends', 'lacquer']);
+    eq(order, ['soak', 'boil', 'dry', 'ends', 'lacquer']);
     eq(boards.size, 3, 'three letters traced');
     eq(traceAway, 0, 'traced at the carving place');
     eq([...traceStage], [3], 'carved before the end pieces');
@@ -253,15 +253,22 @@ test('ch5: 자리마다 앞에 서서 판을 내려놓고 도구 끝이 판에 �
   try {
     const sc = ch5.buildScene(s.w, s.ctx);
     ch5.enterStage(s.ctx, 'minigame');
+    s.w.player.scale.setScalar(0.8); // 실제 게임의 학생은 0.8배다(들고 있는 판까지 작아지던 오류)
+    const THREE = await import('three'); const ws = o => { o.updateWorldMatrix(true, false); return o.getWorldScale(new THREE.Vector3()).x; };
     await makeBlock(s.ctx);
     const W = s.ctx.testHooks.work;
+    ok(Math.abs(ws(sc.plank) - 1) < 0.01, `들고 있는 경판이 제 크기 ${ws(sc.plank).toFixed(2)}`);
+    // 2026-10-30 선생님: 바닷물에 담그는 모습이 보이게(통 뚜껑이 물을 덮고 있었다), 빛나는 자리에서 미끄러지듯 먼 데로 가지 않게, 글자 새기기는 겹치지 않게
+    ok(W.soak.waterSeen, '카메라에서 바닷물이 보인다'); ok(W.soak.submerged, '판이 물속으로 들어간다');
+    for (const [id, h] of Object.entries(W)) { ok(h.walked < 1.05, `${id}: 빛나는 자리에서 일할 자리까지 ${h.walked.toFixed(2)}m`); if (h.walked > 0.2) ok(h.legs > 0.1, `${id}: 걸어갈 때 다리가 움직인다`); }
+    eq(W.carve.strokes, 0, '새김칼질 없이 바로 大藏經을 새긴다');
     eq(Object.keys(W), ['soak', 'boil', 'dry', 'carve', 'ends', 'lacquer']);
     for (const [id, h] of Object.entries(W)) { ok(h.placed < 0.02, `${id}: 판을 놓을 곳에 놓았다 ${h.placed.toFixed(3)}`); if (['boil', 'carve', 'ends', 'lacquer'].includes(id)) ok(h.contact < 0.15, `${id}: 도구 끝이 판·솥에 닿는다 ${h.contact.toFixed(3)}`); }
     await shelveBlock(s.ctx);
     const H = s.ctx.testHooks.shelf;
     ok(H.fp, '1인칭으로 바뀌었다'); ok(H.gap < 0.15, `두 손이 경판을 붙들었다 ${H.gap.toFixed(3)}`); ok(H.slotErr < 0.01, `빈자리에 꽂혔다 ${H.slotErr.toFixed(3)}`);
-    eq(sc.plank.parent, sc.library); ok(Math.abs(sc.plank.scale.x - 1) < 1e-6, '크기 그대로');
+    eq(sc.plank.parent, sc.library); ok(Math.abs(ws(sc.plank) - 1) < 0.01, `옆 경판과 같은 크기 ${ws(sc.plank).toFixed(2)}`);
     for (let i = 0; i < 30; i++) s.w.step(0.05, { x: 0, z: 0 });
-    eq(sc.plank.parent, sc.library, '제자리에 남는다'); eq(s.w.camMode, 'follow'); ok(s.w.player.userData.head.visible, '머리가 다시 보인다');
+    eq(sc.plank.parent, sc.library, '제자리에 남는다'); eq(s.w.camMode, 'follow'); ok(s.w.player.userData.head.visible, '머리가 다시 보인다'); eq(s.w.player.scale.x, 0.8, '학생 크기가 되돌아온다');
   } finally { bot.stop(); s.done(); }
 }, { timeout: 120000 });

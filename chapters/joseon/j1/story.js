@@ -13,10 +13,13 @@ export function coronationScene(ctx) {
   return storyScene(ctx, { key: 'coronation', arena: CORONATION, mood: 'morning', async run({ g, hook, cam, glide, say, fadeIn }) {
     const { world } = ctx;
     const t = new THREE.Group(); t.position.set(0, 0, -6); g.add(t); BLD.terrace(t, { w: 12, d: 5, h: 1.2 });
-    const hall = new THREE.Group(); hall.position.set(0, 1.2, -7.4); g.add(hall); BLD.hanok(hall, { tile: true, seed: 9 }); hall.scale.setScalar(1.5);
+    const hall = new THREE.Group(); hall.position.set(0, 1.2, -8.2); g.add(hall); BLD.hanok(hall, { tile: true, seed: 9 }); hall.scale.setScalar(1.5); // 전각 돌계단이 단 위 왕의 발에 겹치지 않게 뒤로(2026-10-30)
     
     const dais = new THREE.Group(); dais.position.y = 1.2 + 0.095; g.add(dais); // 단 윗면(축대 덮개 윗면, 2026-10-30: 발이 덮개에 묻히지 않게). 걸음 흔들기가 높이를 바꾸지 않게 무리째 올린다
     const king = person(dais, { ...LOOKS.sejong, face: LOOKS.yiseonggye.face, named: true }, 0, -4.4, 0); king.userData.noWalk = true;
+    g.updateMatrixWorld(true);
+    const shoes = []; king.traverse(o => { if (o.name === 'shoe') shoes.push(new THREE.Box3().setFromObject(o).expandByScalar(-0.01)); });
+    hook.kingFeetHidden = 0; [hall, t].forEach(r => r.traverse(o => { if (!o.isMesh) return; const b = new THREE.Box3().setFromObject(o); if (b.max.y > dais.position.y + 0.02 && shoes.some(sh => sh.intersectsBox(b))) hook.kingFeetHidden += 1; })); // 발에 겹친 돌
     hook.kingFeet = king.getWorldPosition(new THREE.Vector3()).y; hook.daisTop = t.position.y + 1.2 + 0.095; // 발바닥 = 단 윗면 // 왕이 된 이성계: 곤룡포와 익선관, 얼굴은 이성계
     // 마당 양쪽에 줄지어 선 신하들(가운데 길을 보며 선다)
     const left = troop(g, ['joseonOfficial', 'minister', 'scholar'], -4.5, 0, { cols: 1, rows: 4, gap: 1.6, ry: Math.PI / 2, jitter: 0.1 });

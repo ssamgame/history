@@ -85,7 +85,9 @@ function tick() {
   if (g && w.camMode === 'follow' && ctx.input.enabled) {
     const p = w.player.position; let dx = g.x - p.x, dz = g.z - p.z; const d = Math.hypot(dx, dz);
     if (wander > 0) { wander -= 1; const a = E.step * 0.7; dx = Math.cos(a); dz = Math.sin(a); } // 막혔으면 잠깐 옆으로 비켜 걷는다
-    if (d > 1.2 || wander > 0) { const n = Math.hypot(dx, dz) || 1; if (!dragging) { pe('pointerdown', 150, 150); dragging = true; } pe('pointermove', 150 + dx / n * 40, 150 + dz / n * 40); }
+    const talkOff = !document.querySelector('.talkbtn') || document.querySelector('.talkbtn').disabled;
+    if (d > 1.2 || (d > 0.6 && talkOff && ctx.testHooks.closer) || wander > 0) { // closer: 작은 자리(5장 일하는 원)는 그 위까지 걸어 들어간다
+      const n = Math.hypot(dx, dz) || 1; if (!dragging) { pe('pointerdown', 150, 150); dragging = true; } pe('pointermove', 150 + dx / n * 40, 150 + dz / n * 40); }
     else { release(); action(); }
     // 같은 자리에 오래 머물면(막힘) 비켜 걷기
     E.pos = E.pos || { x: p.x, z: p.z, t: performance.now() };

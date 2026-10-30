@@ -163,7 +163,7 @@ export function buildCourt(world) {
   const m = (w, h, d, c, x, y, z, kind = 'stone') => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(c, kind)); o.position.set(x, y, z); o.receiveShadow = true; o.castShadow = h > 0.3; g.add(o); return o; };
   m(44, 0.1, 38, 0xb3ab99, 0, -0.04, 0); // 박석 마당
   const t = new THREE.Group(); t.position.set(0, 0, -6); g.add(t); terrace(t, { w: 12, d: 5, h: 1.2 });
-  const hall = new THREE.Group(); hall.position.set(0, 1.2, -7.4); hall.scale.setScalar(1.5); g.add(hall); hanok(hall, { tile: true, seed: 9 });
+  const hall = new THREE.Group(); hall.position.set(0, 1.2, -8.2); hall.scale.setScalar(1.5); g.add(hall); hanok(hall, { tile: true, seed: 9 }); // 전각 돌계단이 단 위 왕의 발에 겹치지 않게 뒤로(2026-10-30)
   for (const sx of [-1, 1]) { const w = new THREE.Group(); w.position.set(sx * 15, 0, 0); w.rotation.y = Math.PI / 2; g.add(w); wall(w, { w: 26, h: 2.6, color: 0x8a5a3a }); } // 양옆 행랑 담
   for (const x of [-8, 8]) { const f = new THREE.Group(); f.position.set(x, 0, -2); banner(f, { color: 0xd9a441, h: 3.6 }); g.add(f); }
   const officials = [];

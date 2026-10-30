@@ -153,7 +153,7 @@ export function touchBot(s, { answers, wrongFirst = new Set(), noTaps = () => fa
       const g = w.getGoal() || ctx.testHooks.walkTo; // 정답 자리를 화살표로 알려 주지 않는 놀이는 봇에게만 따로 알려 준다
       if (g && w.camMode === 'follow' && !holdStill()) {
         const p = w.player.position, dx = g.x - p.x, dz = g.z - p.z, d = Math.hypot(dx, dz);
-        if (d > 1.2) {
+        if (d > 1.2 || (d > 0.6 && hud.talkBtn.disabled && ctx.testHooks.closer)) { // closer: 작은 자리(5장 일하는 원)는 그 위까지 걸어 들어간다
           if (!dragging) { pe('pointerdown', 100, 100); dragging = true; }
           pe('pointermove', 100 + (dx / d) * 40, 100 + (dz / d) * 40);
         } else {

@@ -303,7 +303,7 @@ export async function rumorWalk(ctx) {
     const P = R.people[i], text = P.talk.map(l => l.text).join(' ');
     for (;;) {
       ctx.testHooks.choice = P.correct ? 0 : 1;
-      const pick = await dialogue.choose(`「${text}」 ${R.question}`, R.options);
+      const pick = await dialogue.choose({ who: 'yiseonggye', text: `「${text}」 ${R.question}` }, R.options); // 군사가 한 말을 대화창에 보인다
       if ((pick === 0) === P.correct) { await dialogue.say({ who: 'guide', text: `○ 맞아요. ${P.correct ? '이성계가 직접 든 까닭이에요.' : '이성계가 하지 않은 말, 떠도는 소문이에요.'}` }); break; }
       first = false;
       await dialogue.say({ who: 'guide', text: `× 다시 생각해 봐요. ${P.why || R.fail}` });

@@ -57,13 +57,17 @@ test('j1: soldiers relay what 이성계 said; a wrong judgement gets the explana
   s.dialogue.say = l => { said.push(l.text); return say(l); };
   const choose = s.dialogue.choose;
   let wrongOnce = true;
-  s.dialogue.choose = (p, o, x) => { if (wrongOnce && s.ctx.testHooks.choice != null) { wrongOnce = false; const c = s.ctx.testHooks.choice; s.ctx.testHooks.choice = 1 - c; } return choose(p, o, x); };
+  const prompts = [];
+  s.dialogue.choose = (p, o, x) => { prompts.push(p); if (wrongOnce && s.ctx.testHooks.choice != null) { wrongOnce = false; const c = s.ctx.testHooks.choice; s.ctx.testHooks.choice = 1 - c; } return choose(p, o, x); };
   const bot = touchBot(s, { answers });
   try {
     j1.buildScene(s.w, s.ctx);
     j1.enterStage(s.ctx, 'minigame');
     const r = await j1.minigame(s.ctx);
     ok(said.some(t => t.startsWith('× 다시 생각해 봐요.')), 'explanation after the wrong judgement');
+    // 2026-10-30 선생님: 가릴 때 군사가 한 말이 대화창에 보여야 한다(글이 비어 있었다)
+    const judged = prompts.filter(p => p && typeof p.text === 'string' && p.text.includes(j1Script.reasons.question));
+    ok(judged.length >= 6 && j1Script.reasons.people.every(P => judged.some(p => p.text.includes(P.talk[0].text))), `가릴 말이 보인다 ${prompts.map(p => typeof p).join(',')}`);
     eq(r.firstTryCorrect, 1, 'judging missed once, Hanyang right the first time');
     eq(r.easyModeUsed, false);
     ok(s.ctx.testHooks.march && s.ctx.testHooks.march.done, 'march on the map played');
@@ -71,6 +75,20 @@ test('j1: soldiers relay what 이성계 said; a wrong judgement gets the explana
     eq(s.ctx.testHooks.built, ['palace', 'jongmyo', 'sajik'], 'three buildings rose at their sites');
   } finally { bot.stop(); s.done(); }
 }, { timeout: 150000 });
+
+// 2026-10-30 선생님: 왕이 된 이성계의 오른발이 전각 돌계단에 묻혀 안 보였다. 궁궐 마당과 즉위 장면 모두 발이 다른 돌에 묻히지 않는다
+test('j1: 왕이 된 이성계의 발이 돌계단·기단에 묻히지 않는다', async () => {
+  const THREE = await import('three');
+  const s = touchSetup(j1Script.speakers);
+  try {
+    j1.buildScene(s.w, s.ctx); j1.enterStage(s.ctx, 'quiz');
+    const k = s.w.npcs.get('yiseonggye').mesh; s.w.level.updateMatrixWorld(true);
+    const shoes = []; k.traverse(o => { if (o.name === 'shoe') shoes.push(new THREE.Box3().setFromObject(o).expandByScalar(-0.01)); });
+    eq(shoes.length, 2);
+    const hit = []; s.w.level.traverse(o => { if (!o.isMesh || !o.visible) return; let p = o; while (p && p !== k) p = p.parent; if (p === k) return; const b = new THREE.Box3().setFromObject(o); if (b.max.y > k.position.y + 0.02 && shoes.some(sh => sh.intersectsBox(b))) hit.push(o.name || o.geometry.type); });
+    eq(hit, [], '발에 겹친 것');
+  } finally { s.done(); }
+});
 
 test('j1: nothing stands between the camera and the player at the Hanyang site', () => {
   const from = 13; // 학생이 서는 곳(남쪽)

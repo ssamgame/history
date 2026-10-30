@@ -9,6 +9,7 @@ import { mat, setWork } from '../../core/people.js';
 import { scatter } from '../../core/props.js';
 import { LOOKS } from '../../content/characters.js';
 import { gateLeaves, nameBoard } from '../kit/gate.js';
+import { WORK } from './work.js';
 
 function seeded(s) { return () => (s = (s * 16807) % 2147483647) / 2147483647; }
 
@@ -92,16 +93,19 @@ export function buildCh5Scene(world) {
   world.addCollider({ x: -12.4, z: -3, r: 1.3 });
 
   // 작업대 (장인 곁)
-  const fires = [];
+  const fires = []; let sea = null, seaTop = null;
   // 1) 바닷물 통과 솥
   {
     const x = -9, z = -2;
-    mk(new THREE.CylinderGeometry(1.2, 1.1, 0.9, 12), 0x6b4a32, x - 1.6, 0.45, z);
-    mk(new THREE.CylinderGeometry(1.05, 1.05, 0.05, 12), 0x4a7f9c, x - 1.6, 0.86, z, L, false);
+    // 바닷물 통: 위가 뚫린 통 안에 물이 찰랑인다(2026-10-30 선생님: 통 뚜껑이 물을 덮어 담그는 모습이 안 보였다). 물은 조금 비쳐 잠긴 판이 보인다
+    const tub = mk(new THREE.CylinderGeometry(1.2, 1.1, 0.9, 12, 1, true), 0x6b4a32, x - 1.6, 0.45, z); tub.material = tub.material.clone(); tub.material.side = THREE.DoubleSide;
+    mk(new THREE.CylinderGeometry(1.1, 1.1, 0.06, 12), 0x4a3424, x - 1.6, 0.25, z, L, false); // 통 바닥
+    sea = new THREE.Mesh(new THREE.CylinderGeometry(1.14, 1.14, 0.04, 16), new THREE.MeshStandardMaterial({ color: 0x3f86a8, roughness: 0.25, transparent: true, opacity: 0.62, depthWrite: false }));
+    sea.name = 'seawater'; sea.position.set(x - 1.6, 0.8, z); L.add(sea); seaTop = 0.82;
     mk(new THREE.CylinderGeometry(0.9, 0.7, 0.9, 12), 0x3a3a3a, x + 1.4, 0.75, z);
     const fire = makeFire({ size: 0.45, detail: world.quality.particles }); fire.group.position.set(x + 1.4, 0.15, z); fire.setLit(true); L.add(fire.group); // 솥 아래 장작불
     fires.push(fire);
-    world.addCollider({ x: x - 1.6, z, r: 1.3 }); world.addCollider({ x: x + 1.4, z, r: 1 });
+    world.addCollider({ x: x - 1.6, z, r: 1.2 }); world.addCollider({ x: x + 1.4, z, r: 1 });
   }
   // 2) 그늘 말림 선반
   {
@@ -109,14 +113,14 @@ export function buildCh5Scene(world) {
     for (const sx of [-1.5, 1.5]) mk(new THREE.BoxGeometry(0.15, 2.4, 0.15), 0x5a3f2a, x + sx, 1.2, z);
     mk(new THREE.BoxGeometry(3.4, 0.1, 1.6), 0x3d4846, x, 2.5, z); // 그늘 지붕
     for (let k = 0; k < 5; k++) mk(new THREE.BoxGeometry(0.06, 1.2, 0.7), 0xc8a476, x - 1.2 + k * 0.6, 0.8, z);
-    world.addCollider({ x, z, r: 1.6 });
+    for (const dx of [-1.2, 0, 1.2]) world.addCollider({ x: x + dx, z, r: 0.75 }); // 긴 선반은 작은 원 셋으로(앞에 다가설 수 있게)
   }
   // 3) 판각대
   {
     const x = 3, z = -5;
     mk(new THREE.BoxGeometry(2.6, 0.9, 1.2), 0x6b4a32, x, 0.45, z);
     mk(new THREE.BoxGeometry(1.4, 0.08, 0.7), 0xc8a476, x, 0.94, z);
-    world.addCollider({ x, z, r: 1.4 });
+    for (const dx of [-1, 0, 1]) world.addCollider({ x: x + dx, z, r: 0.65 });
   }
   // 4) 마구리 작업대: 판 양 끝에 덧댈 나무토막과 구리판
   {
@@ -124,7 +128,7 @@ export function buildCh5Scene(world) {
     mk(new THREE.BoxGeometry(2, 0.85, 1.1), 0x6b4a32, x, 0.43, z);
     for (let k = 0; k < 4; k++) mk(new THREE.BoxGeometry(0.16, 0.14, 0.62), 0x8a5a3a, x + 0.45 + k * 0.2, 0.92, z - 0.1);
     mk(new THREE.BoxGeometry(0.3, 0.03, 0.3), 0xb87333, x - 0.6, 0.87, z + 0.2);
-    world.addCollider({ x, z, r: 1.2 });
+    for (const dx of [-0.6, 0.6]) world.addCollider({ x: x + dx, z, r: 0.6 });
   }
   // 5) 옻칠 작업대와 경판 더미
   {
@@ -132,15 +136,13 @@ export function buildCh5Scene(world) {
     mk(new THREE.BoxGeometry(2.4, 0.9, 1.2), 0x6b4a32, x, 0.45, z);
     mk(new THREE.CylinderGeometry(0.3, 0.3, 0.4, 10), 0x2a1a12, x - 0.6, 1.1, z);
     for (let k = 0; k < 8; k++) mk(new THREE.BoxGeometry(1.0, 0.08, 0.5), 0x3b2414, x + 2.2, 0.06 + k * 0.09, z + 0.4);
-    world.addCollider({ x, z, r: 1.4 }); world.addCollider({ x: x + 2.2, z: z + 0.4, r: 0.8 });
+    for (const dx of [-0.9, 0, 0.9]) world.addCollider({ x: x + dx, z, r: 0.65 }); world.addCollider({ x: x + 2.2, z: z + 0.4, r: 0.8 });
   }
 
   // 경판 만드는 여섯 자리(D-17): 학생이 서는 곳(spot), 판을 내려놓는 곳(put), 지금 차례일 때만 빛나는 원(ring)
-  const glowRing = () => { const r = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.25, 28), new THREE.MeshBasicMaterial({ color: 0xd9a441, transparent: true, opacity: 0.85, side: THREE.DoubleSide })); r.rotation.x = -Math.PI / 2; r.visible = false; L.add(r); return r; };
-  const stations = [
-    ['soak', [-11.2, 0], [-10.6, 0.82, -1.7]], ['boil', [-7.4, -0.5], [-7.6, 1.24, -2]], ['dry', [-3, -1.6], [-3, 1.44, -5]],
-    ['carve', [3, -1.8], [3, 1.0, -5]], ['ends', [6, -2.6], [6.2, 0.9, -5.2]], ['lacquer', [7.6, -0.4], [9.3, 0.94, -2]],
-  ].map(([id, spot, put]) => { const ring = glowRing(); ring.position.set(spot[0], 0.08, spot[1]); return { id, spot, put, ring }; });
+  const glowRing = (a = 0.9, b = 1.25) => { const r = new THREE.Mesh(new THREE.RingGeometry(a, b, 28), new THREE.MeshBasicMaterial({ color: 0xd9a441, transparent: true, opacity: 0.85, side: THREE.DoubleSide })); r.rotation.x = -Math.PI / 2; r.visible = false; L.add(r); return r; };
+  // 빛나는 원은 학생이 일할 자리(WORK의 stand) 바로 위에 작게 둔다: 원 안에서 E를 누르면 제자리에서 바로 일한다(2026-10-30)
+  const stations = ['soak', 'boil', 'dry', 'carve', 'ends', 'lacquer'].map(id => { const spot = WORK[id].stand, put = WORK[id].put, ring = glowRing(0.45, 0.75); ring.position.set(spot[0], 0.08, spot[1]); return { id, spot, put, ring }; });
 
   // 학생이 들고 다니는 나무판: 단계(stage) 0 베어 낸 나무 → 1 바닷물에 젖음 → 2 삶음 → 3 마름 → 4 글자 새김 → 5 마구리 → 6 옻칠
   const plank = new THREE.Group(); plank.name = 'plank'; plank.visible = false; L.add(plank);
@@ -205,8 +207,8 @@ export function buildCh5Scene(world) {
   nameBoard(L, '경판 작업장', 2.8, 9.8); // 하는 일 이름 그대로(S7~S9에 작업장 이름이 따로 없다)
 
   world.addNpc('artisan1', LOOKS.artisan, -9.1, -2.4, Math.PI);
-  world.addNpc('artisan2', LOOKS.artisan, -3, -2.8, Math.PI);
-  world.addNpc('artisan3', LOOKS.artisan, 3, -3.3, Math.PI);
+  world.addNpc('artisan2', LOOKS.artisan, -1.0, -3.1, Math.PI); // 선반·판각대 옆에 비켜 선다(학생이 일할 자리를 비워 둔다)
+  world.addNpc('artisan3', LOOKS.artisan, 4.7, -3.4, Math.PI);
   world.addNpc('artisan4', LOOKS.artisan, 9, 0.3, Math.PI);
   world.addNpc('monk', LOOKS.monk, 0, 3, Math.PI);
   // 장인마다 하는 일: 솥 젓기, 판자 나르기, 글자 새기기(망치질), 옻칠
@@ -215,7 +217,7 @@ export function buildCh5Scene(world) {
   world.onUpdate((dt, t) => { for (const f of fires) f.update(dt, t); });
   backdropMountains(world.level, { color: 0x4f6a3e, radius: 130 }); // 먼 산줄기(깊이감)
   surroundings(world, { bounds: world.bounds, trees: ['pine', 'pine', 'tree'], count: 12, seed: 5 }); // 걷는 곳 바깥에 그 장소다운 집·나무(깊이감)
-  return { library, shelf, stations, plank, setStage, setCarved, stageColor: n => STAGE_COLOR[Math.min(6, n)], gate, start: [0, 7], introFrom: [0, 15] };
+  return { sea, seaTop, library, shelf, stations, plank, setStage, setCarved, stageColor: n => STAGE_COLOR[Math.min(6, n)], gate, start: [0, 7], introFrom: [0, 15] };
 }
 
 // 경판 만드는 과정 그림(D-32): 단계마다 캔버스에 그린다(그림 파일 없음, 글자 없음). 그림판은 100×70 칸을 scale배로 키운다.
