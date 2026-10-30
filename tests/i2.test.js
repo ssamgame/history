@@ -127,8 +127,8 @@ test('i2 D-43: 무리 속 태극기는 오른손에 쥐어 가슴 앞, 깃발은
   const ps = g.children.filter(c => c.userData?.arms);
   ok(ps.length === 10 && ps.every(p => p.userData.carry?.style === 'flag'), '모두 손에 쥔다');
   for (const p of ps) {
-    const f = p.userData.carry.obj;
-    ok(f.position.z > 0.4 && f.position.y > 1 && f.position.y < 1.5, `가슴 앞 ${f.position.y.toFixed(2)}, ${f.position.z.toFixed(2)}`);
+    const f = p.userData.carry.obj, fy = f.position.y + (f.parent === p.userData.upper ? 1.05 : 0); // 몸통 관절(골반 1.05) 기준 → 몸 기준
+    ok(f.position.z > 0.4 && fy > 1 && fy < 1.5, `가슴 앞 ${fy.toFixed(2)}, ${f.position.z.toFixed(2)}`);
     ok(p.userData.arms[1].rotation.x < -0.5, '오른팔을 앞으로 굽힌다');
   }
 });

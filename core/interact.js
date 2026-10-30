@@ -11,6 +11,8 @@ const wrap = a => Math.atan2(Math.sin(a), Math.cos(a));
 const tick = (world, sec, fn) => new Promise(res => { let t = 0; const off = world.onUpdate(dt => { t = Math.min(sec, t + dt); fn?.(t, dt); if (t >= sec) { off(); res(); } }); });
 const yawTo = (p, x, z) => { p.getWorldPosition(yv); return Math.atan2(x - yv.x, z - yv.z); };
 const worldOf = (o, out = new THREE.Vector3()) => o.getWorldPosition(out);
+// 걸음이 다 멈출 때까지 잠깐 기다린다(멈추며 손을 뻗지 않게: 준비 동작 → 핵심 동작)
+const settle = (world, ...ps) => new Promise(res => { let t = 0; const off = world.onUpdate(dt => { t += dt; if (t > 0.8 || ps.every(p => (p.userData.stride || 0) < 0.05)) { off(); res(); } }); });
 
 // 제자리에서 target(세계 좌표 { x, z } 또는 각도)을 향해 돌아선다. 머리가 먼저 돌고 몸이 따라간다(시간은 돌 각도에 맞춘다)
 export async function turnTo(world, p, target, { speed = 4 } = {}) {
@@ -57,6 +59,7 @@ export async function handshake(world, a, b, { gap = 1.3 } = {}) {
   const side = 0.36 * (a.scale.x || 1);
   const bx = a.position.x + fx * gap + rx * side, bz = a.position.z + fz * gap + rz * side;
   if (Math.hypot(b.position.x - bx, b.position.z - bz) > 0.05) await walkTo(world, b, [bx, bz], { speed: 1.2, face: { x: a.position.x + rx * side, z: a.position.z + rz * side } });
+  await settle(world, a, b);
   worldOf(a, v); worldOf(b, w); setLook(a, { x: w.x, y: 2.3, z: w.z }); setLook(b, { x: v.x, y: 2.3, z: v.z });
   // 공통 시계: 0~0.45 뻗기, 0.45 닿음, 0.45~1.35 흔들기(세 번), 1.35~1.7 놓기
   const T = { reach: 0.45, shake: 0.9, back: 0.4 }, dur = T.reach + T.shake + T.back;
@@ -85,6 +88,7 @@ export async function giveItem(world, giver, taker, obj, { style = 'arms' } = {}
   // 팔이 닿는 거리(약 1.45)보다 멀면 받는 사람이 다가선다(같은 부모 좌표 안에서)
   const dx = taker.position.x - giver.position.x, dz = taker.position.z - giver.position.z, d = Math.hypot(dx, dz), near = 1.45 * (giver.scale.x || 1);
   if (d > near + 0.1) await walkTo(world, taker, [giver.position.x + dx / d * near, giver.position.z + dz / d * near], { speed: 1.2, face: { x: G.x, z: G.z } });
+  await settle(world, giver, taker);
   worldOf(taker, Tk);
   setLook(giver, { x: Tk.x, y: 1.6, z: Tk.z }); setLook(taker, { x: G.x, y: 1.6, z: G.z });
   const reach = 0.55, hold = 0.25;

@@ -153,7 +153,7 @@ test('ch5 D-32: each work place waits for E (talk button), then shows a drawn pi
     let res = null;
     makeBlock(s.ctx).then(r => { res = r; });
     stepN(s.w);
-    ok(s.w.player.children.includes(sc.plank), 'the plank is in the arms');
+    ok(s.w.player.userData.carry?.obj === sc.plank, 'the plank is in the arms');
     const st0 = sc.stations[0];
     s.w.player.position.set(st0.spot[0], 0, st0.spot[1]); stepN(s.w, 40);
     await sleep(10);
@@ -167,12 +167,12 @@ test('ch5 D-32: each work place waits for E (talk button), then shows a drawn pi
     const cv = panel.querySelector('canvas');
     ok(cv && cv.width >= 300 && inkColors(cv) >= 4, 'a picture is drawn on a canvas');
     ok(panel.textContent.includes(P[0].text), 'one line under the picture');
-    ok(!s.w.player.children.includes(sc.plank), 'put down at the work place');
+    ok(s.w.player.userData.carry?.obj !== sc.plank, 'put down at the work place');
     eq(sc.plank.userData.stage, 0, 'still waiting while the picture is open');
     panel.querySelector('.doc-ok').click(); await sleep(10); stepN(s.w, 2);
     ok(!stepPanel(s), 'closed');
     eq(sc.plank.userData.stage, 1, 'soaked');
-    ok(s.w.player.children.includes(sc.plank), 'picked up again');
+    ok(s.w.player.userData.carry?.obj === sc.plank, 'picked up again');
     stepN(s.w, 14); await sleep(20);
     ok(!s.dialogue.isOpen(), 'standing on at the place just finished is not a wrong place');
     // 틀린 곳(말리는 선반)에 머물면 스님이 알려 주고, 거기서는 대화 버튼이 눌리지 않는다
@@ -206,7 +206,7 @@ test('ch5 D-32: 1 -> 2 -> 3 work places, the letters 大藏經 are carved right 
     const mo = new MutationObserver(list => list.forEach(m => m.addedNodes.forEach(seen)));
     mo.observe(s.ui, { childList: true });
     const off = s.w.onUpdate(() => {
-      if (sc.plank.userData.carved === 3 && sc.plank.userData.stage === 4 && !stepPanel(s) && sc.plank.parent === s.w.player) carried = true;
+      if (sc.plank.userData.carved === 3 && sc.plank.userData.stage === 4 && !stepPanel(s) && s.w.player.userData.carry?.obj === sc.plank) carried = true;
     });
     const r = await makeBlock(s.ctx);
     off(); mo.disconnect();

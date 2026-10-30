@@ -170,8 +170,9 @@ export function animateWalk(person, moving, dt) {
   u.swing = st.swing;
   if (u.stride > 0 && !working) {
     gaitPose(person, ph, kk, amp, run);
-    const drop = LEG * (1 - Math.cos(amp * s * kk)) * 0.8;
-    u.bob = -drop + Math.abs(c) * 0.012 * kk + run * Math.max(0, Math.abs(c) - 0.5) * 0.08;
+    // 두 다리가 가장 벌어진 순간 발이 땅에 닿는 높이(0)로, 다리가 곧게 선 순간 그만큼 올라간다(땅 아래로 꺼지지 않게)
+    const drop = LEG * (Math.cos(amp * s * kk) - Math.cos(amp * kk)) * 0.8;
+    u.bob = drop + run * Math.max(0, Math.abs(c) - 0.5) * 0.08;
   } else u.bob = 0;
   p.y = base + u.bob; u.bobY = p.y;
   const easeX = (o, val) => { o.rotation.x += (val - o.rotation.x) * 0.3; };

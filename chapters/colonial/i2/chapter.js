@@ -93,7 +93,7 @@ export async function declarationScene(ctx) {
     world.setFixedCamera([1.2, 2.8, -2.6], [-0.2, 1.4, 2.4]); // 팔각정 계단 앞에서 마주 보며 태극기를 든 사람들의 얼굴(D-43)
     for (let n = 0; n < 3; n++) { // 대한 독립 만세! 세 번
       ctx.audio?.play?.('correct');
-      await wait(world, 0.9, k => { crowd.forEach((p, i) => cheerPose(p, Math.min(1, Math.max(0, k * 1.15 - (i % 4) * 0.04)))); hook.raisedY = Math.max(hook.raisedY, ...flags.map(f => f.position.y)); });
+      await wait(world, 0.9, k => { crowd.forEach((p, i) => cheerPose(p, Math.min(1, Math.max(0, k * 1.15 - (i % 4) * 0.04)))); hook.raisedY = Math.max(hook.raisedY, ...flags.map(f => f.position.y + (f.parent?.name === 'upper' ? 1.05 : 0))); }); // 깃발 높이는 몸 기준
       hook.cheers += 1;
       if (n === 0) { hook.camZ = world.camera.position.z; hook.facing = facingShare(world, crowd); }
       if (n === 0) { await dialogue.say(L[3]); dialogue.close(); }

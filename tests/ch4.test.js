@@ -150,7 +150,7 @@ test('ch4 D-14: the slave documents are carried to the pile, then burn with flic
     carryDocuments(s.ctx).then(() => { done = true; });
     for (let k = 0; k < 3; k++) {
       const g1 = s.w.getGoal(); s.w.player.position.set(g1.x, 0, g1.z); s.w.step(0.05, { x: 0, z: 0 });
-      ok(s.w.player.children.includes(sc.bundles[k]), `carrying bundle ${k + 1}`);
+      ok(s.w.player.userData.carry?.obj === sc.bundles[k], `carrying bundle ${k + 1}`); // 든 물건은 몸통 관절(upper)의 자식(2026-10-30)
       const g2 = s.w.getGoal(); s.w.player.position.set(g2.x, 0, g2.z); s.w.step(0.05, { x: 0, z: 0 });
     }
     await sleep(5);

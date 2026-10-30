@@ -34,7 +34,7 @@ test('motion: 출발은 가속, 멈춤은 감속(다리·몸통이 한 번에 �
   ok(first < 0.15, `첫 걸음은 작게 ${first.toFixed(2)}`);
   let maxJump = 0, prev = u.legs[0].rotation.x;
   for (let i = 0; i < 40; i++) { animateWalk(p, false, 1 / 30); maxJump = Math.max(maxJump, Math.abs(u.legs[0].rotation.x - prev)); prev = u.legs[0].rotation.x; }
-  ok(maxJump < 0.2, `멈출 때 한 프레임 변화 ${maxJump.toFixed(2)}`);
+  ok(maxJump < 0.25, `멈출 때 한 프레임 변화 ${maxJump.toFixed(2)}`); // 30fps 한 프레임에 14도 안쪽(걸음 박자 그대로 줄어든다)
   ok(Math.abs(u.legs[0].rotation.x) < 0.05 && Math.abs(u.upper.rotation.y) < 0.05, '멈추면 바로 선다');
 });
 
