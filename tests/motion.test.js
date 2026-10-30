@@ -223,3 +223,29 @@ test('horse: 빠르기에 따라 평보·속보·구보, 디딘 발굽은 미끄
   for (let i = 0; i < 60; i++) animateHorse(h, 1 / 30);
   eq(h.userData.gaitName, 'stand'); ok(h.userData.legs.every(l => Math.abs(l.rotation.x) < 0.05), '서면 다리를 모은다');
 });
+
+// 2026-10-30 선생님(긴급): 말에 탄 사람의 몸이 투명하게 보이던 오류. 긴 옷(델·단령·장삼)의 몸통을 숨겨 가슴이 비었다.
+// 서 있을 때·걸을 때·달릴 때·돌 때, 앞·옆·뒤에서 허리·배·가슴 높이로 쏜 빛이 모두 기수 몸에 맞아야 한다(뚫린 곳 없음)
+test('horse: 말 탄 사람의 몸통이 비어 보이지 않는다(델·단령·장삼·갑옷·저고리, 서기·걷기·달리기·돌기)', async () => {
+  const { makeHorse, mount, animateHorse } = await import('../core/horse.js');
+  const scene = new THREE.Scene(), inv = new THREE.Matrix4(), M = new THREE.Matrix4(), box = new THREE.Box3(), p = new THREE.Vector3(), miss = [];
+  // 몸통 자리(사람 좌표): 허리·배·가슴 높이마다 가운데와 좌우·앞뒤. 이 점마다 보이는 기수 조각이 하나는 감싸야 한다(빈 곳이 없다)
+  const pts = []; for (const y of [0.75, 1.05, 1.35, 1.6]) for (const [x, z] of [[0, 0], [0.22, 0], [-0.22, 0], [0, 0.2], [0, -0.2]]) pts.push([x, y, z]);
+  const covered = r => {
+    r.updateWorldMatrix(true, true); inv.copy(r.matrixWorld).invert();
+    const boxes = []; r.traverse(m => { if (!m.isMesh || m.name === 'face') return; let n = m; while (n && n !== r) { if (!n.visible) return; n = n.parent; } if (!m.geometry.boundingBox) m.geometry.computeBoundingBox(); boxes.push(box.copy(m.geometry.boundingBox).applyMatrix4(M.multiplyMatrices(inv, m.matrixWorld)).clone()); });
+    return pts.filter(q => !boxes.some(b => b.containsPoint(p.set(...q))));
+  };
+  for (const id of ['mongol', 'mongolArcher', 'mongolLancer', 'mongolGeneral', 'khitan', 'sonn', 'yanggyu', 'soldier', 'minister', 'monk', 'villager', 'sambyeolcho']) {
+    if (!LOOKS[id]) continue;
+    const h = makeHorse(), r = makePerson(LOOKS[id]); mount(h, r); scene.add(h); h.rotation.y = 0.4;
+    for (const [v, frames, turn] of [[0, 5, 0], [1.4, 30, 0], [6, 30, 0], [2, 20, 0.05], [0, 40, 0]]) {
+      for (let i = 0; i < frames; i++) { h.rotation.y += turn; h.position.x += Math.sin(h.rotation.y) * v / 30; h.position.z += Math.cos(h.rotation.y) * v / 30; h.updateMatrixWorld(true); animateHorse(h, 1 / 30); }
+      const hole = covered(r); if (hole.length) miss.push(`${id} ${v}m/s 빈 곳 ${hole.map(q => q.join('/')).join(' ')}`);
+    }
+    scene.remove(h);
+  }
+  ok(miss.length === 0, `몸통이 비어 보이는 곳: ${miss.slice(0, 6).join(' | ')}`);
+  // 같은 기수를 말에서 내리지 않은 보통 사람과 비교: 걸어 다니는 사람은 그대로(긴 옷을 숨기지 않는다)
+  const walker = makePerson(LOOKS.mongol); ok(walker.children.some(c => c.name === 'robe' && c.visible), '걷는 사람의 긴 옷은 그대로');
+});

@@ -69,11 +69,17 @@ export function mount(horse, person) {
   u.noWalk = true; u.mounted = horse;
   u.legs.forEach((l, i) => { l.rotation.set(-0.6, 0, (i ? 1 : -1) * 0.9); const kn = l.userData.knee; if (kn) { kn.rotation.order = 'ZXY'; kn.rotation.set(0.75, 0, (i ? -1 : 1) * 0.8); } }); // 허벅지는 말 옆구리 바깥으로, 정강이는 옆구리를 따라 아래로
   u.arms.forEach((a, i) => { if (!u.grip?.[i]) a.rotation.set(-0.6, 0, (i ? 1 : -1) * 0.15); }); // 빈손은 앞으로(고삐를 쥔 자리)
-  for (const c of [...person.children]) if (c.name === 'robe' || c.name === 'hem') c.visible = false;
-  if (!person.getObjectByName('rideSkirt')) { // 안장 위에 내려앉은 옷자락(말 몸통을 뚫지 않게 안장보다 위에서 넓게 퍼진다)
-    const robe = person.children.find(c => c.name === 'robe');
-    const m = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.46, 0.5, 8), robe ? robe.material : mat(0x6e5a44, 'cloth', 'object'));
-    m.name = 'rideSkirt'; m.position.y = 0.78; m.castShadow = true; person.add(m);
+  // 긴 옷(델·단령·장삼·도포)은 발목에서 가슴까지 한 덩어리라 숨기면 몸통이 비어 투명해 보인다(2026-10-30 오류).
+  // 그래서 숨기지 않고, 같은 옷(같은 재질·윗지름)을 안장 높이에서 잘라 다시 만든다: 가슴은 그대로, 아래는 안장 위로 넓게 퍼져 말 몸통을 뚫지 않는다
+  if (!person.getObjectByName('rideRobe')) for (const c of [...person.children]) {
+    if (c.name === 'hem') { c.visible = false; continue; } // 발목 끝단은 탄 자세에 없다
+    if (c.name !== 'robe' || !c.geometry?.parameters) continue;
+    const P = c.geometry.parameters, top = c.position.y + P.height / 2, seat = 0.5;
+    c.visible = false;
+    if (top <= seat + 0.05) continue;
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(P.radiusTop, Math.max(P.radiusTop, 0.46), top - seat, P.radialSegments || 8), c.material);
+    m.name = 'rideRobe'; m.position.set(c.position.x, (top + seat) / 2, c.position.z); m.castShadow = true; m.receiveShadow = c.receiveShadow;
+    person.add(m);
   }
   return person;
 }
