@@ -20,6 +20,8 @@
   import { makePerson, setCarry, setStyle, setTalking } from '../core/people.js';
   import { walkTo, turnTo, handshake, giveItem, escort, strike, block, pickUp, putDown } from '../core/interact.js';
   import { LOOKS } from '../content/characters.js';
+  import { setHairEra } from '../core/hairstyle.js';
+  setHairEra(new URLSearchParams(location.search).get('era'));
   const q = new URLSearchParams(location.search), act = q.get('act') || 'walk';
   const world = createWorld(document.getElementById('stage'), { quality: 'medium' });
   world.setMood('morning'); world.player.visible = false;
@@ -36,6 +38,12 @@
   requestAnimationFrame(loop);
   const sleep = s => new Promise(r => setTimeout(r, s * 1000));
   const scenes = {
+    async lineup() { // 생김새 줄 세우기(옷차림 확인): &ids=sejong,scholar,…&era=joseon
+      const ids = (q.get('ids') || 'sejong,joseonOfficial,scholar,joseonSoldier,commoner,woman').split(',');
+      const n = ids.length, gap = 1.5;
+      ids.forEach((id, i) => P(id, (i - (n - 1) / 2) * gap, 0, 0.25 * Math.sin(i)));
+      cam([0, 1.8, n * 0.62 + 2.2], [0, 1.25, 0]); phase('끝');
+    },
     async gait() { // 한 사람의 걸음 한 바퀴를 가까이(옆에서 따라가며). &v=빠르기 &look=생김새 &style=captive|guard|weary &carry=arms|shoulder|back
       const look = q.get('look') || 'villager', a = P(look, -12, 0, Math.PI / 2);
       if (q.get('style')) setStyle(a, q.get('style'));

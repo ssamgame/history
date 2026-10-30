@@ -169,7 +169,7 @@ let personCount = 0;
 // 이름난 인물은 LOOKS에 named: true(어디서 만들어도 같은 얼굴).
 export function makePerson(look = {}, { track = true, stable = false } = {}) {
   const vary = !stable && !look.named;
-  const { trim = 0x2b241c, gear = null, outfit = null, hairColor = null, armor = 0x6b665e, pants = null, skin = null } = look;
+  const { trim = 0x2b241c, gear = null, outfit = null, hairColor = null, armor = 0x6b665e, pants = null, skin = null, sleeve = null, badge = null, royal = false, cord = null } = look; // sleeve 소매 빛(동달이), badge 흉배 빛, royal 곤룡포의 둥근 보, cord 도포의 세조대 빛
   let { robe, hat } = look;
   const crowdN = vary ? personCount % 6 + 1 : (look._n || 0); // 같은 생김새 묶음마다 여섯 가지 얼굴을 돌려 쓴다(얼굴 그림 수를 줄여 태블릿 메모리를 아낀다)
   const hv = hairStyle(look, crowdN, roleOf(look)); // 시대별 머리 모양(D-56, core/hairstyle.js)
@@ -205,12 +205,29 @@ export function makePerson(look = {}, { track = true, stable = false } = {}) {
     const sk2 = part(new THREE.CylinderGeometry(0.4, 0.66, 1.1, 9), pants ?? trim, 0, 0.92, 0, g); sk2.name = 'robe'; // 가슴에서 발목까지 치마
     part(new THREE.BoxGeometry(0.1, 0.34, 0.04), 0xb8452f, 0.06, 1.47, 0.4, g).name = 'goreum'; // 옷고름
   } else {
-    const len = outfit === 'danryeong' || outfit === 'jangsam' || outfit === 'deel' ? 1.5 : 1.25; // 단령·장삼·델은 발등 가까이까지
+    const len = outfit === 'danryeong' || outfit === 'jangsam' || outfit === 'deel' || outfit === 'dopo' ? 1.5 : 1.25; // 단령·장삼·델·도포는 발등 가까이까지
     const r = part(new THREE.CylinderGeometry(0.38, 0.58 + (len - 1.25) * 0.2, len, 7), robe, 0, 1.745 - len / 2, 0, g); r.name = 'robe'; r.userData.len = len;
-    part(new THREE.CylinderGeometry(0.4, 0.4, 0.12, 7), outfit === 'danryeong' ? 0x1e1c1a : trim, 0, 1.25, 0, g).name = 'belt'; // 허리띠(단령은 검은 각대)
+    if (outfit === 'dopo') { // 도포: 허리에 가는 세조대를 매고 끝을 앞으로 늘어뜨린다
+      part(new THREE.CylinderGeometry(0.395, 0.395, 0.04, 7), cord ?? 0x8a2f24, 0, 1.3, 0, g).name = 'belt';
+      for (const sx of [-0.05, 0.05]) part(new THREE.BoxGeometry(0.03, 0.5, 0.03), cord ?? 0x8a2f24, sx, 1.05, 0.4, g).rotation.x = -0.12;
+    } else if (outfit === 'jeonbok') { // 군복: 동달이 위에 소매 없는 전복, 허리에 붉은 전대
+      part(new THREE.CylinderGeometry(0.405, 0.405, 0.1, 7), cord ?? 0xb8452f, 0, 1.25, 0, g).name = 'belt';
+      part(new THREE.BoxGeometry(0.1, 0.5, 0.03), cord ?? 0xb8452f, 0.2, 1.0, 0.43, g).rotation.x = -0.15; // 전대 끝
+    } else part(new THREE.CylinderGeometry(0.4, 0.4, 0.12, 7), outfit === 'danryeong' ? 0x1e1c1a : trim, 0, 1.25, 0, g).name = 'belt'; // 허리띠(단령은 검은 각대)
     part(new THREE.CylinderGeometry(0.585 + (len - 1.25) * 0.2, 0.6 + (len - 1.25) * 0.2, 0.08, 7), trim, 0, 1.745 - len + 0.035, 0, g).name = 'hem'; // 옷자락 끝단
   }
   if (outfit === 'danryeong') for (let i = 0; i < 5; i++) { const a = (i - 2) * 0.42; part(new THREE.BoxGeometry(0.09, 0.08, 0.03), 0xd9a441, Math.sin(a) * 0.41, 1.25, Math.cos(a) * 0.41, g, 'grain').rotation.y = a; } // 각대 장식
+  if (badge != null) { // 흉배: 관리의 가슴 네모 무늬(짙은 바탕에 수놓은 밝은 학)
+    const b = part(new THREE.BoxGeometry(0.34, 0.32, 0.03), badge, 0, 1.47, 0.41, g, 'grain'); b.rotation.x = -0.08; b.name = 'badge';
+    const c = part(new THREE.BoxGeometry(0.18, 0.1, 0.02), 0xe8e2d2, 0, 1.48, 0.43, g, 'grain'); c.rotation.set(-0.08, 0, 0.25); const d = part(new THREE.BoxGeometry(0.05, 0.12, 0.02), 0xe8e2d2, 0.08, 1.54, 0.43, g, 'grain'); d.rotation.x = -0.08;
+  }
+  if (royal) { // 곤룡포: 가슴과 두 어깨에 금빛 둥근 보(용무늬 자리)
+    const r = part(new THREE.CylinderGeometry(0.17, 0.17, 0.03, 12), 0xd9a441, 0, 1.47, 0.41, g, 'grain'); r.rotation.x = Math.PI / 2 - 0.08; r.name = 'bo';
+    for (const sx of [-0.4, 0.4]) { const q = part(new THREE.CylinderGeometry(0.12, 0.12, 0.03, 10), 0xd9a441, sx, 1.7, 0.18, g, 'grain'); q.rotation.set(Math.PI / 2 - 0.5, 0, sx > 0 ? -0.4 : 0.4); }
+  }
+  if (outfit === 'jeonbok') for (const sx of [-1, 1]) { // 전복 앞자락의 트인 섶(겉옷 가장자리)
+    const f = part(new THREE.BoxGeometry(0.05, 0.7, 0.03), trim, sx * 0.08, 1.35, 0.4, g); f.rotation.x = -0.15;
+  }
   if (outfit === 'deel') { // 오른쪽으로 비스듬히 여민 섶과 목 긴 장화
     const f = part(new THREE.BoxGeometry(0.08, 0.6, 0.04), trim, 0.16, 1.5, 0.37, g); f.rotation.set(-0.28, 0, 0.55); f.name = 'flap';
     legs.forEach(l => l.userData.knee.children.forEach(m => { if (m.name === 'shin') m.material = mat(0x2a2018, 'grain', 'object'); }));
@@ -241,8 +258,9 @@ export function makePerson(look = {}, { track = true, stable = false } = {}) {
   }
   for (const sx of [-0.5, 0.5]) {
     const piv = new THREE.Group(); piv.position.set(sx, 1.65, 0); g.add(piv);
-    part(new THREE.BoxGeometry(0.18, 0.72, 0.2), robe, 0, -0.34, 0, piv);
-    part(new THREE.BoxGeometry(0.2, 0.08, 0.22), trim, 0, -0.66, 0, piv); // 소맷부리
+    const wide = outfit === 'dopo' || outfit === 'danryeong' || royal; // 도포·단령·곤룡포는 넓은 소매
+    part(new THREE.BoxGeometry(wide ? 0.24 : 0.18, 0.72, wide ? 0.26 : 0.2), sleeve ?? robe, 0, -0.34, 0, piv); // sleeve: 동달이처럼 몸판과 다른 소매 빛
+    part(new THREE.BoxGeometry(wide ? 0.26 : 0.2, 0.08, wide ? 0.28 : 0.22), trim, 0, -0.66, 0, piv); // 소맷부리
     const hand = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), headMat(sk, F.tone)); hand.position.set(0, -0.78, 0); hand.castShadow = true; hand.name = 'hand'; piv.add(hand);
     arms.push(piv);
   }
