@@ -69,6 +69,17 @@ function tick() {
     return;
   }
   if (tapTarget) { tap(tapTarget); }
+  const D = ctx.testHooks.drag;
+  if (D && !(ui.querySelector('.dlg') && !ui.querySelector('.dlg').hidden)) { // 매단 돌 끌기(조선 6장): 돌을 잡아 빈자리 위로 천천히 끌고 놓는다
+    const pt = a => (Array.isArray(a) ? { x: a[0], y: a[1] } : a);
+    const ev = (t, q) => D.el.dispatchEvent(new PointerEvent(t, { pointerId: 11, bubbles: true, clientX: q.x, clientY: q.y }));
+    if (!E.drag) { const a = pt(D.stone()); E.drag = { k: 0, from: a }; ev('pointerdown', a); return; }
+    const b = pt(D.target()), k = (E.drag.k += 0.08), q = { x: E.drag.from.x + (b.x - E.drag.from.x) * Math.min(1, k), y: E.drag.from.y + (b.y - E.drag.from.y) * Math.min(1, k) };
+    ev('pointermove', q);
+    if (k >= 1.2) { ev('pointerup', q); E.drag = null; }
+    return;
+  }
+  E.drag = null;
   if (ctx.testHooks.pressing) { release(); action(); return; }
   const g = w.getGoal?.() || ctx.testHooks.walkTo;
   if (g && w.camMode === 'follow' && ctx.input.enabled) {

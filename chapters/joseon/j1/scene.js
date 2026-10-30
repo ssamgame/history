@@ -2,7 +2,7 @@
 // 회군 때 군사들은 돌아서서 남쪽 물길을 건너 개경 쪽으로 간다.
 import * as THREE from 'three';
 import { backdropMountains } from '../../kit/terrain.js';
-import { tent, tree, boat, spearRack, terrace, hanok, banner, wall } from '../../kit/buildings.js';
+import { tent, tree, boat, spearRack, terrace, hanok, banner, wall, bakeStatic } from '../../kit/buildings.js';
 import { walkTo } from '../../../core/interact.js';
 import { setStyle } from '../../../core/people.js';
 import { BUILD } from '../../kit/town.js';
@@ -129,12 +129,13 @@ export function buildJ1Scene(world) {
   nameBoard(L, '위화도', 2.8, 11); // S23
 
   // 진영의 군사들(2026-10-30 선생님: 군사적 분위기): 문을 지키는 창병, 진영을 도는 순찰, 강가를 살피는 보초, 천막 앞에 모여 선 군사들
-  const extra = [];
-  const putSoldier = (lk, x, z, ry, style) => { const p = makePerson(typeof lk === 'string' ? LOOKS[lk] : lk); p.position.set(x, groundH(x, z), z); p.rotation.y = ry; L.add(p); if (style) setStyle(p, style); extra.push(p); return p; };
+  const extra = [], still = new THREE.Group(); still.name = 'campStill'; L.add(still); // 서 있기만 하는 군사는 한 덩어리로 굳힌다(그리기 수를 줄여 태블릿에서 가볍게, 2026-10-30 점검)
+  const putSoldier = (lk, x, z, ry, style, moving = false) => { const p = makePerson(typeof lk === 'string' ? LOOKS[lk] : lk); p.position.set(x, groundH(x, z), z); p.rotation.y = ry; (moving ? L : still).add(p); if (style) setStyle(p, style); extra.push(p); return p; };
   putSoldier('soldier', -2.9, 12.4, Math.PI, 'guard'); putSoldier('soldier', 2.9, 12.4, Math.PI, 'guard'); // 문지기(바깥을 본다)
   for (const [x, z] of [[-17, -9], [18, -8.5], [-18.5, 5]]) putSoldier(x > 0 ? 'archer' : 'soldier', x, z, Math.atan2(x, z), 'guard'); // 물가 보초
   for (const [x, z, ry, lk] of [[-11.2, 6.2, 2.4, 'soldier'], [-9.8, 7.4, -2.6, 'archer'], [-10.4, 5, 0.3, 'soldier'], [17.5, 1, -1.9, 'soldier'], [15.8, 2.4, 2.6, 'archer']]) putSoldier(lk, x, z, ry, 'soldier'); // 천막 앞에 모여 이야기하는 군사들
-  const patrol = (lk, path) => { const p = putSoldier(lk, path[0][0], path[0][1], 0, 'guard'); (async () => { for (let i = 1; p.parent; i = (i + 1) % path.length) await walkTo(world, p, path[i], { speed: 1.1 }); })(); return p; };
+  const patrol = (lk, path) => { const p = putSoldier(lk, path[0][0], path[0][1], 0, 'guard', true); (async () => { for (let i = 1; p.parent; i = (i + 1) % path.length) await walkTo(world, p, path[i], { speed: 1.1 }); })(); return p; };
+  bakeStatic(still);
   patrol('soldier', [[-6, 8], [-17, 8], [-17, -1], [-6, 1]]); patrol('archer', [[18, -6], [18, 7], [9, 9], [9, -6]]); // 진영을 도는 순찰(동쪽 통로는 비켜서)
 
   world.addNpc('archer', LOOKS.archer, -8, 3, Math.PI * 0.25);
