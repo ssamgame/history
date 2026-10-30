@@ -6,9 +6,11 @@
 
 export const ERAS = ['goryeo', 'joseon', 'modern', 'colonial', 'present'];
 export const eraOfChapter = id => (/^ch\d/.test(id) ? 'goryeo' : /^j\d/.test(id) ? 'joseon' : /^k\d/.test(id) ? 'modern' : /^i\d/.test(id) ? 'colonial' : /^h\d/.test(id) ? 'present' : null);
-let era = null;
-export const setHairEra = e => { era = ERAS.includes(e) ? e : null; };
+let era = null, late = false;
+// id: 장 id(선택). 현대편 5·6장(1960~80년대)은 옷차림이 해방·전쟁기와 달라 따로 구분한다(eraKey 'presentLate')
+export const setHairEra = (e, id = '') => { era = ERAS.includes(e) ? e : null; late = /^h[56]$/.test(id); };
 export const hairEra = () => era;
+export const eraKey = () => (era === 'present' && late ? 'presentLate' : era);
 
 // 머리 빛깔: 검은 머리의 자연스러운 범위, 나이 든 사람은 희끗한 머리·흰머리
 export const HAIR_COLORS = { black: ['#1e1c1a', '#241f1b', '#2b241e', '#1b1b1d'], gray: ['#3e3a36', '#4a4640'], white: ['#b8b2a8', '#d6d1c8'] }; // gray: 검은 머리에 흰 머리가 섞인 희끗한 빛

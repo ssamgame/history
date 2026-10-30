@@ -61,34 +61,34 @@ export const LOOKS = {
   seojaepil: { named: true, robe: 0x2b2f36, outfit: 'suit', hat: 'short', trim: 0x2b2f36, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'thin' } },
   gentleman: { robe: 0x3a3530, outfit: 'suit', hat: 'fedora', trim: 0x3a3530, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache' } },
   student: { outfit: 'uniform', role: 'youth', robe: 0x22262e, hat: 'cap', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', age: 'young' } },
-  schoolgirl: { outfit: 'chima', pants: 0x22262e, robe: 0xe9e4da, hat: 'braid', trim: 0x2c3a5a, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
-  woman: { outfit: 'chima', pants: 0x2f4a5e, robe: 0xb8768a, hat: 'bun', trim: 0x2f4a5e, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
+  schoolgirl: { eras: { present: { outfit: 'dress', robe: 0xf2efe8, pants: 0x22304a } }, outfit: 'chima', pants: 0x22262e, robe: 0xe9e4da, hat: 'braid', trim: 0x2c3a5a, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
+  woman: { eras: { presentLate: { outfit: 'dress', robe: 0xe8dcc8, pants: 0x5a6a8a } }, outfit: 'chima', pants: 0x2f4a5e, robe: 0xb8768a, hat: 'bun', trim: 0x2f4a5e, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   uibyeong: { outfit: 'short', pants: 0xd8d0bc, robe: 0xd8d0bc, hat: 'topknot', gear: 'rifle', trim: 0x6b4a32, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache' } },
   // 안중근: 짧은 머리와 짙은 콧수염
   ahnjunggeun: { outfit: 'suit', named: true, robe: 0x2b2f36, hat: 'short', trim: 0xe6dcc3, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'thick' } },
   ahnchangho: { named: true, robe: 0x3a3a44, outfit: 'suit', hat: 'short', trim: 0x3a3a44, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache', shape: 'round' } },
-  yugwansun: { named: true, robe: 0xf2efe6, hat: 'braid', trim: 0x2b241c, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', shape: 'round' } },
+  yugwansun: { outfit: 'chima', pants: 0x22262e, named: true, robe: 0xf2efe6, hat: 'braid', trim: 0x2b241c, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', shape: 'round' } },
   // 김구: 널리 알려진 사진처럼 둥근 얼굴, 검은 동그란 안경, 아주 짧게 깎은 희끗한 머리, 짙은 두루마기
-  kimgu: { named: true, robe: 0x3a3836, hat: 'buzz', hairColor: '#8a8680', trim: 0x2b2826, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', glasses: 'round', shape: 'round', age: 'old', browColor: '#5a5650' } },
+  kimgu: { outfit: 'dopo', cord: 0x2b2826, named: true, robe: 0x3a3836, hat: 'buzz', hairColor: '#8a8680', trim: 0x2b2826, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', glasses: 'round', shape: 'round', age: 'old', browColor: '#5a5650' } },
   // 이승만: 정부 수립 무렵(70대) 사진처럼 갸름한 얼굴, 뒤로 넘긴 흰머리, 양복에 넥타이
   syngmanrhee: { named: true, robe: 0x2b2f36, outfit: 'suit', hat: 'swept', hairColor: '#e4e0d8', trim: 0x2b2f36, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', shape: 'long', age: 'old', browColor: '#b8b2a8' } },
   // 홍범도: 나이 든 장군, 크게 처진 콧수염
-  hongbeomdo: { named: true, robe: 0x4e5840, hat: 'cap', gear: 'rifle', trim: 0x2b241c, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'walrus', age: 'old', beardColor: '#3a3632' } },
-  kimjwajin: { named: true, robe: 0x4e5840, hat: 'cap', gear: 'sword', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'thick', shape: 'long' } },
-  independenceArmy: { robe: 0x5a6448, hat: 'cap', gear: 'rifle', trim: 0x2b241c, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
-  gwangbokgun: { robe: 0x6b6a4a, hat: 'cap', gear: 'rifle', trim: 0xa8392b, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
+  hongbeomdo: { outfit: 'uniform', pants: 0x3e4634, named: true, robe: 0x4e5840, hat: 'cap', gear: 'rifle', trim: 0x2b241c, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'walrus', age: 'old', beardColor: '#3a3632' } },
+  kimjwajin: { outfit: 'uniform', pants: 0x3e4634, named: true, robe: 0x4e5840, hat: 'cap', gear: 'sword', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'thick', shape: 'long' } },
+  independenceArmy: { outfit: 'uniform', pants: 0x4a5040, robe: 0x5a6448, hat: 'cap', gear: 'rifle', trim: 0x2b241c, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
+  gwangbokgun: { outfit: 'uniform', pants: 0x5a5a3e, robe: 0x6b6a4a, hat: 'cap', gear: 'rifle', trim: 0xa8392b, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   scholarModern: { robe: 0x4a4f5a, outfit: 'suit', hat: 'short', trim: 0x4a4f5a, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache', glasses: 'round' } },
-  gendarme: { robe: 0x55603f, hat: 'cap', trim: 0xb8452f, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
+  gendarme: { outfit: 'uniform', pants: 0x55603f, robe: 0x55603f, hat: 'cap', trim: 0xb8452f, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   // 1930년대 학교의 제복 입은 교사(칼은 차지 않음)
   teacherUniform: { outfit: 'uniform', robe: 0x2f3540, hat: 'cap', trim: 0xc9a040, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache' } },
-  rokSoldier: { robe: 0x5a6448, hat: 'steel', gear: 'rifle', trim: 0x3a3f2c, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
-  unSoldier: { robe: 0x6b6a4a, hat: 'steel', gear: 'rifle', trim: 0x3a3f2c, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
-  citizen: { outfit: 'short', pants: 0xd8cfbf, robe: 0x5d7a9a, hat: 'short', trim: 0xe6dcc3, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
+  rokSoldier: { outfit: 'uniform', pants: 0x4e5840, robe: 0x5a6448, hat: 'steel', gear: 'rifle', trim: 0x3a3f2c, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
+  unSoldier: { outfit: 'uniform', pants: 0x5a5a3e, robe: 0x6b6a4a, hat: 'steel', gear: 'rifle', trim: 0x3a3f2c, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
+  citizen: { eras: { present: { outfit: 'shirt', robe: 0xe8e6e0, pants: 0x3a3f4a }, presentLate: { outfit: 'shirt', robe: 0x9ab0c8, pants: 0x4a4038 } }, outfit: 'short', pants: 0xd8cfbf, robe: 0x5d7a9a, hat: 'short', trim: 0xe6dcc3, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   grandma: { outfit: 'chima', pants: 0x5a4a3a, robe: 0xd8cfbf, hat: 'bun', hairColor: '#b8b2a8', trim: 0x6b4a32, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', age: 'old' } },
-  nkSoldier: { robe: 0x6b6a3a, hat: 'cap', gear: 'rifle', trim: 0x8a2f24, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
-  builder: { robe: 0x8a7a5a, hat: 'steel', trim: 0x3a3f2c, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
+  nkSoldier: { outfit: 'uniform', pants: 0x5a5a32, robe: 0x6b6a3a, hat: 'cap', gear: 'rifle', trim: 0x8a2f24, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
+  builder: { outfit: 'shirt', pants: 0x5a5040, robe: 0x8a7a5a, hat: 'steel', trim: 0x3a3f2c, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   // 1950년대 아이: 상투 없이 짧게 깎은 머리, 무명 셔츠
-  kidModern: { outfit: 'short', pants: 0xbfb6a0, robe: 0xcfc6b0, hat: 'short', trim: 0x5a6a7a, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
+  kidModern: { eras: { present: { outfit: 'shirt', robe: 0xd8d0c0, pants: 0x4a4a5a } }, outfit: 'short', pants: 0xbfb6a0, robe: 0xcfc6b0, hat: 'short', trim: 0x5a6a7a, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
 };
 
 export const look = (id, extra = {}) => ({ ...LOOKS[id], ...extra });

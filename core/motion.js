@@ -157,7 +157,7 @@ export function animateWalk(person, moving, dt) {
   const heavy = c0 ? Math.max(c0.heavy, u.carry.obj.userData.heavy ? 1 : 0) : 0;
   const k = ss(0, 0.9, v), run = ss(3.2, 5, v) * (1 - heavy * 0.7);
   const amp = (0.52 + 0.2 * Math.min(1, v / 2.5) + 0.06 * run) * st.stride * (1 - heavy * 0.25);
-  const step = (0.5 + 0.2 * Math.min(1, v / 2.5) + 0.65 * run) * st.stride * (1 - heavy * 0.25); // 한 걸음 보폭(m)
+  const step = (0.5 + 0.2 * Math.min(1, v / 2.5) + 0.5 * run) * st.stride * (1 - heavy * 0.25); // 한 걸음 보폭(m)
   const was = u.stride || 0;
   u.stride = was + ((moving ? 1 : 0) - was) * Math.min(1, dt * 6);
   if (u.stride < 0.002 && !moving) u.stride = 0;

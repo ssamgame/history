@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { faceTexture, faceVariant } from './faces.js';
 import { roleOf } from './facebuild.js';
-import { hairStyle } from './hairstyle.js';
+import { hairStyle, eraKey } from './hairstyle.js';
 import { worldMapped } from './textures.js';
 import { animateWalk, HIP } from './motion.js';
 export { gaitPose, carryPose, setCarry, animateWalk, setWork, setStyle, setLook, setTalking, playAction, blendArms, CARRY, HIP } from './motion.js';
@@ -168,6 +168,8 @@ let personCount = 0;
 // stable: 늘 같은 생김새(말을 거는 사람·학생). 아니면 이름 없는 사람(병사·마을 사람·군중)은 한 사람씩 얼굴과 옷빛이 조금씩 다르다(D-54).
 // 이름난 인물은 LOOKS에 named: true(어디서 만들어도 같은 얼굴).
 export function makePerson(look = {}, { track = true, stable = false } = {}) {
+  // 시대마다 다른 옷차림(2026-10-30 선생님: 당시 시대상을 복장에): 생김새의 eras[시대]가 있으면 그 시대 옷으로 바꿔 입는다
+  { const ek = eraKey(), o = look.eras && ek && (look.eras[ek] || (ek === 'presentLate' && look.eras.present)); if (o) look = { ...look, ...o }; }
   const vary = !stable && !look.named;
   const { trim = 0x2b241c, gear = null, outfit = null, hairColor = null, armor = 0x6b665e, pants = null, skin = null, sleeve = null, badge = null, royal = false, cord = null } = look; // sleeve 소매 빛(동달이), badge 흉배 빛, royal 곤룡포의 둥근 보, cord 도포의 세조대 빛
   let { robe, hat } = look;
@@ -192,7 +194,17 @@ export function makePerson(look = {}, { track = true, stable = false } = {}) {
   }
   // 몸통 옷: 긴 옷(기본)은 무릎 아래까지, 저고리(short)는 엉덩이까지, 치마(chima)는 발목까지 넓게
   const sk = skin || (face.age === 'old' ? 'old' : 'base');
-  if (outfit === 'short' || outfit === 'uniform') {
+  if (outfit === 'shirt') { // 셔츠와 양복바지(해방 뒤 도시 사람): 바지에 넣어 입은 셔츠, 가는 허리띠, 곧은 바지
+    const top = part(new THREE.CylinderGeometry(0.38, 0.42, 0.68, 7), robe, 0, 1.4, 0, g); top.name = 'robe';
+    part(new THREE.CylinderGeometry(0.405, 0.405, 0.06, 7), 0x2a2420, 0, 1.06, 0, g).name = 'belt';
+    const pc = pants ?? 0x3a3f4a;
+    part(new THREE.CylinderGeometry(0.39, 0.36, 0.48, 7), pc, 0, 0.8, 0, g).name = 'pantsTop';
+    legs.forEach(l => { l.children.forEach(m => { if (m.name === 'thigh') { m.material = mat(pc, 'cloth', 'object'); m.scale.set(1.1, 1, 1.1); } }); l.userData.knee.children.forEach(m => { if (m.name === 'shin') { m.material = mat(pc, 'cloth', 'object'); m.scale.set(1.05, 1, 1.05); } }); });
+  } else if (outfit === 'dress') { // 블라우스와 무릎 치마(1950~80년대 여자·여학생 교복): 무릎 아래로 다리가 보인다
+    const top = part(new THREE.CylinderGeometry(0.34, 0.4, 0.62, 7), robe, 0, 1.44, 0, g); top.name = 'jeogori';
+    const sk2 = part(new THREE.CylinderGeometry(0.38, 0.5, 0.62, 9), pants ?? trim, 0, 0.84, 0, g); sk2.name = 'robe';
+    legs.forEach(l => l.userData.knee.children.forEach(m => { if (m.name === 'shin') m.material = mat(0xd8b898, 'cloth', 'object'); }));
+  } else if (outfit === 'short' || outfit === 'uniform') {
     const top = part(new THREE.CylinderGeometry(0.4, 0.5, 0.78, 7), robe, 0, 1.36, 0, g); top.name = 'robe';
     part(new THREE.CylinderGeometry(0.42, 0.42, 0.1, 7), trim, 0, 1.04, 0, g).name = 'belt';
     // 바지 허리(웃옷 아래에서 허벅지까지)
@@ -246,7 +258,9 @@ export function makePerson(look = {}, { track = true, stable = false } = {}) {
     for (const sx of [-0.2, 0.2]) part(new THREE.BoxGeometry(0.16, 0.13, 0.03), trim, sx, 1.56, 0.41, g).rotation.x = -0.12;
   }
   // 앞섶(깃): 가슴에서 엇갈리는 흰 깃 두 줄. 양복(suit)이면 흰 셔츠와 넥타이
-  if (outfit === 'suit') {
+  if (outfit === 'shirt' || outfit === 'dress') { // 셔츠 깃: 목 아래 두 갈래로 펼친 흰(또는 옷빛) 깃
+    for (const sx of [-1, 1]) { const c = part(new THREE.BoxGeometry(0.16, 0.12, 0.03), outfit === 'dress' ? 0xf2efe8 : new THREE.Color(robe).offsetHSL(0, 0, 0.06).getHex(), sx * 0.09, 1.7, 0.33, g); c.rotation.set(-0.35, 0, sx * -0.5); c.name = 'collar'; }
+  } else if (outfit === 'suit') {
     part(new THREE.BoxGeometry(0.3, 0.44, 0.05), 0xf2efe8, 0, 1.5, 0.36, g).rotation.x = -0.28;
     const tie = part(new THREE.BoxGeometry(0.09, 0.4, 0.05), 0x7a2a2a, 0, 1.47, 0.39, g); tie.rotation.x = -0.28; tie.name = 'tie';
   } else if (outfit === 'danryeong' || outfit === 'uniform' || outfit === 'deel') { // 둥근 깃(단령)·선 깃(제복)

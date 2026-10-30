@@ -21,7 +21,7 @@
   import { walkTo, turnTo, handshake, giveItem, escort, strike, block, pickUp, putDown } from '../core/interact.js';
   import { LOOKS } from '../content/characters.js';
   import { setHairEra } from '../core/hairstyle.js';
-  setHairEra(new URLSearchParams(location.search).get('era'));
+  setHairEra(new URLSearchParams(location.search).get('era'), new URLSearchParams(location.search).get('ch') || '');
   const q = new URLSearchParams(location.search), act = q.get('act') || 'walk';
   const world = createWorld(document.getElementById('stage'), { quality: 'medium' });
   world.setMood('morning'); world.player.visible = false;

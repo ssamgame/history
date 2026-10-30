@@ -79,3 +79,22 @@ test('hairstyle: 머리 모양마다 윤곽이 다르다(이마 선·정수리·
   for (let i = 0; i < pa.count; i++) { const z = pa.getZ(i), y = pa.getY(i); if (z > 0.25) front = Math.min(front, y); if (z < -0.2) back = Math.min(back, y); }
   ok(front > 0.12 && back < -0.1, `이마 끝 ${front.toFixed(2)}, 뒤통수 끝 ${back.toFixed(2)}`);
 });
+
+// D-60(2026-10-30 선생님: 조선~현대 옷차림, 당시 시대상을 복장에): 신분별 옷과 시대마다 바꿔 입는 옷(eras)
+test('outfit D-60: 조선 임금은 곤룡포(둥근 보), 관리는 흉배, 선비는 도포, 군사는 동달이, 여인은 치마저고리', () => {
+  setHairEra('joseon', 'j2');
+  const has = (id, name) => !!makePerson(LOOKS[id], { stable: true }).getObjectByName(name);
+  ok(has('sejong', 'bo') && has('jeongjo', 'bo'), '곤룡포의 보');
+  ok(has('joseonOfficial', 'badge') && has('kimsangheon', 'badge'), '흉배');
+  eq(LOOKS.scholar.outfit, 'dopo'); eq(LOOKS.joseonSoldier.outfit, 'jeonbok'); ok(LOOKS.joseonSoldier.sleeve, '동달이 소매 빛');
+  ok(has('woman', 'goreum'), '치마저고리 옷고름');
+  setHairEra(null);
+});
+test('outfit D-60: 같은 생김새도 시대마다 옷이 다르다(시민: 일제 저고리 → 해방 뒤 셔츠, 여인: 1960~80년대 블라우스와 치마)', () => {
+  const collarOf = p => p.getObjectByName('pantsTop') ? 'pants' : 'none';
+  setHairEra('colonial', 'i2'); const a = makePerson(LOOKS.citizen, { stable: true }); ok(a.getObjectByName('belt') && !a.getObjectByName('goreum'), '일제: 저고리·바지');
+  setHairEra('present', 'h3'); const b = makePerson(LOOKS.citizen, { stable: true }); ok(b.getObjectByName('pantsTop') && b.getObjectByName('collar'), '해방·전쟁기: 셔츠와 바지');
+  const w1 = makePerson(LOOKS.woman, { stable: true }); ok(w1.getObjectByName('goreum'), '1950년대 여인: 치마저고리');
+  setHairEra('present', 'h6'); const w2 = makePerson(LOOKS.woman, { stable: true }); ok(!w2.getObjectByName('goreum') && w2.getObjectByName('jeogori'), '1960~80년대 여인: 블라우스와 치마');
+  setHairEra(null); void collarOf;
+});
