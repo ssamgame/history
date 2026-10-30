@@ -98,7 +98,7 @@ test('ch5: resume at quiz shows the finished library of woodblocks', () => {
 
 // ---- D-17: 스님이 여는 탐험, 나무판을 들고 경판 만들기, 그 경판에 大藏經 새기기 ----
 import * as ch5mod from '../chapters/ch5/chapter.js';
-const { artisanTalk, makeBlock, carveAndShelve } = ch5mod;
+const { artisanTalk, makeBlock, carveAndShelve, shelveBlock } = ch5mod;
 import { sleep } from './bot.js';
 
 test('ch5 D-17: workshop gate, 경판 작업장 board, no reading signs, one-paragraph intro, five goals', () => {
@@ -160,7 +160,9 @@ test('ch5 D-32: each work place waits for E (talk button), then shows a drawn pi
     eq(sc.plank.userData.stage, 0, 'standing there is not enough');
     ok(!stepPanel(s), 'no picture yet');
     ok(!s.hud.talkBtn.disabled, 'talk button ready at the work place');
-    s.hud.talkBtn.click(); await sleep(10); stepN(s.w);
+    s.hud.talkBtn.click(); await sleep(10);
+    // 2026-10-30: 작업 대상 앞으로 걸어가 판을 내려놓고, E를 누를 때마다 한 번씩 일한다(판을 물에 눌러 담그기 3번)
+    for (let n = 0; n < 200 && !stepPanel(s); n++) { stepN(s.w, 3); await sleep(1); if (!s.hud.talkBtn.disabled) { s.hud.talkBtn.click(); await sleep(2); } }
     const panel = stepPanel(s);
     ok(panel, 'picture panel opens');
     eq(panel.dataset.step, 'soak');
@@ -169,7 +171,7 @@ test('ch5 D-32: each work place waits for E (talk button), then shows a drawn pi
     ok(panel.textContent.includes(P[0].text), 'one line under the picture');
     ok(s.w.player.userData.carry?.obj !== sc.plank, 'put down at the work place');
     eq(sc.plank.userData.stage, 0, 'still waiting while the picture is open');
-    panel.querySelector('.doc-ok').click(); await sleep(10); stepN(s.w, 2);
+    panel.querySelector('.doc-ok').click(); await sleep(10); stepN(s.w, 40); await sleep(5);
     ok(!stepPanel(s), 'closed');
     eq(sc.plank.userData.stage, 1, 'soaked');
     ok(s.w.player.userData.carry?.obj === sc.plank, 'picked up again');
@@ -235,7 +237,7 @@ test('ch5 D-17: full run uses no cards and keeps the low camera', async () => {
   let cards = 0, fixed = 0;
   const boards = new Set();
   const poll = setInterval(() => { const b = s.ui.querySelector('.trace-board'); if (b) boards.add(b); }, 5); // 장이 장면을 다시 지으면 onUpdate가 지워져서 따로 살핀다
-  const off = s.w.onUpdate(() => { if (s.ui.querySelector('.order-card')) cards += 1; if (s.w.camMode === 'fixed' && !s.w.storyOn && !s.ctx.testHooks.quizView && !s.ui.classList.contains('filming')) fixed += 1; }); // 퀴즈 배경·도입 장면은 고정 카메라라 세지 않는다
+  const off = s.w.onUpdate(() => { if (s.ui.querySelector('.order-card')) cards += 1; if (s.w.camMode === 'fixed' && !s.w.storyOn && !s.ctx.testHooks.quizView && !s.ui.classList.contains('filming') && !s.ctx.testHooks.working) fixed += 1; }); // 퀴즈 배경·도입 장면, 경판 만드는 손동작·1인칭 서가(2026-10-30)는 고정 카메라라 세지 않는다
   try {
     const r = await runChapter(CHAPTERS[4], ch5, s.ctx, memSave());
     eq(cards, 0, 'no picture cards'); eq(fixed, 0, 'no fixed camera');
@@ -243,3 +245,23 @@ test('ch5 D-17: full run uses no cards and keeps the low camera', async () => {
     eq(boards.size, 3, 'the three letters are carved once (inside block making)');
   } finally { clearInterval(poll); off(); bot.stop(); s.done(); }
 }, { timeout: 150000 });
+
+// 2026-10-30 선생님: 경판 만들기를 실제 행동으로, 서가에 정확히 꽂기, 꽂을 때 1인칭
+test('ch5: 자리마다 앞에 서서 판을 내려놓고 도구 끝이 판에 닿으며, 서가에는 1인칭으로 빈자리에 정확히 꽂고 그대로 남는다', async () => {
+  const s = touchSetup(ch5Script.speakers);
+  const bot = touchBot(s, { answers });
+  try {
+    const sc = ch5.buildScene(s.w, s.ctx);
+    ch5.enterStage(s.ctx, 'minigame');
+    await makeBlock(s.ctx);
+    const W = s.ctx.testHooks.work;
+    eq(Object.keys(W), ['soak', 'boil', 'dry', 'carve', 'ends', 'lacquer']);
+    for (const [id, h] of Object.entries(W)) { ok(h.placed < 0.02, `${id}: 판을 놓을 곳에 놓았다 ${h.placed.toFixed(3)}`); if (['boil', 'carve', 'ends', 'lacquer'].includes(id)) ok(h.contact < 0.15, `${id}: 도구 끝이 판·솥에 닿는다 ${h.contact.toFixed(3)}`); }
+    await shelveBlock(s.ctx);
+    const H = s.ctx.testHooks.shelf;
+    ok(H.fp, '1인칭으로 바뀌었다'); ok(H.gap < 0.15, `두 손이 경판을 붙들었다 ${H.gap.toFixed(3)}`); ok(H.slotErr < 0.01, `빈자리에 꽂혔다 ${H.slotErr.toFixed(3)}`);
+    eq(sc.plank.parent, sc.library); ok(Math.abs(sc.plank.scale.x - 1) < 1e-6, '크기 그대로');
+    for (let i = 0; i < 30; i++) s.w.step(0.05, { x: 0, z: 0 });
+    eq(sc.plank.parent, sc.library, '제자리에 남는다'); eq(s.w.camMode, 'follow'); ok(s.w.player.userData.head.visible, '머리가 다시 보인다');
+  } finally { bot.stop(); s.done(); }
+}, { timeout: 120000 });

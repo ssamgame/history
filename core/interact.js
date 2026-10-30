@@ -180,3 +180,27 @@ export function escort(world, { captives, guards = [], path, speed = 1.1 }) {
     });
   });
 }
+
+// 손 뻗기(2026-10-30 5장 경판 만들기·서가에 꽂기): 손(또는 손에 쥔 도구 끝)이 정한 곳(세계 좌표)에 닿도록 허리 숙임과 두 팔 각도를 고른다.
+// targets: [{ i: 0 왼팔 | 1 오른팔, at: Vector3, len: 손에서 도구 끝까지(없으면 0) }]. 돌려주는 것 { lean, arms: [왼팔, 오른팔] (각도 [x, 0, z] 또는 null), err: 가장 크게 모자라거나 넘친 거리 }
+// playAction의 pose에서 { upper: [lean, 0, 0], arms }로 쓴다(어깨 자리는 바로 계산해 가볍다)
+const ARM_LEN = 0.78, rq = new THREE.Vector3(), rd = new THREE.Vector3();
+export function reach(p, targets, { leanMin = -0.15, leanMax = 0.9 } = {}) {
+  const u = p.userData; p.updateWorldMatrix(true, false);
+  const T = targets.map(t => ({ ...t, l: p.worldToLocal(rq.copy(t.at)).clone(), sx: u.arms[t.i].position.x, sy: u.arms[t.i].position.y }));
+  let best = null;
+  for (let lean = leanMin; lean <= leanMax + 1e-6; lean += 0.04) {
+    const c = Math.cos(lean), s = Math.sin(lean);
+    let err = 0;
+    for (const t of T) { rd.set(t.l.x - t.sx, t.l.y - (HIP + t.sy * c), t.l.z - t.sy * s); err = Math.max(err, Math.abs(rd.length() - (ARM_LEN + (t.len || 0)))); }
+    err += Math.abs(lean - 0.25) * 0.02; // 같으면 덜 숙인 쪽
+    if (!best || err < best.err) best = { lean, err };
+  }
+  const c = Math.cos(best.lean), s = Math.sin(best.lean), arms = [null, null];
+  for (const t of T) {
+    rd.set(t.l.x - t.sx, t.l.y - (HIP + t.sy * c), t.l.z - t.sy * s);
+    const y = rd.y * c + rd.z * s, z = -rd.y * s + rd.z * c, n = Math.hypot(rd.x, y, z) || 1; // 숙인 몸통 좌표로
+    arms[t.i] = [Math.atan2(-z / n, -y / n), 0, Math.asin(Math.max(-1, Math.min(1, rd.x / n)))];
+  }
+  return { lean: best.lean, arms, err: best.err };
+}

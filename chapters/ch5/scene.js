@@ -180,11 +180,18 @@ export function buildCh5Scene(world) {
   };
   setStage(0); setCarved(0);
 
-  // 완성된 경판 선반(서가): 맨 위 칸 가운데를 비워 두었다가 학생이 새긴 경판을 꽂는다
+  // 완성된 경판 서가(2026-10-30): 두 칸. 경판은 학생이 만든 판과 같은 크기로 세워(긴 쪽이 위아래) 나란히 꽂혀 있고, 학생 손이 닿는 아래 칸 가운데 한 자리가 비어 있다
   const library = new THREE.Group(); library.visible = false; library.position.set(-8, 0, 6.3); L.add(library);
-  for (let row = 0; row < 3; row++) for (let k = 0; k < 14; k++) if (!(row === 2 && k === 7)) mk(new THREE.BoxGeometry(0.12, 0.6, 0.5), 0x3b2414, -3 + k * 0.45, 0.4 + row * 0.75, 0, library);
-  for (let row = 0; row < 4; row++) mk(new THREE.BoxGeometry(7, 0.08, 0.7), 0x5a3f2a, 0, 0.08 + row * 0.75, 0, library);
-  const shelf = { spot: [-8, 7.7], slot: [-3 + 7 * 0.45, 0.4 + 2 * 0.75, 0], ring: glowRing() };
+  const SLOT_K = 9, ROW_Y = [0.55, 1.79], PITCH = 0.2; // 아래 칸이 학생 가슴 높이(손이 닿는다)
+  for (let row = 0; row < 2; row++) for (let k = 0; k < 19; k++) if (!(row === 0 && k === SLOT_K)) {
+    mk(new THREE.BoxGeometry(0.08, 1.0, 0.5), 0x5a3a22, -1.8 + k * PITCH, ROW_Y[row] + 0.6, 0, library); // 경판
+    for (const sy of [-1, 1]) mk(new THREE.BoxGeometry(0.14, 0.1, 0.54), 0x2a1a10, -1.8 + k * PITCH, ROW_Y[row] + 0.6 + sy * 0.55, 0, library); // 마구리
+  }
+  mk(new THREE.BoxGeometry(4.2, 2.5, 0.05), 0xd8c49a, 0, 1.75, -0.34, library); // 뒤판(밝게: 빈자리가 잘 보인다)
+  mk(new THREE.BoxGeometry(4.2, 0.5, 0.72), 0x4a3424, 0, 0.25, 0, library); // 받침
+  for (const y of [0.5, 1.74, 2.97]) mk(new THREE.BoxGeometry(4.2, 0.1, 0.72), 0x5a3f2a, 0, y, 0, library); // 선반 널
+  for (const sx of [-2.15, 2.15]) mk(new THREE.BoxGeometry(0.12, 3.05, 0.72), 0x5a3f2a, sx, 1.52, 0, library); // 옆판
+  const shelf = { spot: [-8, 8.2], slot: [-1.8 + SLOT_K * PITCH, ROW_Y[0] + 0.6, 0], stand: [-8 + (-1.8 + SLOT_K * PITCH), 7.42], ring: glowRing() };
   shelf.ring.position.set(shelf.spot[0], 0.08, shelf.spot[1]);
 
   // 남쪽 문(시작 장면): 낮은 돌담 사이 나무 문. 카메라를 가리지 않게 낮게 짓는다
@@ -208,7 +215,7 @@ export function buildCh5Scene(world) {
   world.onUpdate((dt, t) => { for (const f of fires) f.update(dt, t); });
   backdropMountains(world.level, { color: 0x4f6a3e, radius: 130 }); // 먼 산줄기(깊이감)
   surroundings(world, { bounds: world.bounds, trees: ['pine', 'pine', 'tree'], count: 12, seed: 5 }); // 걷는 곳 바깥에 그 장소다운 집·나무(깊이감)
-  return { library, shelf, stations, plank, setStage, setCarved, gate, start: [0, 7], introFrom: [0, 15] };
+  return { library, shelf, stations, plank, setStage, setCarved, stageColor: n => STAGE_COLOR[Math.min(6, n)], gate, start: [0, 7], introFrom: [0, 15] };
 }
 
 // 경판 만드는 과정 그림(D-32): 단계마다 캔버스에 그린다(그림 파일 없음, 글자 없음). 그림판은 100×70 칸을 scale배로 키운다.

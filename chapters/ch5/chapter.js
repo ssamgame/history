@@ -12,6 +12,7 @@ import { LOOKS } from '../../content/characters.js';
 import * as THREE from 'three';
 import script from './script.js';
 import { tripitakaScene } from './story.js';
+import { doWork, shelveFirstPerson } from './work.js';
 
 const ARTISANS = ['artisan1', 'artisan2', 'artisan3', 'artisan4'];
 const NEAR = 1.3;      // 빛나는 자리에 닿았다고 보는 거리
@@ -43,11 +44,6 @@ export function artisanTalk(id, heard) {
 
 // 판을 학생 두 팔에 안긴다
 function hold(world) { scene.plank.visible = true; scene.plank.scale.setScalar(1); scene.plank.rotation.set(0, 0, 0); setCarry(world.player, scene.plank, 'arms'); }
-// 판을 작업 자리(put)에 내려놓는다
-function putDown(world, [x, y, z]) {
-  setCarry(world.player, null);
-  world.level.add(scene.plank); scene.plank.position.set(x, y, z); scene.plank.rotation.set(0, 0, 0);
-}
 
 // 과정 그림(D-32): 그 자리의 일을 그린 그림과 그 아래 설명 한 줄. '다음'(또는 E)을 누르면 닫힌다
 export function showStepPicture(ctx, i) {
@@ -111,10 +107,12 @@ export async function makeBlock(ctx) {
     await waitInteract(ctx, { pos: { x: st.spot[0], z: st.spot[1] }, label: P[k].title, r: NEAR + 0.3, mark: false });
     busy = true; show();
     const was = ctx.input.enabled; ctx.input.enabled = false;
-    putDown(world, st.put); audio.play('tap');
-    await showStepPicture(ctx, k);
-    if (st.id === 'carve') await carve(ctx);
-    k += 1; scene.setStage(k); hold(world); audio.play('correct');
+    ctx.testHooks.work = ctx.testHooks.work || {};
+    await doWork(ctx, scene, st.id, (ctx.testHooks.work[st.id] = {}), async () => { // 몸으로 일하고(판 내려놓기 → 도구질) 그 자리에서 과정 그림, 3번 자리에서는 大藏經 새기기
+      await showStepPicture(ctx, k);
+      if (st.id === 'carve') await carve(ctx);
+    });
+    k += 1; scene.setStage(k); audio.play('correct');
     if (st.id === 'carve') { hud.setCounter(`경판 만들기 ${k}/${S.length}`); await dialogue.say(script.carving.toEnds); dialogue.close(); }
     ctx.input.enabled = was;
   }
@@ -127,31 +125,32 @@ export async function makeBlock(ctx) {
 export async function shelveBlock(ctx) {
   const { world, dialogue, input } = ctx;
   const H = scene.shelf;
-  if (scene.plank.parent !== world.player) hold(world);
+  if (world.player.userData.carry?.obj !== scene.plank) hold(world);
   scene.library.visible = true;
   await dialogue.say(script.carving.shelve); dialogue.close();
-  await new Promise(resolve => {
+  const was = await new Promise(resolve => {
     H.ring.visible = true; world.setGoal({ x: H.spot[0], z: H.spot[1] });
     const was = input.enabled; input.enabled = true;
     const off = world.onUpdate(() => {
       const p = world.player.position;
       if (Math.hypot(p.x - H.spot[0], p.z - H.spot[1]) >= NEAR) return;
-      off(); H.ring.visible = false; world.setGoal(null); input.enabled = was; resolve();
+      off(); H.ring.visible = false; world.setGoal(null); input.enabled = false; resolve(was);
     });
   });
-  shelve();
-  ctx.audio.play('correct');
+  ctx.testHooks.shelf = await shelveFirstPerson(ctx, scene, {}); // 1인칭으로 서가의 빈자리에 꽂는다(2026-10-30)
+  input.enabled = was;
 }
 
 export const devScene = () => scene; // 개발용(사진 찍기·콘솔): 지은 장면
 
-// 새긴 경판을 서가 맨 위 칸 빈자리에 세워 꽂는다
+// (이어 하기) 새긴 경판을 서가 위 칸 빈자리에 다른 경판과 같은 자세로 세워 둔다(크기는 그대로)
 function shelve() {
   const pl = scene.plank;
   if (pl.parent && pl.parent.userData.carry) setCarry(pl.parent, null);
   scene.library.add(pl);
-  pl.visible = true; pl.scale.setScalar(0.6);
-  pl.position.set(...scene.shelf.slot); pl.rotation.set(0, Math.PI / 2, Math.PI / 2);
+  pl.visible = true; pl.scale.setScalar(1);
+  pl.position.set(...scene.shelf.slot);
+  pl.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3(0, 1, 0), new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 0, -1)));
 }
 
 export default {
