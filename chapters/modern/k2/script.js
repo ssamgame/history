@@ -101,6 +101,8 @@ export default {
       cards: [],
     },
   },
+  // 끝 해설 장면(D-58, chapters/modern/k2/story.js): 청 군사들이 한성 큰길을 지나간다
+  qingStreet: [{ who: 'merchant', expr: 'worry', text: '청나라 군사들이 또 큰길을 지나가네요. 이제 청이 우리 일에 더 크게 간섭하겠어요.', src: ['S51'] }],
   result: [{ who: 'narr', text: '갑신정변 뒤 청의 간섭은 더욱 심해졌어요.', src: ['S51'] }],
   quizzes: [
     { kind: 'quiz', year: 1884, question: '갑신정변을 일으킨 개화 세력의 인물은?', options: ['전봉준', '김옥균', '서재필'], answer: 1, explain: '김옥균 등 개화 세력이 1884년 갑신정변을 일으켰어요.', src: ['S51'] },

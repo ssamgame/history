@@ -18,6 +18,7 @@ import { MOODS } from '../../../core/world.js';
 import { LOOKS } from '../../../content/characters.js';
 import { sayAll, placePlayer } from '../../joseon/common.js';
 import script from './script.js';
+import { qingStreetScene } from './story.js';
 
 const PEOPLE = ['merchant', 'clerk'];
 const GATE_Z = 12.5, INTRO_FROM = [0, 15.5];
@@ -348,6 +349,7 @@ const base = makeKitChapter({
       bins: reform.bins.map(b => ({ ...b, ...PLACES[b.id] })),
       before: ctx => { beaconOff = nextPlaceBeacon(ctx); }, after: () => { beaconOff?.(); beaconOff = null; } },
     { type: 'scene', title: '청의 군대가 몰려와요', goal: script.goals[4], intro: meet('kimokgyun', '김옥균과 이야기하기', script.parts.palace.intro), play: ctx => qingWalk(ctx) },
+    { type: 'scene', title: '갑신정변 뒤 한성 거리', play: ctx => qingStreetScene(ctx) }, // 끝 해설 장면(D-58)
   ],
   decorate(world) { // 큰길 어귀 나무 문과 「우정총국 앞 큰길」 이름판(S51). 문짝은 굳히기에 합쳐지지 않게 돌려준다
     const gate = gateLeaves(world.level, { x: 0, z: GATE_Z, width: 4, height: 2.6, inward: -1 });
@@ -393,6 +395,7 @@ export default {
   ...base,
   anyOrder: true, // 거리 사람은 아무 차례로(차례 전 대사 tooEarly가 없다, tests/quest.test.js)
   introScene,
+  stories: { qingStreet: qingStreetScene }, // 이야기 장면(D-58)
   portal: { at: [0, 0.5], ry: 0 }, // 미니게임 뒤 빛나는 문(C-02): 돌아온 학생(spot) 바로 앞 큰길 가운데, 앞면은 학생(남쪽) 쪽
   buildScene(world) { scene = base.buildScene(world); return scene; },
   enterStage(ctx, stage) { scene.gate.setOpen(0); ctx.world.closeView = true; base.enterStage(ctx, stage); },
