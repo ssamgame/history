@@ -235,7 +235,7 @@ test('ch5 D-17: full run uses no cards and keeps the low camera', async () => {
   let cards = 0, fixed = 0;
   const boards = new Set();
   const poll = setInterval(() => { const b = s.ui.querySelector('.trace-board'); if (b) boards.add(b); }, 5); // 장이 장면을 다시 지으면 onUpdate가 지워져서 따로 살핀다
-  const off = s.w.onUpdate(() => { if (s.ui.querySelector('.order-card')) cards += 1; if (s.w.camMode === 'fixed' && !s.ctx.testHooks.quizView && !s.ui.classList.contains('filming')) fixed += 1; }); // 퀴즈 배경·도입 장면은 고정 카메라라 세지 않는다
+  const off = s.w.onUpdate(() => { if (s.ui.querySelector('.order-card')) cards += 1; if (s.w.camMode === 'fixed' && !s.w.storyOn && !s.ctx.testHooks.quizView && !s.ui.classList.contains('filming')) fixed += 1; }); // 퀴즈 배경·도입 장면은 고정 카메라라 세지 않는다
   try {
     const r = await runChapter(CHAPTERS[4], ch5, s.ctx, memSave());
     eq(cards, 0, 'no picture cards'); eq(fixed, 0, 'no fixed camera');

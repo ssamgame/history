@@ -180,7 +180,7 @@ test('ch3 D-10: full run keeps the low camera and walks (no fixed camera, no but
   const s = touchSetup(ch3Script.speakers);
   const bot = touchBot(s, { answers });
   let fixed = false, big = false;
-  const off = s.w.onUpdate(() => { if (s.w.camMode === 'fixed') fixed = true; if (s.ui.querySelector('.big-action')) big = true; });
+  const off = s.w.onUpdate(() => { if (s.w.camMode === 'fixed' && !s.w.storyOn) fixed = true; /* 이야기 장면(D-58)은 고정 카메라 */ if (s.ui.querySelector('.big-action')) big = true; });
   try {
     const sc = ch3.buildScene(s.w, s.ctx);
     ok(s.w.closeView, 'low camera');

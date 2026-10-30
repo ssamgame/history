@@ -348,8 +348,7 @@ const base = makeKitChapter({
     { ...reform, goal: script.goals[3], arena: STREETS, from: [0, 8], intro: meet('kimokgyun', '김옥균과 이야기하기', reform.intro),
       bins: reform.bins.map(b => ({ ...b, ...PLACES[b.id] })),
       before: ctx => { beaconOff = nextPlaceBeacon(ctx); }, after: () => { beaconOff?.(); beaconOff = null; } },
-    { type: 'scene', title: '청의 군대가 몰려와요', goal: script.goals[4], intro: meet('kimokgyun', '김옥균과 이야기하기', script.parts.palace.intro), play: ctx => qingWalk(ctx) },
-    { type: 'scene', title: '갑신정변 뒤 한성 거리', play: ctx => qingStreetScene(ctx) }, // 끝 해설 장면(D-58)
+    { type: 'scene', title: '청의 군대가 몰려와요', goal: script.goals[4], intro: meet('kimokgyun', '김옥균과 이야기하기', script.parts.palace.intro), play: async ctx => { await qingWalk(ctx); await qingStreetScene(ctx); } }, // 끝에 이야기 장면(D-58): 갑신정변 뒤 한성 큰길의 청 군사
   ],
   decorate(world) { // 큰길 어귀 나무 문과 「우정총국 앞 큰길」 이름판(S51). 문짝은 굳히기에 합쳐지지 않게 돌려준다
     const gate = gateLeaves(world.level, { x: 0, z: GATE_Z, width: 4, height: 2.6, inward: -1 });

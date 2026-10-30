@@ -15,6 +15,7 @@ export async function storyScene(ctx, { key, arena, mood = null, run }) {
   const P = world.player.position.clone(), ry = world.player.rotation.y, mode = world.camMode, cv = world.closeView, mood0 = world.moodName, inp = ctx.input.enabled, vis = world.player.visible;
   const hook = ctx.testHooks[key] = { shown: false, lines: 0, facing: 1 };
   ctx.input.enabled = false;
+  world.storyOn = true; // 이야기 장면 중(고정 카메라를 쓰는 때라고 테스트·장 코드가 알 수 있게)
   await ctx.fade?.(true);
   const a = buildArena(world, arena), g = a.group;
   const hidden = world.level.children.filter(o => o !== g && o.visible); hidden.forEach(o => { o.visible = false; }); // 마을 땅·산이 무대 너머로 비치지 않게(그리기도 줄어든다)
@@ -46,6 +47,7 @@ export async function storyScene(ctx, { key, arena, mood = null, run }) {
     world.closeView = cv;
     world.camMode = mode === 'fixed' ? 'follow' : mode; world.snapCamera?.();
     ctx.input.enabled = inp;
+    world.storyOn = false;
     await ctx.fade?.(false);
   }
   return hook;

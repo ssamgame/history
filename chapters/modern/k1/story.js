@@ -29,7 +29,6 @@ export function treatyScene(ctx) {
     ctx.audio?.play?.('tap');
     paper.material = paper.material.clone(); hook.signed = true;
     await wait(world, 0.4, k => { stamp.position.y = 0.78 + 0.5 * k; });
-    await say(L[1]);
     hook.ships = ships.length; hook.seated = joseon.length + japan.length;
   } });
 }

@@ -114,10 +114,9 @@ export default {
       done: [{ who: 'narr', text: '강화도 조약에는 일본인이 조선 해안을 측량하고, 죄를 지어도 일본 관리가 재판하는 불리한 내용이 있었어요.', src: ['S51'] }],
     },
   },
-  // 이야기 장면(D-58, chapters/modern/k1/story.js): 해안 순찰 뒤 연무당에서 조약을 맺는 모습
+  // 이야기 장면(D-58, chapters/modern/k1/story.js): 해안 순찰 마지막 연무당에 닿으면 조약을 맺는 모습(그다음 관리의 1876년 대사)
   treaty: [
     { who: 'official', expr: 'worry', text: '일본이 군함을 앞세워 항구를 열라고 하니, 끝내 조약을 맺는구나.', src: ['S51'] },
-    { who: 'narr', text: '1876년 조선과 일본은 강화도에서 조약을 맺었어요. 조선이 맺은 최초의 근대적 조약이에요.', src: ['S51'] },
   ],
   result: [
     { who: 'narr', text: '조선은 이렇게 문을 열고 새로운 시대를 맞이했어요.', src: ['S51'] },

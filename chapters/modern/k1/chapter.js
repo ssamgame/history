@@ -177,8 +177,7 @@ const base = makeKitChapter({
     { ...script.parts.regent, goal: script.goals[2], arena: PALACE, from: [0, 10], bins: xy(script.parts.regent.bins, [{ x: -11, z: -4 }, { x: 0, z: -5 }, { x: 11, z: -4 }]) },
     // 둘째 놀이부터는 마을의 그 사람에게 가서 말을 걸어야 시작한다(D-30 C-05, intro 앞의 meet)
     { ...script.parts.coast, goal: script.goals[3], arena: COAST, from: [0, 21], intro: meet('elder', '마을 어르신과 이야기하기', script.parts.coast.intro),
-      route: xy(script.parts.coast.route, [{ x: -4, z: 12 }, { x: -12, z: 0 }, { x: 6, z: -2 }, { x: 6, z: 14 }]).map((r, i) => i === 1 ? { ...r, scene: warshipArrives, holdCenter: true } : r) }, // 망루: 남은 시간을 화면 가운데 크게(D-02)
-    { type: 'scene', title: '1876년 연무당', goal: script.goals[4], play: ctx => treatyScene(ctx) }, // 이야기 장면(D-58): 조약을 맺는 모습
+      route: xy(script.parts.coast.route, [{ x: -4, z: 12 }, { x: -12, z: 0 }, { x: 6, z: -2 }, { x: 6, z: 14 }]).map((r, i) => i === 1 ? { ...r, scene: warshipArrives, holdCenter: true } : i === 3 ? { ...r, scene: ctx => treatyScene(ctx) } : r) }, // 망루: 남은 시간을 화면 가운데 크게(D-02)
     { ...script.parts.paper, goal: script.goals[4], arena: YEONMU, from: [0, -3.6], view: { eye: [2.5, 3.2, -1.2], at: [0, 1, -6.5] }, scroll: true, // 연무당 탁자 앞에서 낡은 두루마리 조약문을 읽는다(D-05)
       intro: meet('official', '조선 관리와 이야기하기', script.parts.paper.intro) },
     { ...script.parts.rumor, goal: script.goals[5], arena: YEONMU, from: [0, 11], mark: '!', intro: meet('scholar', '젊은 선비와 이야기하기', script.parts.rumor.intro), // 머리 위는 느낌표(D-06)
