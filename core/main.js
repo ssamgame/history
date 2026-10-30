@@ -199,6 +199,7 @@ function boot() {
 
   async function main() {
     const debug = new URLSearchParams(location.search).get('debug');
+    if (new URLSearchParams(location.search).has('e2e')) { window.__world = world; window.__ctx = ctx; } // 자동 플레이 점검(tools/e2e.cjs)용: 학생 주소에는 붙지 않고 진행도 바꾸지 않는다
     // 개발용: ?debug=ch2-scene 처럼 장면만 띄운다. ?debug=ch2-minigame 은 미니게임부터, ?debug=ch2-quiz 는 퀴즈부터 시작한다. 조선편은 ?debug=j1-scene, 근대·일제 강점기·현대편은 k1·i1·h1.
     const dm = /^(ch\d|[jkih]\d)-(scene|intro|explore|minigame|quiz|story)$/.exec(debug || ''); // intro: 도입 장면부터, story: 이야기 장면만(&s=이름, 장 모듈의 stories)
     const meta = dm && ALL_CHAPTERS.find(c => c.id === dm[1] && c.load);

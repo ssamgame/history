@@ -22,7 +22,7 @@ test('carry: 두 팔로 안으면 물건이 두 손 사이에 붙고, 걸어도 
   ok(handsNear(p, b).every(d => d < 0.6), `hands at the object ${handsNear(p, b).map(d => d.toFixed(2))}`);
   const ys = [], diffs = [];
   let legMax = 0; // 걸음 박자에 따라 한 순간의 다리 각은 작을 수 있어, 걷는 동안 가장 크게 벌어진 각을 본다
-  for (let i = 0; i < 40; i++) { animateWalk(p, true, 0.05); ys.push(b.position.y); diffs.push(Math.abs(u.arms[0].rotation.x - u.arms[1].rotation.x)); legMax = Math.max(legMax, ...u.legs.map(l => Math.abs(l.rotation.x))); }
+  for (let i = 0; i < 40; i++) { p.position.x += 1.3 * 0.05; animateWalk(p, true, 0.05); ys.push(b.position.y); diffs.push(Math.abs(u.arms[0].rotation.x - u.arms[1].rotation.x)); legMax = Math.max(legMax, ...u.legs.map(l => Math.abs(l.rotation.x))); }
   ok(Math.max(...diffs) < 0.25, 'arms do not swing opposite');
   const sway = Math.max(...ys) - Math.min(...ys); ok(sway > 0.005 && sway < 0.12, `gentle sway ${sway.toFixed(3)}`);
   ok(legMax > 0.3, `legs still walk ${legMax.toFixed(2)}`);
@@ -39,7 +39,7 @@ test('carry: 옆구리에 끼거나 어깨에 메면 그쪽 손이 물건을 잡
     const d = handsNear(p, b);
     ok(d[1] < 0.6, `${style}: holding hand ${d[1].toFixed(2)}`);
     const free = [];
-    for (let i = 0; i < 40; i++) { animateWalk(p, true, 0.05); free.push(p.userData.arms[0].rotation.x); }
+    for (let i = 0; i < 40; i++) { p.position.x += 1.3 * 0.05; animateWalk(p, true, 0.05); free.push(p.userData.arms[0].rotation.x); }
     ok(Math.max(...free) - Math.min(...free) > 0.3, `${style}: the other arm swings`);
   }
 });

@@ -139,6 +139,7 @@ test('walk D-11: walking people swing legs wide with arms opposite, bob, and kee
   const a = makePerson(LOOKS.soldier), b = makePerson(LOOKS.villager);
   let maxLeg = 0, opposite = true, minY = Infinity, maxY = -Infinity, differ = false;
   for (let i = 0; i < 80; i++) {
+    a.position.x += 1.5 / 30; b.position.x += 1.5 / 30; // 2026-10-30: 걸음은 실제로 간 거리만큼(제자리 걸음은 하지 않는다)
     animateWalk(a, true, 1 / 30); animateWalk(b, true, 1 / 30);
     const u = a.userData;
     if (i > 20) {
