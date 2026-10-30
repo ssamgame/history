@@ -17,6 +17,7 @@ export async function storyScene(ctx, { key, arena, mood = null, run }) {
   ctx.input.enabled = false;
   await ctx.fade?.(true);
   const a = buildArena(world, arena), g = a.group;
+  const hidden = world.level.children.filter(o => o !== g && o.visible); hidden.forEach(o => { o.visible = false; }); // 마을 땅·산이 무대 너머로 비치지 않게(그리기도 줄어든다)
   if (mood) world.setMood(mood);
   world.player.visible = false; // 학생은 마을에 그대로 두고(장면에는 나오지 않는다) 끝나면 같은 자리로
   const abs = ([x, y, z]) => { const p = a.at(x, z); return [p.x, y, p.z]; };
@@ -37,6 +38,7 @@ export async function storyScene(ctx, { key, arena, mood = null, run }) {
     dialogue.close();
   } finally {
     await ctx.fade?.(true);
+    hidden.forEach(o => { o.visible = true; });
     a.dispose();
     if (mood0) world.setMood(mood0);
     world.player.visible = vis;

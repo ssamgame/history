@@ -37,6 +37,7 @@ export default {
   },
 
   jindo: {
+    meet: [{ who: 'kimtongjeong', text: '여기가 용장성이다. 우리는 이 성을 근거지로 맞서 왔다.', src: ['S12'] }], // 다가가 말을 걸면, 그다음은 이야기 장면(D-58, chapters/ch6/story.js)
     arrive: [{ who: 'guide', text: '진도에 닿았어. 배에서 내려 용장성 앞의 김통정에게 가 보자.' }],
     talk: [
       { who: 'narr', text: '삼별초는 진도 용장성을 근거지로 9개월 동안 맞섰어요.', src: ['S12'] },
@@ -46,6 +47,7 @@ export default {
   },
 
   jeju: {
+    meet: [{ who: 'kimtongjeong', text: '제주까지 왔구나. 이곳 항파두리를 보아라.' }],
     arrive: [{ who: 'guide', text: '제주에 닿았어. 흙으로 쌓은 성을 따라 김통정에게 가 보자.' }],
     talk: [
       { who: 'kimtongjeong', expr: 'tension', text: '이 항파두리에 흙으로 성을 쌓고 끝까지 맞설 것이다.', src: ['S13'] },

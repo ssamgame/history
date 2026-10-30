@@ -10,6 +10,7 @@ import { leadWalk } from '../kit/lead.js';
 import { setCarry } from '../../core/people.js';
 import { waitInteract } from '../../core/portal.js';
 import script from './script.js';
+import { capitalScene } from './story.js';
 
 let scene = null;
 const PEOPLE = ['villager']; // 이야기를 들어 볼 사람(백성), 그다음 관리
@@ -287,6 +288,7 @@ export default {
   mood: 'overcast',
   script,
   quizzes: script.quizzes,
+  stories: { capital: capitalScene }, // 이야기 장면(D-58)
 
   buildScene(world) {
     scene = buildCh4Scene(world); callLabel = null; cheoinOff = null;
@@ -389,12 +391,9 @@ export default {
       dialogue.close();
     }
     const a = await dialogue.ask(script.capital.reason);
-    await ctx.fade(true);
-    world.player.visible = false;
-    world.setFixedCamera(scene.areas.ganghwa.cam.pos, scene.areas.ganghwa.cam.target);
-    await ctx.fade(false);
-    await sayAll(dialogue, script.capital.done);
     dialogue.close();
+    world.player.visible = false;
+    await capitalScene(ctx); // 이야기 장면(D-58): 배들이 강화도로 건너가고 몽골군은 바닷가에서 멈춘다
 
     // 2. 처인성: 짧은 장면 전환 뒤 김윤후를 따라 비탈을 올라 성벽 위로, 가리킨 곳으로 걸어가 막는다
     await ctx.fade(true);

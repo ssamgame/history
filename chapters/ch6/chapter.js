@@ -8,6 +8,7 @@ import { leadWalk } from '../kit/lead.js';
 import { waitInteract } from '../../core/portal.js';
 import * as THREE from 'three';
 import script from './script.js';
+import { yongjangScene, hangpaduriScene } from './story.js';
 
 const PEOPLE = ['minister', 'sambyeolcho', 'villager'];
 const SAIL_CAM = { offset: [0, 2.9, 5.4], lookY: 1.3 }; // 배 바로 뒤 낮은 눈높이(1인칭 같은 3인칭, D-20)
@@ -122,6 +123,7 @@ export default {
   mood: 'sea',
   script,
   quizzes: script.quizzes,
+  stories: { yongjang: yongjangScene, hangpaduri: hangpaduriScene }, // 이야기 장면(D-58)
 
   buildScene(world) {
     scene = buildCh6Scene(world); devWorld = world;
@@ -232,7 +234,9 @@ export default {
     await ctx.fade(false);
     await sayAll(dialogue, script.jindo.arrive);
     dialogue.close();
-    await talkToKim(ctx, script.jindo.talk);
+    await talkToKim(ctx, script.jindo.meet);
+    dialogue.close();
+    await yongjangScene(ctx); // 이야기 장면(D-58): 용장성이 무너지고 김통정이 배로 제주로
     // 4. 진도 → 제주
     await ctx.fade(true);
     world.npcs.get('kimtongjeong').mesh.visible = false;
@@ -247,7 +251,9 @@ export default {
     await ctx.fade(false);
     await sayAll(dialogue, script.jeju.arrive);
     dialogue.close();
-    await talkToKim(ctx, script.jeju.talk);
+    await talkToKim(ctx, script.jeju.meet);
+    dialogue.close();
+    await hangpaduriScene(ctx); // 이야기 장면(D-58): 항파두리 흙성과 몰려오는 연합군 배
     input.enabled = false;
     // 마을(포구)로 돌아온다: 이어서 큰 문이 선다(C-02)
     await ctx.fade(true);

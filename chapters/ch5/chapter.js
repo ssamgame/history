@@ -11,6 +11,7 @@ import { makePerson } from '../../core/people.js';
 import { LOOKS } from '../../content/characters.js';
 import * as THREE from 'three';
 import script from './script.js';
+import { tripitakaScene } from './story.js';
 
 const ARTISANS = ['artisan1', 'artisan2', 'artisan3', 'artisan4'];
 const NEAR = 1.3;      // 빛나는 자리에 닿았다고 보는 거리
@@ -158,6 +159,7 @@ export default {
   mood: 'forest',
   script,
   quizzes: script.quizzes,
+  stories: { tripitaka: tripitakaScene }, // 이야기 장면(D-58)
 
   buildScene(world) {
     scene = buildCh5Scene(world); addNumberTags(world);
@@ -267,8 +269,8 @@ export default {
     ctx.setGoal(script.goals[5]);
     await shelveBlock(ctx);
     input.enabled = false;
-    await sayAll(dialogue, script.result);
     dialogue.close();
+    await tripitakaScene(ctx); // 끝 해설 장면(D-58): 16년 동안 만든 경판이 서가를 채운다
     return { firstTryCorrect: a.first ? 1 : 0, firstTryTotal: 1, easyModeUsed: false };
   },
 };

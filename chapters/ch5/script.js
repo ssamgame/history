@@ -70,6 +70,8 @@ export default {
     glyphs: GLYPHS.map(g => ({ ...g, reading: READING[g.glyph] })),
   },
 
+  // 끝 해설 장면(D-58, chapters/ch5/story.js): 서가가 16년에 걸쳐 경판으로 가득 찬다. result 두 문장을 장면 위에
+  tripitaka: { line: { who: 'monk', expr: 'joy', text: '온 나라 사람들의 마음이 한 판 한 판에 담겼소.' } },
   result: [
     { who: 'narr', text: '1236년부터 1251년까지 16년 동안 만든 경판은 81,258판이에요. 이것이 팔만대장경이에요.', src: ['S7', 'S9'] },
     { who: 'narr', text: '팔만대장경판은 유네스코 세계기록유산이에요.', src: ['S9'] },
