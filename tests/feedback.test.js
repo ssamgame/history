@@ -25,9 +25,10 @@ test('feedback: 움직이는 인물(따라오는 사람·감시원)도 다리를
     const p = makePerson(LOOKS.citizen); w.level.add(p);
     const legs = p.userData.legs;
     step(w);
-    for (let i = 0; i < 6; i++) { p.position.x += 0.3; step(w); }
-    ok(Math.abs(legs[0].rotation.x) > 0.15, `걷는 동안 다리가 움직인다 (${legs[0].rotation.x.toFixed(2)})`);
-    ok(Math.sign(legs[0].rotation.x) !== Math.sign(legs[1].rotation.x), '두 다리는 엇갈린다');
+    let mx = 0, crossed = false; // 한 순간이 아니라 걷는 동안 가장 크게 벌어진 각(걸음 박자는 사람마다 다르다)
+    for (let i = 0; i < 6; i++) { p.position.x += 0.3; step(w); mx = Math.max(mx, Math.abs(legs[0].rotation.x)); if (Math.abs(legs[0].rotation.x) > 0.05 && Math.sign(legs[0].rotation.x) !== Math.sign(legs[1].rotation.x)) crossed = true; }
+    ok(mx > 0.15, `걷는 동안 다리가 움직인다 (${mx.toFixed(2)})`);
+    ok(crossed, '두 다리는 엇갈린다');
     step(w, 30);
     ok(Math.abs(legs[0].rotation.x) < 0.05, '멈추면 다리를 모은다');
     const rider = makePerson(LOOKS.citizen); rider.userData.noWalk = true; w.level.add(rider);
@@ -39,8 +40,8 @@ test('feedback: 움직이는 인물(따라오는 사람·감시원)도 다리를
 test('feedback: 학생도 걸을 때 다리를 크게 흔든다', () => {
   const w = testWorld();
   try {
-    for (let i = 0; i < 4; i++) w.step(1 / 20, { x: 1, z: 0 });
-    ok(Math.abs(w.player.userData.legs[0].rotation.x) > 0.2);
+    let mx = 0; for (let i = 0; i < 8; i++) { w.step(1 / 20, { x: 1, z: 0 }); mx = Math.max(mx, Math.abs(w.player.userData.legs[0].rotation.x)); }
+    ok(mx > 0.2, `가장 크게 벌어진 다리 각 ${mx.toFixed(2)}`);
   } finally { w.dispose(); }
 });
 

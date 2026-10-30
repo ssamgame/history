@@ -21,10 +21,11 @@ test('carry: 두 팔로 안으면 물건이 두 손 사이에 붙고, 걸어도 
   ok(u.arms.every(a => a.rotation.x < -0.6), 'both arms forward');
   ok(handsNear(p, b).every(d => d < 0.6), `hands at the object ${handsNear(p, b).map(d => d.toFixed(2))}`);
   const ys = [], diffs = [];
-  for (let i = 0; i < 40; i++) { animateWalk(p, true, 0.05); ys.push(b.position.y); diffs.push(Math.abs(u.arms[0].rotation.x - u.arms[1].rotation.x)); }
+  let legMax = 0; // 걸음 박자에 따라 한 순간의 다리 각은 작을 수 있어, 걷는 동안 가장 크게 벌어진 각을 본다
+  for (let i = 0; i < 40; i++) { animateWalk(p, true, 0.05); ys.push(b.position.y); diffs.push(Math.abs(u.arms[0].rotation.x - u.arms[1].rotation.x)); legMax = Math.max(legMax, ...u.legs.map(l => Math.abs(l.rotation.x))); }
   ok(Math.max(...diffs) < 0.25, 'arms do not swing opposite');
   const sway = Math.max(...ys) - Math.min(...ys); ok(sway > 0.005 && sway < 0.12, `gentle sway ${sway.toFixed(3)}`);
-  ok(Math.max(...u.legs.map(l => Math.abs(l.rotation.x))) > 0.3, 'legs still walk');
+  ok(legMax > 0.3, `legs still walk ${legMax.toFixed(2)}`);
   setCarry(p, null);
   ok(!b.parent, 'put down');
   ok(u.arms.every(a => Math.abs(a.rotation.x) < 0.01 && Math.abs(a.rotation.z) < 0.01), 'arms back');

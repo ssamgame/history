@@ -83,7 +83,7 @@ const hashOf = key => { let h = 2166136261; for (let i = 0; i < key.length; i++)
 // 한 사람의 머리 모양. role: core/facebuild.js roleOf 값. 돌려주는 값 { hat, color, beard?, ...기본형, ...변형 하나 }
 export function hairStyle(L = {}, n = 0, role = 'farmer', e = era) {
   const f = L.face || {};
-  const family0 = L.hat, hat = (e && ERA_SWAP[e]?.[family0]) || family0;
+  const family0 = L.hat, hat = (e && !L.named && ERA_SWAP[e]?.[family0]) || family0; // 이름난 인물은 생김새에 정한 머리 그대로
   const old = f.age === 'old', kid = f.age === 'young' || role === 'youth' || role === 'child', fem = f.sex === 'f' || ['bun', 'braid'].includes(hat);
   const out = { hat, color: L.hairColor || null };
   let h = hashOf(JSON.stringify([L.robe, family0, L.outfit, f.beard, role]));

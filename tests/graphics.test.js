@@ -54,7 +54,8 @@ test('world: shadow map is sharper on higher quality', () => {
 test('people: belt, collar and shoes, and gear by role', () => {
   const names = g => { const s = new Set(); g.traverse(o => o.name && s.add(o.name)); return s; };
   const p = names(makePerson(LOOKS.player));
-  for (const n of ['belt', 'collar', 'shoe']) ok(p.has(n), `player has ${n}`);
+  for (const n of ['belt', 'shoe']) ok(p.has(n), `player has ${n}`);
+  ok(p.has('armor') || p.has('collar'), 'player wears armor or a collared robe'); // D-54: 고려 병사·학생은 찰갑(깃은 갑옷 아래)
   ok(names(makePerson(LOOKS.player)).has('spear'), 'soldier carries a spear');
   ok(names(makePerson(LOOKS.gangamchan)).has('sword'), 'general wears a sword');
   ok(!names(makePerson(LOOKS.monk)).has('spear') && !names(makePerson(LOOKS.monk)).has('sword'), 'monk unarmed');

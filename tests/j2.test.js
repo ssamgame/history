@@ -31,7 +31,7 @@ test('j2: scene builds a palace with three people, player is a palace kid', () =
   try {
     buildJ2Scene(w);
     eq([...w.npcs.values()].filter(n => !n.spot).map(n => n.id).sort(), ['commoner', 'scholar', 'sejong']);
-    ok(j2.player && j2.player.hat === 'topknot');
+    ok(j2.player && ['topknot', 'daenggi'].includes(j2.player.hat), `궁궐 아이 머리 ${j2.player?.hat}`); // D-54: 혼인 전 아이는 댕기머리
   } finally { w.dispose(); }
 });
 
