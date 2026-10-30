@@ -11,6 +11,7 @@ import { LOOKS } from '../../../content/characters.js';
 import { geunjeongjeon, jongmyo, sajikdan } from '../landmarks.js';
 import * as THREE from 'three';
 import script from './script.js';
+import { coronationScene } from './story.js';
 import { waitInteract } from '../../../core/portal.js';
 
 // 미니게임 무대(마을에서 떨어진 x 400)
@@ -229,8 +230,9 @@ export async function marchOnMap(ctx) {
     });
   });
   ctx.audio.play('correct');
-  await dialogue.say(T[2]);
-  dialogue.close();
+  await coronationScene(ctx); // 이야기 장면(D-58): 1392년 이성계가 왕위에 오른다(T[2]를 장면 위에)
+  world.fitFixedCamera([at(MARCH.mid).x, 0, (at(MARCH.wihwa).z + at(MARCH.hanyang).z) / 2], [0, 1.5, 1], pts, 0.7); // 다시 지도 위로
+  world.player.visible = false;
   tag('한양 (1394)', MARCH.hanyang, 1.3, { color: '#2f4a6b' });
   await walk([MARCH.gaegyeong, MARCH.hanyang], 3);
   await dialogue.say(T[3]);
@@ -250,6 +252,7 @@ export default {
   mood: 'monsoon',
   script,
   quizzes: script.quizzes,
+  stories: { coronation: coronationScene }, // 이야기 장면(D-58)
 
   buildScene(world) {
     scene = buildJ1Scene(world);

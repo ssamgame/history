@@ -98,6 +98,8 @@ export default {
   wordsFail: '소리 나는 차례대로 놓아요. 첫소리(자음) 다음에 가운뎃소리(모음)가 와요.',
   wordsDone: [{ who: 'guide', text: '자음과 모음을 모으니 낱말이 되었어! 이제 누구나 소리를 글로 적을 수 있어.' }],
 
+  // 끝 해설 장면(D-58, chapters/joseon/j2/story.js): result 앞 두 문장을 저잣거리 알림판 장면 위에
+  proclaim: { line: { who: 'commoner', expr: 'joy', text: '스물여덟 글자만 익히면 나도 하고 싶은 말을 글로 쓸 수 있겠어요!', src: ['S28'] } },
   result: [
     { who: 'narr', text: '세종은 1443년에 훈민정음을 만들고, 1446년에 세상에 널리 알렸어요.', src: ['S27'] },
     { who: 'narr', text: '집현전 학자들이 훈민정음을 만드는 일을 도왔어요.', src: ['S29'] },

@@ -65,6 +65,8 @@ export default {
     { who: 'yisunsin', text: '거북선을 앞세워라!' },
     { who: 'navy', text: '거북선이 앞장선다! 덮개 위에는 칼과 송곳, 앞에는 용머리!', src: ['S36'] },
   ],
+  // 끝 해설 장면(D-58, chapters/joseon/j4/story.js): result 세 문장을 돌아오는 수군과 포구 사람들 장면 위에
+  victory: { line: { who: 'commoner', expr: 'joy', text: '수군이 돌아왔어요! 바다를 지켜 냈어요!' } },
   result: [
     { who: 'narr', text: '1592년 7월, 조선 수군은 한산도 앞바다에서 일본 배를 크게 물리쳤어요. 이 싸움을 한산도 대첩이라고 해요.', src: ['S35'] },
     { who: 'narr', text: '조선 수군은 남쪽 바다를 지켜 냈어요.', src: ['S34', 'S35'] },

@@ -13,6 +13,7 @@ import { LOOKS } from '../../../content/characters.js';
 import { sayAll, placePlayer, tryPart, sumParts, standPick, visitAny } from '../common.js';
 import { waitInteract } from '../../../core/portal.js';
 import script from './script.js';
+import { proclaimScene } from './story.js';
 
 // 미니게임 무대(마을에서 떨어진 x 400): 집현전 앞마당
 export const YARD = {
@@ -245,6 +246,7 @@ export default {
   player: LOOKS.kid,
   script,
   quizzes: script.quizzes,
+  stories: { proclaim: proclaimScene }, // 이야기 장면(D-58)
 
   buildScene(world) {
     scene = buildJ2Scene(world);
@@ -340,7 +342,9 @@ export default {
       return missed ? 'missed' : true;
     }, script.wordsFail));
     await sayAll(dialogue, script.wordsDone);
-    await sayAll(dialogue, script.result);
+    dialogue.close();
+    await proclaimScene(ctx); // 끝 해설 장면(D-58): 1446년 훈민정음을 널리 알린다(result 앞 두 문장)
+    await sayAll(dialogue, script.result.slice(2));
     dialogue.close();
     await ctx.fade(true);
     placePlayer(world, AFTER);

@@ -11,6 +11,7 @@ import { waitInteract } from '../../../core/portal.js';
 import { enterThroughGate, closeGate } from '../../kit/gate.js';
 import { sayAll, placePlayer, tryPart, sumParts } from '../common.js';
 import script from './script.js';
+import { victoryScene } from './story.js';
 
 const PEOPLE = ['navy', 'commoner'];
 const SPOT = [-5, 7.5];
@@ -165,6 +166,7 @@ export default {
   player: LOOKS.navy,
   script,
   quizzes: script.quizzes,
+  stories: { victory: victoryScene }, // 이야기 장면(D-58)
 
   buildScene(world) {
     scene = buildJ4Scene(world);
@@ -264,7 +266,7 @@ export default {
     await turtleAndBattle(ctx);
     scene.myShip.visible = false;
     await ctx.wait(600);
-    await sayAll(dialogue, script.result); dialogue.close();
+    await victoryScene(ctx); // 끝 해설 장면(D-58): 돌아오는 수군과 포구 사람들, 해 질 녘 판옥선
 
     await ctx.fade(true);
     world.bounds = { x0: -16, x1: 16, z0: 4.5, z1: 14 };
