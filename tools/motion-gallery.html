@@ -25,6 +25,7 @@
   import { addSculler, autoRow } from '../chapters/kit/row.js';
   import { rider as armyRider } from '../chapters/kit/army.js';
   import * as BLD from '../chapters/kit/buildings.js';
+  import { loadRig, makeRigged, animateRigged } from '../core/rigged.js';
   setHairEra(new URLSearchParams(location.search).get('era'), new URLSearchParams(location.search).get('ch') || '');
   const q = new URLSearchParams(location.search), act = q.get('act') || 'walk';
   const world = createWorld(document.getElementById('stage'), { quality: 'medium' });
@@ -149,6 +150,21 @@
       phase('돌아서기'); await Promise.all(hs.map(h => turnTo(world, h, { x: -20, z: h.position.z }))); await sleep(0.6); await Promise.all(hs.map(h => turnTo(world, h, { x: 20, z: h.position.z })));
       phase('달리기'); await go(11, 6);
       phase('멈춤'); await sleep(2); phase('끝');
+    },
+    async rig() { // 블렌더 시범(core/rigged.js): 위는 지금 인물, 아래는 블렌더로 만든 뼈대 인물. 같은 길을 걷기 → 빠른 걸음 → 달리기 → 멈춤
+      await loadRig();
+      const looks = (q.get('looks') || 'villager').split(','); // 생김새마다 지금 인물(왼쪽)과 블렌더 인물(오른쪽)을 한 쌍으로, 쌍은 뒤로 늘어선다
+      const now = looks.map((l, i) => P(l, -12, -0.7 - i * 3, Math.PI / 2));
+      const rig = looks.map((l, i) => { const r = makeRigged(LOOKS[l]); r.position.set(-12, 0, 0.7 - i * 3); r.rotation.y = Math.PI / 2; g.add(r); return r; });
+      world.onUpdate(dt => rig.forEach(r => animateRigged(r, dt)));
+      window.__hooks.rig = rig;
+      track(now[0], q.get('side') ? [0, 1.3, 7] : [4.5, 1.6, 5]); // 앞쪽 비스듬히(&side=1이면 옆에서)
+      const all = [...now, ...rig], go = (x, sp) => Promise.all(all.map(p => walkTo(world, p, [x, p.position.z], { speed: sp })));
+      phase('서 있기'); await sleep(1.5);
+      phase('걷기'); await go(-4, 1.5);
+      phase('빠른 걸음'); await go(3, 2.8);
+      phase('달리기'); await go(12, 5.5);
+      phase('멈춤'); await sleep(1.5); phase('끝');
     },
     async row() { // 노 젓기(장면이 쓰는 chapters/kit/row.js): 배가 서 있다가 나아가고 다시 선다. 사공의 두 손이 노 손잡이를 쥔다
       const water = new THREE.Mesh(new THREE.PlaneGeometry(60, 30).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ color: 0x3f7fa0 })); water.position.y = 0.03; g.add(water);
