@@ -19,8 +19,15 @@ let base = null;
 export function rigTrialOn() {
   try { if (new URLSearchParams(location.search).get('rig') === '1') return true; return localStorage.getItem('goryeo-rig') === '1'; } catch { return false; }
 }
-export async function loadRig(url = new URL('../assets/models/person.glb', import.meta.url).href) {
-  if (!base) base = await new GLTFLoader().loadAsync(url);
+// 모델은 자바스크립트 모듈(assets/models/person.js, GLB를 base64로)에 담겨 다른 코드처럼 불러진다(따로 파일을 내려받지 않는다). url을 주면 그 파일을 받는다(개발용)
+export async function loadRig(url = null) {
+  if (base) return base;
+  if (url) base = await new GLTFLoader().loadAsync(url);
+  else {
+    const { default: b64 } = await import('../assets/models/person.js');
+    const bin = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    base = await new GLTFLoader().parseAsync(bin.buffer, '');
+  }
   return base;
 }
 export const canRig = look => !!base && ROBES.has(look.outfit ?? null) && !look.royal;

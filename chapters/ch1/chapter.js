@@ -9,7 +9,7 @@ import * as THREE from 'three';
 import { rigTrialOn, loadRig, enableRig } from '../../core/rigged.js';
 
 // 블렌더 몸 시험(2026-10-31 선생님: 먼저 한 장에): 켤 때만(?rig=1 또는 저장된 설정 goryeo-rig=1) 이 장의 긴 옷 인물이 뼈대 있는 몸이 된다
-if (rigTrialOn()) await loadRig();
+if (rigTrialOn()) await loadRig().catch(e => console.warn('블렌더 몸을 불러오지 못해 지금 인물로 한다', e)); // 못 불러와도 장은 그대로 시작한다
 
 export const START = [0, 19];
 export const INTRO_FROM = [0, 36]; // 장 시작 장면: 진영 밖 길(걷는 곳 z1=22 바깥)

@@ -1,5 +1,6 @@
 # 블렌더로 인물 몸(뼈대·살붙이기·움직임)을 만들어 GLB로 내보낸다(2026-10-31 시범: 선생님 "블렌더로 인물의 모양·움직임 완성도").
-# 실행(창 없이): <블렌더 파이썬> tools/blender/person.py <내보낼 .glb>
+# 실행(창 없이): <블렌더 파이썬> tools/blender/person.py assets/models/person.glb && python3 tools/blender/glb2js.py assets/models/person.glb assets/models/person.js
+#   (게임은 person.js를 불러온다: GLB를 base64로 담은 모듈)
 #   블렌더는 PyPI의 bpy(블렌더 5.2를 파이썬 모듈로 만든 것)로 돌린다: python3.13 -m venv bl && bl/bin/pip install bpy
 # 몸 크기는 게임의 인물(core/people.js)과 같게 둔다: 다리 관절 높이 0.55, 몸통 관절(허리) 1.05, 어깨 1.65(좌우 ±0.5), 팔 길이 0.78, 머리 자리 2.1.
 # 얼굴·머리카락·모자는 넣지 않는다: 게임이 지금처럼 코드로 그린 머리(core/people.js의 headGroup)를 이 몸의 head 뼈에 붙인다.
