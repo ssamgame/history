@@ -12,7 +12,7 @@
 <div id="stage"></div>
 <div id="bar"></div>
 <script type="module">
-  // 개발용: 인물 움직임(2026-10-30 움직임 개선)을 한 마당에서 본다. ?act=walk|turn|weapons|carry|handshake|give|escort|strike|talk|chain
+  // 개발용: 인물 움직임(2026-10-30 움직임 개선)을 한 마당에서 본다. ?act=walk|turn|weapons|carry|handshake|give|escort|strike|talk|chain|horse|rider|row|gait|lineup
   // window.__t(초)·window.__phase(지금 하는 일)를 보고 사진을 찍는다(scratchpad motion.cjs)
   import * as THREE from 'three';
   import { createWorld } from '../core/world.js';
@@ -22,9 +22,13 @@
   import { LOOKS } from '../content/characters.js';
   import { makeHorse, mount } from '../core/horse.js';
   import { setHairEra } from '../core/hairstyle.js';
+  import { addSculler, autoRow } from '../chapters/kit/row.js';
+  import { rider as armyRider } from '../chapters/kit/army.js';
+  import * as BLD from '../chapters/kit/buildings.js';
   setHairEra(new URLSearchParams(location.search).get('era'), new URLSearchParams(location.search).get('ch') || '');
   const q = new URLSearchParams(location.search), act = q.get('act') || 'walk';
   const world = createWorld(document.getElementById('stage'), { quality: 'medium' });
+  window.__world = world; // 점검 도구(tools/qa)가 장면을 읽는다
   world.setMood('morning'); world.player.visible = false;
   const arena = buildArena(world, { origin: [0, 0], ground: 'earth', groundColor: 0x9a8a68, hill: 0.5, bounds: { x0: -14, x1: 14, z0: -10, z1: 10 }, nature: false });
   const g = arena.group;
@@ -35,9 +39,11 @@
   window.__hooks = {};
   let last = performance.now(); window.__t = 0;
   let follow = null; const track = (p, off = [0, 1.4, 5.5]) => { follow = { p, off }; }; // 걷는 사람을 옆에서 따라가며 본다
-  const loop = now => { const dt = Math.min(0.05, (now - last) / 1000); last = now; window.__t += dt; world.step(dt, { x: 0, z: 0 }); if (follow) { const v = follow.p.getWorldPosition(new THREE.Vector3()); world.setFixedCamera([v.x + follow.off[0], follow.off[1] + 0.6, v.z + follow.off[2]], [v.x, 1.3, v.z]); } world.render(); requestAnimationFrame(loop); };
+  // &fixed=1: 한 프레임에 1/30초씩(실제 시간과 상관없이 늘 같은 장면) · &pauseAt=2,5.5: 그 시각에 멈춰 window.__hold에 시각을 둔다(점검 도구가 사진을 찍고 null로 풀면 이어 간다)
+  const fixed = q.get('fixed'), stops = (q.get('pauseAt') || '').split(',').filter(Boolean).map(Number).sort((a, b) => a - b); window.__hold = null;
+  const loop = now => { let dt = fixed ? 1 / 30 : Math.min(0.05, (now - last) / 1000); last = now; if (window.__hold != null) dt = 0; else if (stops.length && window.__t >= stops[0]) { window.__hold = stops.shift(); dt = 0; } window.__t += dt; world.step(dt, { x: 0, z: 0 }); if (follow) { const v = follow.p.getWorldPosition(new THREE.Vector3()); world.setFixedCamera([v.x + follow.off[0], follow.off[1] + 0.6, v.z + follow.off[2]], [v.x, 1.3, v.z]); } world.render(); requestAnimationFrame(loop); };
   requestAnimationFrame(loop);
-  const sleep = s => new Promise(r => setTimeout(r, s * 1000));
+  const sleep = s => new Promise(r => { const end = window.__t + s; const off = world.onUpdate(() => { if (window.__t >= end) { off(); r(); } }); }); // 장면 시계로 기다린다(멈춘 동안은 기다림도 멈춘다)
   const scenes = {
     async lineup() { // 생김새 줄 세우기(옷차림 확인): &ids=sejong,scholar,…&era=joseon
       const ids = (q.get('ids') || 'sejong,joseonOfficial,scholar,joseonSoldier,commoner,woman').split(',');
@@ -132,6 +138,28 @@
       phase('속보'); await Promise.all(hs.map(h => ride(h, 2, 3.4)));
       phase('구보'); await Promise.all(hs.map(h => ride(h, 13, 6)));
       phase('서기'); await sleep(2); phase('끝');
+    },
+    async rider() { // 기마병(장면이 쓰는 chapters/kit/army.js의 rider): 서 있기 → 걷기 → 멈춤 → 돌아서기 → 달리기 → 멈춤. 무기 든 기수도 함께
+      const hs = [['mongol', 0], ['khitan', -3], ['soldier', -6]].map(([lk, z]) => armyRider(g, lk, -10, z, Math.PI / 2));
+      track(hs[1], [7, 4.5, 10]); // 셋이 겹치지 않게 앞쪽 비스듬히에서 따라간다
+      const go = (x, sp) => Promise.all(hs.map(h => walkTo(world, h, [x, h.position.z], { speed: sp, accel: 0.6 })));
+      phase('서 있기'); await sleep(1.2);
+      phase('걷기'); await go(-3, 1.5);
+      phase('멈춤'); await sleep(1.5);
+      phase('돌아서기'); await Promise.all(hs.map(h => turnTo(world, h, { x: -20, z: h.position.z }))); await sleep(0.6); await Promise.all(hs.map(h => turnTo(world, h, { x: 20, z: h.position.z })));
+      phase('달리기'); await go(11, 6);
+      phase('멈춤'); await sleep(2); phase('끝');
+    },
+    async row() { // 노 젓기(장면이 쓰는 chapters/kit/row.js): 배가 서 있다가 나아가고 다시 선다. 사공의 두 손이 노 손잡이를 쥔다
+      const water = new THREE.Mesh(new THREE.PlaneGeometry(60, 30).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ color: 0x3f7fa0 })); water.position.y = 0.03; g.add(water);
+      const boats = [-2.5, 2.5].map((x, i) => { const b = new THREE.Group(); b.position.set(x, 0, -9); g.add(b); BLD.boat(b, { len: 4.6 }); const rig = addSculler(b, { look: i ? 'mongol' : 'sambyeolcho', deckY: 0.33, sternZ: -2.0, side: 0.3, scale: 0.85 }); return { b, rig }; });
+      const off = autoRow(world, boats.map(x => x.rig)); window.__hooks.row = boats.map(x => x.rig);
+      track(boats[0].b, [-8, 3, 4]);
+      let sp = 0; const drift = world.onUpdate(dt => boats.forEach(({ b }) => { b.position.z += sp * dt; }));
+      phase('서 있기'); await sleep(1.5);
+      phase('젓기'); sp = 1.4; await sleep(4.5);
+      phase('빠르게'); sp = 2.6; await sleep(3);
+      phase('멈춤'); sp = 0; await sleep(2.5); drift(); off(); phase('끝');
     },
   };
   await scenes[act]();

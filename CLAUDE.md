@@ -47,6 +47,7 @@
 - 개발용: `?debug=h3-minigame&part=1` 처럼 미니게임의 몇 번째 부분부터 볼 수 있다. 근대~현대편 카드형 미니게임은 `tools/minigame-gallery.html?part=h3:0`(&fill=1이면 자리 놓기를 채운 모습)으로 장면 없이 띄워 본다. `tests/layout.test.js`가 모든 화면 크기에서 버튼이 화면 안에 있고 손가락으로 누를 수 있는지(다른 판에 덮이지 않는지) 검사하고, 테스트 봇(`tests/bot.js`)도 누르기 전에 같은 검사를 한다.
 - 성능 측정(개발자용, 학생 화면에는 안 나옴): 게임 주소 뒤에 `?perf=1`(예: `?debug=k3-explore&perf=1`)을 붙이면 오른쪽 위에 측정판(FPS·5초 평균·멈칫 수, 펼치면 장면별 진입 3초/안정 FPS·render() CPU 시간·그리기 횟수·장면 짓기·무대 짓기·역사책 그림 시간, 복사·파일로 저장·화질 단추). 숫자는 `core/perf.js`가 모으고 `world.perf`로 장·무대·역사책이 기록한다. 우선 장면을 한 번에 재는 페이지는 `tools/perf-bench.html`(세 화질, 약 3분). GPU 시간·온도는 브라우저가 알려 주지 않아 재지 않는다.
 - 테스트: `powershell -NoProfile -ExecutionPolicy Bypass -File tools/test.ps1 -Port 8141` (헤드리스 Edge, 자체 하네스 `tests/harness.js`). 포트 8123은 막혀 있어 8141을 쓴다. 출력이 길면 파일로 받아 `FAIL|RESULT` 줄만 본다.
+- 시각 오류 자동 점검(2026-10-31): `tools/qa/`(`run.cjs` 실제 브라우저로 게임·개발 마당을 돌리며 화면 속 오류 감지기 `probe.js`가 몸통·머리 빔, 땅에 묻힘, 겹침, 기수·든 물건 어긋남, 미끄러짐, 순간이동, 단추 가림을 잡고 사진·영상·보고서를 남김, `baseline.cjs` 기준 화면 비교). 사용법은 `tools/qa/README.md`. 움직임을 고치면 `node tools/qa/run.cjs --suite motion`으로 확인한다.
 - 새 기능과 버그 수정은 테스트를 먼저 쓰고 실패를 본 뒤 고친다. 새 테스트 파일은 `tests/index.html`의 목록에 넣는다.
 - 화면에 보이는 변경은 브라우저 창에서 직접 확인한다(1000×560 정도로 탭 크기 흉내).
 
