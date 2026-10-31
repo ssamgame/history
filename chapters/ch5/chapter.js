@@ -51,6 +51,7 @@ function hold(world) { scene.plank.visible = true; scene.plank.rotation.set(0, 0
 export function showStepPicture(ctx, i) {
   const P = script.making.pictures.find(p => p.id === scene.stations[i].id);
   if (!P) return Promise.resolve();
+  (ctx.testHooks.order ||= []).push(`picture:${P.id}`);
   return new Promise(resolve => {
     const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
     const screen = el('section', 'screen doc ch5-step'); screen.dataset.step = P.id;
@@ -113,8 +114,8 @@ export async function makeBlock(ctx) {
     busy = true; show();
     const was = ctx.input.enabled; ctx.input.enabled = false;
     ctx.testHooks.work = ctx.testHooks.work || {};
-    await doWork(ctx, scene, st.id, (ctx.testHooks.work[st.id] = {}), async () => { // 몸으로 일하고(판 내려놓기 → 도구질) 그 자리에서 과정 그림, 3번 자리에서는 大藏經 새기기
-      await showStepPicture(ctx, k);
+    await showStepPicture(ctx, k); // 일하기 전에 그 일의 그림 설명부터(D-62, 2026-10-31 선생님)
+    await doWork(ctx, scene, st.id, (ctx.testHooks.work[st.id] = {}), async () => { // 몸으로 일한다(판 내려놓기 → 도구질). 3번 자리에서는 大藏經 새기기
       if (st.id === 'carve') await carve(ctx);
     });
     k += 1; scene.setStage(k); audio.play('correct');
@@ -176,21 +177,43 @@ export default {
     const { world } = ctx;
     const people = [...world.npcs.values()];
     const g = new THREE.Group(); g.name = 'introBurn'; g.position.set(0, 0, 2);
-    for (let k = 0; k < 14; k++) { // 쌓아 올린 옛 경판
+    // 쌓아 올린 옛 경판(초조대장경). D-62(2026-10-31 선생님): 불은 맨 아래에서 붙고, 아래 판부터 그을려 검게 타며 오그라들어 더미가 낮아지고 검은 재가 남는다
+    const H = 0.11, blocks = [];
+    for (let k = 0; k < 14; k++) {
       const b = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.1, 0.5), new THREE.MeshLambertMaterial({ color: 0x9a7650 }));
-      b.position.set((k % 2) * 0.1, 0.06 + k * 0.11, 0); b.rotation.y = (k % 3 - 1) * 0.1; g.add(b);
+      b.position.set((k % 2) * 0.1, 0.06 + k * H, 0); b.rotation.y = (k % 3 - 1) * 0.1; g.add(b); blocks.push({ b, k, burn: 0 });
     }
+    const ash = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.95, 0.16, 12), new THREE.MeshLambertMaterial({ color: 0x1e1a17 })); ash.position.y = 0.08; ash.scale.setScalar(0.01); ash.visible = false; g.add(ash);
     const soldiers = [[-3.4, -0.6, -0.5], [3.4, -0.6, 0.5], [-1.5, -2.6, 0.2], [1.7, -2.4, -0.2]].map(([x, z, ry]) => {
       const m = makePerson(LOOKS.mongol); m.position.set(x, 0, z); m.rotation.y = ry; m.userData.noWalk = true; g.add(m); return m;
     });
-    const fire = burning(world, { parent: g, x: 0, y: 0.5, z: 0, size: 2.2, level: 0 });
+    const fire = burning(world, { parent: g, x: 0, y: 0.02, z: 0, size: 2.0, level: 0 }); // 더미 맨 아래
+    const wood = new THREE.Color(0x9a7650), brown = new THREE.Color(0x5a3a20), black = new THREE.Color(0x141110);
+    const height = () => blocks.reduce((h, o) => (o.b.visible ? Math.max(h, o.b.position.y + 0.05 * o.b.scale.y) : h), 0);
+    const burnStep = (t, dt) => {
+      fire.setLevel(Math.min(1, t / 1.2) * (blocks.some(o => o.b.visible) ? 1 : Math.max(0, 1 - (t - 6) / 1.5)));
+      let y = 0.01;
+      for (const o of blocks) { // 아래 판부터(불이 위로 번진다) 그을리고 타서 줄어든다
+        o.burn = Math.min(1, Math.max(0, (t - 0.3 - o.k * 0.28) / 2.4));
+        const c = o.burn < 0.4 ? wood.clone().lerp(brown, o.burn / 0.4) : brown.clone().lerp(black, (o.burn - 0.4) / 0.6);
+        o.b.material.color.copy(c);
+        const sh = o.burn < 0.55 ? 1 : Math.max(0.05, 1 - (o.burn - 0.55) / 0.45);
+        o.b.scale.set(0.6 + 0.4 * sh, sh, 0.6 + 0.4 * sh);
+        o.b.visible = o.burn < 1;
+        o.b.position.y = y + 0.05 * o.b.scale.y; if (o.b.visible) y += H * o.b.scale.y; // 아래가 타서 줄면 위 판이 내려앉는다
+      }
+      fire.group.position.y = 0.02;
+      const gone = blocks.filter(o => o.burn > 0.55).length / blocks.length;
+      ash.visible = gone > 0; ash.scale.set(Math.max(0.01, gone), Math.max(0.01, gone), Math.max(0.01, gone));
+    };
+    ctx.testHooks.introBurn = { height, fireY: () => fire.group.position.y, darkness: () => blocks.reduce((a, o) => a + Math.min(1, o.burn / 0.8), 0) / blocks.length, ash: () => ash.visible && ash.scale.x > 0.5 };
     let off = null;
     return {
       shots: [
-        { cam: [3, 2.4, 7.5], look: [0, 1.8, 0], to: { cam: [-2, 2.4, 6.5], look: [0, 2.0, 0] },
+        { ms: 8200, cam: [3, 2.2, 7.5], look: [0, 1.2, 2], to: { cam: [-2, 1.9, 6.2], look: [0, 0.8, 2] }, // 타 들어가는 더미를 끝까지 보여 준다
           act: () => {
             people.forEach(n => { n.mesh.visible = false; }); world.level.add(g); g.visible = true; let t = 0;
-            off = world.onUpdate(dt => { t += dt; fire.setLevel(Math.min(1, t / 2.5)); });
+            off = world.onUpdate(dt => { t += dt; burnStep(t, dt); });
           } },
         { cam: [-9, 3.2, 8], look: [-5, 1.4, -2], to: { cam: [9, 3.2, 8], look: [5, 1.4, -2] },
           act: () => { off?.(); off = null; g.visible = false; fire.setLevel(0); people.forEach(n => { n.mesh.visible = true; }); } },
@@ -234,7 +257,7 @@ export default {
     dialogue.close();
     ctx.input.enabled = true;
     await new Promise(resolve => {
-      const stop = roam(ctx, {
+      const stop = roam(ctx, { faceBack: true,
         async onTalk(id) {
           if (id === 'monk') {
             if (monk && heard.size === ARTISANS.length) { // 모두 들은 뒤: 스님이 나무판을 건네며 일을 맡긴다

@@ -86,11 +86,10 @@ export default {
     ],
   },
 
-  // 끝 해설 장면(D-58, chapters/ch2/story.js lastStandScene): result 두 문장을 장면 위에 띄운다
-  lastStand: { line: { who: 'yanggyu', expr: 'tension', text: '물러서지 마라! 끌려가는 백성을 한 사람이라도 더 구하라!' } },
+  // 끝 해설 장면(D-58, chapters/ch2/story.js lastStandScene): result 두 문장을 장면 위에 띄운다. 양규의 대사는 뺐다(D-62)
   result: [
     { who: 'narr', text: '현종이 거란에 직접 찾아가겠다고 약속하자, 거란군은 물러갔어요.', src: ['S66', 'S15'] },
-    { who: 'narr', text: '양규는 끝까지 싸우다 전사했어요.', src: ['S15'] },
+    { who: 'narr', text: '양규는 끝까지 싸우다 결국 전사했어요.', src: ['S15'] },
   ],
 
   quizzes: [

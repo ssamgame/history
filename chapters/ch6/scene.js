@@ -1,6 +1,7 @@
 // 6장 장면: 넓은 바다. 북쪽(화면 위)으로 갈수록 남쪽 섬에 가까워지도록, 강화도 포구를 아래(+z)에,
 // 진도를 가운데, 제주를 위(-z)에 둔다. 배는 늘 화면 위쪽으로 나아간다.
 import * as THREE from 'three';
+import { makeSea } from '../../core/sea.js';
 import { mat, makePerson } from '../../core/people.js';
 import { scatter } from '../../core/props.js';
 import { LOOKS } from '../../content/characters.js';
@@ -56,9 +57,8 @@ export function buildCh6Scene(world) {
   world.bounds = { x0: -18, x1: 18, z0: 64, z1: 86 };
 
   // 바다 (물결)
-  const seaGeo = new THREE.PlaneGeometry(340, 340, 50, 50); seaGeo.rotateX(-Math.PI / 2);
-  const sea = new THREE.Mesh(seaGeo, new THREE.MeshPhongMaterial({ color: 0x2f7fa6, shininess: 40, flatShading: true }));
-  sea.position.y = -0.5; sea.receiveShadow = true; L.add(sea);
+  const sea = makeSea({ w: 340, d: 340, seg: 80, color: 0x2f7fa6, shininess: 40, opacity: 1, amp: 0.22 }); // 출렁이는 바다(core/sea.js, D-62)
+  sea.position.y = -0.5; L.add(sea);
 
   // 강화도 포구: 땅과 부두
   mk(new THREE.BoxGeometry(60, 1, 28), 0x6f8a5a, 0, -0.5, PORT_Z + 13);
@@ -120,8 +120,11 @@ export function buildCh6Scene(world) {
   boat.getObjectByName('rig').visible = false; // 학생 배는 돛을 내리고 노를 젓는다(낮은 시점에서 앞을 가리지 않게)
   // 뱃사공(2026-10-30 선생님): 고물에 서서 긴 노를 좌우로 저어 배를 몬다. 두 손은 노 손잡이를 쥐고, 배가 빠를수록 잦게 젓는다(kit/row.js)
   for (const o of boat.userData.oars) o.visible = false;
-  const rower = addSculler(boat, { look: 'sambyeolcho', deckY: 0.42, sternZ: -1.75, side: 0.3, scale: 0.8 });
+  // 고물에서 노를 젓는 사람은 학생(D-62, 2026-10-31 선생님: 배중손을 앞에 태우고 학생이 노를 저어 간다)
+  const rower = addSculler(boat, { look: world.playerLookArgs?.[0] || LOOKS.sambyeolcho, deckY: 0.42, sternZ: -1.75, side: 0.3, scale: 0.8 });
+  rower.person.userData.student = true;
   boat.userData.oars = [rower.oar]; boat.userData.rower = rower;
+  { const bj = makePerson(LOOKS.baejungson, { stable: true }); bj.position.set(0, 0.42, 1.5); bj.scale.setScalar(0.8); bj.userData.noWalk = true; bj.userData.who = 'baejungson'; boat.add(bj); boat.userData.passenger = bj; } // 뱃머리에 선 배중손
   // 뒤쫓는 배 3척
   // 뒤쫓는 배에는 몽골 군사 두 명이 타고 있다(창을 든 병사)
   const pursuers = [0, 1, 2].map(() => {
@@ -152,10 +155,12 @@ export function buildCh6Scene(world) {
   const gate = gateLeaves(L, { x: 0, z: GATE_Z, width: 3.7, height: 2, color: 0x6b4a32, inward: 1 });
   nameBoard(L, '강화도', 3, 84.6); // 삼별초가 떠난 곳(S21)
 
-  world.addNpc('baejungson', LOOKS.baejungson, 0, PORT_Z + 1, Math.PI);
-  world.addNpc('sambyeolcho', LOOKS.sambyeolcho, 6, 73.5, Math.PI * 0.8);
-  world.addNpc('minister', LOOKS.minister, -8, 76, Math.PI * 1.2);
-  world.addNpc('villager', LOOKS.villager, 9.5, 78.5, Math.PI * 0.7);
+  // 포구 사람들은 들어오는 학생(첫 자리 0, 80) 쪽을 본다(D-62)
+  const toStart = (x, z) => Math.atan2(0 - x, 80 - z);
+  world.addNpc('baejungson', LOOKS.baejungson, 0, PORT_Z + 1, toStart(0, PORT_Z + 1));
+  world.addNpc('sambyeolcho', LOOKS.sambyeolcho, 6, 73.5, toStart(6, 73.5));
+  world.addNpc('minister', LOOKS.minister, -8, 76, toStart(-8, 76));
+  world.addNpc('villager', LOOKS.villager, 9.5, 78.5, toStart(9.5, 78.5));
 
   // 진도 용장성 앞, 제주 항파두리 앞 땅
   const land = (C, color) => {
@@ -191,13 +196,8 @@ export function buildCh6Scene(world) {
     jeju: { name: '항파두리', ground: eg, shore: [EL[0], EL[1] + 9], kim: [EL[0] + 8, EL[1] - 4.5], bounds: { x0: EL[0] - 18, x1: EL[0] + 18, z0: EL[1] - 6, z1: EL[1] + 11 } },
   };
 
-  const sp = seaGeo.attributes.position;
   let sailing = false;
   world.onUpdate((dt, t) => {
-    if (world.quality.water === 'waves') {
-      for (let i = 0; i < sp.count; i++) sp.setY(i, Math.sin(sp.getX(i) * 0.15 + t * 1.2) * 0.18 + Math.cos(sp.getZ(i) * 0.2 + t) * 0.12);
-      sp.needsUpdate = true;
-    }
     if (ring.visible) ring.material.opacity = 0.55 + Math.sin(t * 4) * 0.3;
     if (sailing) {
       const p = world.player.position;

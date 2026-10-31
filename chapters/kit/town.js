@@ -1,6 +1,7 @@
 // 장면 부품 상자: 근대·일제 강점기·현대편 장들이 '배치표(layout)'만 써서 장면을 만든다.
 // layout = { ground, area, bounds, start, props: [{ type, x, z, ry, ... }], npcs: [{ id, look, x, z, ry }], signs: [{ id, title, x, z }], scatter: [...] }
 import * as THREE from 'three';
+import { makeSea } from '../../core/sea.js';
 import { mat, makePerson, setWork, setCarry } from '../../core/people.js';
 import { scatter } from '../../core/props.js';
 import { makeSign, placeSign } from '../../core/signs.js';
@@ -147,7 +148,7 @@ export const BUILD = {
   // 증기선 (항구)
   steamship(g, p) { BLD.steamship(g, p); return 0; }, // old: 1860~70년대 돛대 셋 목조 증기 군함
   // 바다·강 (넓은 물판)
-  water(g, p) { const m = new THREE.Mesh(new THREE.PlaneGeometry(p.w || 200, p.d || 60).rotateX(-Math.PI / 2), new THREE.MeshPhongMaterial({ color: p.color || 0x3f7d9a, shininess: 60, transparent: true, opacity: 0.93 })); m.position.y = -0.3; g.add(m); return 0; },
+  water(g, p) { const m = makeSea({ w: p.w || 200, d: p.d || 60, color: p.color || 0x3f7d9a, amp: p.amp ?? (p.river ? 0.06 : 0.16) }); m.position.y = -0.3; g.add(m); return 0; }, // 출렁이는 물(core/sea.js, D-62)
   // 섬·땅덩이(바다 무대): 모래톱 위에 풀. r 반지름
   island(g, p) {
     const r = p.r || 4;

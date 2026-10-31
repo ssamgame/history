@@ -2,6 +2,7 @@
 import { setHairEra, eraOfChapter } from './hairstyle.js';
 import { computeStars } from './save.js';
 import { bakeLevel } from './bake.js';
+import { turnTo } from './interact.js';
 import { showQuizView, endQuizView } from './quizview.js';
 import { portalStage } from './portal.js';
 import { playIntro } from './intro.js';
@@ -94,7 +95,8 @@ export async function runChapter(meta, chapter, ctx, save, { resumeStage = 'intr
 
 // 탐험 중 돌아다니기: 가까운 인물에게 말 걸기와 특정 지점 도착을 처리한다.
 // 반환값은 멈추는 함수. 대화 중에는 움직임을 막는다.
-export function roam(ctx, { onTalk, zones = [] }) {
+// faceBack: 대화가 끝나면 말 건 사람이 처음 보던 쪽으로 다시 돌아선다(D-62, 5장 장인)
+export function roam(ctx, { onTalk, zones = [], faceBack = false }) {
   const { world, input, hud, dialogue } = ctx;
   let busy = false, stopped = false;
   const inside = new Set();
@@ -124,7 +126,7 @@ export function roam(ctx, { onTalk, zones = [] }) {
     const npc = world.nearestNpc(2.8);
     if (!npc) return;
     busy = true; input.enabled = false;
-    const p = npc.mesh.position;
+    const p = npc.mesh.position, yaw0 = npc.mesh.rotation.y;
     npc.mesh.rotation.y = Math.atan2(world.player.position.x - p.x, world.player.position.z - p.z);
     world.setTalkCamera(npc.mesh); // 대화하는 동안 인물 얼굴 가까이
     if (npc.spot) { read.add(npc.id); showRead(); }
@@ -132,6 +134,7 @@ export function roam(ctx, { onTalk, zones = [] }) {
       if (world.camMode === 'talk') world.camMode = 'follow';
       dialogue.close();
       busy = false; input.enabled = !stopped;
+      if (faceBack && !npc.spot) turnTo(world, npc.mesh, yaw0, { speed: 3 }); // 천천히 처음 방향으로
     }
   });
   return () => { stopped = true; off(); unbind(); hud.setPrompt(null); hud.setTalkEnabled(false); hud.setFound?.(null); };

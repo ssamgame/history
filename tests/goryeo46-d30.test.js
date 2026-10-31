@@ -8,24 +8,15 @@ import ch5 from '../chapters/ch5/chapter.js';
 import ch6 from '../chapters/ch6/chapter.js';
 import { touchSetup } from './bot.js';
 
-test('ch4 D-30: introScene shows the envoy walking the river road, portal is in the palace yard, no quiz goal, culprit stays unknown', async () => {
-  ok(typeof ch4.introScene === 'function', 'introScene');
+// D-30의 도입 장면(저고여가 걷는 모습)은 D-62(2026-10-31 선생님: 뒤의 저고여 사건 장면과 겹친다)로 뺐다. 첫 해설은 해설 카드로 보인다
+test('ch4 D-62: no intro film (the envoy story comes right after), portal is in the palace yard, no quiz goal, culprit stays unknown', async () => {
+  ok(!ch4.introScene, 'no introScene');
   ok(ch4.portal && ch4.portal.at.length === 2, 'portal');
   ok(!ch4Script.goals.some(g => g.includes('배운 내용')), 'no quiz goal');
   ok(ch4Script.jeogo.after[0].text.includes('밝혀지지 않았'), 'culprit unknown line kept');
   const s = touchSetup(ch4Script.speakers);
   try {
     const sc = ch4.buildScene(s.w, s.ctx);
-    const J = sc.areas.jeogo, x0 = J.envoy.position.x;
-    const film = ch4.introScene(s.ctx);
-    ok(film.shots.length >= 1 && film.shots.length >= ch4Script.intro.length, 'a shot per sentence');
-    film.shots[0].act(s.ctx);
-    for (let i = 0; i < 20; i++) s.w.step(0.05, { x: 0, z: 0 });
-    ok(J.envoy.position.x > x0 + 0.5, 'the envoy walks in the intro');
-    ok(!J.archer.visible, 'the hidden soldier is not shown in the intro');
-    film.done(s.ctx);
-    eq(J.envoy.position.x, x0, 'put back for the story');
-    ok(J.archer.visible);
     const P = sc.areas.palace.bounds;
     ok(ch4.portal.at[0] > P.x0 + 3 && ch4.portal.at[0] < P.x1 - 3 && ch4.portal.at[1] > P.z0 && ch4.portal.at[1] < P.z1, 'inside the yard');
     ch4.enterStage(s.ctx, 'quiz');

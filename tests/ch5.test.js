@@ -161,17 +161,23 @@ test('ch5 D-32: each work place waits for E (talk button), then shows a drawn pi
     ok(!stepPanel(s), 'no picture yet');
     ok(!s.hud.talkBtn.disabled, 'talk button ready at the work place');
     s.hud.talkBtn.click(); await sleep(10);
-    // 2026-10-30: 작업 대상 앞으로 걸어가 판을 내려놓고, E를 누를 때마다 한 번씩 일한다(판을 물에 눌러 담그기 3번)
-    for (let n = 0; n < 200 && !stepPanel(s); n++) { stepN(s.w, 3); await sleep(1); if (!s.hud.talkBtn.disabled) { s.hud.talkBtn.click(); await sleep(2); } }
+    // D-62(2026-10-31 선생님): 일하기 전에 그림 설명부터 뜨고, 바닷물에는 3초 꾹 눌러 담근다
+    for (let n = 0; n < 50 && !stepPanel(s); n++) { stepN(s.w, 2); await sleep(1); }
     const panel = stepPanel(s);
     ok(panel, 'picture panel opens');
     eq(panel.dataset.step, 'soak');
     const cv = panel.querySelector('canvas');
     ok(cv && cv.width >= 300 && inkColors(cv) >= 4, 'a picture is drawn on a canvas');
     ok(panel.textContent.includes(P[0].text), 'one line under the picture');
-    ok(s.w.player.userData.carry?.obj !== sc.plank, 'put down at the work place');
+    ok(s.w.player.userData.carry?.obj === sc.plank, 'the picture comes before the work (still in the arms)');
     eq(sc.plank.userData.stage, 0, 'still waiting while the picture is open');
-    panel.querySelector('.doc-ok').click(); await sleep(10); stepN(s.w, 40); await sleep(5);
+    panel.querySelector('.doc-ok').click(); await sleep(10);
+    for (let n = 0; n < 200 && !s.ctx.testHooks.holding; n++) { stepN(s.w, 2); await sleep(1); }
+    ok(s.w.player.userData.carry?.obj !== sc.plank, 'put down at the work place');
+    s.hud.talkBtn.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    for (let n = 0; n < 60 && s.ctx.testHooks.holding; n++) { stepN(s.w, 3); await sleep(1); }
+    s.hud.talkBtn.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+    stepN(s.w, 40); await sleep(5);
     ok(!stepPanel(s), 'closed');
     eq(sc.plank.userData.stage, 1, 'soaked');
     ok(s.w.player.userData.carry?.obj === sc.plank, 'picked up again');

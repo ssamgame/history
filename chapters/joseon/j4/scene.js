@@ -1,6 +1,7 @@
 // 조선편 4장 장면: 남해안 포구(부두, 판옥선과 거북선, 지휘소)와 북쪽 바다. 바다 북쪽 끝의 두 섬 사이가 좁은 견내량,
 // 서쪽 섬이 한산도. 미니게임은 높은 데서 내려다보는 고정 카메라로 바다 위에서 한다.
 import * as THREE from 'three';
+import { makeSea } from '../../../core/sea.js';
 import { groundMaterial } from '../../../core/textures.js';
 import { mat, makePerson } from '../../../core/people.js';
 import { scatter } from '../../../core/props.js';
@@ -32,7 +33,7 @@ export function buildJ4Scene(world) {
   world.bounds = harbor;
 
   // 바다와 포구 땅
-  const sea = new THREE.Mesh(new THREE.PlaneGeometry(500, 500).rotateX(-Math.PI / 2), new THREE.MeshPhongMaterial({ color: 0x3f7d9a, shininess: 60, specular: 0x9ac4d6, transparent: true, opacity: 0.94 }));
+  const sea = makeSea({ w: 500, d: 500, seg: 90, color: 0x3f7d9a, shininess: 60, opacity: 0.94 }); // 출렁이는 바다(D-62)
   sea.position.y = -0.4; L.add(sea);
   {
     const g = new THREE.PlaneGeometry(120, 40, 40, 14); g.rotateX(-Math.PI / 2); g.translate(0, 0, 22);

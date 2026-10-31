@@ -22,6 +22,7 @@
 // arena: 마을과 떨어진 곳(origin)에 미니게임 무대를 따로 세운다. { origin: [x, z], ground, groundColor, bounds, props, roads }
 //        좌표는 모두 무대 기준. arena가 없으면 장 마을에서 한다.
 import * as THREE from 'three';
+import { makeSea } from '../../core/sea.js';
 import { BUILD, addFootprint, taegukgiTexture, addNature } from './town.js';
 import { bakeStatic } from './buildings.js';
 import { terrainField, terrainMesh, hillColorFor } from './terrain.js';
@@ -123,9 +124,8 @@ export function buildArena(world, arena) {
   if (arena) {
     const color = arena.groundColor ?? 0x8a7a62, kind = arena.ground || 'earth';
     if (arena.sea) {
-      const gg = new THREE.PlaneGeometry(160, 160, 8, 8).rotateX(-Math.PI / 2);
-      const ground = new THREE.Mesh(gg, new THREE.MeshPhongMaterial({ color: arena.sea === true ? 0x3f7d9a : arena.sea, shininess: 70 }));
-      ground.position.y = 0.01; ground.receiveShadow = true; g.add(ground);
+      const ground = makeSea({ w: 160, d: 160, color: arena.sea === true ? 0x3f7d9a : arena.sea, shininess: 70, opacity: 1, amp: 0.1 }); // 출렁이는 바다(D-62)
+      ground.position.y = 0.01; g.add(ground);
     } else { // 걷는 곳은 평평하게, 바깥은 언덕(마을 땅과 같은 방식)
       const field = terrainField({ bounds: arena.bounds, props: [...(arena.props || []), ...(arena.center || [])], margin: arena.edge ? 13 : 4, hill: arena.hill ?? 0.8 }); // 둘레 건물(edge)이 서는 곳까지 평평하게
       if (kind === 'stone') { const f = field.flat, pave = new THREE.Mesh(box(f.x1 - f.x0, 0.04, f.z1 - f.z0), mat(color, 'stone')); pave.position.set((f.x0 + f.x1) / 2, 0.02, (f.z0 + f.z1) / 2); pave.receiveShadow = true; g.add(pave); }

@@ -2,7 +2,10 @@
 // 김윤후를 따라 처인성 성벽에 올라 가리킨 곳으로 걸어가 막기 → 김윤후를 따라 충주성 관청 마당에서 노비 문서를 가져다 놓기(불꽃·연기·재, 만세, D-14) → 퀴즈.
 import * as THREE from 'three';
 import { buildCh4Scene, cheoinPlace, cheoinHeight, CHEOIN, fieldH } from './scene.js';
-import { mount } from '../../core/horse.js';
+import { mount, makeHorse } from '../../core/horse.js';
+import { makePerson, playAction } from '../../core/people.js';
+import { LOOKS } from '../../content/characters.js';
+import { wait } from '../kit/walk.js';
 import { roam } from '../../core/flow.js';
 import { showHowTo, runWithRetries, pickOnMap } from '../../core/minigame.js';
 import { enterThroughGate } from '../kit/gate.js';
@@ -53,7 +56,7 @@ function kimLabel(world) {
 }
 
 // 처인성에서는 학생이 비탈과 성벽 위만 걷는다(성벽 높이에 선다). 놀이 중 카메라는 조금 높고 멀리서 들판을 내려다본다(2장 성벽과 같은 예외)
-export const CHEOIN_CAM = { offset: [0, 8, 12], lookY: 0 };
+export const CHEOIN_CAM = { offset: [0, 11, 13], lookY: -1 }; // D-62: 조금 높이서 멀리 몽골 진영과 보초까지 보이게
 let cheoinOff = null;
 function cheoinOn(ctx, on) {
   const { world } = ctx;
@@ -74,6 +77,7 @@ export function setupCheoin(ctx) {
   world.moveNpc('kimyunhu', A.kimyunhu[0], A.kimyunhu[1], CHEOIN.rampA + Math.PI / 2);
   placePlayer(world, A.start, Math.PI);
   world.player.position.y = cheoinPlace(world.player.position);
+  for (const ar of scene.archers) { ar.group.visible = true; ar.group.position.y = ar.baseY; ar.group.rotation.y = ar.rest; } // 성벽 위 궁수·승려는 학생이 오르기 전부터 서 있다(D-62)
   world.snapCamera();
 }
 // 성벽 위 자리(김윤후가 이끈 끝)에 바로 세운다(다시 하기·시험)
@@ -104,31 +108,35 @@ function fallFromHorse(m, dt) {
   const k = m.fall, f = r.userData.from;
   r.position.set(f.x, f.y * (1 - k) * (1 - k) + 0.1 * k, f.z - 1.1 * k); // 뒤로 넘어가며 내려온다
   r.rotation.x = -1.45 * k;
-  // 말: 몸을 돌려 성에서 멀어진다
-  h.rotation.y += (Math.PI - h.rotation.y) * Math.min(1, dt * 3);
-  h.position.z -= Math.cos(h.rotation.y) * dt * 3.2; h.position.x -= Math.sin(h.rotation.y) * dt * 3.2;
+  // 말: 놀라 몸을 돌려 몽골 진영(나온 쪽, 성 반대쪽)으로 빠르게 달아난다(D-62, 2026-10-31 선생님)
+  h.rotation.y += (Math.PI - h.rotation.y) * Math.min(1, dt * 4);
+  const run = Math.min(HORSE_FLEE, (m.fallT = (m.fallT || 0) + dt) * 9);
+  h.position.z -= dt * run; // 무리의 -z가 성 반대쪽(몽골 진영)
+  m.horseRun = run;
 }
+const HORSE_FLEE = 7.5;
 function unfall(m) {
   const r = m.rider, h = m.horse;
-  h.position.set(0, 0, 0); h.rotation.set(0, 0, 0);
+  h.position.set(0, 0, 0); h.rotation.set(0, 0, 0); m.fallT = 0; m.horseRun = 0;
   if (r.parent !== h.userData.body) { r.rotation.set(0, 0, 0); r.rotation.order = 'XYZ'; mount(h, r); }
 }
 
-const FLY = 0.85, FALL = 0.5, LIE = 1.0, RISE = 0.6; // 화살 나는 시간, 쓰러지는 시간, 누워 있는 시간, 궁수가 올라오는 시간
+const FLY = 0.95, FALL = 0.5, LIE = 1.4, RISE = 0.6; // 화살 나는 시간, 쓰러지는 시간, 누워 있는 시간, 궁수가 올라오는 시간
 const SPOT_R = 1.6;
 const KEEP_CLEAR = 0.9, RUN_NEAR = 2.5, RUN_SPEED = 7; // 김윤후와 학생 사이를 이만큼 띄운다(몸이 겹치지 않게). 학생이 이만큼 가까이 따라오면 이 빠르기로 뛴다
 const angleOf = (p, cx) => { let a = Math.atan2(p.z, p.x - cx); if (a < 0) a += Math.PI * 2; return a; };
 export function cheoinDefense(ctx, easy) {
   const { world, hud, audio } = ctx;
   const A = scene.areas.cheoin, [cx] = A.center, R = A.radius;
-  const spawnEvery = easy ? 3.6 : 2.6, speed = easy ? 1.3 : 2.0, duration = 40;
+  const spawnEvery = easy ? 3.6 : 2.6, speed = easy ? 1.3 : 2.0, duration = 30; // D-62: 30초
+  ctx.testHooks.cheoinDuration = duration; ctx.testHooks.stuckArrows = 0; ctx.testHooks.horseFlee = 0; ctx.testHooks.horseToCamp = 0;
   const travel = A.spawnR - A.radius - 1;
   ctx.testHooks.cheoinAttempts = (ctx.testHooks.cheoinAttempts || 0) + 1;
   const kim = world.npcs.get('kimyunhu'), km = kim.mesh.position, label = kimLabel(world), ring = scene.spotRing;
   const reset = () => {
     for (const m of scene.mongols) { m.group.visible = false; m.group.rotation.x = 0; m.fall = 0; if (m.horse) unfall(m); }
-    for (const ar of scene.arrows) ar.visible = false;
-    for (const ar of scene.archers) { ar.group.visible = false; ar.group.position.y = 0; ar.group.rotation.y = ar.rest; }
+    for (const ar of scene.arrows) { if (ar.parent !== world.level) world.level.add(ar); ar.visible = false; ar.scale.setScalar(3.4); }
+    for (const ar of scene.archers) { ar.group.visible = true; ar.group.position.y = ar.baseY; ar.group.rotation.y = ar.rest; }
     ring.visible = false; label.visible = false;
   };
   reset();
@@ -141,6 +149,8 @@ export function cheoinDefense(ctx, easy) {
     const g = archer.group, p = m.group.position;
     g.rotation.y = Math.atan2(p.x - g.position.x, p.z - g.position.z); // 몽골군 쪽으로 돌아선다
     const arrow = scene.arrows.find(a => !a.visible) || scene.arrows[0];
+    if (arrow.parent !== world.level) world.level.attach(arrow);
+    arrow.scale.setScalar(3.4);
     arrow.visible = true;
     hit.set(m, { t: 0, arrow, from: v(g.position.x, g.position.y + 2.2, g.position.z), to: v(p.x, p.y + (m.horse ? 3.3 : 2.2), p.z) }); // 말 탄 사람은 더 높이
     audio.play('whoosh');
@@ -164,8 +174,6 @@ export function cheoinDefense(ctx, easy) {
       t += dt;
       hud.setTimer(duration - t);
       hud.setCounter(`막은 몽골군 ${stopped} · 성벽에 닿은 적 ${breaches}/3`);
-      const rise = Math.min(1, t / RISE); // 궁수가 발판 위로 올라온다
-      for (const ar of scene.archers) ar.group.position.y = ar.baseY * (1 - (1 - rise) * (1 - rise));
       if (t >= nextSpawn) {
         nextSpawn = t + spawnEvery;
         const free = scene.mongols.filter(m => !active.has(m) && !hit.has(m));
@@ -185,10 +193,18 @@ export function cheoinDefense(ctx, easy) {
           ahead.lerpVectors(h.from, h.to, Math.min(1, k + 0.05)); ahead.y += Math.sin(Math.PI * Math.min(1, k + 0.05)) * 2.5;
           h.arrow.position.copy(pos); h.arrow.lookAt(ahead);
         } else {
-          h.arrow.visible = false;
+          if (!h.stuck) { // 맞은 화살은 사라지지 않고 맞은 사람에게 꽂힌 채 함께 쓰러진다(D-62)
+            h.stuck = true; const tgt = m.rider || m.group; tgt.attach(h.arrow); ctx.testHooks.stuckArrows += 1;
+          }
           m.fall = Math.min(1, (h.t - FLY) / FALL);
-          if (m.horse) fallFromHorse(m, dt); else m.group.rotation.x = -1.45 * m.fall;
-          if (h.t >= FLY + FALL + LIE) { m.group.visible = false; m.group.rotation.x = 0; if (m.horse) unfall(m); hit.delete(m); }
+          if (m.horse) {
+            const before = m.horse.getWorldPosition(new THREE.Vector3());
+            fallFromHorse(m, dt); ctx.testHooks.horseFlee = Math.max(ctx.testHooks.horseFlee, m.horseRun || 0);
+            const after = m.horse.getWorldPosition(new THREE.Vector3()), mv = after.sub(before).setY(0), camp = new THREE.Vector3(cx, 0, -scene.camp.dist).sub(before).setY(0); // 몽골 진영 쪽으로 가는가(테스트)
+            if ((m.horseRun || 0) > 5 && mv.length() > 1e-4) ctx.testHooks.horseToCamp = Math.max(ctx.testHooks.horseToCamp, mv.normalize().dot(camp.normalize()));
+          }
+          else m.group.rotation.x = -1.45 * m.fall;
+          if (h.t >= FLY + FALL + LIE) { m.group.visible = false; m.group.rotation.x = 0; if (m.horse) unfall(m); world.level.attach(h.arrow); h.arrow.visible = false; h.arrow.scale.setScalar(3.4); hit.delete(m); }
         }
       }
       for (const [m, a] of active) {
@@ -229,6 +245,63 @@ export function cheoinDefense(ctx, easy) {
       if (t >= duration) finish(true);
     });
   });
+}
+
+// 처인성 방어가 끝나면(D-62, 2026-10-31 선생님): 들판에 말 탄 몽골 장수 살리타가 군사를 이끌고 나타나고, 성벽 위 김윤후가 활을 들어 쏜다.
+// 화살을 맞은 살리타가 말에서 떨어지고(피 없음), 말과 남은 몽골군은 몽골 진영 쪽으로 빠르게 달아난다. 해설은 '~다고 전해져요'(S4) 그대로.
+export async function salitaiScene(ctx) {
+  const { world, dialogue } = ctx, A = scene.areas.cheoin, [cx] = A.center, R = A.radius;
+  const hook = ctx.testHooks.salitai = { bow: false, arrowFlew: false, fell: false, fled: 0, fleeSpeed: 0 };
+  const g = new THREE.Group(); world.level.add(g);
+  for (const m of scene.mongols) m.group.visible = false;
+  // 살리타와 몽골군: 성 북쪽 들판, 성을 바라본다(+z)
+  const sx = cx + 1.5, sz = -24;
+  const horse = makeHorse({ coat: 0x3a2e26, armor: 0x6a5a40, saddle: 0x8a6a22 }), sal = makePerson(LOOKS.mongolGeneral); mount(horse, sal);
+  horse.position.set(sx, fieldH(sx, sz), sz); horse.scale.setScalar(1.25); g.add(horse);
+  const troops = [[-4, -2.5, 1], [4.5, -2, 1], [-7, -5, 0], [7, -5.5, 0], [-2, -6, 0], [2.5, -6.5, 1], [0, -9, 0], [-5, -9, 1]].map(([dx, dz, rideOn], i) => {
+    const x = sx + dx, z = sz + dz;
+    let o; if (rideOn) { o = makeHorse({ coat: [0x7a5232, 0xb09a72, 0x4a3426][i % 3] }); mount(o, makePerson(i % 2 ? LOOKS.mongolLancer : LOOKS.mongolArcher)); } else o = makePerson(i % 2 ? LOOKS.mongolLancer : LOOKS.mongol);
+    o.position.set(x, fieldH(x, z), z); o.scale.setScalar(1.25); g.add(o); return o;
+  });
+  // 김윤후는 성벽 위 북쪽 가운데에서 활을 든다
+  const kim = world.npcs.get('kimyunhu'), km = kim.mesh, ka = Math.PI * 1.5 + 0.05;
+  world.moveNpc('kimyunhu', cx + Math.cos(ka) * R, Math.sin(ka) * R, Math.atan2(sx - (cx + Math.cos(ka) * R), sz - Math.sin(ka) * R)); km.position.y = CHEOIN.top;
+  const bow = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.04, 4, 14, Math.PI), new THREE.MeshLambertMaterial({ color: 0x5a3f2a }));
+  bow.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, -1, 0), new THREE.Vector3(1, 0, 0)));
+  bow.position.set(0, -0.16, 0); bow.name = 'kimBow'; km.userData.arms[0].add(bow); hook.bow = true;
+  const wasVisible = world.player.visible; world.player.visible = false;
+  const kp = km.position, camAt = [kp.x - 3.2, CHEOIN.top + 2.6, kp.z + 5.2], look = [sx, 2.2, sz];
+  world.setFixedCamera(camAt, look);
+  await dialogue.say(script.cheoin.done[0]);
+  dialogue.close();
+  // 활을 겨누고(팔을 앞으로, 시위를 당겨) 쏜다
+  const aim = playAction(km, { dur: 2.2, fadeIn: 0.4, fadeOut: 0.3, pose: () => ({ arms: [[-Math.PI / 2, 0, 0], [-1.35, 0, 0]], upper: [0, 0.15, 0] }) });
+  await wait(world, 0.9);
+  const arrow = scene.arrows.find(a => !a.visible) || scene.arrows[0]; if (arrow.parent !== world.level) world.level.attach(arrow);
+  arrow.scale.setScalar(2.4); arrow.visible = true; hook.arrowFlew = true; ctx.audio?.play?.('whoosh');
+  const from = new THREE.Vector3(kp.x, kp.y + 2.1, kp.z), to = new THREE.Vector3(sx, horse.position.y + 3.6, sz), pos = new THREE.Vector3(), ahead = new THREE.Vector3();
+  await wait(world, 1.0, k => { pos.lerpVectors(from, to, k); pos.y += Math.sin(Math.PI * k) * 1.6; ahead.lerpVectors(from, to, Math.min(1, k + 0.05)); ahead.y += Math.sin(Math.PI * Math.min(1, k + 0.05)) * 1.6; arrow.position.copy(pos); arrow.lookAt(ahead); world.setFixedCamera(camAt.map((c, i) => c + ([sx, 2.2, sz][i] - c) * 0.35 * k), look); });
+  sal.attach(arrow); // 화살은 꽂힌 채 남는다
+  await aim;
+  // 살리타가 뒤로 넘어가며 말에서 떨어진다
+  const p0 = new THREE.Vector3(); sal.getWorldPosition(p0); g.worldToLocal(p0); g.attach(sal); sal.rotation.order = 'YXZ';
+  const groundY = fieldH(sx, sz - 1.2);
+  await wait(world, 0.6, k => { sal.position.set(p0.x, p0.y + (groundY + 0.1 - p0.y) * k * k, p0.z - 1.2 * k); sal.rotation.x = -1.45 * k; });
+  hook.fell = true; ctx.audio?.play?.('correct');
+  // 말과 몽골군은 돌아서 진영(북쪽, -z)으로 빠르게 달아난다
+  const runners = [horse, ...troops];
+  runners.forEach(o => { o.rotation.y = Math.PI; });
+  hook.fled = runners.length - 1;
+  let last = troops[0].position.z;
+  const flee = wait(world, 3.2, (k, dt) => { const v = Math.min(7.5, 2 + k * 14); runners.forEach((o, i) => { o.position.z -= v * dt * (i ? 1 : 1.1); o.position.y = fieldH(o.position.x, o.position.z); }); if (dt > 0) { hook.fleeSpeed = Math.max(hook.fleeSpeed, (last - troops[0].position.z) / dt); last = troops[0].position.z; } });
+  await dialogue.say(script.cheoin.done[1]);
+  await flee;
+  await dialogue.say(script.cheoin.done[2]);
+  dialogue.close();
+  // 정리
+  world.level.attach(arrow); arrow.visible = false;
+  bow.removeFromParent(); g.removeFromParent();
+  world.player.visible = wasVisible; world.camMode = 'follow';
 }
 
 // 충주성 관청 마당에 학생과 김윤후를 세운다(장면 전환 뒤)
@@ -324,18 +397,7 @@ export default {
     return scene;
   },
 
-  // 장 도입(C-03): 압록강 가 길을 걸어가는 몽골 사신 일행(복면 병사는 아직 보이지 않는다)
-  introScene(ctx) {
-    const { world } = ctx, J = scene.areas.jeogo, { envoy, aide, archer } = J;
-    const e0 = envoy.position.clone(), a0 = aide.position.clone();
-    const f0 = e0.x + 3, f1 = e0.x + 12;
-    let off = null;
-    return {
-      shots: [{ cam: [f0 + 0.6, 3.3, 11], look: [f0, 1.0, 0.6], to: { cam: [f1 + 0.6, 3.3, 11], look: [f1, 1.0, 0.6] },
-        act: () => { archer.visible = false; off = world.onUpdate(dt => { envoy.position.x += dt * 1.5; aide.position.x += dt * 1.5; }); } }],
-      done: () => { off?.(); off = null; envoy.position.copy(e0); aide.position.copy(a0); archer.visible = true; },
-    };
-  },
+  // 장 도입: 첫 해설은 해설 카드로 보인다(D-62, 2026-10-31 선생님: 저고여가 걷는 장면은 뒤의 저고여 사건 장면과 겹쳐 뺐다)
   // 미니게임 뒤 빛나는 문(C-02): 개경 궁궐 마당 오른쪽 빈 땅, 학생 쪽(남쪽)을 본다
   portal: { at: [6, 5], ry: 0 },
 
@@ -423,7 +485,9 @@ export default {
     world.player.visible = false;
     await capitalScene(ctx); // 이야기 장면(D-58): 배들이 강화도로 건너가고 몽골군은 바닷가에서 멈춘다
 
-    // 2. 처인성: 짧은 장면 전환 뒤 김윤후를 따라 비탈을 올라 성벽 위로, 가리킨 곳으로 걸어가 막는다
+    // 2. 처인성: 김윤후가 처인성에 있다는 소식을 듣고(D-62), 짧은 장면 전환 뒤 김윤후를 따라 비탈을 올라 성벽 위로, 가리킨 곳으로 걸어가 막는다
+    await sayAll(dialogue, script.cheoin.news);
+    dialogue.close();
     await ctx.fade(true);
     setupCheoin(ctx);
     ctx.setGoal(G[3]);
@@ -440,10 +504,12 @@ export default {
     dialogue.close();
     await showHowTo(ctx.ui, script.cheoin.howto);
     const b = await runWithRetries(ctx, easy => { putOnCheoinWall(ctx); input.enabled = true; return cheoinDefense(ctx, easy).finally(() => { input.enabled = false; }); }, { failHint: script.cheoin.failHint });
-    await sayAll(dialogue, script.cheoin.done);
-    dialogue.close();
+    cheoinOn(ctx, true); world.followOffset = null;
+    await salitaiScene(ctx); // 김윤후가 활로 살리타를 쏘아 쓰러뜨리고 몽골군이 달아난다(D-62)
 
     // 3. 충주성: 짧은 장면 전환 뒤 김윤후를 따라 관청 마당으로, 노비 문서를 가져다 놓는다(실패 없음). 문서가 불타고 노비와 백성들이 만세한다(D-14)
+    await sayAll(dialogue, script.chungju.before); // 시간이 흐른 뒤 김윤후는 충주성 싸움에도 함께했다(D-62)
+    dialogue.close();
     await ctx.fade(true);
     setupChungju(ctx);
     ctx.setGoal(G[5]);
@@ -464,11 +530,17 @@ export default {
     input.enabled = false;
     // 문서 더미 너머로 노비와 백성들이 보이는 곳에서 본다(학생은 잠깐 숨겨 앞을 가리지 않게)
     world.player.visible = false;
+    const kimN = world.npcs.get('kimyunhu');
+    world.moveNpc('kimyunhu', C.kimyunhu[0], C.kimyunhu[1], Math.atan2(C.pile[0] - C.kimyunhu[0], C.pile[1] - C.kimyunhu[1])); // 김윤후는 노비 문서 곁에 서서 불을 붙인다(D-62)
     world.setFixedCamera(C.cheerCam.pos, C.cheerCam.target);
     ctx.audio.play('whoosh');
-    await scene.burnDocuments(); // 불꽃이 일어 문서가 타오르고, 불이 잦아들며 연기·재가 남는다(D-14)
-    await sayAll(dialogue, script.chungju.burn);
+    await scene.burnDocuments(); // 문서 뭉치에 불이 붙어 위에서부터 타 점점 작아지다 재가 된다(D-62)
+    // 해설 대신 김윤후가 관노들을 바라보며 약속한다(말풍선 대사)
+    kimN.mesh.rotation.y = Math.atan2(scene.people[2].position.x - kimN.mesh.position.x, scene.people[2].position.z - kimN.mesh.position.z);
+    world.setFixedCamera(C.promiseCam.pos, C.promiseCam.target);
+    await sayAll(dialogue, script.chungju.promise);
     dialogue.close();
+    world.setFixedCamera(C.cheerCam.pos, C.cheerCam.target);
     const stopCheer = cheer(ctx); // 노비와 백성들이 제자리에서 만세
     await new Promise(r => setTimeout(r, 900));
     await sayAll(dialogue, script.chungju.done);

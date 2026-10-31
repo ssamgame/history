@@ -10,6 +10,8 @@ import script from './script.js';
 import { setStyle } from '../../core/motion.js';
 import { strike } from '../../core/interact.js';
 import { gwakjuScene, lastStandScene } from './story.js';
+import { command } from '../kit/army.js';
+import { playAction } from '../../core/motion.js';
 import * as THREE from 'three';
 
 const EXPLORE_BOUNDS = { x0: -10.5, x1: 10.5, z0: -10.5, z1: 7 };
@@ -165,7 +167,7 @@ function makeHorde(active) {
     h.tx = clamp(l.x + (rnd() - 0.5) * 2.6, -11, 11); h.tz = GATHER_Z - rnd() * 1.8;
   };
   const pick = h => {
-    const busy = [...active.keys()].filter(l => hs.filter(o => o.ladder === l).length < 5);
+    const busy = [...active.keys()].filter(l => hs.filter(o => o.ladder === l).length < 9); // 대군(D-62): 사다리마다 더 많이 몰린다
     aim(h, busy.length && rnd() < 0.75 ? busy[Math.floor(rnd() * busy.length)] : scene.ladders[Math.floor(rnd() * scene.ladders.length)]);
   };
   hs.forEach(pick);
@@ -173,7 +175,7 @@ function makeHorde(active) {
   return {
     raised(l) { // 사다리를 세우면 가까운 군사 몇이 그 아래로 몰려온다
       const free = hs.filter(h => h.state !== 'back').sort((a, b) => Math.abs(a.k.position.x - l.x) - Math.abs(b.k.position.x - l.x));
-      for (const h of free.slice(0, 4)) aim(h, l);
+      for (const h of free.slice(0, 7)) aim(h, l);
     },
     pushed(l) { // 사다리와 함께 밀려나 물러난다
       for (const h of hs) if (near(h, l) || (h.ladder === l && h.state === 'wait')) {
@@ -335,25 +337,45 @@ function followChain(world, dt) {
   }
 }
 
-// 백성 구출 한 번: 90초 안에 네 무리 이상 구하면 성공. 구한 무리는 사라지지 않고 학생을 따라온다(D-8).
+// 백성 구출 한 번(D-62, 2026-10-31 선생님): 포승줄에 묶여 거란 병사에게 끌려가는 백성 무리에 다가가 E(행동)를 누르면,
+// 학생과 함께 간 고려 병사가 달려가 거란 병사를 쓰러뜨리고 학생이 포승줄을 풀어 준다(학생은 무기가 없다).
+// 90초 안에 네 무리 이상 구하면 성공. 구한 무리는 사라지지 않고 학생을 따라온다(D-8).
+const FREE_R = 2.6, ALLY_SPEED = 8;
 function rescue(ctx, easy) {
   const { world, hud, audio } = ctx;
   const speed = easy ? 0.3 : 0.6, duration = 90, need = 4, f = scene.field;
   rescued = [];
+  scene.setField(true);
+  const hook = ctx.testHooks.rescue = { saved: 0, struck: 0 };
   const groups = scene.captives.map(c => {
-    c.group.visible = true; c.escort.visible = true; c.group.children.forEach(v => setStyle(v, v === c.escort ? 'guard' : 'captive')); // 다시 하기 때 다시 끌려가는 걸음으로
+    if (c.escort.parent !== c.group) { c.group.add(c.escort); c.escort.position.set(0.1, 0, -1.5); } // 다시 하기: 쓰러졌던 호송병을 무리 앞으로
+    c.group.visible = true; c.escort.visible = true; c.escort.rotation.set(0, Math.PI, 0); c.escort.userData.down = false; c.rope.visible = true;
+    c.group.children.forEach(v => { if (v.userData.legs) setStyle(v, v === c.escort ? 'guard' : 'captive'); }); // 다시 하기 때 다시 끌려가는 걸음으로
     c.group.position.set(c.start[0], 0, c.start[1]); c.group.rotation.y = 0;
-    return { c, state: 'walking' };
+    return { c, state: 'walking', ally: null, t: 0 };
   });
   world.bounds = f.bounds;
   placePlayer(world, f.start, Math.PI);
+  const allies = scene.allies.map((a, i) => { a.visible = true; a.position.set(f.start[0] + (i ? 1.5 : -1.5), 0, f.start[1] + 1.8); a.rotation.set(0, Math.PI, 0); a.userData.job = null; return a; });
   let t = 0, done = false;
+  const v3 = new THREE.Vector3();
+  const nearGroup = () => { const p = world.player.position; let best = null, bd = FREE_R; for (const g of groups) { if (g.state !== 'walking') continue; const d = Math.hypot(p.x - g.c.group.position.x, p.z - g.c.group.position.z - 0.6); if (d < bd) { bd = d; best = g; } } return best; };
+  const escortAt = g => g.c.escort.getWorldPosition(v3).clone();
+  const moveTo = (a, x, z, sp, dt) => { const dx = x - a.position.x, dz = z - a.position.z, d = Math.hypot(dx, dz); if (d < 0.05) return true; const st = Math.min(d, sp * dt); a.position.x += dx / d * st; a.position.z += dz / d * st; a.rotation.y = Math.atan2(dx, dz); return d - st < 0.05; };
   return new Promise(resolve => {
     const finish = ok => {
       if (done) return; done = true;
-      off(); hud.setTimer(null); hud.setCounter(null); world.setGoal(null);
+      off(); unbind(); hud.setTimer(null); hud.setCounter(null); hud.setPrompt(null); hud.setTalkEnabled(false); world.setGoal(null);
       resolve(ok);
     };
+    const unbind = ctx.onAction(() => {
+      if (done || ctx.dialogue?.isOpen?.()) return;
+      const g = nearGroup(); if (!g) return;
+      g.state = 'freeing'; g.t = 0;
+      const free = allies.filter(a => !a.userData.job), e = escortAt(g);
+      g.ally = (free.length ? free : allies).sort((a, b) => a.position.distanceTo(e) - b.position.distanceTo(e))[0];
+      g.ally.userData.job = g;
+    });
     const off = world.onUpdate(dt => {
       if (done) return;
       t += dt;
@@ -362,18 +384,48 @@ function rescue(ctx, easy) {
       const p = world.player.position;
       let nearest = null, nd = Infinity;
       for (const g of groups) {
-        if (g.state !== 'walking') continue;
         const gp = g.c.group.position;
-        gp.z -= speed * dt;
-        const d = Math.hypot(p.x - gp.x, p.z - gp.z);
-        if (d < 2.0) { g.state = 'saved'; rescued.push(g.c); g.c.escort.visible = false; g.c.group.children.forEach(v => setStyle(v, 'weary')); audio.play('correct'); } // 풀려난 백성은 지친 걸음으로 따라온다
-        else if (gp.z < f.lostZ) { g.state = 'lost'; g.c.group.visible = false; }
-        else if (d < nd) { nd = d; nearest = gp; }
+        if (g.state === 'walking') {
+          gp.z -= speed * dt;
+          const d = Math.hypot(p.x - gp.x, p.z - gp.z);
+          if (gp.z < f.lostZ) { g.state = 'lost'; g.c.group.visible = false; }
+          else if (d < nd) { nd = d; nearest = gp; }
+        } else if (g.state === 'freeing') { // 고려 병사가 달려가 친다 → 거란 병사가 뒤로 쓰러진다 → 줄을 푼다
+          const a = g.ally, e = escortAt(g), side = Math.sign(a.position.x - e.x) || 1;
+          if (!g.hit) {
+            if (moveTo(a, e.x + side * 0.9, e.z + 0.5, ALLY_SPEED, dt)) {
+              a.rotation.y = Math.atan2(e.x - a.position.x, e.z - a.position.z);
+              g.hit = true; g.t = 0; hook.struck++; strike(a, 'spear'); audio.play('whoosh');
+            }
+          } else {
+            g.t += dt;
+            const k = Math.min(1, Math.max(0, (g.t - 0.3) / 0.45));
+            if (k > 0) { g.c.escort.userData.down = true; setStyle(g.c.escort, null); g.c.escort.rotation.x = k * k * Math.PI / 2; } // 뒤로 쓰러진다(피는 넣지 않는다)
+            if (g.t > 0.9 && g.c.rope.visible) {
+              g.c.rope.visible = false; g.state = 'saved'; rescued.push(g.c); hook.saved = rescued.length;
+              world.level.attach(g.c.escort); // 쓰러진 병사는 그 자리에 남고 백성만 학생을 따라간다
+              g.c.folk.forEach(v => setStyle(v, 'weary')); audio.play('correct'); // 풀려난 백성은 지친 걸음으로 따라온다
+              a.userData.job = null; g.down = 0;
+            }
+          }
+        }
+        if (g.state === 'saved' && g.c.escort.visible) { g.down = (g.down || 0) + dt; if (g.down > 1.6) g.c.escort.visible = false; } // 잠시 누웠다가 사라진다(D-45)
+        g.c.rope.update();
       }
+      // 일이 없는 고려 병사는 학생 뒤 양옆에서 따라온다(멀리 떨어지면 화면 밖에서 따라붙는다)
+      allies.forEach((a, i) => {
+        if (a.userData.job) return;
+        const tx = p.x + (i ? 1.5 : -1.5), tz = p.z + 1.8;
+        if (Math.hypot(tx - a.position.x, tz - a.position.z) > 16) { a.position.set(tx, 0, tz + 4); }
+        moveTo(a, tx, tz, Math.min(ALLY_SPEED, 1 + Math.hypot(tx - a.position.x, tz - a.position.z) * 2.5), dt);
+      });
       followChain(world, dt);
-      world.setGoal(nearest ? { x: nearest.x, z: nearest.z } : null);
-      if (rescued.length >= need) return finish(true);
-      if (t >= duration || !groups.some(g => g.state === 'walking')) finish(false);
+      const ng = nearGroup();
+      hud.setPrompt(ng && !ctx.dialogue?.isOpen?.() ? new THREE.Vector3(ng.c.group.position.x, 0, ng.c.group.position.z) : null, '백성 구하기');
+      hud.setTalkEnabled(!!ng);
+      world.setGoal(nearest ? { x: nearest.x, z: nearest.z + 0.8 } : null);
+      if (rescued.length >= need && !groups.some(g => g.state === 'freeing')) return finish(true);
+      if (t >= duration || !groups.some(g => g.state === 'walking' || g.state === 'freeing')) finish(rescued.length >= need);
     });
   });
 }
@@ -383,6 +435,9 @@ async function walkHome(ctx) {
   const { world, dialogue } = ctx;
   await ctx.fade(true);
   for (const c of scene.captives) if (!rescued.includes(c)) c.group.visible = false;
+  for (const c of rescued) c.escort.visible = false;
+  scene.allies.forEach(a => { a.visible = false; });
+  scene.setField(false); scene.khitan.visible = false; // 성으로 돌아온다(D-62)
   scene.gate.setOpen(1);
   world.bounds = { x0: -24, x1: 24, z0: 0, z1: 72 };
   placePlayer(world, [0, 26], Math.PI);
@@ -407,7 +462,8 @@ async function walkHome(ctx) {
 
 function showAftermath(ctx) {
   for (const c of scene.captives) c.group.visible = false;
-  scene.khitan.visible = false;
+  scene.allies.forEach(a => { a.visible = false; });
+  scene.setField(false); scene.khitan.visible = false;
   ctx.world.bounds = EXPLORE_BOUNDS; // 구출이 끝나면 성안으로 돌아온다(빛나는 문이 선다)
   placePlayer(ctx.world, RETURN_AT);
 }
@@ -418,6 +474,7 @@ export default {
   script,
   quizzes: script.quizzes,
   stories: { gwakju: gwakjuScene, lastStand: lastStandScene }, // 이야기 장면(D-58)
+  rescueOnce: (ctx, easy) => rescue(ctx, easy), // 테스트: 백성 구출 한 번
 
   buildScene(world) {
     scene = buildCh2Scene(world); rescued = [];
@@ -425,16 +482,25 @@ export default {
     return scene;
   },
 
-  // 장 도입(C-03): 눈 덮인 흥화진 북쪽에서 거란 대군이 성벽 쪽으로 나아온다
+  // 장 도입(C-03 → D-62, 2026-10-31 선생님): 흥화진 북쪽 성벽 위에서 바라본 거란 대군. 선봉에 거란 왕(성종)이 말을 타고 서 있고,
+  // 이어 무기를 들고 성벽으로 덤벼오는 거란군을 가까이(클로즈업) 보여 주며 장면을 바꾼다.
   introScene(ctx) {
-    const { world } = ctx, f = scene.khitanFront;
-    let off = null;
+    const { world } = ctx, f = scene.khitanFront, king = scene.khitanKing;
+    const T = WALL_TOP;
+    const chargers = scene.horde.filter(k => k.userData.home.z > -25.5 && Math.abs(k.userData.home.x) > 1.6 && Math.abs(k.userData.home.x) < 9);
+    const offs = [];
     return {
       shots: [
-        { cam: [0, 8.5, -3], look: [0, 1.6, -30], to: { cam: [0, 7, -8.5], look: [0, 1.8, -26] },
-          act: () => { off = world.onUpdate(dt => { f.position.z += dt * 1.1; }); } },
+        { cam: [1.2, T + 1.7, -12.2], look: [0.3, 2.2, -24], to: { cam: [0.8, T + 1.5, -13.1], look: [0.4, 2.4, -21.5] },
+          act: () => { offs.push(world.onUpdate(dt => { for (const k of scene.horde) if (!chargers.includes(k) || !k.userData.charging) k.position.z += dt * 0.35; })); } }, // 대군이 천천히 다가온다(왕은 선봉에 선 채)
+        { ms: 4200, cam: [5.6, 1.5, -14.6], look: [3.6, 1.8, -20.8], to: { cam: [5.2, 1.45, -15.2], look: [3.7, 1.9, -19.8] }, // 덤벼오는 거란군이 카메라 쪽으로 달려온다(왕은 왼쪽에)
+          act: () => {
+            command(king); // 왕이 칼을 들어 공격을 명한다
+            for (const k of chargers) { k.userData.charging = true; setStyle(k, 'soldier'); playAction(k, { dur: 4.5, fadeIn: 0.3, fadeOut: 0.3, pose: () => ({ arms: [[-1.0, 0, 0.25], [-1.25, 0, -0.1]], upper: [0.18, 0, 0], head: [-0.1, 0] }) }); } // 창을 앞으로 겨누고 달려든다
+            offs.push(world.onUpdate(dt => { for (const k of chargers) { k.position.z = Math.min(k.position.z + dt * 3.6, -15.2); k.rotation.y = 0; } }));
+          } },
       ],
-      done: () => { off?.(); f.position.z = 0; },
+      done: () => { offs.forEach(o => o()); for (const k of scene.horde) { k.position.copy(k.userData.home); k.rotation.y = 0; k.userData.charging = false; } },
     };
   },
   // 미니게임 뒤 빛나는 문(C-02): 성안 눈길 가운데, 돌아온 학생(남쪽)을 본다
@@ -501,7 +567,7 @@ export default {
     await gwakjuScene(ctx); // 이야기 장면(D-58): 양규가 곽주를 되찾는다
 
     await ctx.fade(true);
-    scene.khitan.visible = false;
+    scene.setField(true); // 들판: 성과 거란 진영 없이 황량한 들판과 멀리 끌려가는 백성(D-62)
     world.bounds = scene.field.bounds;
     placePlayer(world, scene.field.start);
     // 들판에서 양규가 기다린다: 다가가 말을 걸어야 구출이 시작된다(C-05)

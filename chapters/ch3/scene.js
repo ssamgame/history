@@ -10,6 +10,7 @@ import { gateLeaves, nameBoard } from '../kit/gate.js';
 import { scatter } from '../../core/props.js';
 import { LOOKS, look } from '../../content/characters.js';
 import { createWeather } from '../../core/weather.js';
+import { host } from '../kit/army.js';
 
 const RIVER_Z = -8, RIVER_W = 6;
 const DAM_X = -10;   // 쇠가죽 둑(냇물 위쪽). 물은 +x 쪽(아래쪽)으로 흐른다
@@ -167,8 +168,17 @@ export function buildCh3Scene(world) {
     const k = makePerson(LOOKS.khitan);
     k.position.set(-4.4 + (i % 5) * 2.2, 0, -Math.floor(i / 5) * 1.8); k.rotation.y = 0; army.add(k);
   }
+  for (const k of army.children) k.userData.home = k.position.clone(); // 물에 쓸려 간 뒤 다시 하기 때 제자리로
   const setCross = t => { army.position.set(ARMY_X, 0, zNorth - 8 + t * (zSouth + 4 - (zNorth - 8))); };
   setCross(0);
+  // 도입 장면의 소배압 대군(D-62, 2026-10-31 선생님: 웅장하게): 냇물 북쪽 들판을 메운 보병·기마병, 말 탄 소배압과 깃발. 도입 장면에만 보인다
+  const hostG = new THREE.Group(); hostG.visible = false; L.add(hostG);
+  const H = host(hostG, { x: ARMY_X - 1, z: zNorth - 15, ry: 0, front: 'infantry', ground: groundH,
+    general: { ...LOOKS.khitan, robe: 0x5a4632, trim: 0xd9a441, hat: 'fur', gear: 'sword', named: true }, banner: 0x2e2a26, bearerLook: 'khitan',
+    infantry: { looks: ['khitan', 'khitanBright', 'khitan'], n: 45, cols: 15, gap: 1.5, depth: 1.6 },
+    cavalry: { looks: ['khitan'], n: 14, cols: 7, gap: 2.7, coats: [0x6b4a32, 0x3a2e26, 0x8a6a4a] } });
+  for (const x of [-14, -5, 5, 14]) { const f = new THREE.Group(); f.position.set(ARMY_X + x, groundH(ARMY_X + x, zNorth - 21), zNorth - 21); BUILD.banner(f, { color: 0x2e2a26, h: 3.8 }); hostG.add(f); }
+  const introHost = { group: hostG, units: H.units, general: H.general, count: H.units.filter(u => u.userData.person || u.userData.legs).length };
   // 북쪽 거란 진영
   for (const [x, z] of [[-10, -30], [2, -34], [14, -31], [-20, -38], [8, -42]]) {
     mk(new THREE.CylinderGeometry(2.1, 2.1, 1.7, 9), 0x8f7556, x, 0.85, z);
@@ -275,7 +285,7 @@ export function buildCh3Scene(world) {
     bankPath: [[DAM_X + 3, -1.6], [DAM_X + 3.6, -3.6], [DAM_X + 5, -4.2]],
     hides, damWall, ring, flood, rain, flagPoles, gujuFlags, gujuKhitan, gujuGoryeo, gujuFires, reinforcements, guju, dust, gujuZ: GUJU_Z,
     dam: { x: DAM_X + 1, z: -1.4, r: 1.6 },
-    river: { army, setCross, zNorth, zSouth },
+    river: { army, setCross, zNorth, zSouth }, introHost,
     gujuBounds: { x0: -9, x1: 9, z0: GUJU_Z + 8, z1: GUJU_Z + 14 },
     start: [0, 10],
     setFlags(northward) { flagDir = northward ? Math.PI / 2 : -Math.PI / 2; rain.setWind(northward ? -2 : 2); },

@@ -11,6 +11,7 @@ export function createInput({ target = window, joyZone, actionButton }) {
   const held = new Set();
   const joy = { id: null, cx: 0, cy: 0, x: 0, z: 0 };
   const actionFns = [], menuFns = [];
+  const actionKeys = new Set(); let btnHeld = false; // 꾹 누르기(D-62): 행동 키·버튼을 누르고 있는지
 
   const base = document.createElement('div');
   base.className = 'joy'; base.hidden = true;
@@ -21,6 +22,7 @@ export function createInput({ target = window, joyZone, actionButton }) {
   const onKeyDown = e => {
     if (e.target && e.target.tagName === 'INPUT') return;
     if (MOVE_KEYS[e.code]) { held.add(e.code); if (e.code.startsWith('Arrow')) e.preventDefault?.(); }
+    if (ACTION_KEYS.has(e.code)) actionKeys.add(e.code);
     if (ACTION_KEYS.has(e.code) && !e.repeat) {
       if (e.target && e.target.tagName === 'BUTTON') return; // 버튼 위에서는 브라우저 기본 동작(클릭)에 맡김
       e.preventDefault?.();
@@ -28,8 +30,9 @@ export function createInput({ target = window, joyZone, actionButton }) {
     }
     if (e.code === 'Escape') menuFns.forEach(f => f());
   };
-  const onKeyUp = e => held.delete(e.code);
-  const onBlur = () => held.clear();
+  const onKeyUp = e => { held.delete(e.code); actionKeys.delete(e.code); };
+  const onBlur = () => { held.clear(); actionKeys.clear(); btnHeld = false; };
+  const btnDown = () => { btnHeld = true; }, btnUp = () => { btnHeld = false; };
 
   const endJoy = e => {
     if (e.pointerId !== joy.id) return;
@@ -62,6 +65,8 @@ export function createInput({ target = window, joyZone, actionButton }) {
   joyZone.addEventListener('pointercancel', endJoy);
   joyZone.addEventListener('lostpointercapture', endJoy);
   actionButton.addEventListener('click', onAction);
+  actionButton.addEventListener('pointerdown', btnDown);
+  for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) actionButton.addEventListener(ev, btnUp);
 
   const input = {
     enabled: true,
@@ -75,6 +80,7 @@ export function createInput({ target = window, joyZone, actionButton }) {
       return { x: x * k + 0, z: z * k + 0 };
     },
     onAction(fn) { actionFns.push(fn); },
+    actionHeld() { return btnHeld || actionKeys.size > 0; }, // 행동 키(E·스페이스 등)나 행동 버튼을 누르고 있는 동안 true
     onMenu(fn) { menuFns.push(fn); },
     releaseJoystick() { endJoy({ pointerId: joy.id }); },
     dispose() {
@@ -87,6 +93,8 @@ export function createInput({ target = window, joyZone, actionButton }) {
       joyZone.removeEventListener('pointercancel', endJoy);
       joyZone.removeEventListener('lostpointercapture', endJoy);
       actionButton.removeEventListener('click', onAction);
+      actionButton.removeEventListener('pointerdown', btnDown);
+      for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) actionButton.removeEventListener(ev, btnUp);
       base.remove();
     },
   };

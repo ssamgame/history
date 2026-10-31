@@ -25,10 +25,16 @@ export function yongjangScene(ctx) {
   const L = script.jindo.talk;
   return storyScene(ctx, { key: 'yongjang', arena: YONGJANG, mood: 'overcast', async run({ g, hook, cam, glide, say, fadeIn }) {
     const { world } = ctx;
-    // 산기슭 돌성(용장성)과 성 위 삼별초 깃발, 군데군데 불길
-    for (const x of [-9, 0, 9]) { const w = new THREE.Group(); w.position.set(x, 0, -8); BLD.wall(w, { w: 9, h: 3.8, color: 0x8c8577 }); g.add(w); }
-    for (const x of [-11, -3, 5, 12]) { const f = new THREE.Group(); f.position.set(x, 3.8, -8); BLD.banner(f, { color: 0x3a2f2a, h: 2.6 }); g.add(f); }
-    const fires = [[-7, -7.2], [3, -7.2], [10, -7.4]].map(([x, z]) => burning(world, { parent: g, x, y: 3.8, z, size: 1.4, level: 0 }));
+    // 산기슭 돌성(용장성): 성돌을 쌓아 올린 성벽과 성 위 삼별초 깃발. 무너질 때는 성돌이 허물어져 쏟아져 내린다(D-62, 2026-10-31 선생님)
+    const stones = [], SW = 1.0, SH = 0.62;
+    const stoneMat = [0x8c8577, 0x9a9384, 0x7d776b].map(c => new THREE.MeshLambertMaterial({ color: c }));
+    for (let col = 0; col < 27; col++) for (let row = 0; row < 6; row++) {
+      const x = -13 + col * SW + (row % 2) * 0.5, y = SH / 2 + row * SH;
+      const m = new THREE.Mesh(new THREE.BoxGeometry(SW * 0.96, SH * 0.94, 1.1), stoneMat[(col * 7 + row * 3) % 3]); m.position.set(x, y, -8); m.castShadow = true; m.receiveShadow = true; g.add(m);
+      stones.push({ m, x, y, row, col, v: new THREE.Vector3(), w: new THREE.Vector3(), t0: 0 });
+    }
+    const flags = [-11, -3, 5, 12].map(x => { const f = new THREE.Group(); f.position.set(x, 6 * SH, -8); BLD.banner(f, { color: 0x3a2f2a, h: 2.6 }); g.add(f); return f; });
+    const dust = Array.from({ length: 14 }, (_, i) => { const d = new THREE.Mesh(new THREE.SphereGeometry(0.8, 7, 5), new THREE.MeshLambertMaterial({ color: 0xb8ae98, transparent: true, opacity: 0, depthWrite: false })); d.position.set(-11 + i * 1.7, 0.6, -7.4); g.add(d); return d; });
     // 성을 지키는 삼별초와 김통정
     const kim = person(g, 'kimtongjeong', -1, -3.6, 0);
     const men = troop(g, 'sambyeolcho', 0.5, -5, { cols: 5, rows: 2, gap: 1.3, ry: 0 });
@@ -36,8 +42,25 @@ export function yongjangScene(ctx) {
     await fadeIn();
     await say(L[0]);
     ctx.dialogue.close();
+    // 성벽이 허물어진다: 가운데부터 금이 가 위 성돌부터 앞으로 쏟아져 내리고, 흙먼지가 인다
     ctx.audio?.play?.('whoosh');
-    await wait(world, 1.4, k => fires.forEach(f => f.setLevel(k))); hook.fire = true;
+    let seed = 5; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    for (const st of stones) { const dc = Math.abs(st.x - 0.5); st.t0 = 0.15 + dc * 0.07 + (5 - st.row) * 0.06 + rnd() * 0.25; st.v.set((rnd() - 0.5) * 1.6, 0.6 + rnd() * 1.2, 1.2 + rnd() * 2.4); st.w.set((rnd() - 0.5) * 6, (rnd() - 0.5) * 3, (rnd() - 0.5) * 6); st.fall = st.row >= 1 || rnd() < 0.5; }
+    hook.crumbled = 0;
+    await wait(world, 3.2, (k, dt) => {
+      const t = k * 3.2;
+      for (const st of stones) {
+        if (!st.fall || t < st.t0) continue;
+        if (!st.moving) { st.moving = true; hook.crumbled++; }
+        st.v.y -= 9.8 * dt; st.m.position.addScaledVector(st.v, dt);
+        const floor = 0.3 + (st.row === 0 ? 0 : 0.25 * ((st.col * 3 + st.row) % 3));
+        if (st.m.position.y < floor) { st.m.position.y = floor; st.v.multiplyScalar(0.25); st.v.y = Math.abs(st.v.y) * 0.2; st.w.multiplyScalar(0.4); } // 땅에 떨어져 쌓인다
+        st.m.rotation.x += st.w.x * dt; st.m.rotation.y += st.w.y * dt; st.m.rotation.z += st.w.z * dt;
+      }
+      flags.forEach((f, i) => { f.position.y = Math.max(0.2, 6 * SH - Math.max(0, t - 0.4 - i * 0.15) ** 2 * 4); f.rotation.z = (i % 2 ? 1 : -1) * Math.min(1.4, Math.max(0, t - 0.4) * 1.2); });
+      dust.forEach((d, i) => { const q = Math.max(0, Math.min(1, (t - 0.5 - (i % 4) * 0.15) / 2)); d.material.opacity = 0.55 * Math.sin(Math.PI * q); d.scale.setScalar(0.6 + q * 2.6); d.position.y = 0.6 + q * 2.4; });
+    });
+    hook.collapsed = true;
     await say(L[1]);
     ctx.dialogue.close();
     // 바닷가의 배로 물러난다
@@ -94,49 +117,33 @@ export function hangpaduriScene(ctx) {
     const allUnits = [...allies.units, ...wingL.units, ...wingR.units], riders = [...allies.riders, ...wingL.riders, ...wingR.riders];
     const offPatrol = patrol(world, riders);
     cam([16, 6.5, 2], [0, 1.2, 10]);
-    await say(L[1]); hook.phases.push('advance'); // 연출이라는 안내(사실과 나눈다)
-    ctx.dialogue.close();
+    hook.phases.push('advance');
     command(allies.general); command(wingL.general);
-    const front = allies.foot.slice(0, 7);
+    // 삼별초는 흙성 앞으로 나와 흙성을 등지고 늘어서 바닷가의 연합군을 마주 본다(D-62, 2026-10-31 선생님: 흙벽을 사이에 두고 싸우지 않고, 흙벽을 뒤로 두고 대치)
+    const line = men.map((p, i) => [p, -9 + (i % 7) * 3 + (i >= 7 ? 1.5 : 0), WZ + 2.4 + (i >= 7 ? 0 : 1.4)]);
+    const outMarch = Promise.all(line.map(([p, x, z]) => march(world, [p], x - p.position.x, z - p.position.z, 2.4)));
     await Promise.all([
-      advance(world, allies.units, 0, -9.5, 4.2, { ground: groundAt }),
-      advance(world, wingL.units, 3, -7, 4.6, { ground: groundAt }),
-      advance(world, wingR.units, -3, -7, 4.6, { ground: groundAt }),
-      volley(world, g, men, front, 3), // 삼별초 궁수들이 활을 쏜다(화살은 앞에서 막는다)
-      glide([16, 6.5, 2], [0, 1.2, 10], [9, 3.6, -5], [0, 1.4, 4], 4.2),
+      outMarch,
+      advance(world, allies.units, 0, -6.5, 4.2),
+      advance(world, wingL.units, 2.5, -5, 4.6),
+      advance(world, wingR.units, -2.5, -5, 4.6),
+      glide([16, 6.5, 2], [0, 1.2, 10], [17, 5, 6], [0, 1.4, 7], 4.4),
     ]);
-    // ③ 대치와 전투: 흙성을 사이에 두고 창으로 찌르고 막는다(앞줄끼리 마주 본다)
-    const pairs = front.slice(0, 5).map(a => { const d = men.slice(0, 7).reduce((b, p) => (Math.abs(p.position.x - a.position.x) < Math.abs(b.position.x - a.position.x) ? p : b)); return [a, d]; });
-    for (const [a, d] of pairs) { face(a, d.position.x, d.position.z); face(d, a.position.x, a.position.z); }
-    hook.phases.push('clash');
-    for (let n = 0; n < 2; n++) {
-      await Promise.all(pairs.map(([a, d], i) => (async () => { await wait(world, 0.15 * i); await Promise.all([strike(a, 'spear'), (async () => { await wait(world, 0.18); await block(d, 0.6); })()]); })()));
-      await Promise.all(pairs.map(([a, d], i) => (async () => { await wait(world, 0.1 * i); await Promise.all([strike(d, 'spear'), (async () => { await wait(world, 0.18); await block(a, 0.6); })()]); })()));
-    }
-    hook.weaponsFacing = pairs.every(([a, d]) => Math.cos(a.rotation.y - Math.atan2(d.position.x - a.position.x, d.position.z - a.position.z)) > 0.9);
-    // ④ 방어선이 무너진다: 앞줄 몇이 쓰러지고(잠시 누웠다 사라진다), 나머지는 물러서며, 깃발이 넘어간다. 연합군이 흙성을 넘는다
-    hook.phases.push('collapse');
-    const fallen = pairs.slice(0, 3).map(([, d]) => d);
-    const rest = men.filter(p => !fallen.includes(p));
-    rest.forEach(p => face(p, p.position.x, p.position.z - 10));
-    await Promise.all([
-      wait(world, 0.8, k => { fallen.forEach(p => { p.rotation.order = 'YXZ'; p.rotation.x = -1.45 * k * k; }); flags.forEach((f, i) => { f.rotation.z = (i % 2 ? 1 : -1) * 1.4 * Math.min(1, k * 1.3); }); }),
-      march(world, rest, 0, -6, 2.6),
-      advance(world, [...allies.foot, allies.general, allies.bearer], 0, -4.2, 2.4, { ground: groundAt }), // 장수와 깃발도 함께 흙성으로
-    ]);
-    await wait(world, 0.8);
-    fallen.forEach(p => { p.visible = false; });
-    rest.forEach(p => { p.visible = false; }); // 물러난 군사들은 성 안쪽 멀리로
+    men.forEach(p => face(p, p.position.x, p.position.z + 10)); // 바다 쪽(연합군)을 본다
+    allies.foot.forEach(p => face(p, p.position.x, p.position.z - 10)); // 연합군 보병은 흙성 쪽을 본다
+    hook.phases.push('standoff');
+    flags.forEach(f => { f.position.z = WZ - 0.6; });
+    // 대치: 두 군대가 마주 서서 창을 겨눈다(서로 닿지 않는 거리)
+    const zSB = Math.max(...men.map(p => p.position.z)), zAL = Math.min(...allies.foot.map(p => p.position.z));
+    hook.gap = zAL - zSB; hook.wallBehind = men.every(p => p.position.z > WZ + 1.2);
+    hook.facing = (men.filter(p => Math.cos(p.rotation.y) > 0.9).length + allies.foot.filter(p => Math.cos(p.rotation.y) < -0.9).length) / (men.length + allies.foot.length);
+    await glide([17, 5, 6], [0, 1.4, 7], [-13, 3.4, 9.5], [2, 1.5, 8], 3); // 옆에서 흙성을 등진 삼별초와 마주 선 연합군을 함께
     kim.visible = false;
-    // ⑤ 싸움이 끝난 뒤: 흙성 위에 연합군 깃발, 장수와 군사들이 선다
-    hook.phases.push('after');
-    const won = [-6, 6].map(x => { const f = new THREE.Group(); f.position.set(x, WALL, WZ); BLD.banner(f, { color: x < 0 ? 0xb8452f : 0x2a2a2e, h: 2.8 }); g.add(f); return f; });
-    await glide([9, 3.6, -5], [0, 1.4, 4], [-6, 4.2, -9], [0, 1.6, 4], 2.2);
     hook.mongols = riders.length + 2; hook.mongolRiders = riders.length + 1; // 연합군 가운데 몽골군은 기마병 중심(걸어가는 몽골 병사는 없다)
     hook.sunk = sunk(allUnits, groundAt);
     { let m = 9; const vis = allUnits.filter(u => u.visible); for (let i = 0; i < vis.length; i++) for (let j = i + 1; j < vis.length; j++) m = Math.min(m, Math.hypot(vis[i].position.x - vis[j].position.x, vis[i].position.z - vis[j].position.z) / (vis[i].userData.horse || vis[j].userData.horse ? 1.7 : 1)); hook.minGap = m; }
-    hook.fleet = fleet.length; hook.flags = won.length;
-    await say(L[2]);
+    hook.fleet = fleet.length;
+    await say(L[1]);
     offPatrol(); offRow();
   } });
 }

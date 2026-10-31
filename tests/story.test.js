@@ -33,7 +33,7 @@ for (const id of IDS) {
         if (h.kingFeetHidden != null) eq(h.kingFeetHidden, 0, `${id}/${name}: 왕의 발이 돌계단에 묻히지 않는다`);
         if (h.minGap != null) ok(h.minGap > 0.55, `${id}/${name}: 사람·말이 서로 겹치지 않는다 ${h.minGap.toFixed(2)}`);
         if (h.weaponsFacing != null) ok(h.weaponsFacing, `${id}/${name}: 찌르는 쪽이 상대를 향한다`);
-        if (h.phases) ok(['defend', 'advance', 'clash', 'collapse', 'after'].every(k => h.phases.includes(k)), `${id}/${name}: 저항→진격→전투→무너짐→끝 ${h.phases}`);
+        if (h.phases) ok(['defend', 'advance', 'standoff'].every(k => h.phases.includes(k)), `${id}/${name}: 저항→진격→흙성을 등진 대치(D-62) ${h.phases}`);
         if (h.mongolRiders != null) ok(h.mongolRiders / h.mongols >= 0.6, `${id}/${name}: 몽골군은 기마병 중심 ${h.mongolRiders}/${h.mongols}`);
         eq(s.w.level.children.length, n0, `${id}/${name}: 무대를 치웠다`);
         eq(s.w.level.children.filter(o => o.visible).length, vis, `${id}/${name}: 마을을 다시 보인다`);

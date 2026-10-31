@@ -365,7 +365,7 @@ const base = makeKitChapter({
     ground: 'grass', groundColor: 0x6a7a4c, bounds: { x0: -16, x1: 16, z0: -8, z1: 11 }, start: [0, 9], hill: 1.7,
     roads: [{ x: 0, z: 2, w: 4, d: 20, color: 0x7a6a50 }],
     props: [
-      { type: 'water', x: 0, z: -24, w: 260, d: 14, color: 0x5a7a7a },
+      { type: 'water', x: 0, z: -24, w: 260, d: 14, color: 0x5a7a7a, river: true },
       { type: 'sandbags', x: -8, z: -9, w: 6 }, { type: 'sandbags', x: 8, z: -9, w: 6 }, { type: 'sandbags', x: 0, z: -10, w: 4 },
       { type: 'tent', x: -12, z: 7, color: 0x6b6a4a }, { type: 'tent', x: 12, z: 7, color: 0x6b6a4a }, { type: 'tent', x: -12, z: 0.5, color: 0x6b6a4a },
       { type: 'truck', x: 11, z: -1, ry: 0.3 },

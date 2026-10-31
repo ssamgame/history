@@ -80,6 +80,12 @@ function tick() {
     return;
   }
   E.drag = null;
+  if (ctx.testHooks.holding) { // 꾹 누르기(5장 바닷물에 담그기, D-62): 행동 단추를 누르고 있다가 끝나면 뗀다
+    const t = document.querySelector('.talkbtn');
+    if (t && !E.btnHold) { release(); t.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 12, bubbles: true })); E.btnHold = t; }
+    return;
+  }
+  if (E.btnHold) { E.btnHold.dispatchEvent(new PointerEvent('pointerup', { pointerId: 12, bubbles: true })); E.btnHold = null; }
   if (ctx.testHooks.pressing) { release(); action(); return; }
   const g = w.getGoal?.() || ctx.testHooks.walkTo;
   if (g && w.camMode === 'follow' && ctx.input.enabled) {

@@ -12,7 +12,7 @@ const tick = (world, sec, fn) => new Promise(res => { let t = 0; const off = wor
 const yawTo = (p, x, z) => { p.getWorldPosition(yv); return Math.atan2(x - yv.x, z - yv.z); };
 const worldOf = (o, out = new THREE.Vector3()) => o.getWorldPosition(out);
 // 손(i: 0 x−쪽, 1 x+쪽): 예전 팔 관절 안, 공통 뼈대 몸이면 손 뼈로 옮겨 간 손(2026-10-31 점검: 뼈대 몸에서 악수·건네기가 손을 못 찾아 멈췄다)
-const handOf = (p, i) => p.userData.arms[i].getObjectByName('hand') || p.userData.skel?.bones(i ? 'hand_L' : 'hand_R').getObjectByName('hand') || p.userData.skel?.bones(i ? 'hand_L' : 'hand_R');
+export const handOf = (p, i) => p.userData.arms[i].getObjectByName('hand') || p.userData.skel?.bones(i ? 'hand_L' : 'hand_R').getObjectByName('hand') || p.userData.skel?.bones(i ? 'hand_L' : 'hand_R');
 // 걸음이 다 멈출 때까지 잠깐 기다린다(멈추며 손을 뻗지 않게: 준비 동작 → 핵심 동작)
 const settle = (world, ...ps) => new Promise(res => { let t = 0; const off = world.onUpdate(dt => { t += dt; if (t > 0.8 || ps.every(p => (p.userData.stride || 0) < 0.05)) { off(); res(); } }); });
 

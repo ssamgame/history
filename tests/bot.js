@@ -52,7 +52,7 @@ export function touchBot(s, { answers, wrongFirst = new Set(), noTaps = () => fa
   const wrongUsed = new Set(), seenAt = new Map();
   const zone = hud.joyZone;
   const pe = (type, x, y) => zone.dispatchEvent(new PointerEvent(type, { pointerId: 3, clientX: x, clientY: y, bubbles: true }));
-  let dragging = false, stopped = false, taps = 0, earlyPressed = !pressEarlyOnce;
+  let dragging = false, stopped = false, taps = 0, earlyPressed = !pressEarlyOnce, holdingBtn = false;
   const release = () => { if (dragging) { pe('pointerup', 100, 100); dragging = false; } };
   // 사람 손가락처럼 누른다: 버튼 한가운데 맨 위에 그 버튼이 있어야 한다(다른 화면이 덮고 있으면 기록해 두었다가 끝에 실패)
   const covered = [];
@@ -150,6 +150,8 @@ export function touchBot(s, { answers, wrongFirst = new Set(), noTaps = () => fa
       const big = ui.querySelector('.big-action');
       if (big && (ctx.testHooks.ready || (!earlyPressed && ctx.testHooks.armed !== false))) { earlyPressed = true; tap(big); }
       if (ctx.testHooks.pressing && !hud.talkBtn.disabled) { hud.talkBtn.click(); taps += 1; } // 제자리에서 E를 눌러 하는 일(5장 경판 만들기 등)
+      if (ctx.testHooks.holding && !holdingBtn) { hud.talkBtn.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); holdingBtn = true; } // 꾹 누르기(5장 바닷물에 담그기, D-62)
+      else if (!ctx.testHooks.holding && holdingBtn) { hud.talkBtn.dispatchEvent(new PointerEvent('pointerup', { bubbles: true })); holdingBtn = false; }
       const g = w.getGoal() || ctx.testHooks.walkTo; // 정답 자리를 화살표로 알려 주지 않는 놀이는 봇에게만 따로 알려 준다
       if (g && w.camMode === 'follow' && !holdStill()) {
         const p = w.player.position, dx = g.x - p.x, dz = g.z - p.z, d = Math.hypot(dx, dz);

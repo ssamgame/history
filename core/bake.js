@@ -42,7 +42,7 @@ export function bakeLevel(world, scene, { steps = 3 } = {}) {
   };
   visit(scene, 0);
   // 2) 사람·안내판
-  L.traverse(o => { if (o.userData.work || o.userData.minQuality) keep.add(o); }); // 일하는 동작을 하는 사람은 계속 움직이고, 화질에 따라 숨길 장식은 따로 둔다
+  L.traverse(o => { if (o.userData.work || o.userData.minQuality || o.userData.dynamic) keep.add(o); }); // dynamic: 꼭짓점이 움직이는 바다(core/sea.js) 등 // 일하는 동작을 하는 사람은 계속 움직이고, 화질에 따라 숨길 장식은 따로 둔다
   const npcMeshes = new Set([...world.npcs.values()].map(n => n.mesh));
   for (const m of npcMeshes) keep.add(m);
   // 3) 잠깐 돌려 보아 움직이거나 바뀐 것

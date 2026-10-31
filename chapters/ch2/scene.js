@@ -11,7 +11,8 @@ import { setStyle } from '../../core/motion.js';
 import { scatter } from '../../core/props.js';
 import { LOOKS, look } from '../../content/characters.js';
 import { createWeather } from '../../core/weather.js';
-import { burning } from '../kit/fire.js';
+import { rider } from '../kit/army.js';
+import { handOf } from '../../core/interact.js';
 
 const HALF = 12;          // 성 안쪽 반 너비
 const WALL_H = 4.2;
@@ -44,6 +45,24 @@ function snowH(x, z) {
   return Math.min(far * far * 0.01, 16) + Math.sin(x * 0.3) * Math.cos(z * 0.25) * 0.15 * k * k * (3 - 2 * k);
 }
 
+// 포승줄(D-62): 호송병의 왼손 → 백성들의 모은 두 손을 차례로 잇는 가는 줄. update()가 매 프레임 손 자리를 따라간다
+const ROPE_MAT = new THREE.MeshLambertMaterial({ color: 0x8a7350 });
+const ROPE_GEO = new THREE.CylinderGeometry(0.022, 0.022, 1, 4).translate(0, 0.5, 0);
+const rv = new THREE.Vector3(), rw = new THREE.Vector3(), rup = new THREE.Vector3(0, 1, 0);
+function makeRope(group, lead, folk) {
+  const segs = folk.map(() => { const m = new THREE.Mesh(ROPE_GEO, ROPE_MAT); m.castShadow = false; group.add(m); return m; });
+  const rope = new THREE.Group(); rope.name = 'rope'; group.add(rope); // 보이기만 맡는 묶음(줄 조각은 group에 붙어 있다)
+  const handAt = (p, i, out) => { const h = handOf(p, i); if (h) h.getWorldPosition(out); else p.localToWorld(out.set(0, 1.0, 0.3)); return group.worldToLocal(out); };
+  const pts = () => { const a = [handAt(lead, 1, new THREE.Vector3())]; for (const v of folk) { const l = handAt(v, 0, new THREE.Vector3()), r = handAt(v, 1, new THREE.Vector3()); a.push(l.add(r).multiplyScalar(0.5)); } return a; };
+  rope.update = () => {
+    if (!rope.visible) { segs.forEach(m => { m.visible = false; }); return; }
+    group.updateMatrixWorld(true);
+    const P = pts();
+    segs.forEach((m, i) => { const a = P[i], b = P[i + 1]; rv.subVectors(b, a); const len = rv.length(); m.visible = len > 0.01; m.position.copy(a); m.scale.set(1, len, 1); m.quaternion.setFromUnitVectors(rup, rw.copy(rv).normalize()); });
+  };
+  return rope;
+}
+
 export function buildCh2Scene(world) {
   const L = world.level, rand = seeded(11);
   const mk = (geo, color, x, y, z, parent = L, cast = true) => {
@@ -68,7 +87,8 @@ export function buildCh2Scene(world) {
     const t = new THREE.Mesh(g, groundMaterial('grain'));
     t.receiveShadow = true; L.add(t);
   }
-  // 성벽 (남쪽에 성문)
+  // 성벽 (남쪽에 성문). 성과 성안 살림은 한 묶음(castle)으로: 들판 장면에서는 숨겨 황량한 들판만 보이게(D-62)
+  const castleFrom = L.children.length;
   const stone = 0xe4ded2; // 밝은 돌색(돌 무늬가 조금 어둡게 하므로 더 밝게): 사다리와 거란 병사가 잘 보이도록
   mk(new THREE.BoxGeometry(HALF * 2 + 3.2, WALL_H, 1.6), stone, 0, WALL_H / 2, -HALF - 0.8);
   for (const sx of [-1, 1]) mk(new THREE.BoxGeometry(1.6, WALL_H, HALF * 2 + 3.2), stone, sx * (HALF + 0.8), WALL_H / 2, 0);
@@ -106,6 +126,9 @@ export function buildCh2Scene(world) {
     const f = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 1.9).translate(0.65, 0, 0), new THREE.MeshLambertMaterial({ color: c, side: THREE.DoubleSide }));
     f.position.set(x, WALL_H + 4, z); L.add(f);
   }
+  const castle = new THREE.Group(); castle.name = 'castle';
+  for (const o of L.children.slice(castleFrom)) castle.add(o);
+  L.add(castle);
   // 소나무
   for (let i = 0; i < 40; i++) {
     const a = rand() * Math.PI * 2, d = 30 + rand() * 50, x = Math.cos(a) * d, z = Math.sin(a) * d + 20;
@@ -120,16 +143,21 @@ export function buildCh2Scene(world) {
     mk(new THREE.CylinderGeometry(2.1, 2.1, 1.7, 9), 0x8f7556, x, 0.85, z, khitan);
     mk(new THREE.ConeGeometry(2.4, 1.5, 9), 0x5e432c, x, 2.45, z, khitan);
   }
-  // 성 밖 거란 진영의 천막 두 채가 타며 연기가 오른다(D-16, 공용 불 부품). 성벽 앞 싸움 자리와 떨어진 곳
-  const campFires = [[-4, -40], [16, -42]].map(([x, z]) => burning(world, { parent: khitan, x: x + 0.6, y: 0.3, z: z + 1.9, size: 1.6 }).group);
-  const khitanFront = new THREE.Group(); khitan.add(khitanFront); // 성벽 앞 거란군 줄 (성벽 방어 때는 치운다)
-  for (let i = 0; i < 10; i++) {
+  // 거란 진영의 천막에는 불을 피우지 않는다(D-62, 2026-10-31 선생님. 예전 D-16의 타는 천막을 뺐다)
+  const campFires = [];
+  const khitanFront = new THREE.Group(); khitan.add(khitanFront); // 성벽 앞 거란 대군(성벽 방어 때 사다리 아래로 몰려온다)
+  // 대군(D-62): 네 줄로 늘어선 보병. 앞줄일수록 성벽에 가깝다
+  const rows = [[11, -24, 3.4], [10, -27, 3.6], [9, -30.5, 4], [8, -34, 4.4]];
+  rows.forEach(([n, z, gap], r) => { for (let i = 0; i < n; i++) {
     const k = makePerson(LOOKS.khitan);
-    k.position.set(-18 + i * 4, 0, -24 - (i % 2) * 2); khitanFront.add(k);
-  }
-  for (let i = 0; i < 4; i++) { const k = makePerson(LOOKS.khitan); k.position.set(-12 + i * 8, 0, -29); khitanFront.add(k); } // 뒷줄
+    k.position.set((i - (n - 1) / 2) * gap + (r % 2) * 0.9 + (rand() - 0.5) * 0.8, 0, z - (i % 2) * 1.1 + (rand() - 0.5) * 0.6); khitanFront.add(k);
+  } });
   const horde = [...khitanFront.children]; // 성벽 방어 때 사다리 아래로 걸어와 모이는 무리(D-32)
   for (const k of horde) k.userData.home = k.position.clone();
+  // 선봉의 거란 왕(성종, S3: 직접 대군을 이끌고 왔다): 말 탄 채 대군 맨 앞 가운데, 양옆에 깃발 기수
+  const KING = { ...LOOKS.khitan, robe: 0x7a5a24, trim: 0xd9a441, hat: 'fur', gear: 'sword', named: true };
+  const khitanKing = rider(khitanFront, KING, 0.4, -20.5, 0, { armor: 0x6a5a40, saddle: 0x8a6a22 });
+  const kingFlags = [-2.6, 3.2].map(x => { const f = new THREE.Group(); f.position.set(x, 0, -21.6); BUILD.banner(f, { color: 0x2e2a26, h: 3.6 }); khitanFront.add(f); return f; });
 
   // 사다리 6개와 오르는 거란 병사 (처음엔 숨김)
   const len = Math.hypot(WALL_H, LADDER_Z + HALF + 1.6 + 0.0);
@@ -149,17 +177,21 @@ export function buildCh2Scene(world) {
     return { x, group, pivot, top, climber, carrier, len, tilt };
   });
 
-  // 들판의 끌려가는 백성 무리 6개
+  // 들판의 끌려가는 백성 무리 6개(D-62): 백성 셋이 한 줄로 포승줄에 묶여, 앞선 거란 병사가 줄 끝을 쥐고 끌고 간다
   const captives = [];
   for (let i = 0; i < 6; i++) {
     const g = new THREE.Group(); g.visible = false; L.add(g);
+    const folk = [];
     for (let k = 0; k < 3; k++) {
       const v = makePerson(look('villager', { robe: [0xe8e2d6, 0xd8cfbf, 0xc9bda8][k] }));
-      v.position.set((k - 1) * 0.9, 0, (k % 2) * 0.6); v.rotation.y = Math.PI; setStyle(v, 'captive'); g.add(v); // 끌려가는 걸음: 움츠린 어깨, 숙인 고개, 앞으로 모은 손(2026-10-30 움직임 개선)
+      v.position.set((k % 2 ? 0.25 : -0.2), 0, k * 1.05); v.rotation.y = Math.PI; setStyle(v, 'captive'); g.add(v); folk.push(v); // 끌려가는 걸음: 움츠린 어깨, 숙인 고개, 앞으로 모은 손(2026-10-30 움직임 개선)
     }
-    const escort = makePerson(LOOKS.khitan); escort.position.set(0, 0, -1.4); escort.rotation.y = Math.PI; setStyle(escort, 'guard'); g.add(escort); // 호송병: 경계하며 둘레를 살핀다
-    captives.push({ group: g, escort, start: [-18 + i * 7.2 + (rand() - 0.5) * 2, FIELD_Z - 6 + rand() * 6] }); // 플레이어보다 앞(북쪽)에서 출발
+    const escort = makePerson(LOOKS.khitan); escort.position.set(0.1, 0, -1.5); escort.rotation.y = Math.PI; setStyle(escort, 'guard'); g.add(escort); // 호송병: 경계하며 둘레를 살핀다
+    const rope = makeRope(g, escort, folk);
+    captives.push({ group: g, escort, folk, rope, start: [-18 + i * 7.2 + (rand() - 0.5) * 2, FIELD_Z - 6 + rand() * 6] }); // 플레이어보다 앞(북쪽)에서 출발
   }
+  // 들판에서 학생과 함께 가는 고려 병사 둘(D-62: 학생은 무기가 없어, 호송병은 이 병사들이 쓰러뜨린다)
+  const allies = [0, 1].map(i => { const a = makePerson(LOOKS.soldier); a.visible = false; a.userData.ally = i; L.add(a); return a; });
   // 눈 위로 드러난 바위와 마른 풀 (성 밖 들판)
   scatter(world, { kind: 'rock', count: 30, area: { x0: -60, x1: 60, z0: 14, z1: 90 }, avoid: [{ x: 0, z: 46, r: 22 }], seed: 31, ground: snowH, scale: [0.6, 1.8], color: 0x9aa0a6 });
   scatter(world, { kind: 'grass', count: 120, area: { x0: -40, x1: 40, z0: 14, z1: 80 }, seed: 32, ground: snowH, scale: [0.6, 1.1], color: 0xa89470 });
@@ -191,7 +223,8 @@ export function buildCh2Scene(world) {
 
   backdropMountains(world.level, { color: 0xc8ccd0, radius: 130 }); // 먼 산줄기(깊이감)
   return {
-    ring, gate, wallRings, wallGauges, horde, stairs: { x: 0, z: -6, r: 1.6 }, ladders, captives, khitan, khitanFront, campFires,
+    ring, gate, wallRings, wallGauges, horde, stairs: { x: 0, z: -6, r: 1.6 }, ladders, captives, khitan, khitanFront, campFires, castle, khitanKing, kingFlags, allies,
+    setField(on) { castle.visible = !on; khitan.visible = !on; }, // 들판 장면: 성과 거란 진영을 숨겨 황량한 들판만(D-62)
     field: { bounds: { x0: -24, x1: 24, z0: 20, z1: 72 }, start: [0, 68], lostZ: 21 }, // 플레이어는 남쪽에서 북쪽(화면 위)으로 쫓아간다
     start: [0, 6],
   };

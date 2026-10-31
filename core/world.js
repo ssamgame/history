@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { QUALITY } from './quality.js';
 import { makePerson, animateWalk, animateWalkers, markerSprite, POST_POSE } from './people.js';
 import { animateHorses } from './horse.js';
+import { stepSeas } from './sea.js';
 import { LOOKS } from '../content/characters.js';
 
 // 장면 분위기. 2~6장 값은 다음 계획에서 채운다.
@@ -382,6 +383,7 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
         goalArrow.rotation.y = Math.atan2(dx, dz);
       } else goalArrow.visible = false;
       for (const fn of [...updaters]) fn(dt, elapsed); // 도중에 해제해도 안전하도록 복사본을 돈다
+      stepSeas(dt, elapsed, world.quality); // 출렁이는 바다(core/sea.js)
       animateWalkers(dt, scene); // 움직인 인물(따라오는 사람·감시원 등)은 다리를 흔든다
       for (const f of POST_POSE) f(dt); // 뼈대 몸(블렌더 시험)이 관절을 따라간다
       animateHorses(dt, scene); // 말: 움직인 빠르기에 맞는 걸음새(core/horse.js)

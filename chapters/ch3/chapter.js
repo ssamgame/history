@@ -149,6 +149,7 @@ export function damAttempt(ctx, easy, fail) {
   const [lo, hi] = easy ? DAM_WINDOW.easy : DAM_WINDOW.normal, T = easy ? CROSS_SECONDS.easy : CROSS_SECONDS.normal;
   const plug = scene.plug, gc = world.npcs.get('gangamchan');
   scene.river.army.visible = true; scene.river.army.position.y = 0; scene.flood.hide();
+  for (const k of scene.river.army.children) { k.visible = true; k.userData.swept = null; k.position.copy(k.userData.home); k.rotation.set(0, 0, 0); } // 쓸려 간 군사를 제자리로(다시 하기)
   scene.river.setCross(0); plug.ring.visible = false; hush(); world.setGoal(null);
   ctx.testHooks.damNow = false;
   let t = 0, done = false, near = false, labelT = 0;
@@ -184,8 +185,8 @@ export function damAttempt(ctx, easy, fail) {
   });
 }
 
-// 물결이 둑에서 하류로 쏟아지고 거란군이 휩쓸린다.
-function playFlood(ctx) {
+// 물결이 둑에서 하류로 쏟아지고 거란군이 휩쓸린다. 물살에 닿은 군사는 하나씩 아래쪽으로 떠밀려 가며 뒹굴다 물속으로 사라진다(D-62, 2026-10-31 선생님)
+export function playFlood(ctx) {
   const { world } = ctx;
   scene.damWall.visible = false;
   const army = scene.river.army, a0 = army.position.clone(), SPEED = 9;
@@ -195,14 +196,19 @@ function playFlood(ctx) {
       t += dt;
       const front = scene.damX + 1 + t * SPEED;
       scene.flood.show(front, 1 + Math.min(1, t / 2.4) * 0.35, t);
-      // 물살이 거란군 무리에 닿으면 무리가 물에 밀려 아래쪽으로 떠밀리며 북쪽 강둑으로 물러난다(땅속으로 사라지지 않는다)
-      if (front > a0.x - 4.4) {
-        pushed = Math.min(1, pushed + dt / 1.8);
-        const e = pushed * (2 - pushed);
-        army.position.set(a0.x + e * 7, 0, a0.z + (scene.river.zNorth - 3 - a0.z) * e);
-        army.children.forEach((k, i) => { k.rotation.x = Math.sin(pushed * Math.PI) * -0.35; k.rotation.z = Math.sin(t * 6 + i) * 0.12 * (1 - pushed); });
-      }
-      if (t > 3.4) { off(); scene.flood.hide(); army.children.forEach(k => { k.rotation.x = 0; k.rotation.z = 0; }); resolve(); }
+      // 물살 앞이 닿은 군사부터 아래쪽(+x)으로 빨라지며 떠밀리고, 뒹굴며 가라앉다가 화면 밖에서 사라진다
+      army.children.forEach((k, i) => {
+        if (!k.visible) return;
+        const wx = army.position.x + k.position.x;
+        if (!k.userData.swept && front > wx - 0.5) { k.userData.swept = { v: 2, t: 0, spin: (i % 2 ? 1 : -1) * (2 + (i % 3)) }; }
+        const w = k.userData.swept; if (!w) return;
+        w.t += dt; w.v = Math.min(SPEED * 1.1, w.v + dt * 7);
+        k.position.x += w.v * dt; k.position.z += Math.sin(t * 3 + i) * 0.6 * dt;
+        k.rotation.x = Math.min(1.4, w.t * 1.6); k.rotation.z = Math.sin(w.t * w.spin) * 0.5; k.rotation.y += dt * w.spin * 0.6; // 넘어져 뒹군다
+        k.position.y = -Math.min(1.6, w.t * 0.55) + Math.sin(w.t * 5) * 0.08; // 물에 잠긴다
+        if (w.t > 2.2 || k.position.x - k.userData.home.x > 16) { k.visible = false; pushed++; } // 쓸려 가 사라진다
+      });
+      if (t > 3.4 || (t > 1 && army.children.every(k => !k.visible))) { off(); scene.flood.hide(); army.children.forEach(k => { k.visible = false; }); resolve(); }
     });
   });
 }
@@ -336,12 +342,12 @@ export default {
     let off = null;
     return {
       shots: [
-        { cam: [-8, 5.5, 4], look: [1.5, 1.5, -18], to: { cam: [-4, 4, -1], look: [1.5, 1.5, -15] },
-          act: () => { let k = 0; off = world.onUpdate(dt => { k = Math.min(0.28, k + dt * 0.03); r.setCross(k); }); } },
+        { cam: [-9, 8.5, 5], look: [1.5, 1, -21], to: { cam: [-5, 6, 0], look: [1.5, 1.2, -17] }, // 높이서 대군 전체를
+          act: () => { scene.introHost.group.visible = true; let k = 0; off = world.onUpdate(dt => { k = Math.min(0.28, k + dt * 0.03); r.setCross(k); }); } }, // 냇물 북쪽을 메운 소배압 대군(D-62)
         { cam: [-1, 2.5, 10.5], look: [-4, 2.1, 5], to: { cam: [-2.2, 2.4, 9.2], look: [-4, 2.2, 5] },
           act: () => { off?.(); off = null; r.setCross(0); } },
       ],
-      done: () => { off?.(); r.setCross(0); },
+      done: () => { off?.(); r.setCross(0); scene.introHost.group.visible = false; },
     };
   },
   // 미니게임 뒤 빛나는 문(C-02): 진영 가운데 빈 땅, 돌아온 학생(남쪽)을 본다

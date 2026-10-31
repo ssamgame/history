@@ -16,11 +16,11 @@ const flatQ = new THREE.Quaternion(); // 판을 눕힌 자세(글자 면이 위)
 // 빛나는 자리(scene.stations의 spot)가 곧 서는 곳이다: 학생이 그 위에서 E를 누르면 제자리에서 돌아서서 바로 일한다(2026-10-30 선생님: 미끄러지듯 먼 데로 가지 않게)
 // 글자 새기기는 大藏經을 직접 새기므로 새김칼질(n)을 하지 않는다(같은 일을 두 번 하지 않게)
 export const WORK = {
-  soak:    { stand: [-10.6, -0.4], put: [-10.6, 0.83, -1.7], tool: null, n: 2, verb: '판을 물에 눌러 담그기', sink: 0.12 }, // 판이 물에 반쯤 떠 있다가 눌리면 잠긴다
-  boil:    { stand: [-7.6, -0.5], put: [-7.6, 1.26, -1.95], tool: 'paddle', n: 2, verb: '막대로 솥 젓기', cam: [-5.6, 2.5, 0.2] }, // 솥 서쪽의 장인에 가리지 않게 동쪽에서
-  dry:     { stand: [-2.7, -3.85], put: [-2.7, 0.92, -5], up: true, tool: null, n: 1, verb: '그늘 선반에 세워 말리기' },
-  carve:   { stand: [3, -3.75], put: [3, 1.0, -4.95], tool: null, n: 0, verb: '' },
-  ends:    { stand: [6.0, -4.05], put: [6.0, 0.9, -5.0], tool: 'mallet', n: 2, verb: '나무망치로 마구리 박기' },
+  soak:    { stand: [-10.6, -0.4], put: [-10.6, 0.83, -1.7], tool: null, n: 0, hold: 3, verb: '꾹 눌러 바닷물에 담그기', sink: 0.12 }, // 판이 물에 반쯤 떠 있다가 3초 꾹 누르면 잠긴다(D-62)
+  boil:    { stand: [-7.6, -0.5], put: [-7.6, 1.06, -1.95], tool: 'paddle', n: 2, verb: '막대로 솥 젓기', cam: [-5.6, 2.6, 0.2], swirl: true }, // 끓는 소금물 속 판이 젓는 물살을 따라 돈다(D-62)
+  dry:     { stand: [-2.7, -3.85], put: [-2.7, 0.76, -5], up: true, tool: null, n: 0, wait: 4, verb: '말린 판 꺼내기' }, // 세로로 세워 말리고 시간이 지나면 꺼낸다(D-62)
+  carve:   { stand: [3, -3.75], put: [3, 0.95, -4.95], tool: null, n: 0, verb: '' },
+  ends:    { stand: [6.0, -3.85], put: [6.0, 0.9, -5.0], tool: 'mallet', n: 2, verb: '나무망치로 마구리 박기' },
   lacquer: { stand: [8.6, -0.7], put: [8.6, 0.94, -1.95], tool: 'brush', n: 2, verb: '붓으로 옻칠하기' },
 };
 
@@ -51,6 +51,23 @@ export function press(ctx, label, at) {
     const off = ctx.onAction(() => {
       if (ctx.dialogue?.isOpen?.()) return;
       off(); hud.setPrompt(null); hud.setTalkEnabled(false); ctx.testHooks.pressing = null; resolve();
+    });
+  });
+}
+
+// 꾹 누르기(D-62): 행동 버튼(또는 E)을 sec초 동안 누르고 있으면 끝난다. 손을 떼면 조금씩 줄어든다. onProgress(0~1)로 판이 함께 움직인다
+export function holdPress(ctx, label, at, sec, onProgress) {
+  const { hud, world } = ctx;
+  return new Promise(resolve => {
+    let k = 0, total = 0;
+    hud.setPrompt(at, label); hud.setTalkEnabled(true); ctx.testHooks.holding = label;
+    const off = world.onUpdate(dt => {
+      const on = ctx.input?.actionHeld?.() && !ctx.dialogue?.isOpen?.();
+      k = Math.max(0, Math.min(1, k + (on ? dt / sec : -dt / (sec * 2))));
+      if (on) total += dt;
+      hud.setCounter(`${label} ${Math.round(k * 100)}%`);
+      onProgress?.(k);
+      if (k >= 1) { off(); hud.setPrompt(null); hud.setTalkEnabled(false); hud.setCounter(null); ctx.testHooks.holding = null; resolve(total); }
     });
   });
 }
@@ -106,8 +123,8 @@ export async function doWork(ctx, scene, id, hook = {}, beforeLift = null) {
   await walkTo(world, player, W.stand, { speed: 2, accel: 0.2, face: { x: put.x, z: put.z } });
   legs();
   const face = Math.atan2(put.x - player.position.x, put.z - player.position.z);
-  const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, face + Math.PI / 2, 0)); // 판 길이 방향이 학생 앞에 가로로 놓이게
-  if (W.up) q.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0))); // 말림 선반에는 세워 둔다
+  const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, face, 0)); // 판 길이 방향이 학생 앞에 가로(왼쪽-오른쪽)로 놓이게(D-62)
+  if (W.up) q.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, Math.PI / 2))); // 말림 선반에는 긴 쪽이 위아래로 서게(세로로) 세워 꽂는다(D-62)
   // 일하는 모습이 잘 보이게 옆에서 비스듬히 비춘다
   // 작업 대상 너머(학생 맞은편)에서 비스듬히: 학생의 얼굴·손과 판이 함께 보이고, 둘레 사람에 가리지 않는다
   const side = V(Math.cos(face), 0, -Math.sin(face)), fwd = V(Math.sin(face), 0, Math.cos(face));
@@ -122,15 +139,34 @@ export async function doWork(ctx, scene, id, hook = {}, beforeLift = null) {
   for (const m of people) { const wp = m.getWorldPosition(V(0, 0, 0)); if (Math.hypot(wp.x - cam.x, wp.z - cam.z) > 4) continue; seg.closestPointToPoint(V(wp.x, mid.y, wp.z), true, q3); if (q3.distanceTo(V(wp.x, mid.y, wp.z)) < 0.9) { m.visible = false; hid.push(m); } }
   await moveBoard(world, player, plank, put, q, 0.6); audio?.play?.('tap');
   hook.placed = plank.position.distanceTo(put);
+  (ctx.testHooks.order ||= []).push(`put:${id}`);
+  { plank.updateMatrixWorld(true); const ax = V(1, 0, 0).transformDirection(plank.matrixWorld), sideA = V(Math.cos(face), 0, -Math.sin(face));
+    hook.horizontal = Math.abs(ax.dot(sideA)); hook.vertical = Math.abs(ax.y); } // 판의 긴 쪽이 학생 앞에 가로인지, 세로로 섰는지(테스트)
   if (id === 'soak' && scene.sea) { // 카메라에서 통 속 바닷물이 보이는지(통 뚜껑이 물을 덮던 오류)
     const sea = scene.sea, at = sea.getWorldPosition(V(0, 0, 0)).add(V(0, 0.03, 0)).addScaledVector(side, 0.5), d = at.clone().sub(cam);
     ray.set(cam, d.normalize()); ray.far = 50; const h = ray.intersectObjects([...solid, sea], false)[0];
     hook.waterSeen = !!h && h.object === sea; hook.submerged = false;
   }
+  if (W.hold) { // 바닷물: 3초 꾹 눌러 판을 물속으로 밀어 넣는다(D-62)
+    hook.holdSec = await holdPress(ctx, W.verb, put, W.hold, k => {
+      plank.position.y = put.y - W.sink * k; plank.updateMatrixWorld(true);
+      if (scene.seaTop != null && plank.position.y + 0.04 < scene.seaTop) hook.submerged = true;
+    });
+    wood.color.copy(wood.color).lerp(new THREE.Color(scene.stageColor?.(scene.plank.userData.stage + 1) ?? wood.color.getHex()), 1);
+  }
+  if (W.wait) { // 그늘 선반: 세워 두고 시간이 지나 마르면 꺼낸다(D-62)
+    hook.wait = W.wait;
+    await new Promise(res => { let t = 0; const off = world.onUpdate(dt => { t += dt; hud.setCounter(`그늘에서 말리는 중… ${Math.max(0, Math.ceil(W.wait - t))}초`); const k = Math.min(1, t / W.wait); wood.color.lerpColors(new THREE.Color(scene.stageColor?.(scene.plank.userData.stage) ?? 0x9a7650), new THREE.Color(scene.stageColor?.(scene.plank.userData.stage + 1) ?? 0xd2b07e), k); if (t >= W.wait) { off(); res(); } }); });
+    hud.setCounter(null);
+    await press(ctx, W.verb, put);
+  }
   // 도구질: 누를 때마다 한 번
   const tool = W.tool ? holdTool(player, W.tool) : null;
   const c0 = wood.color.clone(), c1 = new THREE.Color(scene.stageColor?.(scene.plank.userData.stage + 1) ?? c0.getHex());
   hook.contact = 0; hook.strokes = 0;
+  let gapOff = null;
+  if (id === 'ends' && scene.endsTable) { const T = scene.endsTable; hook.tableGap = Infinity; // 학생 몸(반지름 약 0.3)이 탁자를 통과하지 않는지(테스트)
+    gapOff = world.onUpdate(() => { const p = player.position, dx = Math.max(T.x0 - p.x, 0, p.x - T.x1), dz = Math.max(T.z0 - p.z, 0, p.z - T.z1); hook.tableGap = Math.min(hook.tableGap, Math.hypot(dx, dz)); }); }
   for (let n = 0; n < W.n; n++) {
     hook.strokes += 1;
     hud.setCounter(`${W.verb} ${n}/${W.n}`);
@@ -142,11 +178,16 @@ export async function doWork(ctx, scene, id, hook = {}, beforeLift = null) {
       if (scene.seaTop != null && plank.position.y + 0.04 < scene.seaTop) hook.submerged = true;
       return V(0, 0, 0); };
     else if (id === 'dry') tip = (k, on) => V(0, 0.04 * on, 0); // 세운 판을 두 손으로 바로잡는다
-    else if (id === 'boil') tip = k => put.clone().add(V(Math.cos(k * Math.PI * 2) * 0.24, 0.02, Math.sin(k * Math.PI * 2) * 0.24)); // 판 둘레로 솥을 젓는다
+    else if (id === 'boil') { // 끓는 소금물을 휘젓는다: 막대가 솥 안을 한 바퀴 돌고, 물속 판이 물살을 따라 함께 돈다(D-62)
+      const pc = scene.pot?.center ? V(...scene.pot.center) : put.clone(), y0 = plank.rotation.y;
+      hook.spin = hook.spin || 0; hook.underwater = true;
+      tip = (k, on) => { const a = k * Math.PI * 2; const p = pc.clone().add(V(Math.cos(a) * 0.32, (scene.pot?.waterY ?? put.y) - pc.y + 0.02, Math.sin(a) * 0.32));
+        const sw = ss(0.2, 0.95, k) * Math.PI * 1.2; plank.position.set(pc.x + Math.cos(a + 2) * 0.12 * on, put.y, pc.z + Math.sin(a + 2) * 0.12 * on); plank.rotation.y = y0 + sw; plank.updateMatrixWorld(true);
+        hook.spin = Math.max(hook.spin, n * Math.PI * 1.2 + sw); if (scene.pot && plank.position.y + 0.04 > scene.pot.waterY) hook.underwater = false; return p; }; }
     else if (id === 'ends') { // 박을 끝 쪽으로 반 발짝 옮겨 서서(오른손이 닿게) 그 끝을 두드린다
       const sx = n % 2 ? 1 : -1, end = plank.localToWorld(V(sx * 0.62, 0, 0));
       const X = V(Math.cos(face), 0, -Math.sin(face)), F = V(Math.sin(face), 0, Math.cos(face)); // 학생의 오른쪽(오른팔 쪽)·앞
-      const sc = player.getWorldScale(ws).x, at = end.clone().addScaledVector(X, 0.45 * sc).addScaledVector(F, -0.8 * sc); // 학생 크기(0.8배)에 맞춰 팔이 닿는 거리에 선다
+      const sc = player.getWorldScale(ws).x, at = end.clone().addScaledVector(X, 0.4 * sc).addScaledVector(F, -1.05 * sc); // 학생 크기(0.8배)에 맞춰 팔이 닿는 거리, 몸이 탁자에 묻히지 않게 조금 떨어져 선다(D-62)
       await walkTo(world, player, [at.x, at.z], { speed: 1, face: { x: at.x + F.x, z: at.z + F.z } });
       await settle(world, player); // 걸음을 다 멈춘 뒤에 두드린다(걷는 자세가 팔을 흔들지 않게)
       tip = (k, on) => plank.localToWorld(V(sx * 0.62, 0.02 + 0.25 * (1 - on), 0)); }
@@ -158,7 +199,7 @@ export async function doWork(ctx, scene, id, hook = {}, beforeLift = null) {
     wood.color.copy(c0).lerp(c1, f1); // 누를 때마다 판이 조금씩 바뀐다(젖고·삶기고·마르고·칠해진다)
     if (id === 'ends' && ends) { ends.visible = true; ends.children.forEach(c => { if (Math.sign(c.position.x) === (n % 2 ? 1 : -1)) c.userData.done = true; c.visible = !!c.userData.done; }); }
   }
-  hud.setCounter(null);
+  hud.setCounter(null); gapOff?.();
   if (tool) tool.g.removeFromParent();
   if (ends) ends.children.forEach(c => { c.visible = true; delete c.userData.done; });
   world.camMode = 'follow'; hid.forEach(m => { m.visible = true; });

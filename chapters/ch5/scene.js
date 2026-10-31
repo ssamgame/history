@@ -93,7 +93,7 @@ export function buildCh5Scene(world) {
   world.addCollider({ x: -12.4, z: -3, r: 1.3 });
 
   // 작업대 (장인 곁)
-  const fires = []; let sea = null, seaTop = null;
+  const fires = []; let sea = null, seaTop = null, pot = null, lacquerPot = null;
   // 1) 바닷물 통과 솥
   {
     const x = -9, z = -2;
@@ -102,7 +102,21 @@ export function buildCh5Scene(world) {
     mk(new THREE.CylinderGeometry(1.1, 1.1, 0.06, 12), 0x4a3424, x - 1.6, 0.25, z, L, false); // 통 바닥
     sea = new THREE.Mesh(new THREE.CylinderGeometry(1.14, 1.14, 0.04, 16), new THREE.MeshStandardMaterial({ color: 0x3f86a8, roughness: 0.25, transparent: true, opacity: 0.62, depthWrite: false }));
     sea.name = 'seawater'; sea.position.set(x - 1.6, 0.8, z); L.add(sea); seaTop = 0.82;
-    mk(new THREE.CylinderGeometry(0.9, 0.7, 0.9, 12), 0x3a3a3a, x + 1.4, 0.75, z);
+    // 끓는 소금물 솥(D-62, 2026-10-31 선생님): 위가 열린 무쇠 솥에 김이 오르는 물, 보글보글 올라오는 거품
+    const potX = x + 1.4, wallM = mat(0x2e2e2e, 'metal', 'object').clone(); wallM.side = THREE.DoubleSide;
+    const potWall = new THREE.Mesh(new THREE.CylinderGeometry(0.92, 0.7, 0.9, 16, 1, true), wallM); potWall.position.set(potX, 0.75, z); potWall.castShadow = true; L.add(potWall);
+    mk(new THREE.TorusGeometry(0.92, 0.05, 6, 20), 0x3a3a3a, potX, 1.2, z).rotation.x = Math.PI / 2; // 솥 전
+    mk(new THREE.CylinderGeometry(0.7, 0.7, 0.05, 14), 0x262626, potX, 0.32, z, L, false); // 솥 바닥
+    const waterY = 1.12;
+    const potWater = new THREE.Mesh(new THREE.CylinderGeometry(0.88, 0.88, 0.03, 18), new THREE.MeshStandardMaterial({ color: 0x9ab4b0, roughness: 0.2, transparent: true, opacity: 0.55, depthWrite: false }));
+    potWater.name = 'boilingWater'; potWater.position.set(potX, waterY, z); L.add(potWater);
+    const bubbles = Array.from({ length: 10 }, (_, i) => { const b = new THREE.Mesh(new THREE.SphereGeometry(0.045 + (i % 3) * 0.015, 6, 4), new THREE.MeshStandardMaterial({ color: 0xf2f6f4, transparent: true, opacity: 0.8, roughness: 0.2 })); b.userData = { a: i * 2.4, r: 0.15 + (i * 0.37) % 0.6, ph: i * 0.31 }; L.add(b); return b; });
+    const steam = Array.from({ length: 6 }, (_, i) => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.22, 7, 5), new THREE.MeshLambertMaterial({ color: 0xf4f4f0, transparent: true, opacity: 0.35, depthWrite: false })); m.userData.ph = i / 6; L.add(m); return m; });
+    pot = { center: [potX, 0.75, z], waterY, water: potWater, bubbles, steam, open: true };
+    world.onUpdate((dt, t) => {
+      for (const b of bubbles) { const k = (t * 0.9 + b.userData.ph) % 1; b.position.set(potX + Math.cos(b.userData.a + t * 0.4) * b.userData.r, waterY - 0.05 + k * 0.08, z + Math.sin(b.userData.a + t * 0.4) * b.userData.r); b.scale.setScalar(0.6 + k * 0.7); b.material.opacity = 0.85 * (1 - k * 0.6); }
+      for (const m of steam) { const k = (t * 0.25 + m.userData.ph) % 1; m.position.set(potX + Math.sin(k * 6 + m.userData.ph * 9) * 0.25, waterY + 0.2 + k * 1.8, z + Math.cos(k * 5 + m.userData.ph * 7) * 0.2); m.scale.setScalar(0.6 + k * 1.6); m.material.opacity = 0.32 * (1 - k); }
+    });
     const fire = makeFire({ size: 0.45, detail: world.quality.particles }); fire.group.position.set(x + 1.4, 0.15, z); fire.setLit(true); L.add(fire.group); // 솥 아래 장작불
     fires.push(fire);
     world.addCollider({ x: x - 1.6, z, r: 1.2 }); world.addCollider({ x: x + 1.4, z, r: 1 });
@@ -118,8 +132,7 @@ export function buildCh5Scene(world) {
   // 3) 판각대
   {
     const x = 3, z = -5;
-    mk(new THREE.BoxGeometry(2.6, 0.9, 1.2), 0x6b4a32, x, 0.45, z);
-    mk(new THREE.BoxGeometry(1.4, 0.08, 0.7), 0xc8a476, x, 0.94, z);
+    mk(new THREE.BoxGeometry(2.6, 0.9, 1.2), 0x6b4a32, x, 0.45, z); // 판 밑에 깔린 나무판자는 뺐다(D-62)
     for (const dx of [-1, 0, 1]) world.addCollider({ x: x + dx, z, r: 0.65 });
   }
   // 4) 마구리 작업대: 판 양 끝에 덧댈 나무토막과 구리판
@@ -134,7 +147,7 @@ export function buildCh5Scene(world) {
   {
     const x = 9, z = -2;
     mk(new THREE.BoxGeometry(2.4, 0.9, 1.2), 0x6b4a32, x, 0.45, z);
-    mk(new THREE.CylinderGeometry(0.3, 0.3, 0.4, 10), 0x2a1a12, x - 0.6, 1.1, z);
+    lacquerPot = mk(new THREE.CylinderGeometry(0.22, 0.22, 0.3, 10), 0x2a1a12, x + 1.0, 1.05, z - 0.4); // 옻칠 통은 판이 닿지 않는 탁자 구석에(D-62)
     for (let k = 0; k < 8; k++) mk(new THREE.BoxGeometry(1.0, 0.08, 0.5), 0x3b2414, x + 2.2, 0.06 + k * 0.09, z + 0.4);
     for (const dx of [-0.9, 0, 0.9]) world.addCollider({ x: x + dx, z, r: 0.65 }); world.addCollider({ x: x + 2.2, z: z + 0.4, r: 0.8 });
   }
@@ -210,14 +223,14 @@ export function buildCh5Scene(world) {
   world.addNpc('artisan2', LOOKS.artisan, -1.0, -3.1, Math.PI); // 선반·판각대 옆에 비켜 선다(학생이 일할 자리를 비워 둔다)
   world.addNpc('artisan3', LOOKS.artisan, 4.7, -3.4, Math.PI);
   world.addNpc('artisan4', LOOKS.artisan, 9, 0.3, Math.PI);
-  world.addNpc('monk', LOOKS.monk, 0, 3, Math.PI);
+  world.addNpc('monk', LOOKS.monk, 0, 3, 0); // 들어오는 학생(남쪽)을 정면으로 본다(D-62)
   // 장인마다 하는 일: 솥 젓기, 판자 나르기, 글자 새기기(망치질), 옻칠
   [['artisan1', 'sweep'], ['artisan2', 'carry'], ['artisan3', 'hammer'], ['artisan4', 'sweep']].forEach(([id, w]) => setWork(world.npcs.get(id).mesh, w));
 
   world.onUpdate((dt, t) => { for (const f of fires) f.update(dt, t); });
   backdropMountains(world.level, { color: 0x4f6a3e, radius: 130 }); // 먼 산줄기(깊이감)
   surroundings(world, { bounds: world.bounds, trees: ['pine', 'pine', 'tree'], count: 12, seed: 5 }); // 걷는 곳 바깥에 그 장소다운 집·나무(깊이감)
-  return { sea, seaTop, library, shelf, stations, plank, setStage, setCarved, stageColor: n => STAGE_COLOR[Math.min(6, n)], gate, start: [0, 7], introFrom: [0, 15] };
+  return { sea, seaTop, pot, lacquerPot, tableBoards: [], endsTable: { x0: 5.2, x1: 7.2, z0: -5.75, z1: -4.65 }, library, shelf, stations, plank, setStage, setCarved, stageColor: n => STAGE_COLOR[Math.min(6, n)], gate, start: [0, 7], introFrom: [0, 15] };
 }
 
 // 경판 만드는 과정 그림(D-32): 단계마다 캔버스에 그린다(그림 파일 없음, 글자 없음). 그림판은 100×70 칸을 scale배로 키운다.

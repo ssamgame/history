@@ -20,7 +20,11 @@ let base = null;
 const people = new Set();
 
 export async function loadBody(url = BODY_URL) {
-  if (!base) base = await new GLTFLoader().loadAsync(url);
+  if (!base) {
+    base = await new GLTFLoader().loadAsync(url);
+    // 서 있기 동작의 머리 흔들기는 뺀다: 모든 사람이 같은 박자로 고개를 흔들어 보였다(D-62). 둘러보기는 core/motion.js가 사람마다 다르게 한다
+    for (const clip of base.animations) if (clip.name === 'idle' || clip.name.startsWith('stand')) clip.tracks = clip.tracks.filter(t => !/^head\.(quaternion|rotation)/.test(t.name));
+  }
   return base;
 }
 export const bodyReady = () => !!base;
@@ -88,6 +92,7 @@ export function attachBody(g, look = {}) {
   S.freeze = () => { root.traverse(o => { if (o.isSkinnedMesh) o.visible = false; }); people.delete(g); S.frozen = true; }; // 움직이지 않는 군중으로 굳힐 때(core/bake.js)
   u.skel = S;
   play(g, 'idle', 0);
+  { const k = Math.sin((u.ph ?? 0) * 91.7) * 43758.5453, f = k - Math.floor(k), k2 = Math.sin((u.ph ?? 0) * 37.3) * 24634.6345; acts.idle.time = f * acts.idle.getClip().duration; S.idleRate = 0.7 + 0.6 * (k2 - Math.floor(k2)); acts.idle.timeScale = S.idleRate; } // 숨쉬기 박자도 사람마다 다른 자리·빠르기로
   people.add(g);
   return g;
 }
@@ -114,7 +119,7 @@ export function addElbows(g) {
 export function play(g, name, fade = FADE, timeScale = 1) {
   const S = g.userData.skel; if (!S) return;
   const next = S.acts[name] ? name : 'idle', a = S.acts[next];
-  a.timeScale = timeScale;
+  a.timeScale = next === 'idle' ? timeScale * (S.idleRate || 1) : timeScale; // 서 있기는 사람마다 박자가 조금 다르다(모두 같이 흔들리지 않게, D-62)
   if (S.target === next) return;
   S.target = next; S.cur = a; S.fade = fade;
   if (!a.isRunning()) { a.reset(); a.enabled = true; a.setEffectiveWeight(S.w[next] || 0); a.play(); }

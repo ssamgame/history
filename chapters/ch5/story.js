@@ -22,25 +22,36 @@ export function tripitakaScene(ctx) {
       const boards = []; for (let k = 0; k < 5; k++) for (let j = 0; j < 9; j++) { const b = blk(r, 0.28, 0.5, 0.8, 0x7a5a36, -1.4 + j * 0.35, 0.6 + k * 0.62, 0); b.visible = false; boards.push(b); }
       return { r, boards }; });
     const all = racks.flatMap(r => r.boards);
-    const years = [1236, 1240, 1244, 1248, 1251].map(y => { const s = labelSprite(`${y}년`, { size: 1.4 }); s.position.set(0, 5.6, -3); s.visible = false; g.add(s); return s; });
+    // 타임랩스(D-62, 2026-10-31 선생님): 1236년부터 1251년까지 해마다 연도가 빠르게 바뀌고, 해가 뜨고 지며, 나르는 사람들도 빠르게 오간다
+    const YEARS = Array.from({ length: 16 }, (_, i) => 1236 + i);
+    const yl = YEARS.map(y => { const s = labelSprite(`${y}년`, { size: 1.4 }); s.position.set(0, 5.6, -3); s.visible = false; g.add(s); return s; });
+    const fast = labelSprite('시간이 빠르게 흘러요', { size: 0.9 }); fast.position.set(-8.5, 5.2, -1); g.add(fast);
     // 경판을 안고 나르는 스님과 일꾼
     const carriers = [[-6, 6], [-3, 7], [0, 6.5], [3, 7.2], [6, 6.2]].map(([x, z], i) => { const p = person(g, i % 2 ? 'artisan' : 'monk', x, z, Math.PI);
       const b = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.08, 0.26), new THREE.MeshLambertMaterial({ color: 0x7a5a36 })); setCarry(p, b, 'arms'); return p; });
     const monk = person(g, 'monk', 9.5, 4, -Math.PI * 0.7);
+    const sun = world.scene.children.find(o => o.isDirectionalLight), sun0 = sun?.position.clone(), i0 = sun?.intensity;
     cam([0, 3.4, 15], [0, 1.9, -3]);
     await fadeIn();
-    const chunk = Math.ceil(all.length / years.length);
-    for (let y = 0; y < years.length; y++) {
-      years.forEach((s, i) => { s.visible = i === y; });
-      await march(world, carriers, 0, -5.4, 1.1);
+    hook.timelapse = true; hook.carrierSpeed = 0;
+    let lastZ = carriers[0].position.z;
+    const speedOff = world.onUpdate(dt => { if (dt > 0) { hook.carrierSpeed = Math.max(hook.carrierSpeed, Math.abs(carriers[0].position.z - lastZ) / dt); lastZ = carriers[0].position.z; } });
+    const chunk = Math.ceil(all.length / YEARS.length);
+    for (let y = 0; y < YEARS.length; y++) {
+      yl.forEach((s, i) => { s.visible = i === y; });
+      const dayT = wait(world, 0.95, k => { if (sun) { const a = Math.PI * k; sun.position.set(Math.cos(a) * 40, 8 + Math.sin(a) * 30, 12); sun.intensity = (i0 ?? 1) * (0.45 + 0.55 * Math.sin(a)); } }); // 하루가 빠르게 지나간다
+      await march(world, carriers, 0, -5.4, 0.42);
       all.slice(y * chunk, (y + 1) * chunk).forEach(b => { b.visible = true; });
-      ctx.audio?.play?.('tap');
-      await march(world, carriers, 0, 5.4, 0.8);
-      if (y === 1) await say(L[0]);
-      if (y === 1) ctx.dialogue.close();
+      if (y % 3 === 0) ctx.audio?.play?.('tap');
+      await march(world, carriers, 0, 5.4, 0.36);
+      await dayT;
     }
+    speedOff();
+    if (sun) { sun.position.copy(sun0); sun.intensity = i0; }
+    fast.visible = false;
+    hook.years = YEARS.length;
     hook.filled = all.filter(b => b.visible).length === all.length;
-    hook.years = years.length;
+    await say(L[0]); // 16년 동안 81,258판
     [[-11, 2], [-9.6, 3.4], [-12, 4], [9.6, 2.6], [11.2, 3.8]].forEach(([x, z], i) => { carriers[i].position.set(x, 0, z); face(carriers[i], 0, 12); }); // 서가 앞을 비킨다
     monk.position.set(2.6, 0, 2.4); face(monk, 1, 11);
     await glide([0, 3.4, 15], [0, 1.9, -3], [1, 2.8, 10.5], [1.5, 2, -2], 1.4); // 가득 찬 서가와 스님

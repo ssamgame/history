@@ -44,6 +44,16 @@ export function setStyle(person, style) { person.userData.style = style; return 
 // 바라볼 곳(세계 좌표, Vector3 또는 { x, y, z }). null이면 앞을 본다
 export function setLook(person, target) { person.userData.look = target ? new THREE.Vector3(target.x, target.y ?? 2.2, target.z) : null; return person; }
 
+// 서 있는 사람이 가끔 둘러보기(D-62, 2026-10-31 선생님: 모두 똑같이 좌우로 움직이지 않게): 사람마다 박자(ph에서)와 쉬는 길이가 다르고,
+// 대부분은 앞을 보다가 이따금 한쪽을 잠깐 본다
+const frac = x => x - Math.floor(x);
+const glanceRate = u => 0.75 + 0.5 * frac(u.ph * 0.618);
+const hash = (x, k) => frac(Math.sin(x * k) * 43758.5453);
+function idleGlance(u) {
+  const r1 = 0.6 + 0.9 * hash(u.ph, 12.9898), r2 = 0.6 + 0.9 * hash(u.ph, 78.233), side = hash(u.ph, 39.42) < 0.5 ? -1 : 1; // 사람마다 다른 두 박자와 먼저 보는 쪽
+  const gate = Math.max(0, Math.sin(u.t * 0.13 * r1 + u.ph * 2.3)) ** 4; // 이따금(쉬는 동안 0)
+  return side * Math.sin(u.t * 0.37 * r2 + u.ph * 1.7) * 0.35 * gate;
+}
 const state = u => u.m || (u.m = { v: 0, yaw: null, lag: 0, roll: 0, last: null, rest: 0, nod: 0, headX: 0, tick: 0 });
 const styleOf = (person, u) => STYLE[u.style] || (u.lookAge === 'old' ? STYLE.elder : u.gear ? STYLE.soldier : STYLE.normal);
 
@@ -210,7 +220,7 @@ export function animateWalk(person, moving, dt) {
   const turnRate = dy / dt;
   m.roll += (Math.max(-0.1, Math.min(0.1, -turnRate * v * 0.012)) - m.roll) * Math.min(1, dt * 6);
   const still = 1 - kk, breathe = Math.sin(u.t * 1.6 + u.ph) * 0.012 * still;
-  const shift = Math.sin(u.t * 0.37 + u.ph * 3) * 0.022 * st.idle * still; // 서 있을 때 이쪽저쪽 다리로 무게를 옮긴다
+  const shift = Math.sin(u.t * 0.37 * (0.6 + 0.8 * frac(u.ph * 1.37)) + u.ph * 3) * 0.022 * st.idle * still; // 서 있을 때 이쪽저쪽 다리로 무게를 옮긴다(사람마다 다른 박자, D-62)
   let ux = st.lean + (0.05 * Math.min(1, v / 2.5) + 0.08 * run) * kk - heavy * 0.06 * (c0?.at[2] > 0 ? 1 : -0.5) + breathe;
   let uy = s * 0.075 * kk * (1 + run * 0.5) * (u.carry && c0.arms[0] ? 0.4 : 1) + m.lag * 0.7;
   let uz = Math.cos(ph) * 0.022 * kk + m.roll + shift;
@@ -250,8 +260,8 @@ export function animateWalk(person, moving, dt) {
   if (u.head) {
     let look = 0;
     if (u.look) { person.getWorldPosition(v3); const want = Math.atan2(u.look.x - v3.x, u.look.z - v3.z); look = Math.max(-1.1, Math.min(1.1, wrap(want - yaw - uy))); }
-    else if (st.scan) look = Math.sin(u.t * 0.9 + u.ph) * 0.55 * ss(0.2, 0.9, Math.abs(Math.sin(u.t * 0.45 + u.ph)));
-    else if (!moving) look = Math.sin(u.t * 0.45 + u.ph) * 0.35 * Math.max(0, Math.sin(u.t * 0.21 + u.ph * 2)) * st.idle;
+    else if (st.scan) look = Math.sin(u.t * 0.9 * glanceRate(u) + u.ph) * 0.55 * ss(0.2, 0.9, Math.abs(Math.sin(u.t * 0.45 + u.ph)));
+    else if (!moving) look = idleGlance(u) * st.idle;
     else look = -uy * 0.8; // 걸을 때는 앞을 본다(상체가 늦게 돌면 머리는 먼저 새 방향을)
     look += headY;
     u.head.rotation.y += (look - u.head.rotation.y) * Math.min(1, dt * (u.look ? 5 : 3));
@@ -315,7 +325,8 @@ function animateSkel(person, moving, dt) {
   if (u.head) {
     let look = 0;
     if (u.look) { const yaw = te.setFromQuaternion(person.getWorldQuaternion(tq), 'YXZ').y; look = Math.max(-1.1, Math.min(1.1, wrap(Math.atan2(u.look.x - v3.x, u.look.z - v3.z) - yaw))); }
-    else if (st.scan) look = Math.sin(u.t * 0.9 + u.ph) * 0.45;
+    else if (st.scan) look = Math.sin(u.t * 0.9 * glanceRate(u) + u.ph) * 0.45;
+    else if (!u.act && !(m.v > 0.12)) look = idleGlance(u) * (st.idle ?? 1); // 서 있을 때 가끔 둘러본다(사람마다 다른 때)
     u.head.rotation.y += (look + headY - u.head.rotation.y) * Math.min(1, dt * (u.look ? 5 : 3));
     u.head.rotation.x += (headX + (st.headDown || 0) - u.head.rotation.x) * Math.min(1, dt * 8);
   }

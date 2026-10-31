@@ -262,14 +262,15 @@ test('ch4: resume at quiz puts the student in the palace yard (portal), the slav
 });
 
 
-test('ch4 D-16: the Mongol camp beyond the field burns and the archers shoot fire arrows', () => {
+// D-16의 타는 천막·불화살은 D-62(2026-10-31 선생님: 막사에 불 없이, 보통 화살로)로 바뀌었다
+test('ch4 D-62: the Mongol camp lies beyond where the Mongols appear, without fire, and the archers shoot plain arrows', () => {
   const s = touchSetup(ch4Script.speakers);
   try {
     const sc = ch4.buildScene(s.w, s.ctx);
     const A = sc.areas.cheoin;
-    ok(sc.campFires.length >= 2 && sc.campFires.every(f => f.visible), 'camp fires');
-    for (const f of sc.campFires) ok(Math.hypot(f.position.x - A.center[0], f.position.z) > A.spawnR + 8, 'behind where the Mongols appear');
-    ok(sc.arrows.every(a => a.getObjectByName('fireTip')), 'fire arrows');
+    eq(sc.campFires.length, 0, 'no camp fires');
+    ok(sc.camp.dist > A.spawnR + 8, 'behind where the Mongols appear');
+    ok(sc.arrows.every(a => !a.getObjectByName('fireTip')), 'plain arrows');
   } finally { s.done(); }
 });
 
@@ -300,7 +301,7 @@ test('ch4: 처인성 방어 내내 김윤후와 학생이 겹치지 않고, 처�
     ok(Math.hypot(p.x - km.x, p.z - km.z) > 1, `처인성 첫 자리 ${Math.hypot(p.x - km.x, p.z - km.z).toFixed(2)}m`);
     putOnCheoinWall(s.ctx); cheoinDefense(s.ctx, false);
     let near = Infinity, bumped = 0;
-    for (let i = 0; i < 700; i++) {
+    for (let i = 0; i < 580; i++) { // 방어는 30초(D-62): 그 안에서만 본다
       const g = s.w.getGoal(), into = i % 120 >= 70 && i % 120 < 90; // 120걸음마다 잠깐 김윤후 쪽으로 곧장 걸어 들어간다
       const t = into ? km : g, d = t ? Math.hypot(t.x - p.x, t.z - p.z) : 0;
       if (into) bumped += 1;

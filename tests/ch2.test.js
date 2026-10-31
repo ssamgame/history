@@ -256,7 +256,9 @@ test('ch2 D-8: rescued villagers follow the student instead of vanishing', async
     const c = sc.captives[0];
     s.w.player.position.set(c.group.position.x, 0, c.group.position.z + 1);
     s.w.step(0.05, { x: 0, z: 0 });
-    ok(!c.escort.visible, 'saved');
+    s.hud.talkBtn.click(); // D-62: 다가가 E를 누르면 함께 간 고려 병사가 호송병을 쓰러뜨리고 줄을 푼다
+    for (let i = 0; i < 120 && c.rope.visible; i++) s.w.step(0.05, { x: 0, z: 0 });
+    ok(!c.rope.visible, 'saved');
     s.w.player.position.set(c.group.position.x + 10, 0, c.group.position.z + 6);
     const d0 = Math.hypot(c.group.position.x - s.w.player.position.x, c.group.position.z - s.w.player.position.z);
     for (let i = 0; i < 60; i++) s.w.step(0.05, { x: 0, z: 0 });
@@ -266,18 +268,12 @@ test('ch2 D-8: rescued villagers follow the student instead of vanishing', async
   } finally { s.done(); }
 }, { timeout: 120000 });
 
-test('ch2 D-16: two Khitan camp tents outside the fortress burn, far from the wall and the rescue field', () => {
+// D-16의 타는 천막은 D-62(2026-10-31 선생님: 거란군 막사에 불이 피어나지 않게)로 뺐다
+test('ch2 D-62: Khitan camp tents outside the fortress do not burn', () => {
   const w = testWorld();
   try {
     const sc = buildCh2Scene(w);
-    eq(sc.campFires.length, 2);
-    const p = new THREE.Vector3();
-    for (const f of sc.campFires) {
-      ok(f.visible, 'burning');
-      f.getWorldPosition(p);
-      ok(p.z < -30, `well outside the north wall (z ${p.z.toFixed(1)})`);
-      const b = sc.field.bounds; ok(!(p.x > b.x0 && p.x < b.x1 && p.z > b.z0 && p.z < b.z1), 'not in the rescue field');
-    }
+    eq(sc.campFires.length, 0);
   } finally { w.dispose(); }
 });
 

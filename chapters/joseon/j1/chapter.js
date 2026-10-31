@@ -20,7 +20,7 @@ export const CAMP = {
   origin: [400, 0], ground: 'grass', groundColor: 0x6a8656, // 2026-10-25: 장맛비 그늘에 너무 어두워 한 단계 밝게
   bounds: { x0: -18, x1: 18, z0: -14, z1: 14 },
   props: [
-    { type: 'water', x: 0, z: -36, w: 140, d: 30, color: 0x5a7a86 }, { type: 'water', x: 0, z: 34, w: 140, d: 30, color: 0x5a7a86 },
+    { type: 'water', x: 0, z: -36, w: 140, d: 30, color: 0x5a7a86, river: true }, { type: 'water', x: 0, z: 34, w: 140, d: 30, color: 0x5a7a86, river: true },
     { type: 'tent', x: -14, z: -9, color: 0xb8a888 }, { type: 'tent', x: 14, z: -9, color: 0xb8a888 }, { type: 'tent', x: 0, z: -12, color: 0x9a3a2a },
     { type: 'crowd', x: -3, z: -7, n: 4, cols: 4, looks: ['soldier'], face: Math.PI },
   ],

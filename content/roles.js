@@ -10,7 +10,7 @@ export const ROLES = {
   ch1: { name: '고려의 젊은 병사', does: '서희의 진영에서 거란과의 담판을 지켜봐요.', look: 'player', scale: 1 },
   ch2: { name: '흥화진을 지키는 병사', does: '양규 장군과 함께 성벽을 지켜요.', look: 'player', scale: 1 },
   ch3: { name: '강감찬 군의 병사', does: '삼교천에서 둑을 쌓고 거란군을 기다려요.', look: 'player', scale: 1 },
-  ch4: { name: '처인성의 젊은 궁수', does: '김윤후와 함께 활을 들고 성을 지켜요.', look: { robe: 0x5d6b3e, hat: 'helmet', gear: 'bow', face: STERN }, scale: 1 },
+  ch4: { name: '처인성의 젊은 궁수', does: '김윤후와 함께 성을 지켜요.', look: { robe: 0x5d6b3e, hat: 'helmet', gear: 'bow', face: STERN }, scale: 1 },
   ch5: { name: '대장경 작업장의 어린 일꾼', does: '장인들을 도와 경판 만드는 일을 배워요.', look: 'kid', scale: CHILD },
   ch6: { name: '삼별초의 젊은 병사', does: '배를 몰아 진도와 제주로 가며 싸워요.', look: 'sambyeolcho', scale: 1 },
   // 조선편
@@ -44,9 +44,11 @@ export const ROLES = {
 };
 
 // 그 장의 학생 생김새: 역할에 생김새가 있으면 그것, 없으면 장의 player, 그것도 없으면 기본 병사
+// 학생은 어느 장에서도 무기를 들지 않는다(D-62, 2026-10-31 선생님): 생김새의 gear(창·칼·총·활)를 뺀다
 export function roleLook(id, chapterPlayer) {
   const r = ROLES[id];
   const look = r && r.look;
-  if (typeof look === 'string') return LOOKS[look];
-  return look || chapterPlayer || LOOKS.player;
+  const base = (typeof look === 'string' ? LOOKS[look] : look) || chapterPlayer || LOOKS.player;
+  const { gear, ...rest } = base;
+  return rest;
 }
