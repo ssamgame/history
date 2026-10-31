@@ -142,12 +142,14 @@ export function createProbe(world, { ui = null, label = () => '', limits = {} } 
     if (ui && stats.frames % 30 === 0) checkUi();
   }
 
+  // 내려서 볼 수 있는 판(편 고르기 화면 등) 안의 단추는 화면 밖에 있어도 손가락으로 끌어 올려 누를 수 있다
+  const scrollable = el => { for (let p = el.parentElement; p; p = p.parentElement) { const o = getComputedStyle(p).overflowY; if ((o === 'auto' || o === 'scroll') && p.scrollHeight > p.clientHeight + 1) return true; } return false; };
   function checkUi() {
     const W = innerWidth, H = innerHeight;
     for (const el of ui.querySelectorAll('button, .talkbtn')) {
       const r = el.getBoundingClientRect(); if (!r.width || !r.height || el.disabled || getComputedStyle(el).visibility === 'hidden' || el.closest('[hidden]')) continue;
       const name = (el.textContent || el.className).trim().slice(0, 20);
-      if (r.right > W + 1 || r.bottom > H + 1 || r.left < -1 || r.top < -1) { reportUi('uiOff', name, `${Math.round(r.left)},${Math.round(r.top)} ${Math.round(r.width)}x${Math.round(r.height)}`); continue; }
+      if ((r.right > W + 1 || r.bottom > H + 1 || r.left < -1 || r.top < -1) && !scrollable(el)) { reportUi('uiOff', name, `${Math.round(r.left)},${Math.round(r.top)} ${Math.round(r.width)}x${Math.round(r.height)}`); continue; }
       const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
       if (top && top !== el && !el.contains(top) && !top.contains(el)) reportUi('uiCovered', name, `under ${top.className || top.tagName}`);
     }

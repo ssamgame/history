@@ -66,10 +66,12 @@ test('qa probe: 화면 밖으로 나간 단추와 다른 판에 덮인 단추를
     const under = document.createElement('button'); under.textContent = '덮임'; Object.assign(under.style, { position: 'fixed', left: '10px', top: '10px', width: '60px', height: '40px' });
     const cover = document.createElement('div'); cover.className = 'qa-cover'; Object.assign(cover.style, { position: 'fixed', left: '0', top: '0', width: '120px', height: '80px', zIndex: 9999 });
     const fine = document.createElement('button'); fine.textContent = '정상'; Object.assign(fine.style, { position: 'fixed', left: '200px', top: '10px', width: '60px', height: '40px', zIndex: 10000 }); // 시험 페이지의 결과 글(PRE) 위로
-    ui.append(off, under, cover, fine);
+    const pane = document.createElement('div'); Object.assign(pane.style, { position: 'fixed', left: '300px', top: '0', width: '120px', height: '100px', overflowY: 'auto', zIndex: 10000 });
+    const deep = document.createElement('button'); deep.textContent = '내려서'; Object.assign(deep.style, { display: 'block', marginTop: `${innerHeight + 40}px`, width: '60px', height: '40px' }); pane.append(deep); // 내려서 보는 판 안(편 고르기 카드)
+    ui.append(off, under, cover, fine, pane);
     const probe = createProbe(w, { ui });
     probe.checkUi();
     const got = probe.events.map(e => `${e.kind}:${e.who}`);
-    ok(got.includes('uiOff:밖'), got.join(' ')); ok(got.includes('uiCovered:덮임'), got.join(' ')); ok(!got.some(g => g.endsWith(':정상')), `정상 단추는 잡지 않는다 ${JSON.stringify(probe.events)}`);
+    ok(got.includes('uiOff:밖'), got.join(' ')); ok(got.includes('uiCovered:덮임'), got.join(' ')); ok(!got.some(g => g.endsWith(':내려서')), '내려서 볼 수 있는 판 안의 단추는 잡지 않는다'); ok(!got.some(g => g.endsWith(':정상')), `정상 단추는 잡지 않는다 ${JSON.stringify(probe.events)}`);
   } finally { ui.remove(); w.dispose(); }
 });
