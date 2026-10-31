@@ -11,7 +11,7 @@
 import * as THREE from 'three';
 
 const ARM_LEN = 0.78; // core/interact.js와 같은 팔 길이(어깨에서 손끝까지, 사람 크기 1일 때)
-export const LIMITS = { sunk: 0.12, handSec: 1, overlap: 0.42, horseOverlap: 0.9, riderOff: 0.35, hand: 0.6, glideSpeed: 0.35, glideSec: 0.6, jumpSpeed: 25 };
+export const LIMITS = { sunk: 0.12, handSec: 1, overlap: 0.42, horseOverlap: 0.9, riderOff: 0.35, hand: 0.6, glideSpeed: 0.35, glideSec: 0.6, jumpSpeed: 25, jumpDist: 2.5, riderSec: 0.6 };
 
 const v1 = new THREE.Vector3(), v2 = new THREE.Vector3(), box = new THREE.Box3(), down = new THREE.Vector3(0, -1, 0);
 const shown = o => { for (let p = o; p; p = p.parent) if (!p.visible) return false; return true; };
@@ -83,14 +83,14 @@ export function createProbe(world, { ui = null, label = () => '', limits = {} } 
       const T = track.get(p);
       if (T && dt > 0 && dt < 0.1 && !levelChanged) {
         const sp = Math.hypot(w.x - T.x, w.z - T.z) / dt;
-        if (sp > L.jumpSpeed) report('jump', p, `${(sp * dt).toFixed(2)}m in one frame`);
+        if (sp > L.jumpSpeed && sp * dt > L.jumpDist) report('jump', p, `${(sp * dt).toFixed(2)}m in one frame`);
         else if (!u.mounted && !u.noWalk && p !== world.player) { // 걷는 다리 없이 움직이면 미끄러져 보인다
           const legsMove = (u.stride || 0) > 0.15 || !!u.act;
           T.glide = sp > L.glideSpeed && !legsMove ? (T.glide || 0) + dt : 0;
           if (T.glide > L.glideSec) report('glide', p, `${sp.toFixed(2)}m/s without stepping`);
         }
       }
-      track.set(p, { x: w.x, z: w.z, glide: T?.glide || 0, hand: T?.hand || 0 });
+      track.set(p, { x: w.x, z: w.z, glide: T?.glide || 0, hand: T?.hand || 0, ride: T?.ride || 0 });
     }
     // 4번에 한 번(무거운 검사): 몸통·머리, 땅, 겹침, 기수, 든 물건
     if ((slow = (slow + 1) % 4) !== 0) return;
@@ -115,8 +115,10 @@ export function createProbe(world, { ui = null, label = () => '', limits = {} } 
       if (u.mounted) {
         const h = u.mounted, hw = h.userData.body.getWorldPosition(new THREE.Vector3()), pw = p.getWorldPosition(new THREE.Vector3());
         const up = v2.set(0, 1, 0).applyQuaternion(p.getWorldQuaternion(new THREE.Quaternion())).y;
-        if (!inside(p, h)) { if (up > 0.8) report('rider', p, 'not attached to its horse'); } // 쓰러진 기수(매복 놀이에서 맞은 적)는 빼고
-        else if (Math.hypot(pw.x - hw.x, pw.z - hw.z) > L.riderOff * h.scale.x) report('rider', p, 'off the saddle');
+        const T = track.get(p) || {};
+        T.ride = !inside(p, h) && up > 0.8 ? (T.ride || 0) + dt * 4 : 0; // 화살 맞은 기수는 말에서 떨어지며 0.5초 안에 넘어간다(고려 4장): 그보다 오래 서 있을 때만
+        if (T.ride > L.riderSec) report('rider', p, 'not attached to its horse');
+        else if (inside(p, h) && Math.hypot(pw.x - hw.x, pw.z - hw.z) > L.riderOff * h.scale.x) report('rider', p, 'off the saddle');
       }
       // 든 물건: 손 가까이에 있어야 한다(어깨·등에 멘 것은 뺀다)
       const c = u.carry;
