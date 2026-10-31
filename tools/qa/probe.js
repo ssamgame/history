@@ -97,14 +97,14 @@ export function createProbe(world, { ui = null, label = () => '', limits = {} } 
     if (stats.t - groundAt > 2 || levelChanged) { collectGrounds(); groundAt = stats.t; }
     for (const p of people) {
       const u = p.userData;
-      if (p === world.player && u.head && !shown(u.head)) continue; // 1인칭(몸을 숨긴 학생)
+      if (p === world.player && u.head?.isObject3D && (!shown(u.head) || world.camera.position.distanceTo(u.head.getWorldPosition(v1)) < 0.9)) continue; // 1인칭(몸을 숨기고 눈 자리에 카메라를 둔 학생, 고려 5장 서가)
       p.updateWorldMatrix(true, true);
       // 몸통: 가슴 높이 한 점을 덮는 조각이 있어야 한다(말 탄 사람의 몸통이 비던 오류). 팔은 빼고 본다
-      const chest = p.localToWorld(v1.set(0, 1.42, 0)).clone();
+      const chest = u.upper.localToWorld(v1.set(0, 0.37, 0)).clone(); // 몸통 관절(허리, 1.05) 위 가슴: 앉거나(조선 2장 세종) 숙여도 따라간다
       if (!covered(p, chest, o => inside(o, u.arms[0]) || inside(o, u.arms[1]) || inside(o, u.head))) report('torso', p, 'nothing covers the chest');
       // 머리: 머리 자리를 덮는 조각(장면 굳히기가 사람 조각을 사람 바로 아래로 합친 경우도 있어 사람 전체에서 찾는다)
-      if (u.head) { const noArms = o => inside(o, u.arms[0]) || inside(o, u.arms[1]), hc = u.head.localToWorld(v1.set(0, 0.45, 0)).clone(), hp = u.head.getWorldPosition(new THREE.Vector3()); if (!covered(p, hc, noArms) && !covered(p, hp, noArms)) report('head', p, 'head is empty'); }
-      p.traverse(o => { if (o.isMesh && shown(o) && o.material?.transparent && o.material.opacity < 0.9 && o.material.opacity > 0) report('seeThrough', p, `${o.name || o.geometry.type} opacity ${o.material.opacity}`); });
+      if (u.head?.isObject3D) { const noArms = o => inside(o, u.arms[0]) || inside(o, u.arms[1]), hc = u.head.localToWorld(v1.set(0, 0.45, 0)).clone(), hp = u.head.getWorldPosition(new THREE.Vector3()); if (!covered(p, hc, noArms) && !covered(p, hp, noArms)) report('head', p, 'head is empty'); }
+      p.traverse(o => { const m = o.material; if (o.isMesh && shown(o) && m?.transparent && m.opacity < 0.9 && m.opacity > 0 && m.type !== 'MeshBasicMaterial' && m.blending !== THREE.AdditiveBlending && m.depthWrite !== false) report('seeThrough', p, `${o.name || o.geometry.type} opacity ${o.material.opacity}`); });
       // 발: 신발 바닥이 땅보다 많이 아래면 묻힌 것(탄 사람·앉은 사람은 뺀다)
       if (!u.mounted && grounds.length) {
         let low = Infinity, sx = 0, sz = 0;

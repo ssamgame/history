@@ -7,6 +7,7 @@ import { createProbe } from '../tools/qa/probe.js';
 import { makePerson, setCarry } from '../core/people.js';
 import { makeHorse, mount } from '../core/horse.js';
 import { LOOKS } from '../content/characters.js';
+import { sitDown } from '../chapters/kit/walk.js';
 
 function scene() {
   const w = testWorld();
@@ -23,10 +24,12 @@ test('qa probe: 멀쩡한 장면(서 있는 사람·말 탄 사람·짐 든 사�
     P('villager', -3, -3); P('soldier', 0, -3); P('woman', 3, -3); // (0,0)에는 학생(world.player)이 서 있다
     const carrier = P('worker', 0, 3); setCarry(carrier, new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.3, 0.4), new THREE.MeshLambertMaterial()), 'arms');
     const h = makeHorse(); h.position.set(-4, 0, 4); w.level.add(h); mount(h, makePerson(LOOKS.mongol));
+    const seated = P('sejong', 5, 3); sitDown(seated); seated.position.y = 0; // 앉은 사람(조선 2장 세종): 가슴이 낮아도 몸통은 있다
+    const torch = P('villager', -6, -3), glow = new THREE.Mesh(new THREE.SphereGeometry(0.4), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.12, depthWrite: false })); torch.userData.arms[1].add(glow); // 횃불 빛무리(근대 3장)는 몸이 아니다
     const probe = createProbe(w);
     run(probe);
     eq(kinds(probe), [], '잡은 것');
-    ok(probe.stats.people >= 5 && probe.stats.horses === 1, `사람 ${probe.stats.people}, 말 ${probe.stats.horses}`);
+    ok(probe.stats.people >= 7 && probe.stats.horses === 1, `사람 ${probe.stats.people}, 말 ${probe.stats.horses}`);
   } finally { w.dispose(); }
 });
 
