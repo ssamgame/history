@@ -83,3 +83,31 @@ test('rig: 시험을 켜면(goryeo-rig=1) 고려 1장 사람들이 뼈대 몸이
     ok(most >= 10, `뼈대 몸 인물 ${most}명`);
   } finally { localStorage.removeItem('goryeo-rig'); enableRig(false); bot.stop(); s.done(); }
 }, { timeout: 240000 });
+
+test('rig: 말 탄 사람은 블렌더 긴 옷자락을 숨기고 탄 옷을 입는다(말 몸통을 뚫지 않게), 몸통은 비지 않는다', async () => {
+  const { makeHorse, mount } = await import('../core/horse.js');
+  await loadRig();
+  const w = testWorld();
+  try {
+    enableRig(true);
+    const rider = makePerson(LOOKS.mongol);
+    enableRig(false);
+    ok(rider.userData.rig, '블렌더 몸');
+    const h = makeHorse(); h.position.set(0, 0, -4); w.level.add(h); mount(h, rider);
+    const body = rider.userData.rig.body;
+    ok(!body.getObjectByName('robe_s').visible && !body.getObjectByName('robe_l').visible, '긴 옷자락은 숨긴다');
+    eq(shownMesh(rider, 'rideRobe'), 1, '탄 옷');
+    const probe = createProbe(w);
+    for (let i = 0; i < 12; i++) { w.step(1 / 30, { x: 0, z: 0 }); probe.tick(1 / 30); }
+    eq(probe.events.filter(e => e.severity === 'error').map(e => `${e.kind}:${e.who}`), []);
+  } finally { enableRig(false); w.dispose(); }
+});
+
+test('rig: 시험은 고려편 1~6장에만 켠다(조선편부터는 아직 지금 인물)', async () => {
+  const { prepareRig, RIG_CHAPTERS } = await import('../core/rigged.js');
+  ok(['ch1', 'ch2', 'ch3', 'ch4', 'ch5', 'ch6'].every(id => RIG_CHAPTERS.test(id)), '고려편');
+  ok(!['j1', 'k1', 'i1', 'h1', 'ch7'].some(id => RIG_CHAPTERS.test(id)), '다른 편');
+  localStorage.setItem('goryeo-rig', '1');
+  try { eq(await prepareRig('ch4'), true); eq(await prepareRig('j1'), false); } finally { localStorage.removeItem('goryeo-rig'); enableRig(false); }
+  eq(await prepareRig('ch4'), false, '시험을 끄면 켜지 않는다');
+});

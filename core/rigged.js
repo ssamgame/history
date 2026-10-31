@@ -93,3 +93,11 @@ export function enableRig(on) {
   POST_POSE.add(sync);
 }
 export const riggedPeople = () => [...rigged];
+
+// 시험을 켤 장(2026-10-31 선생님: 추천대로 편 하나씩. 지금은 고려편 1~6장)
+export const RIG_CHAPTERS = /^ch[1-6]$/;
+// 장을 짓기 직전에 장 실행기(core/flow.js)가 부른다: 그 장이 시험 대상이고 시험이 켜져 있으면 모델을 불러 켠다. 못 불러오면 지금 인물로 한다
+export async function prepareRig(chapterId) {
+  if (!rigTrialOn() || !RIG_CHAPTERS.test(chapterId || '')) return false;
+  try { await loadRig(); enableRig(true); return true; } catch (e) { console.warn('블렌더 몸을 불러오지 못해 지금 인물로 한다', e); return false; }
+}

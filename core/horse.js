@@ -71,6 +71,7 @@ export function mount(horse, person) {
   u.arms.forEach((a, i) => { if (!u.grip?.[i]) a.rotation.set(-0.6, 0, (i ? 1 : -1) * 0.15); }); // 빈손은 앞으로(고삐를 쥔 자리)
   // 긴 옷(델·단령·장삼·도포)은 발목에서 가슴까지 한 덩어리라 숨기면 몸통이 비어 투명해 보인다(2026-10-30 오류).
   // 그래서 숨기지 않고, 같은 옷(같은 재질·윗지름)을 안장 높이에서 잘라 다시 만든다: 가슴은 그대로, 아래는 안장 위로 넓게 퍼져 말 몸통을 뚫지 않는다
+  if (u.rig) for (const k of ['robe_s', 'robe_l']) { const o = u.rig.body.getObjectByName(k); if (o) o.visible = false; } // 블렌더 몸(core/rigged.js)의 긴 옷자락도 말 몸통을 뚫지 않게 숨기고 아래 탄 옷으로
   if (!person.getObjectByName('rideRobe')) for (const c of [...person.children]) {
     if (c.name === 'hem') { c.visible = false; continue; } // 발목 끝단은 탄 자세에 없다
     if (c.name !== 'robe' || !c.geometry?.parameters) continue;
