@@ -72,7 +72,7 @@
    - 이미 고친 것: 2장 클로즈업을 병사 쪽으로, 곽주 카메라를 뒤로(문루 지붕이 잘림).
 3. **전체 테스트(C단계)**: 공통 부품(얼굴·바다·움직임·입력·roam)을 바꿨으니 배포 전에 30장 전체를 돌린다. 조선~현대편도 무기 제거·얼굴·바다의 영향을 받는다(일제 4·6장·현대 3장 학생 총 제거, 바다 장면).
 4. `docs/team/tested.md`에 결과 기록, `docs/HANDOFF.md`·`docs/STATUS.md` 갱신.
-5. **미리보기 갱신**(선생님 선택: 전부 고친 뒤 한 번에): https://claude.ai/artifact/Hfhs4Zdmb9WL1Q4dsULYuz — 새 파일 `core/sea.js` 포함, 미리보기용 `core/body.js`는 패치 두 개(base64 몸 불러오기, 몸 늘 켜기)를 다시 입힌다.
+5. **미리보기**: 판 29로 지금까지 반영분을 올렸다(2026-10-31, 선생님 요청으로 중간 확인). 테스트 묶음 결과는 아직 확인 전. 이후 고치면 다시 올린다: https://claude.ai/artifact/Hfhs4Zdmb9WL1Q4dsULYuz — 새 파일 `core/sea.js` 포함, 미리보기용 `core/body.js`는 패치 두 개(base64 몸 불러오기, 몸 늘 켜기)를 다시 입힌다.
 6. 선생님께 보고하고 확인받기 → 승인되면 배포(precache `goryeo-v70` + `core/sea.js`는 이미 PRECACHE에 넣음, `tests/sw.test.js` 맞추기, main 병합·push, Pages 확인).
 
 ### 확인이 필요한 점(선생님께 여쭐 것)
