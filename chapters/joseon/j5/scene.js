@@ -17,7 +17,7 @@ const WALL = { rx: 20, rz: 16 };
 // 땅 높이: 성안은 평평한 산마루, 성 밖은 산비탈로 내려가 아래 벌판(-9)
 export function groundH(x, z) {
   const e = Math.hypot(x / WALL.rx, z / WALL.rz);
-  if (e <= 1.05) return 0.1 * Math.sin(x * 0.3) * Math.cos(z * 0.35);
+  if (e <= 1.05) { const out = Math.hypot(Math.max(-16 - x, 0, x - 16), Math.max(-12 - z, 0, z - 12.5)), k = Math.min(1, out / 4); return 0.1 * Math.sin(x * 0.3) * Math.cos(z * 0.35) * k * k * (3 - 2 * k); } // 학생이 걷는 곳(bounds+1)은 굴곡 없이 높이 0(2026-10-31 자동 점검: 발이 묻혀 보였다)
   return -Math.min(9, (e - 1.05) * 14);
 }
 

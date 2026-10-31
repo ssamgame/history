@@ -53,7 +53,7 @@
 - 장면 사진: 스크래치패드 `botshot.cjs`(테스트 봇으로 장면 함수를 돌리며 캔버스를 찍는다, `node botshot.cjs <폴더> /chapters/.../chapter.js <함수|ambush> 300 400`). 게임 화면 흐름 대신 이 방법이 빠르고 확실하다.
 
 ## 6. 남은 묵은 일 (`docs/STATUS.md` 3절과 같음)
-- 실제 갤럭시 탭 측정(`docs/tablet-measure-guide.md`), 교과서 대조, 출처 S66~S70 주소 확인, 배경음악 들어 보기, 첫 화면 병사가 버튼 뒤에 겹침, 별점 규칙.
+- 실제 갤럭시 탭 측정(`docs/tablet-measure-guide.md`), 교과서 대조, 출처 S66~S70 주소 확인, 배경음악 들어 보기, 별점 규칙.
 - 원래부터 실패하는 테스트(arena k1 doc papers 위치, stage3 G2 고려 1장 담판 카메라·해, carry 다리 걸음은 함께 돌 때만).
 - `content/sources.md` 다시 만들기(`tools/gen-sources.ps1`/`.cjs`)는 배포 때 한 번에(다른 장 대사까지 많이 바뀌어 있음).
 - `.claude/worktrees/` 아래 예전 에이전트 작업 사본이 여럿 남아 있다(모두 합친 것). 새 컨테이너에서는 없을 수 있고, 지워도 된다.

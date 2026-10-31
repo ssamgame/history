@@ -39,7 +39,7 @@ export function buildJ4Scene(world) {
     const p = g.attributes.position, cols = [], c = new THREE.Color();
     for (let i = 0; i < p.count; i++) {
       const z = p.getZ(i);
-      const h = z < 6 ? -0.8 + (z - 2) * 0.25 : 0.1 + Math.max(0, z - 20) * 0.25;
+      const h = z < 6 ? -0.8 + (z - 2) * 0.2 : Math.max(0, z - 20) * 0.25; // 포구 땅은 높이 0(사람·건물이 서는 높이, 2026-10-31 자동 점검: 0.1m 높아 발이 묻혀 보였다)
       p.setY(i, Math.min(h, 4));
       const j = rand() * 0.04;
       if (z < 7.5) c.setRGB(0.66 + j, 0.6 + j, 0.46 + j); else c.setRGB(0.34 + j, 0.47 + j, 0.29 + j);

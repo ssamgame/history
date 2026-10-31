@@ -2,10 +2,11 @@
 // 학생이 멀어지면(waitFar) 인물이 멈춰 돌아보며 기다리고, 가까이 오면(waitNear) 다시 걷는다.
 // 인물이 끝에 서면 face 쪽을 보고, 학생 자리(stand)에 빛나는 원(ring)이 뜬다. 학생이 그 자리에 오면 끝난다.
 // heightAt(x, z)가 있으면 인물을 그 높이에 세운다(둑·성벽 위). 학생 높이는 장면이 맞춘다.
+const KEEP = 0.75; // 앞장선 인물과 학생 몸 사이를 이만큼 띄운다
 export function leadWalk(ctx, { id, path, stand, ring = null, face = Math.PI, speed = 4.2, waitFar = 5, waitNear = 3.2, heightAt = null, reach = 1.6 }) {
   const { world, input } = ctx;
   const n = world.npcs.get(id), m = n.mesh.position;
-  n.collider.r = 0; // 좁은 곳에서 학생 길을 막지 않게
+  const r0 = n.collider.r; n.collider.r = 0.3; // 좁은 곳에서 학생 길을 덜 막게 작게(학생 몸 0.4와 합쳐 0.7m 띄움, 인물이 학생 몸 둘레로 비켜 돈다). 끝나면 되돌린다
   n.mark.visible = false;
   let i = 0, waiting = false;
   input.enabled = true;
@@ -28,12 +29,18 @@ export function leadWalk(ctx, { id, path, stand, ring = null, face = Math.PI, sp
             if (ring) { ring.position.set(stand[0], (heightAt ? heightAt(stand[0], stand[1]) : 0) + 0.08, stand[1]); ring.visible = true; }
           }
         }
+        { const ax = m.x - p.x, az = m.z - p.z, da = Math.hypot(ax, az); // 학생 몸을 지나가지 않고 몸 둘레로 돌아 앞으로 나간다(2026-10-31 자동 점검: 0.18m까지 겹쳤다)
+          if (da < KEEP) {
+            let au = da > 1e-6 ? Math.atan2(az, ax) : Math.atan2(Math.cos(n.mesh.rotation.y), Math.sin(n.mesh.rotation.y));
+            if (i < path.length && !waiting) { const at = Math.atan2(path[i][1] - p.z, path[i][0] - p.x); let df = Math.atan2(Math.sin(at - au), Math.cos(at - au)); const lim = speed * dt / KEEP * 1.5; au += Math.max(-lim, Math.min(lim, df)); }
+            world.moveNpc(id, p.x + Math.cos(au) * KEEP, p.z + Math.sin(au) * KEEP, n.mesh.rotation.y); setY();
+          } }
         world.setGoal({ x: m.x, z: m.z });
         return;
       }
       world.setGoal({ x: stand[0], z: stand[1] });
       if (Math.hypot(p.x - stand[0], p.z - stand[1]) < reach) {
-        off(); input.enabled = false; if (ring) ring.visible = false; world.setGoal(null);
+        off(); n.collider.r = r0; input.enabled = false; if (ring) ring.visible = false; world.setGoal(null);
         resolve();
       }
     });

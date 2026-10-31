@@ -19,7 +19,8 @@ const SOUTH_Z = 22;                // 남쪽 물길 가운데 (회군 때 건너
 // 땅 높이: 섬 안은 거의 평평하고, 가장자리에서 물 아래로 내려간다
 export function groundH(x, z) {
   const e = Math.hypot(x / ISLAND.rx, z / ISLAND.rz);
-  let h = 0.12 * Math.sin(x * 0.35) * Math.cos(z * 0.4);
+  const out = Math.hypot(Math.max(-21 - x, 0, x - 21), Math.max(-12 - z, 0, z - 13)), k = Math.min(1, out / 4); // 학생이 걷는 곳(bounds+1)은 굴곡 없이 높이 0(2026-10-31 자동 점검: 발이 묻혀 보였다)
+  let h = 0.12 * Math.sin(x * 0.35) * Math.cos(z * 0.4) * k * k * (3 - 2 * k);
   if (e > 0.85) h -= Math.min(2.2, (e - 0.85) * 6);
   return h;
 }

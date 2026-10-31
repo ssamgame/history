@@ -74,3 +74,24 @@ test('marks: passed dots show a ✓', () => {
   ui.remove();
 });
 
+
+// 남은 일 "첫 화면 병사가 버튼 뒤에 겹침"(2026-10-31 확인): 시대를 고른 뒤 장 고르기 지도에서 학생 병사가 반투명 장 단추 뒤에 비쳐 보였다
+test('map: 장 고르기 지도 뒤에 학생 병사가 보이지 않는다', async () => {
+  const frame = document.createElement('iframe');
+  frame.src = '../index.html?e2e=1'; frame.style.cssText = 'width:1000px;height:560px;position:fixed;left:-3000px;top:0;border:0';
+  document.body.appendChild(frame);
+  try {
+    await new Promise(r => frame.addEventListener('load', r));
+    const d = () => frame.contentDocument, find = t => [...d().querySelectorAll('button')].find(b => b.textContent.includes(t));
+    const wait = async (f, ms = 20000) => { for (let i = 0; i < ms / 50; i++) { const v = f(); if (v) return v; await sleep(50); } return null; };
+    const w = await wait(() => frame.contentWindow.__world);
+    ok(w, 'world');
+    (await wait(() => find('고려를 지켜라'))).click();
+    (await wait(() => find('처음부터'))).click();
+    (await wait(() => d().querySelector('input'))).value = '시험';
+    (await wait(() => find('시작'))).click();
+    ok(await wait(() => d().body.textContent.includes('어디로 갈까요')), '장 고르기 지도');
+    await sleep(300);
+    ok(!w.player.visible, '지도 뒤 학생 병사는 숨긴다');
+  } finally { frame.remove(); }
+}, { timeout: 40000 });

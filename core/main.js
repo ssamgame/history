@@ -112,6 +112,7 @@ function boot() {
   async function playChapter(meta, stage) {
     const mod = (await meta.load()).default;
     world.clearLevel();
+    world.player.visible = true;
     quality.restart();
     world.camMode = 'follow';
     world.setMood(mod.mood);
@@ -184,6 +185,7 @@ function boot() {
         }
         save.data.current = null;
       }
+      world.player.visible = false; // 시대 고르기·장 고르기 지도 뒤에 학생 병사가 비쳐 보이지 않게(장을 시작하면 다시 보인다)
       if (!save.data.course) await pickCourse();
       const course = courseById(save.data.course);
       music.play(`map:${course.id}`); // 시대 지도에서는 그 시대의 잔잔한 음악
@@ -228,7 +230,6 @@ function boot() {
       save.setName(await askName(ui, ''));
     } else if (cur && cur !== course) save.abandonCurrent(); // 다른 시대로 넘어가면 하다 만 장만 내려놓는다(마친 장과 별은 그대로)
     save.setCourse(course);
-    world.player.visible = true;
     await mapLoop();
   }
   main();

@@ -35,6 +35,15 @@ export function setGauge(g, f) {
 
 function seeded(s) { return () => (s = (s * 16807) % 2147483647) / 2147483647; }
 
+// 눈밭 높이: 멀리는 언덕으로 솟고 잔물결 굴곡이 있다. 사람이 걷는 곳(성 밖 거란군 z -32~-14, 들판 백성 z 14~74, x ±28)은 높이 0
+// (2026-10-31 자동 점검: 굴곡 ±0.15m에 발이 묻혀 보였다)
+const WALKED = [{ x0: -28, x1: 28, z0: -34, z1: 76 }];
+const outside = (x, z) => Math.min(...WALKED.map(r => Math.hypot(Math.max(r.x0 - x, 0, x - r.x1), Math.max(r.z0 - z, 0, z - r.z1))));
+function snowH(x, z) {
+  const far = Math.max(0, Math.hypot(x, z - 20) - 60), k = Math.min(1, outside(x, z) / 8);
+  return Math.min(far * far * 0.01, 16) + Math.sin(x * 0.3) * Math.cos(z * 0.25) * 0.15 * k * k * (3 - 2 * k);
+}
+
 export function buildCh2Scene(world) {
   const L = world.level, rand = seeded(11);
   const mk = (geo, color, x, y, z, parent = L, cast = true) => {
@@ -48,8 +57,8 @@ export function buildCh2Scene(world) {
     const g = new THREE.PlaneGeometry(240, 240, 60, 60); g.rotateX(-Math.PI / 2);
     const p = g.attributes.position, cols = [], c = new THREE.Color();
     for (let i = 0; i < p.count; i++) {
-      const x = p.getX(i), z = p.getZ(i), far = Math.max(0, Math.hypot(x, z - 20) - 60);
-      p.setY(i, Math.min(far * far * 0.01, 16) + Math.sin(x * 0.3) * Math.cos(z * 0.25) * 0.15);
+      const x = p.getX(i), z = p.getZ(i);
+      p.setY(i, snowH(x, z));
       const j = rand() * 0.04;
       c.setRGB(0.64 + j, 0.68 + j, 0.75 + j); // 2026-10-25: 흰 성벽·하늘과 구별되게 눈밭을 한 단계 낮춤
       cols.push(c.r, c.g, c.b);
@@ -152,7 +161,6 @@ export function buildCh2Scene(world) {
     captives.push({ group: g, escort, start: [-18 + i * 7.2 + (rand() - 0.5) * 2, FIELD_Z - 6 + rand() * 6] }); // 플레이어보다 앞(북쪽)에서 출발
   }
   // 눈 위로 드러난 바위와 마른 풀 (성 밖 들판)
-  const snowH = (x, z) => { const far = Math.max(0, Math.hypot(x, z - 20) - 60); return Math.min(far * far * 0.01, 16) + Math.sin(x * 0.3) * Math.cos(z * 0.25) * 0.15; };
   scatter(world, { kind: 'rock', count: 30, area: { x0: -60, x1: 60, z0: 14, z1: 90 }, avoid: [{ x: 0, z: 46, r: 22 }], seed: 31, ground: snowH, scale: [0.6, 1.8], color: 0x9aa0a6 });
   scatter(world, { kind: 'grass', count: 120, area: { x0: -40, x1: 40, z0: 14, z1: 80 }, seed: 32, ground: snowH, scale: [0.6, 1.1], color: 0xa89470 });
   scatter(world, { kind: 'bush', count: 30, area: { x0: -70, x1: 70, z0: -70, z1: -16 }, avoid: [{ x: 0, z: -30, r: 26 }], seed: 33, ground: snowH, color: 0xdfe6ea });

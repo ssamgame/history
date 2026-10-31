@@ -313,3 +313,49 @@ test('ch4: 처인성 방어 내내 김윤후와 학생이 겹치지 않고, 처�
     ok(nearArcher > 0.5, `궁수와 가장 가까웠을 때 ${nearArcher.toFixed(2)}m`);
   } finally { s.done(); }
 }, { timeout: 60000 });
+
+test('ch4: 처인성 비탈 아래에서 김윤후에게 걸어가 말을 걸 때 몸이 겹치지 않는다', async () => {
+  const { setupCheoin } = await import('../chapters/ch4/chapter.js');
+  const s = touchSetup(ch4Script.speakers);
+  try {
+    ch4.buildScene(s.w, s.ctx);
+    setupCheoin(s.ctx);
+    const p = s.w.player.position, km = s.w.npcs.get('kimyunhu').mesh.position;
+    let near = Infinity;
+    for (const side of [0, 0.7, -0.7, 1.4]) { // 여러 쪽에서 곧장 김윤후 쪽으로 걸어 들어간다(자동 점검: 0.18m까지 겹쳤다)
+      setupCheoin(s.ctx);
+      p.x += Math.cos(side) * 1.5; p.z += Math.sin(side) * 1.5;
+      for (let i = 0; i < 60; i++) {
+        const d = Math.hypot(km.x - p.x, km.z - p.z);
+        s.w.step(0.05, d > 0.05 ? { x: (km.x - p.x) / d, z: (km.z - p.z) / d } : { x: 0, z: 0 });
+        near = Math.min(near, Math.hypot(p.x - km.x, p.z - km.z));
+      }
+    }
+    ok(near > 0.6, `가장 가까웠을 때 ${near.toFixed(2)}m`);
+  } finally { s.done(); }
+}, { timeout: 60000 });
+
+test('ch4: 김윤후가 앞장서 걸을 때 길 위에 선 학생 몸을 지나가지 않는다(처인성 비탈·충주성)', async () => {
+  const { setupCheoin, setupChungju } = await import('../chapters/ch4/chapter.js');
+  const { leadWalk } = await import('../chapters/kit/lead.js');
+  const s = touchSetup(ch4Script.speakers);
+  try {
+    const sc = { scene: ch4.buildScene(s.w, s.ctx) };
+    const p = s.w.player.position, km = s.w.npcs.get('kimyunhu').mesh.position;
+    for (const [setup, A] of [[setupCheoin, sc.scene.areas.cheoin], [setupChungju, sc.scene.areas.chungju]]) {
+      setup(s.ctx);
+      const q = A.leadPath[0]; p.x = (km.x + q[0]) / 2; p.z = (km.z + q[1]) / 2; // 김윤후와 첫 길목 사이에 가만히 선다(자동 점검: 0.18m까지 겹쳤다)
+      let near = Infinity, done = false;
+      leadWalk(s.ctx, { id: 'kimyunhu', path: A.leadPath, stand: A.stand }).then(() => { done = true; });
+      for (let i = 0; i < 80; i++) { s.w.step(0.05, { x: 0, z: 0 }); near = Math.min(near, Math.hypot(p.x - km.x, p.z - km.z)); }
+      for (let i = 0; i < 400 && !done; i++) { // 그다음 김윤후를 따라 걷다가 가끔 곧장 몸 쪽으로 들어간다
+        const g = s.w.getGoal(), t = i % 50 < 10 ? km : g, d = t ? Math.hypot(t.x - p.x, t.z - p.z) : 0;
+        s.w.step(0.05, t && d > 0.3 ? { x: (t.x - p.x) / d, z: (t.z - p.z) / d } : { x: 0, z: 0 });
+        near = Math.min(near, Math.hypot(p.x - km.x, p.z - km.z));
+        await Promise.resolve();
+      }
+      ok(done, `${A === sc.scene.areas.cheoin ? "처인성" : "충주성"} 따라 걷기가 끝난다`);
+      ok(near > 0.6, `${A === sc.scene.areas.cheoin ? '처인성' : '충주성'} 가장 가까웠을 때 ${near.toFixed(2)}m`);
+    }
+  } finally { s.done(); }
+}, { timeout: 60000 });

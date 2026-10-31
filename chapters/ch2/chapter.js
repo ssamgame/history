@@ -152,6 +152,7 @@ function resetLadders() {
 
 // 성 밖 거란군 무리(D-32): 사다리 아래로 걸어와 모이고, 세운 사다리 아래에 몰리며, 사다리가 밀려나면 함께 물러났다가 다시 다가온다.
 // 걸음은 자리가 바뀌면 다리·무릎·팔이 저절로 움직인다(core/people.js). 사람마다 빠르기가 조금씩 다르다.
+const SPACE = 0.7; // 거란군끼리 띄우는 거리(몸 너비)
 function makeHorde(active) {
   let seed = 7;
   const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
@@ -198,6 +199,12 @@ function makeHorde(active) {
         dx /= d; dz /= d;
         p.x += dx * step; p.z += dz * step;
         h.k.rotation.y = Math.atan2(dx, dz);
+      }
+      for (let a = 0; a < hs.length; a++) for (let b = a + 1; b < hs.length; b++) { // 서로 몸이 겹치지 않게 비켜 선다(2026-10-31 자동 점검: 사다리 아래에서 겹쳤다)
+        const pa = hs[a].k.position, pb = hs[b].k.position, dx = pb.x - pa.x, dz = pb.z - pa.z, d = Math.hypot(dx, dz);
+        if (d >= SPACE) continue;
+        const ux = d > 1e-6 ? dx / d : 1, uz = d > 1e-6 ? dz / d : 0, push = (SPACE - d) / 2;
+        pa.x -= ux * push; pa.z = Math.min(-15.7, pa.z - uz * push); pb.x += ux * push; pb.z = Math.min(-15.7, pb.z + uz * push); // 성벽 쪽으로는 밀려 들어가지 않는다
       }
     },
     reset() { for (const h of hs) { h.k.position.copy(h.k.userData.home); h.k.rotation.y = 0; } },

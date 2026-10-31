@@ -35,7 +35,7 @@
 2. (끝남 2026-10-29) 일제 강점기 1장 ~ 현대 6장(12장)을 모두 새로 만들었다(현대 3~6장은 선생님 지시로 묻지 않고 추천안대로, D-50~D-53). 선생님이 미리보기를 보고 고칠 곳을 말씀하시면 고친다.
 3. 배포 순서: 전체 테스트 → `core/precache.js` CACHE 올림(다음 v68) + `tests/sw.test.js` → 새 파일은 PRECACHE에 → main 병합·push → GitHub Actions 'pages build and deployment' 성공 확인(이 환경에서는 github.io가 막힘) → 승인 있으면 미리보기 아티팩트 다시 올림(`index.html` + PRECACHE 파일 목록을 `files`로).
 4. **모든 편을 마친 뒤(선생님 계획 D-49)**: 모든 등장인물의 복장·얼굴·머리 모양을 시대·상황·배경에 맞게 한꺼번에 바꾼다. 그 전에는 생김새를 따로 다듬지 않는다.
-4. 예전부터: 실제 갤럭시 탭 측정(`docs/tablet-measure-guide.md`), 교과서 대조, 출처 S66~S70 주소 확인, 배경음악 들어 보기, 첫 화면 병사가 버튼 뒤에 겹침, 별점 규칙.
+4. 예전부터: 실제 갤럭시 탭 측정(`docs/tablet-measure-guide.md`), 교과서 대조, 출처 S66~S70 주소 확인, 배경음악 들어 보기, 별점 규칙.
 5. 원래부터 실패하는 테스트 3개(고칠 일): arena `k1 doc papers` 위치, carry 다리 걸음(함께 돌 때만), stage3 G2(고려 1장 담판 카메라·해).
 6. 참고: optim-jev 플러그인은 이 컨테이너에만 설치됨(작동하려면 선생님이 환경 설정에 `TYPESAFE_API_KEY`와 허용 도메인 `api.typesafe.ai`를 넣어야 함).
 

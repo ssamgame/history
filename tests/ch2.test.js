@@ -311,6 +311,43 @@ test('ch2 D-32: Khitan soldiers keep walking up to the ladders and come back aft
   } finally { s.done(); }
 }, { timeout: 40000 });
 
+// 2026-10-31 자동 점검: 사다리 아래에 몰린 거란군끼리 몸이 겹쳐 섰다(0.42m 안)
+test('ch2: 사다리 아래에 몰린 거란군끼리 몸이 겹치지 않는다', async () => {
+  const s = touchSetup(ch2Script.speakers);
+  try {
+    const sc = await wallStarted(s);
+    let worst = Infinity, at = '';
+    for (let i = 0; i < 500; i++) {
+      s.w.step(0.05, { x: 0, z: 0 });
+      if (i < 40) continue; // 처음 자리에서 걸어 나온 뒤부터
+      const ks = sc.horde.filter(k => k.visible);
+      for (let a = 0; a < ks.length; a++) for (let b = a + 1; b < ks.length; b++) {
+        const d = Math.hypot(ks[a].position.x - ks[b].position.x, ks[a].position.z - ks[b].position.z);
+        if (d < worst) { worst = d; at = `${i}걸음 ${ks[a].position.x.toFixed(1)},${ks[a].position.z.toFixed(1)}`; }
+      }
+    }
+    ok(worst > 0.5, `가장 가까운 두 군사 ${worst.toFixed(2)}m (${at})`);
+  } finally { s.done(); }
+}, { timeout: 60000 });
+
+// 2026-10-31 자동 점검: 성 밖 거란군·들판 백성의 발이 눈밭 굴곡(±0.15m)에 묻혔다. 사람이 걷는 곳의 눈밭은 높이 0이어야 한다
+test('ch2: 사람이 걷는 성 밖·들판의 눈밭은 평평하다(발이 묻히지 않게)', async () => {
+  const THREE = await import('three');
+  const s = touchSetup(ch2Script.speakers);
+  try {
+    ch2.buildScene(s.w, s.ctx);
+    s.w.scene.updateMatrixWorld(true);
+    const planes = []; s.w.level.traverse(o => { if (o.isMesh && o.geometry.type === 'PlaneGeometry' && o.geometry.parameters.width >= 200) planes.push(o); });
+    ok(planes.length >= 1, 'snow plane');
+    const rc = new THREE.Raycaster(); let worst = 0, at = '';
+    for (let x = -26; x <= 26; x += 1.3) for (const z of [-30, -27, -24, -21, -18, -16, 20, 30, 38, 44, 50, 56, 62, 70]) {
+      rc.set(new THREE.Vector3(x, 5, z), new THREE.Vector3(0, -1, 0));
+      const h = rc.intersectObjects(planes)[0]; if (h && Math.abs(h.point.y) > worst) { worst = Math.abs(h.point.y); at = `${x.toFixed(1)},${z}`; }
+    }
+    ok(worst < 0.04, `눈밭 높이 ${worst.toFixed(3)}m (${at})`);
+  } finally { s.done(); }
+});
+
 // D-32: 사다리 자리의 게이지가 시간이 지날수록 노랑 → 주황 → 빨강으로 차오르고, 다 차는 순간 그 사다리로 적이 올라온다
 test('ch2 D-32: the ladder gauge fills yellow to red and the enemy climbs over when it is full', async () => {
   const s = touchSetup(ch2Script.speakers);
