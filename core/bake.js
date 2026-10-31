@@ -78,10 +78,11 @@ export function bakeLevel(world, scene, { steps = 3 } = {}) {
     for (const o of gone) o.parent.remove(o);
     for (const b of local.values()) { const m = new THREE.Mesh(merge(b.geos), b.mat); m.castShadow = b.cast; m.receiveShadow = true; p.add(m); }
   };
-  const compactInside = o => { for (const c of o.children) { if (keep.has(c)) continue; if (c.userData.legs) compact(c); else if (!odd(c)) compactInside(c); } };
+  const compactInside = o => { for (const c of o.children) { if (keep.has(c)) continue; if (c.userData.legs) { if (!c.userData.skel) compact(c); } else if (!odd(c)) compactInside(c); } }; // 뼈대 몸(core/body.js) 사람은 조각이 뼈에 붙어 움직이므로 합치지 않는다
   const walk = o => {
     if (keep.has(o)) { if (!o.userData.legs && !npcMeshes.has(o)) compactInside(o); return; }
     if (!o.visible || odd(o)) return; // 숨긴 것은 나중에 보일 수 있으니 그대로
+    if (o.userData.skel && !o.userData.skel.frozen) o.userData.skel.freeze(); // 움직이지 않는 군중의 뼈대 몸은 지금 자세로 멈추고(살붙인 몸은 숨김) 옷 조각을 예전처럼 굳힌다
     if (mergeable(o) && o.children.length === 0) {
       rel.multiplyMatrices(inv, o.matrixWorld);
       const geo = o.geometry.clone().applyMatrix4(rel);

@@ -71,15 +71,17 @@ export function mount(horse, person) {
   u.arms.forEach((a, i) => { if (!u.grip?.[i]) a.rotation.set(-0.6, 0, (i ? 1 : -1) * 0.15); }); // 빈손은 앞으로(고삐를 쥔 자리)
   // 긴 옷(델·단령·장삼·도포)은 발목에서 가슴까지 한 덩어리라 숨기면 몸통이 비어 투명해 보인다(2026-10-30 오류).
   // 그래서 숨기지 않고, 같은 옷(같은 재질·윗지름)을 안장 높이에서 잘라 다시 만든다: 가슴은 그대로, 아래는 안장 위로 넓게 퍼져 말 몸통을 뚫지 않는다
-  if (u.rig) for (const k of ['robe_s', 'robe_l']) { const o = u.rig.body.getObjectByName(k); if (o) o.visible = false; } // 블렌더 몸(core/rigged.js)의 긴 옷자락도 말 몸통을 뚫지 않게 숨기고 아래 탄 옷으로
-  if (!person.getObjectByName('rideRobe')) for (const c of [...person.children]) {
+  // 뼈대 몸(core/body.js)은 옷자락이 골반 뼈 밑에 있다: 사람 기준 높이로 재서 탄 옷은 사람 바로 아래에 만든다
+  const robes = []; person.traverse(c => { if (c.name === 'hem' || c.name === 'robe') robes.push(c); });
+  if (!person.getObjectByName('rideRobe')) for (const c of robes) {
     if (c.name === 'hem') { c.visible = false; continue; } // 발목 끝단은 탄 자세에 없다
-    if (c.name !== 'robe' || !c.geometry?.parameters) continue;
-    const P = c.geometry.parameters, top = c.position.y + P.height / 2, seat = 0.5;
+    if (!c.geometry?.parameters) continue;
+    person.updateMatrixWorld(true); const at = person.worldToLocal(c.getWorldPosition(new THREE.Vector3())).divideScalar(person.scale.x || 1);
+    const P = c.geometry.parameters, top = at.y + P.height / 2, seat = 0.5;
     c.visible = false;
     if (top <= seat + 0.05) continue;
     const m = new THREE.Mesh(new THREE.CylinderGeometry(P.radiusTop, Math.max(P.radiusTop, 0.46), top - seat, P.radialSegments || 8), c.material);
-    m.name = 'rideRobe'; m.position.set(c.position.x, (top + seat) / 2, c.position.z); m.castShadow = true; m.receiveShadow = c.receiveShadow;
+    m.name = 'rideRobe'; m.position.set(at.x, (top + seat) / 2, at.z); m.castShadow = true; m.receiveShadow = c.receiveShadow;
     person.add(m);
   }
   return person;

@@ -9,6 +9,7 @@
 //   ④ 머리: 바라볼 곳(look)·대화 끄덕임·서 있을 때 두리번거리기. 몸통이 기운 만큼 머리는 반대로 세워 시선이 흔들리지 않는다.
 // 장 코드가 직접 정한 팔 자세(만세 등)는 걷지 않는 동안 건드리지 않는다(예전과 같다).
 import * as THREE from 'three';
+import { play, paceScale, manualGait, holdOnBody } from './body.js'; // 공통 뼈대 몸(2026-10-31): userData.skel이 있는 사람은 동작 묶음으로 움직인다
 
 export const HIP = 1.05; // 몸통 관절(upper) 높이: 상체·팔·머리·든 물건은 이 관절의 자식
 const LEGLEN = 0.55;    // 다리(골반 관절~발바닥) 길이: makePerson의 다리 관절 높이
@@ -60,6 +61,7 @@ function applyBlend(u, dt) {
 // 걸음 한 박자(ph)의 다리·팔 자세(D-11). 장이 직접 걸음을 돌리는 인물(고려 1장 물러나는 거란군, 조선 6장 일꾼)이 쓴다.
 // k(0~1) 걸음 세기, amp 다리 벌림. 돌려주는 값은 몸을 올릴 높이(0~0.08, 예전과 같은 쓰임)
 export function gaitPose(person, ph, k = 1, amp = 0.75, run = 0) {
+  if (person.userData.skel) return manualGait(person, ph, k); // 뼈대 몸: 걷는 동작을 그 박자 자리에(골반 들썩임은 동작에 들어 있다)
   const u = person.userData, s = Math.sin(ph) * k, c = Math.cos(ph);
   u.legs[0].rotation.x = s * amp; u.legs[1].rotation.x = -s * amp;
   const k0 = u.legs[0].userData.knee, k1 = u.legs[1].userData.knee, lift = 1.1 + run * 0.2;
@@ -78,7 +80,7 @@ function armSwing(u, i, x, run) {
 
 // 든 물건 자세: 팔은 물건을 받치고, 물건은 손 자리에 붙어 걸음에 맞춰 살짝 흔들린다(D-18). 물건은 몸통 관절(upper)의 자식
 export function carryPose(person, ph = 0, k = 0) {
-  const u = person.userData, c = u.carry; if (!c || !u.arms) return;
+  const u = person.userData, c = u.carry; if (!c || !u.arms || u.skel) return; // 뼈대 몸은 짐을 손·가슴 뼈에 붙였다(animateSkel)
   const P = CARRY[c.style] || CARRY.arms, sway = Math.sin(ph * 2) * 0.04 * k;
   P.arms.forEach((a, i) => {
     if (a) u.arms[i].rotation.set(a[0] + sway, 0, a[1]);
@@ -95,14 +97,20 @@ export function carryPose(person, ph = 0, k = 0) {
 // 내려놓을 때: 팔은 천천히 내려온다. 들고 있다는 사실(userData.carry)은 곧바로 바뀌어 진행 규칙은 예전과 같다.
 export function setCarry(person, obj, style = 'arms') {
   const u = person.userData, prev = u.carry, host = u.upper || person;
-  if (prev && prev.obj !== obj && prev.obj.parent && (prev.obj.parent === person || prev.obj.parent === u.upper)) prev.obj.parent.remove(prev.obj);
+  const mine = o => { for (let q = o.parent; q; q = q.parent) if (q === person) return true; return false; }; // 뼈대 몸은 짐이 손·가슴 뼈 밑에 있다
+  if (prev && prev.obj !== obj && prev.obj.parent && mine(prev.obj)) prev.obj.parent.remove(prev.obj);
   if (!obj) {
-    u.carry = null;
+    u.carry = null; if (u.skel) u.skel.carry = null;
     if (u.arms) { blendArms(person, 0.35); u.armRest = true; if (!u.m) u.arms.forEach(a => a.rotation.set(0, 0, 0)); } // 움직임을 돌리지 않는 인물(테스트·그림용)은 곧바로
     return;
   }
   let from = null;
   if (obj.parent && obj.parent !== host && u.m) { obj.getWorldPosition(v3); host.worldToLocal(v3); from = v3.clone(); } // 놓여 있던 자리(몸통 관절 기준)
+  if (u.skel) { // 뼈대 몸: 두 팔로 안은 짐은 손에, 그 밖은 가슴 뼈에(예전 자리)
+    u.carry = { obj, style, rz: obj.rotation.z, lift: null };
+    holdOnBody(person, obj, style, (CARRY[style] || CARRY.arms).at); u.armRest = style === 'arms';
+    return;
+  }
   host.add(obj);
   u.armRest = false;
   if (u.m && !(prev && prev.obj === obj)) blendArms(person, 0.3);
@@ -143,6 +151,7 @@ const GESTURE = { // 말하는 손짓: 오른팔(과 왼팔)의 [앞뒤, 안팎]
 export function animateWalk(person, moving, dt) {
   const u = person.userData;
   if (!u.legs || !dt) return;
+  if (u.skel) { if (!u.skel.frozen) animateSkel(person, moving, dt); return; }
   const m = state(u);
   u.t = (u.t || 0) + dt;
   // ① 실제 빠르기를 재고 부드럽게 따라간다(출발할 때 가속, 멈출 때 감속). 크게 건너뛴 것(장면 전환)은 빠르기로 보지 않는다
@@ -250,3 +259,60 @@ export function animateWalk(person, moving, dt) {
 }
 // 일하는 사람으로 정한다: 'hammer'(망치질) 'carry'(짐 들기) 'sweep'(쓸기·노 젓기). 장면 굳히기(core/bake.js)에서 빠져 계속 움직인다.
 export function setWork(person, kind) { person.userData.work = kind; return person; }
+
+// 뼈대 몸(core/body.js)의 한 프레임: 실제 빠르기로 기본 동작(서기·걷기·달리기·창 들고 걷기·짐 안고 걷기·말하기·일하기)을 고르고,
+// 예전처럼 장·행동이 정하는 자세(행동 act, 표정 손짓, 옆구리·어깨에 든 짐, 묶인 손)는 예전 관절에 적는다. 그 관절이 쉬는 자세가 아니면
+// core/body.js가 그 뼈에 덧씌운다. 뼈의 실제 회전과 짐을 손에 붙이는 일은 world.step 끝(POST_POSE)에 core/body.js가 한다
+function animateSkel(person, moving, dt) {
+  const u = person.userData, m = state(u), S = u.skel;
+  u.t = (u.t || 0) + dt;
+  person.getWorldPosition(v3);
+  let raw = 0;
+  if (m.last) raw = Math.hypot(v3.x - m.last.x, v3.z - m.last.z) / dt; else m.last = new THREE.Vector3();
+  m.last.copy(v3);
+  if (raw > 14) raw = 0;
+  const e = person.matrixWorld.elements, sc = Math.hypot(e[4], e[5], e[6]) || 1, target = moving ? raw : 0;
+  m.v += (target - m.v) * Math.min(1, dt * (target > m.v ? 5 : 6));
+  if (!moving && m.v < 0.03) m.v = 0;
+  const v = m.v / sc, walking = v > 0.15, c = u.carry, st = styleOf(person, u);
+  u.stride = walking ? 1 : 0; // 걷는 중(감지기·다른 코드가 본다)
+  const curName = S.cur?.getClip().name;
+  let name;
+  if (u.mounted) name = 'idle';
+  else if (u.talk && u.talk.role === 'speak' && u.talk.expr === 'talk' && !walking) name = 'talk';
+  else if (u.work && !walking) name = u.work === 'hammer' ? 'work_hammer' : u.work === 'sweep' ? 'work_sweep' : 'idle_carry';
+  else if (c && c.style === 'arms') name = walking ? 'carry' : 'idle_carry';
+  else if (u.gear === 'spear' && !c) name = walking ? 'walk_spear' : 'idle_spear';
+  else if (u.gear === 'sword' && !c) name = walking ? 'walk_sword' : 'idle_sword';
+  else if (walking) name = u.gear === 'bow' && v < 2.8 ? 'walk_bow' : (v > 3.3 || (curName === 'run' && v > 2.9)) ? 'run' : 'walk';
+  else name = 'idle';
+  play(person, name, 0.25, paceScale(name, v));
+  // 예전 관절에 적는 자세
+  const arms = u.arms, P0 = c && c.style !== 'arms' ? (CARRY[c.style] || null) : null;
+  const G = u.talk && u.talk.role === 'speak' && u.talk.expr !== 'talk' ? (GESTURE[u.talk.expr] || null) : null;
+  if (u.talk) u.talk.t += dt;
+  if (G && !u.carry) { const b = Math.sin(u.talk.t * 4.2 + u.ph) * G.beat; arms[1].rotation.set(G.r[0] + b, 0, G.r[1]); arms[0].rotation.set(G.l[0] + b * 0.4, 0, G.l[1]); }
+  else if (P0) P0.arms.forEach((a, i) => { arms[i].rotation.set(a ? a[0] : 0, 0, a ? a[1] : 0); });
+  else if (st.bound) arms.forEach((a, i) => a.rotation.set(-0.42, 0, (i ? -1 : 1) * 0.3));
+  else if (u.armRest && !u.act) { const f = Math.exp(-dt * 7); arms.forEach(a => { a.rotation.x *= f; a.rotation.y *= f; a.rotation.z *= f; }); if (arms.every(a => Math.abs(a.rotation.x) + Math.abs(a.rotation.z) < 0.01)) { arms.forEach(a => a.rotation.set(0, 0, 0)); u.armRest = false; } }
+  let ux = 0, uy = 0, uz = 0, headX = 0, headY = 0;
+  if (u.act) {
+    const A = u.act; A.t += dt;
+    const w = Math.min(ss(0, 1, A.t / A.fadeIn), ss(0, 1, (A.dur - A.t) / A.fadeOut));
+    const P = A.pose(Math.min(A.t, A.dur), A) || {};
+    if (P.arms) P.arms.forEach((r, i) => { if (!r) return; const a = arms[i]; a.rotation.set(lerp(a.rotation.x, r[0], w), lerp(a.rotation.y, r[1] || 0, w), lerp(a.rotation.z, r[2] || 0, w)); });
+    if (P.upper) { ux = P.upper[0] * w; uy = (P.upper[1] || 0) * w; uz = (P.upper[2] || 0) * w; }
+    if (P.head) { headX = P.head[0] * w; headY = (P.head[1] || 0) * w; }
+    if (A.t >= A.dur) { u.act = null; if (!u.carry || u.carry.style !== 'arms') u.armRest = true; A.resolve(); }
+  }
+  u.upper.rotation.set(ux, uy, uz);
+  // 머리: 바라볼 곳(머리 묶음은 head 뼈에 붙어 있어 그 위에 더한다)
+  if (u.head) {
+    let look = 0;
+    if (u.look) { const yaw = te.setFromQuaternion(person.getWorldQuaternion(tq), 'YXZ').y; look = Math.max(-1.1, Math.min(1.1, wrap(Math.atan2(u.look.x - v3.x, u.look.z - v3.z) - yaw))); }
+    else if (st.scan) look = Math.sin(u.t * 0.9 + u.ph) * 0.45;
+    u.head.rotation.y += (look + headY - u.head.rotation.y) * Math.min(1, dt * (u.look ? 5 : 3));
+    u.head.rotation.x += (headX + (st.headDown || 0) - u.head.rotation.x) * Math.min(1, dt * 8);
+  }
+}
+const tq = new THREE.Quaternion(), te = new THREE.Euler();

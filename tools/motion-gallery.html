@@ -12,7 +12,7 @@
 <div id="stage"></div>
 <div id="bar"></div>
 <script type="module">
-  // 개발용: 인물 움직임(2026-10-30 움직임 개선)을 한 마당에서 본다. ?act=walk|turn|weapons|carry|handshake|give|escort|strike|talk|chain|horse|rider|row|gait|lineup
+  // 개발용: 인물 움직임(2026-10-30 움직임 개선)을 한 마당에서 본다. ?act=walk|turn|weapons|carry|handshake|give|escort|strike|talk|chain|horse|rider|row|gait|lineup (&body=1: 공통 뼈대 몸)
   // window.__t(초)·window.__phase(지금 하는 일)를 보고 사진을 찍는다(scratchpad motion.cjs)
   import * as THREE from 'three';
   import { createWorld } from '../core/world.js';
@@ -25,11 +25,13 @@
   import { addSculler, autoRow } from '../chapters/kit/row.js';
   import { rider as armyRider } from '../chapters/kit/army.js';
   import * as BLD from '../chapters/kit/buildings.js';
-  import { loadRig, enableRig } from '../core/rigged.js';
+  import { loadBody, attachBody, updateBodies } from '../core/body.js';
+  import { setRigHook, POST_POSE } from '../core/people.js';
   setHairEra(new URLSearchParams(location.search).get('era'), new URLSearchParams(location.search).get('ch') || '');
   const q = new URLSearchParams(location.search), act = q.get('act') || 'walk';
   const world = createWorld(document.getElementById('stage'), { quality: 'medium' });
   window.__world = world; // 점검 도구(tools/qa)가 장면을 읽는다
+  if (q.get('body') === '1') { await loadBody(); setRigHook(attachBody); POST_POSE.add(updateBodies); } // &body=1: 공통 뼈대 몸(core/body.js)으로 같은 장면
   world.setMood('morning'); world.player.visible = false;
   const arena = buildArena(world, { origin: [0, 0], ground: 'earth', groundColor: 0x9a8a68, hill: 0.5, bounds: { x0: -14, x1: 14, z0: -10, z1: 10 }, nature: false });
   const g = arena.group;
@@ -150,22 +152,6 @@
       phase('돌아서기'); await Promise.all(hs.map(h => turnTo(world, h, { x: -20, z: h.position.z }))); await sleep(0.6); await Promise.all(hs.map(h => turnTo(world, h, { x: 20, z: h.position.z })));
       phase('달리기'); await go(11, 6);
       phase('멈춤'); await sleep(2); phase('끝');
-    },
-    async rig() { // 블렌더 시범(core/rigged.js): 위는 지금 인물, 아래는 블렌더로 만든 뼈대 인물. 같은 길을 걷기 → 빠른 걸음 → 달리기 → 멈춤
-      await loadRig();
-      const looks = (q.get('looks') || 'seohui').split(','); // 생김새마다 지금 인물(왼쪽)과 블렌더 몸 인물(오른쪽)을 한 쌍으로, 쌍은 뒤로 늘어선다. 긴 옷을 입은 생김새만 바뀐다
-      const now = looks.map((l, i) => P(l, -12, -0.7 - i * 3, Math.PI / 2));
-      enableRig(true); // 이제부터 만드는 사람은 블렌더 몸(움직임은 지금 게임의 움직임 코드 그대로)
-      const rig = looks.map((l, i) => P(l, -12, 0.7 - i * 3, Math.PI / 2));
-      enableRig(false);
-      window.__hooks.rig = rig;
-      track(now[0], q.get('side') ? [0, 1.3, 7] : [4.5, 1.6, 5]); // 앞쪽 비스듬히(&side=1이면 옆에서)
-      const all = [...now, ...rig], go = (x, sp) => Promise.all(all.map(p => walkTo(world, p, [x, p.position.z], { speed: sp })));
-      phase('서 있기'); await sleep(1.5);
-      phase('걷기'); await go(-4, 1.5);
-      phase('빠른 걸음'); await go(3, 2.8);
-      phase('달리기'); await go(12, 5.5);
-      phase('멈춤'); await sleep(1.5); phase('끝');
     },
     async row() { // 노 젓기(장면이 쓰는 chapters/kit/row.js): 배가 서 있다가 나아가고 다시 선다. 사공의 두 손이 노 손잡이를 쥔다
       const water = new THREE.Mesh(new THREE.PlaneGeometry(60, 30).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ color: 0x3f7fa0 })); water.position.y = 0.03; g.add(water);

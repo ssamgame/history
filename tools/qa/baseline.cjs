@@ -8,12 +8,12 @@ const { chromium } = require('playwright');
 const { serve, root } = require('./serve.cjs');
 
 // 장면마다 사진을 찍을 시각(장면 시계 초). 걷기·말·노 젓기 등 움직임이 한창인 때
-const SHOTS = { walk: [2, 6, 9], horse: [2, 5, 8], rider: [2, 5, 9], row: [1, 3.5, 6], handshake: [1.5, 3], carry: [2, 5], escort: [3, 7] };
+const SHOTS = { walk: [2, 6, 9], horse: [2, 5, 8], rider: [2, 5, 9], row: [1, 3.5, 6], handshake: [1.5, 3], carry: [2, 5], escort: [3, 7], weapons: [2, 4.5], give: [1.2, 2.2], talk: [1, 4] };
 const DIR = path.join(root, 'tools', 'qa', 'baseline');
 const LIMIT = 0.03;
 
 (async () => {
-  const update = process.argv.includes('--update'), only = process.argv.slice(2).filter(a => !a.startsWith('--'));
+  const update = process.argv.includes('--update'), body = process.argv.includes('--body') ? '&body=1' : '', only = process.argv.slice(2).filter(a => !a.startsWith('--')); // --body: 같은 장면을 공통 뼈대 몸으로 찍어 기준(고치기 전)과 견준다
   const acts = only.length ? only : Object.keys(SHOTS);
   const port = 8191, server = await serve(port);
   const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
@@ -23,7 +23,7 @@ const LIMIT = 0.03;
   for (const act of acts) {
     const page = await browser.newPage({ viewport: { width: 640, height: 360 } });
     const errs = []; page.on('pageerror', e => errs.push(e.message));
-    await page.goto(`http://localhost:${port}/tools/motion-gallery.html?act=${act}&fixed=1&pauseAt=${SHOTS[act].join(',')}`);
+    await page.goto(`http://localhost:${port}/tools/motion-gallery.html?act=${act}&fixed=1&pauseAt=${SHOTS[act].join(',')}${body}`);
     for (const t of SHOTS[act]) {
       await page.waitForFunction(T => window.__hold === T, t, { timeout: 120000 });
       await page.evaluate(() => document.getElementById('bar').style.visibility = 'hidden'); // 글자판은 비교에서 뺀다

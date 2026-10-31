@@ -443,11 +443,11 @@ export function makePerson(look = {}, { track = true, stable = false } = {}) {
   if (gear === 'spear') { const sp = arms[1].getObjectByName('spear'); if (sp) sp.rotation.x = 0.25; } // 팔을 앞으로 든 만큼 창을 세운다
   g.userData = { legs, arms, walk: 0, head: hg, upper, grip, gear, lookAge: face.age, ph: rnd * 20, spear: gear === 'spear' ? arms[1].getObjectByName('spear') : null };
   if (track) walkers.add(g);
-  return rigHook ? rigHook(g, look) : g; // 블렌더 몸 시험(core/rigged.js): 켜져 있으면 몸통 조각을 뼈대 있는 몸으로 바꾼다
+  return rigHook ? rigHook(g, look) : g; // 공통 뼈대 몸(core/body.js): 켜져 있으면 조각을 뼈에 옮겨 붙인다
 }
 
-// 블렌더 몸 시험(2026-10-31): core/rigged.js가 켜고 끈다. 끈 동안 makePerson은 지금과 똑같다.
-// POST_POSE: 한 프레임의 걸음·동작 자세를 다 정한 뒤 부르는 일(뼈대 몸이 사람의 관절을 따라간다). world.step이 부른다
+// 공통 뼈대 몸(2026-10-31): core/flow.js가 켜고 끈다(core/body.js의 attachBody). 끈 동안 makePerson은 예전과 똑같다.
+// POST_POSE: 한 프레임의 걸음·동작 자세를 다 정한 뒤 부르는 일(뼈대 몸의 동작 갱신). world.step이 부른다
 let rigHook = null;
 export function setRigHook(fn) { rigHook = fn; }
 export const POST_POSE = new Set();

@@ -16,9 +16,9 @@
 
 ## 기술 구성
 
-- 빌드 없는 정적 ES 모듈 사이트. Three.js r160(`vendor/three.module.min.js`, import map). 외부 서버·소리 파일·그림 파일 없음.
+- 빌드 없는 정적 ES 모듈 사이트. Three.js r160(`vendor/three.module.min.js`, import map, 같은 판의 `vendor/jsm/loaders/GLTFLoader.js`·`vendor/jsm/utils/SkeletonUtils.js`). 외부 서버·소리 파일·그림 파일 없음. 모델 파일은 `assets/models/body.glb` 하나뿐.
 - 기기: 갤럭시 탭 S6 Lite, 크롬북. 가로 화면. 키보드와 터치 모두 된다.
-- 모든 3D 모양은 코드로 만든다(로우폴리). 표면 무늬는 캔버스로 그린다(`core/textures.js`, 위치 기준 매핑, `mat(color)`가 색으로 무늬를 자동 선택).
+- 인물의 뼈대·동작은 Blender(`assets/models/body.glb`, `tools/blender/body.py`로 만듦: 뼈 20개·동작 15개, Draco·meshopt 압축 없음), 나머지 3D 모양은 코드로 만든다(로우폴리). 옷·모자·얼굴·머리·무기·소품은 지금처럼 `makePerson`이 코드로 만들고 `core/body.js`가 해당 뼈에 붙인다(2026-10-31 선생님: "공통 뼈대 + 코드 옷 입히기"; 인물마다 모델을 따로 만들지 않고, 얼굴·건물·배경은 Blender로 만들지 않는다). 표면 무늬는 캔버스로 그린다(`core/textures.js`, 위치 기준 매핑, `mat(color)`가 색으로 무늬를 자동 선택).
 - 장 모듈 형식: `{ id, mood, player?, script, quizzes, buildScene(world), enterStage(ctx, stage), explore(ctx), minigame(ctx) }`. `player`는 그 장의 학생 생김새(없으면 고려 병사). `core/flow.js`의 `runChapter`가 해설 → 탐험 → 미니게임 → 퀴즈 순으로 돌리고 단계마다 저장한다.
 - 주요 파일
   - `core/world.js` 렌더러·분위기·카메라(따라가기·대화·고정 맞춤)·해와 그림자

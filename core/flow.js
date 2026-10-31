@@ -5,10 +5,20 @@ import { bakeLevel } from './bake.js';
 import { showQuizView, endQuizView } from './quizview.js';
 import { portalStage } from './portal.js';
 import { playIntro } from './intro.js';
-import { setRigHook } from './people.js';
+import { setRigHook, POST_POSE } from './people.js';
+import { bodyOn, loadBody, attachBody, updateBodies, resetBodies, setBodyView } from './body.js';
 
 export const STAGES = ['intro', 'explore', 'minigame', 'quiz'];
-const rigWanted = () => { try { return new URLSearchParams(location.search).get('rig') === '1' || localStorage.getItem('goryeo-rig') === '1'; } catch { return false; } };
+// 공통 뼈대 몸: 켜져 있으면(bodyOn) body.glb를 불러 makePerson 끝에 뼈대를 붙이게 하고, 매 프레임 동작을 갱신한다. 못 불러오면 예전 인물로 한다
+async function prepareBodies(ctx) {
+  setRigHook(null);
+  if (!bodyOn()) return;
+  try {
+    await loadBody();
+    resetBodies(); setRigHook(attachBody); POST_POSE.add(updateBodies); setBodyView(ctx.world); // 멀리 있는 사람은 가볍게
+    if (ctx.world?.playerLookArgs) ctx.world.setPlayerLook(...ctx.world.playerLookArgs); // 학생도 뼈대 몸으로
+  } catch (e) { console.warn('뼈대 몸(body.glb)을 불러오지 못해 예전 인물로 한다', e); }
+}
 
 // next: 다음 장 { title }(사건 이름) 또는 다음 편 { era } — 장 모듈에 portal이 있으면 퀴즈 전에 그쪽으로 가는 빛나는 문을 세운다(C-02)
 export async function runChapter(meta, chapter, ctx, save, { resumeStage = 'intro', next = null } = {}) {
@@ -36,8 +46,7 @@ export async function runChapter(meta, chapter, ctx, save, { resumeStage = 'intr
     }
     const perf = ctx.world?.perf, t1 = performance.now(); // perf: 개발용 성능 측정(?perf=1)일 때만 있다
     setHairEra(eraOfChapter(chapter.id || meta?.id || ''), chapter.id || meta?.id || ''); // 이 장의 시대 머리 모양으로 인물을 짓는다(D-56)
-    setRigHook(null); // 블렌더 몸 시험(core/rigged.js): 시험이 켜져 있고 그 장이 대상일 때만 켠다. 꺼져 있으면 블렌더 코드를 불러오지도 않는다
-    if (rigWanted()) await (await import('./rigged.js')).prepareRig(chapter.id || meta?.id || '');
+    await prepareBodies(ctx); // 공통 뼈대 몸(core/body.js): 켜져 있으면 이 장에서 만드는 사람은 뼈대와 동작 묶음으로 움직인다
     const built = chapter.buildScene(ctx.world, ctx);
     const t2 = performance.now();
     if (chapter.bake !== false && ctx.world?.level && ctx.world.npcs) bakeLevel(ctx.world, built); // 움직이지 않는 조각을 재질별로 합쳐 태블릿에서 가볍게
