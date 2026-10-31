@@ -23,6 +23,7 @@ model: claude-opus-5-5
 - 고친 뒤 자기 diff를 다시 읽고 검토한다(틀린 역사 사실, 화면 밖 버튼, 다른 장에 미치는 영향).
 
 ## 테스트 규칙 (토큰 아끼기)
+- 단계(A 바뀐 부분 · B 관련 장면 · C 전체)와 블렌더 모델 검증 순서는 `docs/team/test-strategy.md`를 따른다(2026-10-31 선생님). 전체 테스트(C)는 공통 구조 변경·여러 시대 큰 수정·배포 직전에만.
 - **`docs/team/tested.md`에 '통과'로 적힌 장은, 메인이나 선생님이 다시 테스트하라고 하지 않으면 다시 돌리지 않는다.** 그 장 파일을 이번에 고쳤을 때만 다시 돌린다.
 - 전체 테스트는 돌리지 않는다. 고친 곳의 테스트만 돌린다:
   `NODE_PATH=$(npm root -g) PORT=8161 timeout 900 node tools/test-node.cjs "ch2" > $SCRATCH/t.txt 2>&1; grep -E "FAIL|RESULT" $SCRATCH/t.txt`

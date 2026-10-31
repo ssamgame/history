@@ -77,3 +77,7 @@ warn은 장면 연출일 수도 있다(예: 장이 학생을 새 자리로 옮�
 4. 같은 대상으로 `run.cjs`를 다시 돌려 그 감지가 사라졌는지, 사진이 맞는지 본다.
 5. 동작을 바꿨다면 `baseline.cjs`로 개발 마당 화면이 어떻게 바뀌었는지(`-diff.png`) 본다.
 6. 전체 테스트(`tools/test-node.cjs`)를 돌린다.
+
+## 언제 무엇을 돌리나
+
+`docs/team/test-strategy.md`(A 바뀐 부분 · B 관련 장면 · C 전체, 블렌더 모델 검증). 그리기 횟수 비교는 `drawcalls.cjs`.
