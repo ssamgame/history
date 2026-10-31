@@ -116,6 +116,7 @@ function unfall(m) {
 
 const FLY = 0.85, FALL = 0.5, LIE = 1.0, RISE = 0.6; // 화살 나는 시간, 쓰러지는 시간, 누워 있는 시간, 궁수가 올라오는 시간
 const SPOT_R = 1.6;
+const KEEP_CLEAR = 0.9, RUN_NEAR = 2.5, RUN_SPEED = 7; // 김윤후와 학생 사이를 이만큼 띄운다(몸이 겹치지 않게). 학생이 이만큼 가까이 따라오면 이 빠르기로 뛴다
 const angleOf = (p, cx) => { let a = Math.atan2(p.z, p.x - cx); if (a < 0) a += Math.PI * 2; return a; };
 export function cheoinDefense(ctx, easy) {
   const { world, hud, audio } = ctx;
@@ -156,6 +157,8 @@ export function cheoinDefense(ctx, easy) {
       hud.setTimer(null); hud.setCounter(null); world.setGoal(null); resolve(ok);
     };
     const pos = new THREE.Vector3(), ahead = new THREE.Vector3();
+    // 김윤후를 성벽 위 각도 na로 옮긴다: 걸으면 가는 쪽을, 서 있으면 가리킨 적 쪽(sa) 들판을 본다
+    const moveKim = (na, sa) => { const ka = angleOf(km, cx), ox = km.x, oz = km.z; km.set(cx + Math.cos(na) * R, CHEOIN.top, Math.sin(na) * R); if (Math.abs(na - ka) > 1e-6) kim.mesh.rotation.y = Math.atan2(km.x - ox, km.z - oz); else if (sa != null) kim.mesh.rotation.y = Math.atan2(Math.cos(sa), Math.sin(sa)); };
     const off = world.onUpdate(dt => {
       if (done) return;
       t += dt;
@@ -215,12 +218,14 @@ export function cheoinDefense(ctx, easy) {
           active.delete(target); shoot(target); ring.visible = false; pointed = null;
         }
         // 김윤후는 성벽 위를 걸어 그 자리 곁(학생 반대쪽)으로 가서 적 쪽을 본다
-        const ka = angleOf(km, cx), pa = angleOf(p, cx), goal = sa + (pa < sa ? 0.16 : -0.16), da = goal - ka, st = 3 / R * dt;
-        const na = Math.abs(da) > st ? ka + Math.sign(da) * st : goal, ox = km.x, oz = km.z;
-        km.set(cx + Math.cos(na) * R, CHEOIN.top, Math.sin(na) * R);
-        kim.mesh.rotation.y = Math.abs(da) > st ? Math.atan2(km.x - ox, km.z - oz) : Math.atan2(Math.cos(sa), Math.sin(sa)); // 걸을 때는 가는 쪽, 서면 들판 쪽
+        const ka = angleOf(km, cx), pa = angleOf(p, cx), goal = sa + (pa < sa ? 0.16 : -0.16), da = goal - ka;
+        const st = (Math.abs(ka - pa) * R < RUN_NEAR && Math.sign(da) === Math.sign(ka - pa) ? RUN_SPEED : 3) / R * dt; // 학생이 바로 뒤에 따라오면 학생보다 빨리 뛰어 앞서 간다
+        let na = Math.abs(da) > st ? ka + Math.sign(da) * st : goal;
+        if (na !== ka && Math.sign(na - ka) === Math.sign(pa - ka) && Math.abs(na - pa) * R < KEEP_CLEAR) na = ka; // 학생 몸을 지나가지 않는다(길에 있으면 그 앞에서 멈춘다)
+        moveKim(na, sa);
       } else { ring.visible = false; world.setGoal(null); }
-      kim.collider.x = 1e5; // 좁은 성벽 위에서 학생 길을 막지 않게
+      { const ka = angleOf(km, cx), pa = angleOf(p, cx); if (Math.abs(ka - pa) * R < KEEP_CLEAR && Math.abs(p.y - km.y) < 1) { const st = RUN_SPEED / R * dt, away = Math.sign(ka - pa) || 1; moveKim(Math.max(CHEOIN.arc[0], Math.min(CHEOIN.arc[1], ka + away * st)), null); } } // 학생이 걸어 들어오면 성벽을 따라 비켜선다(2026-10-31 자동 점검: 둘이 겹쳐 섰다)
+      kim.collider.x = 1e5; // 좁은 성벽 위에서 학생 길을 막지 않게(대신 김윤후가 비켜서고 앞서 뛴다)
       if (t >= duration) finish(true);
     });
   });

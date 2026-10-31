@@ -287,3 +287,29 @@ test('ch4: 처인성에 다가오는 몽골군은 기마병이 대부분이고, 
     ok(seen > 20, 'approached'); ok(worst < 0.01, `땅 높이와 차이 ${worst.toFixed(3)}`);
   } finally { s.done(); }
 });
+
+// 2026-10-31 자동 점검(tools/qa): "저기다!" 하고 가리키는 김윤후가 학생 몸에 겹쳐 섰다(성벽 위, 처인성에 들어선 첫 자리)
+test('ch4: 처인성 방어 내내 김윤후와 학생이 겹치지 않고, 처인성 첫 자리도 떨어져 선다', async () => {
+  const { cheoinDefense, putOnCheoinWall, setupCheoin } = await import('../chapters/ch4/chapter.js');
+  const s = touchSetup(ch4Script.speakers);
+  try {
+    const sc = ch4.buildScene(s.w, s.ctx);
+    setupCheoin(s.ctx);
+    let nearArcher = Infinity;
+    const p = s.w.player.position, km = s.w.npcs.get('kimyunhu').mesh.position;
+    ok(Math.hypot(p.x - km.x, p.z - km.z) > 1, `처인성 첫 자리 ${Math.hypot(p.x - km.x, p.z - km.z).toFixed(2)}m`);
+    putOnCheoinWall(s.ctx); cheoinDefense(s.ctx, false);
+    let near = Infinity, bumped = 0;
+    for (let i = 0; i < 700; i++) {
+      const g = s.w.getGoal(), into = i % 120 >= 70 && i % 120 < 90; // 120걸음마다 잠깐 김윤후 쪽으로 곧장 걸어 들어간다
+      const t = into ? km : g, d = t ? Math.hypot(t.x - p.x, t.z - p.z) : 0;
+      if (into) bumped += 1;
+      s.w.step(0.05, t && d > 0.2 ? { x: (t.x - p.x) / d, z: (t.z - p.z) / d } : { x: 0, z: 0 }); // 조이스틱으로 성벽 위를 걷는다
+      near = Math.min(near, Math.hypot(p.x - km.x, p.z - km.z));
+      for (const ar of sc.archers) { const q = ar.group.position; for (const w of [p, km]) nearArcher = Math.min(nearArcher, Math.hypot(w.x - q.x, w.z - q.z)); } // 성벽 위에 줄지어 선 궁수
+    }
+    ok(bumped > 60, 'bumped');
+    ok(near > 0.6, `가장 가까웠을 때 ${near.toFixed(2)}m`);
+    ok(nearArcher > 0.5, `궁수와 가장 가까웠을 때 ${nearArcher.toFixed(2)}m`);
+  } finally { s.done(); }
+}, { timeout: 60000 });

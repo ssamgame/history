@@ -216,6 +216,7 @@ function callLabel(world) { // 양규 머리 위 "저기다!"
 // 성벽 방어 한 번(D-8): 학생은 성벽 위를 걷는다. 거란 병사가 사다리를 세우면 양규가 "저기다!" 하고 그쪽을 가리키고
 // (성벽 위 빛나는 원·화살표), 학생이 그 자리에 가까이 가면 사다리를 밀어낸다. 버튼도 멈춤도 없다.
 // 성공: 사다리 10개를 밀어내거나 45초 버티기. 실패: 사다리 3개가 꼭대기까지 올라옴. 시간은 월드 시계로 잰다.
+const KEEP_CLEAR = 0.9, RUN_NEAR = 2.5, RUN_SPEED = 7; // 양규와 학생 사이를 이만큼 띄운다(몸이 겹치지 않게). 학생이 이만큼 가까이 따라오면 이 빠르기로 뛴다
 function wallDefense(ctx, easy) {
   const { world, hud, audio } = ctx;
   ctx.testHooks.wallAttempts = (ctx.testHooks.wallAttempts || 0) + 1;
@@ -294,11 +295,19 @@ function wallDefense(ctx, easy) {
         if (target) { callT = 1.6; ctx.testHooks.pointed = (ctx.testHooks.pointed || 0) + 1; }
       }
       callT -= dt; label.visible = callT > 0;
+      // 양규는 학생 몸을 지나가지 않고(학생이 길에 있으면 그 앞에서 멈춘다), 학생이 걸어 들어오면 성벽을 따라 비켜선다(2026-10-31 자동 점검: 둘이 겹쳐 섰다)
+      // 학생이 바로 뒤에 따라오거나 걸어 들어오면 학생(6.5m/s)보다 빨리 뛰어 앞서 간다(좁은 성벽이라 비켜설 곳이 없다)
+      const close = Math.abs(m.x - p.x) < RUN_NEAR, run = RUN_SPEED * dt;
+      let nx = m.x;
       if (target) {
-        const gx = clamp(target.x + (p.x <= target.x ? 1.6 : -1.6), WALL_BOUNDS.x0, WALL_BOUNDS.x1), dx = gx - m.x, step = 3.2 * dt;
-        if (Math.abs(dx) > step) setYanggyu(world, m.x + Math.sign(dx) * step, WALK_Z, dx > 0 ? Math.PI / 2 : -Math.PI / 2);
-        else yg.mesh.rotation.y = Math.atan2(target.x - m.x, -14 - m.z);
+        const gx = clamp(target.x + (p.x <= target.x ? 1.6 : -1.6), WALL_BOUNDS.x0, WALL_BOUNDS.x1), dx = gx - m.x, away = Math.sign(dx) === Math.sign(m.x - p.x);
+        const step = (close && away ? RUN_SPEED : 3.2) * dt;
+        if (Math.abs(dx) > step) nx = m.x + Math.sign(dx) * step; else nx = gx;
+        if (nx !== m.x && Math.sign(nx - m.x) === Math.sign(p.x - m.x) && Math.abs(nx - p.x) < KEEP_CLEAR) nx = m.x;
       }
+      if (Math.abs(m.x - p.x) < KEEP_CLEAR) { const away = Math.sign(m.x - p.x) || 1; nx = clamp(m.x + away * run, WALL_BOUNDS.x0, WALL_BOUNDS.x1); }
+      if (nx !== m.x) setYanggyu(world, nx, WALK_Z, nx > m.x ? Math.PI / 2 : -Math.PI / 2);
+      else if (target) yg.mesh.rotation.y = Math.atan2(target.x - m.x, -14 - m.z);
       world.setGoal(target ? { x: target.x, z: WALK_Z } : null);
       if (blocked >= NEED_PUSH || t >= duration) finish(true);
     });

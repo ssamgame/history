@@ -26,6 +26,7 @@ test('qa probe: 멀쩡한 장면(서 있는 사람·말 탄 사람·짐 든 사�
     const h = makeHorse(); h.position.set(-4, 0, 4); w.level.add(h); mount(h, makePerson(LOOKS.mongol));
     const seated = P('sejong', 5, 3); sitDown(seated); seated.position.y = 0; // 앉은 사람(조선 2장 세종): 가슴이 낮아도 몸통은 있다
     const torch = P('villager', -6, -3), glow = new THREE.Mesh(new THREE.SphereGeometry(0.4), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.12, depthWrite: false })); torch.userData.arms[1].add(glow); // 횃불 빛무리(근대 3장)는 몸이 아니다
+    w.player.position.set(0, 0, 6); w.player.traverse(o => { if (o.isMesh && !w.player.userData.arms.some(arm => { for (let q = o; q; q = q.parent) if (q === arm) return true; return false; })) o.visible = false; }); // 1인칭(고려 5장 서가): 두 팔만 보이는 학생
     const probe = createProbe(w);
     run(probe);
     eq(kinds(probe), [], '잡은 것');

@@ -29,7 +29,7 @@ export function cheoinPlace(p) {
     p.x = C.x + Math.cos(C.rampA) * al - Math.sin(C.rampA) * sd; p.z = C.z + Math.sin(C.rampA) * al + Math.cos(C.rampA) * sd;
     return C.top * (al - C.ramp0) / (C.R - C.ramp0);
   }
-  r = Math.max(C.R - 0.25, Math.min(C.R + 0.15, r)); a = Math.max(C.arc[0], Math.min(C.arc[1], a)); // 성벽 위: 북쪽 반원을 따라 걷는다
+  r = Math.max(C.R - 0.15, Math.min(C.R + 0.2, r)); a = Math.max(C.arc[0], Math.min(C.arc[1], a)); // 성벽 위: 북쪽 반원을 따라 걷는다(안쪽 가장자리는 궁수 자리)
   p.x = C.x + Math.cos(a) * r; p.z = C.z + Math.sin(a) * r;
   return C.top;
 }
@@ -300,8 +300,9 @@ export function buildCh4Scene(world) {
   const archers = [];
   for (let i = 0; i < 5; i++) {
     const a = Math.PI + 0.7 + i * (Math.PI - 1.4) / 4;
-    // D-13: 궁수는 학생과 같은 성벽 위에 줄지어 선다(학생 뒤 카메라와 학생 사이를 가리지 않게)
-    const x = CHEOIN_X + Math.cos(a) * (CHEOIN_R - 0.1), z = Math.sin(a) * (CHEOIN_R - 0.1);
+    // D-13: 궁수는 학생과 같은 성벽 위에 줄지어 선다(학생 뒤 카메라와 학생 사이를 가리지 않게). 성벽 윗면(두께 1.4m)의 안쪽 가장자리에 서서
+    // 학생·김윤후가 걷는 길(바깥쪽)을 비워 둔다(2026-10-31 자동 점검: 김윤후가 궁수 몸을 지나갔다)
+    const x = CHEOIN_X + Math.cos(a) * (CHEOIN_R - 0.68), z = Math.sin(a) * (CHEOIN_R - 0.68);
     const g = new THREE.Group(); g.visible = false; g.position.set(x, 0, z); g.scale.setScalar(1.3); L.add(g);
     const p = makePerson(i % 2 ? LOOKS.monk : LOOKS.villager); g.add(p);
     const bow = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.05, 4, 14, Math.PI), mat(0x5a3f2a));

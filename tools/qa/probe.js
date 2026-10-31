@@ -97,7 +97,7 @@ export function createProbe(world, { ui = null, label = () => '', limits = {} } 
     if (stats.t - groundAt > 2 || levelChanged) { collectGrounds(); groundAt = stats.t; }
     for (const p of people) {
       const u = p.userData;
-      if (p === world.player && u.head?.isObject3D && (!shown(u.head) || world.camera.position.distanceTo(u.head.getWorldPosition(v1)) < 0.9)) continue; // 1인칭(몸을 숨기고 눈 자리에 카메라를 둔 학생, 고려 5장 서가)
+      if (p === world.player) { let all = 0, hid = 0; p.traverse(o => { if (o.isMesh) { all += 1; if (!o.visible) hid += 1; } }); if (hid > all / 2) continue; } // 1인칭(몸 조각을 일부러 숨긴 학생, 고려 5장 서가)
       p.updateWorldMatrix(true, true);
       // 몸통: 가슴 높이 한 점을 덮는 조각이 있어야 한다(말 탄 사람의 몸통이 비던 오류). 팔은 빼고 본다
       const chest = u.upper.localToWorld(v1.set(0, 0.37, 0)).clone(); // 몸통 관절(허리, 1.05) 위 가슴: 앉거나(조선 2장 세종) 숙여도 따라간다

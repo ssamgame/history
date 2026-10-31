@@ -343,3 +343,22 @@ test('ch2 D-32: the ladder gauge fills yellow to red and the enemy climbs over w
     ok(!g.visible, 'gauge cleared after the climb');
   } finally { s.done(); }
 }, { timeout: 40000 });
+
+// 2026-10-31 자동 점검(tools/qa): "저기다!" 하고 가리키는 양규가 학생 몸에 겹쳐 섰다. 학생이 가리킨 곳으로 걸어가거나 양규 쪽으로 걸어 들어가도 둘은 겹치지 않는다
+test('ch2: 성벽 방어 내내 양규와 학생이 겹치지 않는다(학생이 가리킨 곳으로 가도, 양규에게 걸어 들어가도)', async () => {
+  const s = touchSetup(ch2Script.speakers);
+  try {
+    await wallStarted(s);
+    const p = s.w.player.position, m = s.w.npcs.get('yanggyu').mesh.position;
+    let near = Infinity, bumped = 0;
+    for (let i = 0; i < 600; i++) {
+      const g = s.w.getGoal(), into = i % 100 >= 60 && i % 100 < 75; // 100걸음마다 잠깐 양규 쪽으로 곧장 걸어 들어간다
+      const tx = into ? m.x : g ? g.x : p.x, dx = tx - p.x;
+      if (into) bumped += 1;
+      s.w.step(0.05, Math.abs(dx) > 0.15 ? { x: Math.sign(dx), z: 0 } : { x: 0, z: 0 }); // 조이스틱으로 걷는다(사람에게 막히는 것도 실제와 같다)
+      near = Math.min(near, Math.hypot(p.x - m.x, p.z - m.z));
+    }
+    ok(bumped > 40, 'bumped');
+    ok(near > 0.6, `가장 가까웠을 때 ${near.toFixed(2)}m`);
+  } finally { s.done(); }
+}, { timeout: 60000 });
