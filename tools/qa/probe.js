@@ -64,8 +64,8 @@ export function createProbe(world, { ui = null, label = () => '', limits = {} } 
   // 그 점을 감싸는(보이고 불투명한) 조각이 있는가
   const covered = (root, pt, skip = null) => {
     let hit = false;
-    root.traverse(o => { if (hit || !o.isMesh || (skip && skip(o)) || !shown(o)) return; const m = o.material; if (m && m.transparent && m.opacity < 0.5) return; box.setFromObject(o).expandByScalar(0.03); if (box.containsPoint(pt)) hit = true; });
-    return hit;
+    root.traverse(o => { if (hit || !o.isMesh || o.isSkinnedMesh || (skip && skip(o)) || !shown(o)) return; const m = o.material; if (m && m.transparent && m.opacity < 0.5) return; box.setFromObject(o).expandByScalar(0.03); if (box.containsPoint(pt)) hit = true; });
+    return hit; // 옷 속의 가는 몸(살붙인 몸)은 옷이 아니므로 세지 않는다
   };
   const inside = (o, root) => { for (let p = o; p; p = p.parent) if (p === root) return true; return false; };
 
@@ -99,8 +99,10 @@ export function createProbe(world, { ui = null, label = () => '', limits = {} } 
       const u = p.userData;
       if (p === world.player) { let all = 0, hid = 0; p.traverse(o => { if (o.isMesh) { all += 1; if (!o.visible) hid += 1; } }); if (hid > all / 2) continue; } // 1인칭(몸 조각을 일부러 숨긴 학생, 고려 5장 서가)
       p.updateWorldMatrix(true, true);
+      const SK = u.skel; // 공통 뼈대 몸(core/body.js): 손·가슴은 뼈에서 잰다(예전 관절은 빈 껍데기). 굳힌 군중은 조각이 장면 덩어리로 옮겨 가 사람 속이 비었다
+      if (SK?.frozen) continue;
       // 몸통: 가슴 높이 한 점을 덮는 조각이 있어야 한다(말 탄 사람의 몸통이 비던 오류). 팔은 빼고 본다
-      const chest = u.upper.localToWorld(v1.set(0, 0.37, 0)).clone(); // 몸통 관절(허리, 1.05) 위 가슴: 앉거나(조선 2장 세종) 숙여도 따라간다
+      const chest = (SK ? SK.bones('spine') : u.upper).localToWorld(v1.set(0, 0.37, 0)).clone(); // 몸통 관절(허리, 1.05) 위 가슴: 앉거나(조선 2장 세종) 숙여도 따라간다(뼈대 몸은 허리 뼈, 뼈의 y가 위)
       if (!covered(p, chest, o => inside(o, u.arms[0]) || inside(o, u.arms[1]) || inside(o, u.head))) report('torso', p, 'nothing covers the chest');
       // 머리: 머리 자리를 덮는 조각(장면 굳히기가 사람 조각을 사람 바로 아래로 합친 경우도 있어 사람 전체에서 찾는다)
       if (u.head?.isObject3D) { const noArms = o => inside(o, u.arms[0]) || inside(o, u.arms[1]), hc = u.head.localToWorld(v1.set(0, 0.45, 0)).clone(), hp = u.head.getWorldPosition(new THREE.Vector3()); if (!covered(p, hc, noArms) && !covered(p, hp, noArms)) report('head', p, 'head is empty'); }
@@ -124,7 +126,8 @@ export function createProbe(world, { ui = null, label = () => '', limits = {} } 
       const c = u.carry;
       if (c && c.obj && !['shoulder', 'back', 'flag'].includes(c.style) && !u.act) {
         const ow = c.obj.getWorldPosition(new THREE.Vector3()), s = p.getWorldScale(v2).x;
-        const d = Math.min(...u.arms.map(a => a.localToWorld(new THREE.Vector3(0, -ARM_LEN, 0)).distanceTo(ow)));
+        const hands = SK ? ['hand_L', 'hand_R'].map(n => SK.bones(n).getWorldPosition(new THREE.Vector3())) : u.arms.map(a => a.localToWorld(new THREE.Vector3(0, -ARM_LEN, 0)));
+        const d = Math.min(...hands.map(h => h.distanceTo(ow)));
         const T = track.get(p) || {};
         T.hand = d > L.hand * s + 0.3 * (c.obj.scale?.x || 1) ? (T.hand || 0) + dt * 4 : 0; // 잠깐(한두 프레임) 어긋난 것은 넘긴다
         if (T.hand > L.handSec) report('hand', p, `${d.toFixed(2)}m from the hands`);
