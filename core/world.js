@@ -1,7 +1,7 @@
 // 3D 무대: 렌더러, 분위기(하늘·안개·빛), 따라가는 카메라, 플레이어, 인물, 충돌, 목표 화살표.
 import * as THREE from 'three';
 import { QUALITY } from './quality.js';
-import { makePerson, animateWalk, animateWalkers, markerSprite } from './people.js';
+import { makePerson, animateWalk, animateWalkers, markerSprite, POST_POSE } from './people.js';
 import { animateHorses } from './horse.js';
 import { LOOKS } from '../content/characters.js';
 
@@ -381,6 +381,7 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
       } else goalArrow.visible = false;
       for (const fn of [...updaters]) fn(dt, elapsed); // 도중에 해제해도 안전하도록 복사본을 돈다
       animateWalkers(dt, scene); // 움직인 인물(따라오는 사람·감시원 등)은 다리를 흔든다
+      for (const f of POST_POSE) f(dt); // 뼈대 몸(블렌더 시험)이 관절을 따라간다
       animateHorses(dt, scene); // 말: 움직인 빠르기에 맞는 걸음새(core/horse.js)
       if (world.camMode === 'fixed' && fit && fit.aspect !== camera.aspect) applyFit();
       if (world.camMode === 'talk') {

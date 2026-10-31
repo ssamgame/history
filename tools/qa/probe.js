@@ -84,7 +84,7 @@ export function createProbe(world, { ui = null, label = () => '', limits = {} } 
       if (T && dt > 0 && dt < 0.1 && !levelChanged) {
         const sp = Math.hypot(w.x - T.x, w.z - T.z) / dt;
         if (sp > L.jumpSpeed && sp * dt > L.jumpDist) report('jump', p, `${(sp * dt).toFixed(2)}m in one frame`);
-        else if (!u.mounted && !u.noWalk && p !== world.player) { // 걷는 다리 없이 움직이면 미끄러져 보인다
+        else if (!u.mounted && !u.noWalk && !u.manual && p !== world.player) { // manual: 장면이 걸음을 직접 움직이는 사람(고려 1장 거란군 행군) // 걷는 다리 없이 움직이면 미끄러져 보인다
           const legsMove = (u.stride || 0) > 0.15 || !!u.act;
           T.glide = sp > L.glideSpeed && !legsMove ? (T.glide || 0) + dt : 0;
           if (T.glide > L.glideSec) report('glide', p, `${sp.toFixed(2)}m/s without stepping`);

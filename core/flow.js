@@ -5,6 +5,7 @@ import { bakeLevel } from './bake.js';
 import { showQuizView, endQuizView } from './quizview.js';
 import { portalStage } from './portal.js';
 import { playIntro } from './intro.js';
+import { setRigHook } from './people.js';
 
 export const STAGES = ['intro', 'explore', 'minigame', 'quiz'];
 
@@ -34,6 +35,7 @@ export async function runChapter(meta, chapter, ctx, save, { resumeStage = 'intr
     }
     const perf = ctx.world?.perf, t1 = performance.now(); // perf: 개발용 성능 측정(?perf=1)일 때만 있다
     setHairEra(eraOfChapter(chapter.id || meta?.id || ''), chapter.id || meta?.id || ''); // 이 장의 시대 머리 모양으로 인물을 짓는다(D-56)
+    setRigHook(null); // 블렌더 몸 시험은 그 장이 켤 때만(core/rigged.js)
     const built = chapter.buildScene(ctx.world, ctx);
     const t2 = performance.now();
     if (chapter.bake !== false && ctx.world?.level && ctx.world.npcs) bakeLevel(ctx.world, built); // 움직이지 않는 조각을 재질별로 합쳐 태블릿에서 가볍게

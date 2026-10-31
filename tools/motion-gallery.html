@@ -25,7 +25,7 @@
   import { addSculler, autoRow } from '../chapters/kit/row.js';
   import { rider as armyRider } from '../chapters/kit/army.js';
   import * as BLD from '../chapters/kit/buildings.js';
-  import { loadRig, makeRigged, animateRigged } from '../core/rigged.js';
+  import { loadRig, enableRig } from '../core/rigged.js';
   setHairEra(new URLSearchParams(location.search).get('era'), new URLSearchParams(location.search).get('ch') || '');
   const q = new URLSearchParams(location.search), act = q.get('act') || 'walk';
   const world = createWorld(document.getElementById('stage'), { quality: 'medium' });
@@ -153,10 +153,11 @@
     },
     async rig() { // 블렌더 시범(core/rigged.js): 위는 지금 인물, 아래는 블렌더로 만든 뼈대 인물. 같은 길을 걷기 → 빠른 걸음 → 달리기 → 멈춤
       await loadRig();
-      const looks = (q.get('looks') || 'villager').split(','); // 생김새마다 지금 인물(왼쪽)과 블렌더 인물(오른쪽)을 한 쌍으로, 쌍은 뒤로 늘어선다
+      const looks = (q.get('looks') || 'seohui').split(','); // 생김새마다 지금 인물(왼쪽)과 블렌더 몸 인물(오른쪽)을 한 쌍으로, 쌍은 뒤로 늘어선다. 긴 옷을 입은 생김새만 바뀐다
       const now = looks.map((l, i) => P(l, -12, -0.7 - i * 3, Math.PI / 2));
-      const rig = looks.map((l, i) => { const r = makeRigged(LOOKS[l]); r.position.set(-12, 0, 0.7 - i * 3); r.rotation.y = Math.PI / 2; g.add(r); return r; });
-      world.onUpdate(dt => rig.forEach(r => animateRigged(r, dt)));
+      enableRig(true); // 이제부터 만드는 사람은 블렌더 몸(움직임은 지금 게임의 움직임 코드 그대로)
+      const rig = looks.map((l, i) => P(l, -12, 0.7 - i * 3, Math.PI / 2));
+      enableRig(false);
       window.__hooks.rig = rig;
       track(now[0], q.get('side') ? [0, 1.3, 7] : [4.5, 1.6, 5]); // 앞쪽 비스듬히(&side=1이면 옆에서)
       const all = [...now, ...rig], go = (x, sp) => Promise.all(all.map(p => walkTo(world, p, [x, p.position.z], { speed: sp })));

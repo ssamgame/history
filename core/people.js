@@ -443,8 +443,14 @@ export function makePerson(look = {}, { track = true, stable = false } = {}) {
   if (gear === 'spear') { const sp = arms[1].getObjectByName('spear'); if (sp) sp.rotation.x = 0.25; } // 팔을 앞으로 든 만큼 창을 세운다
   g.userData = { legs, arms, walk: 0, head: hg, upper, grip, gear, lookAge: face.age, ph: rnd * 20, spear: gear === 'spear' ? arms[1].getObjectByName('spear') : null };
   if (track) walkers.add(g);
-  return g;
+  return rigHook ? rigHook(g, look) : g; // 블렌더 몸 시험(core/rigged.js): 켜져 있으면 몸통 조각을 뼈대 있는 몸으로 바꾼다
 }
+
+// 블렌더 몸 시험(2026-10-31): core/rigged.js가 켜고 끈다. 끈 동안 makePerson은 지금과 똑같다.
+// POST_POSE: 한 프레임의 걸음·동작 자세를 다 정한 뒤 부르는 일(뼈대 몸이 사람의 관절을 따라간다). world.step이 부른다
+let rigHook = null;
+export function setRigHook(fn) { rigHook = fn; }
+export const POST_POSE = new Set();
 
 // 상황 표정(D-55): 'neutral'·'talk'·'surprise'·'worry'·'anger'·'joy'·'tension'(core/facebuild.js EXPRESSIONS). 같은 얼굴 짜임으로 다시 그린 무늬로 바꾼다
 export function setExpression(person, expr = 'neutral') {

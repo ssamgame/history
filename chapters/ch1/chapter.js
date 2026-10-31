@@ -6,6 +6,10 @@ import { enterThroughGate } from '../kit/gate.js';
 import { gangdongScene } from './story.js';
 import { waitInteract } from '../../core/portal.js';
 import * as THREE from 'three';
+import { rigTrialOn, loadRig, enableRig } from '../../core/rigged.js';
+
+// 블렌더 몸 시험(2026-10-31 선생님: 먼저 한 장에): 켤 때만(?rig=1 또는 저장된 설정 goryeo-rig=1) 이 장의 긴 옷 인물이 뼈대 있는 몸이 된다
+if (rigTrialOn()) await loadRig();
 
 export const START = [0, 19];
 export const INTRO_FROM = [0, 36]; // 장 시작 장면: 진영 밖 길(걷는 곳 z1=22 바깥)
@@ -120,7 +124,7 @@ export default {
   quizzes: script.quizzes,
   stories: { gangdong: gangdongScene }, // 이야기 장면(D-58, 개발용 ?debug=ch1-story&s=gangdong과 테스트)
 
-  buildScene(world) { scene = buildCh1Scene(world); return scene; },
+  buildScene(world) { enableRig(rigTrialOn()); scene = buildCh1Scene(world); return scene; },
 
   // 이어하기로 중간 단계부터 시작할 때 장면을 그 단계에 맞춘다.
   // 장 도입(C-03): 강 건너 거란 진영에서 군대가 나아오고, 소손녕이 고려 쪽을 바라본다
