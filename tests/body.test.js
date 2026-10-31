@@ -159,3 +159,21 @@ test('body: 뼈대 몸을 켜면(goryeo-body=1) 고려 1장을 터치만으로 �
     ok(most >= 5, `뼈대 몸으로 움직인 사람 ${most}명`);
   } finally { localStorage.removeItem('goryeo-body'); off(); bot.stop(); s.done(); }
 }, { timeout: 240000 });
+
+// 2026-10-31 선생님: 걸음 박자가 너무 빠르고 짐을 들면 뛰는 것처럼 보였다. 뼈대 몸도 박자(동작 재생 빠르기 × 동작 한 바퀴 두 걸음)를 사람 박자 안에 둔다
+test('body: 걸음 박자는 빠르기가 올라도 사람 박자 안이고, 짐을 들어도 빨라지지 않는다', async () => {
+  await loadBody(); on();
+  const w = testWorld();
+  try {
+    const steps = p => { const S = p.userData.skel, a = S.acts[S.target] || S.cur; return a.timeScale * 2 / a.getClip().duration; };
+    for (const v of [1.2, 2.0, 3.0, 4.2, 6.5]) {
+      const f = makePerson(LOOKS.villager), c = makePerson(LOOKS.villager); w.level.add(f, c);
+      setCarry(c, new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5)), 'arms');
+      for (let i = 0; i < 50; i++) { f.position.x += v / 20; c.position.x += v / 20; w.step(1 / 20, { x: 0, z: 0 }); }
+      const a = steps(f), b = steps(c);
+      ok(a <= (v <= 2.2 ? 2.5 : 3.6), `${v}m/s 빈손(${f.userData.skel.target}): 1초에 ${a.toFixed(2)}걸음`);
+      ok(b <= a * 1.08 + 0.05, `${v}m/s 짐(${c.userData.skel.target}): 1초에 ${b.toFixed(2)}걸음(빈손 ${a.toFixed(2)})`);
+      w.level.remove(f, c);
+    }
+  } finally { off(); w.dispose(); }
+}, { timeout: 30000 });

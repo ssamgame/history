@@ -360,7 +360,7 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
       const len = Math.hypot(move.x, move.z), moving = len > 0.01;
       const p = player.position;
       if (moving) {
-        const sp = SPEED * (world.speedScale || 1); // 배·전차 같은 탈것은 더 빠르게
+        const sp = SPEED * (world.speedScale || 1) * (player.userData.carry ? 0.85 : 1); // 배·전차 같은 탈것은 더 빠르게. 짐을 들면 조금 느리게(2026-10-31 선생님)
         p.x += move.x * sp * dt; p.z += move.z * sp * dt;
         for (const c of world.colliders) {
           const dx = p.x - c.x, dz = p.z - c.z, d = Math.hypot(dx, dz), min = c.r + PLAYER_R;

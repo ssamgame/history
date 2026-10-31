@@ -82,7 +82,7 @@ export function equipFollowers(world, { torch = false } = {}) {
   return off;
 }
 
-// 뛰기: 몸을 조금 숙이고 빠른 걸음으로 to까지 sec초 동안(공용 걷기를 빠르게 돌린다). 끝나면 자세를 되돌린다
+// 뛰기: 몸을 조금 숙이고 to까지 sec초 동안(공용 걷기, 박자는 실제 빠르기에서). 끝나면 자세를 되돌린다
 export function runTo(world, mesh, to, sec = 2, { lean = 0.25, speed = 2.2, heightAt = null } = {}) { // heightAt(x, z): 언덕을 오르내리는 높이
   const u = mesh.userData, p0 = mesh.position.clone(), order = mesh.rotation.order;
   u.manual = true; mesh.rotation.order = 'YXZ';
@@ -95,7 +95,7 @@ export function runTo(world, mesh, to, sec = 2, { lean = 0.25, speed = 2.2, heig
       mesh.position.set(p0.x + (to.x - p0.x) * f, p0.y, p0.z + (to.z - p0.z) * f);
       if (heightAt) mesh.position.y = heightAt(mesh.position.x, mesh.position.z);
       mesh.rotation.y = ry; mesh.rotation.x = lean * Math.min(1, t / 0.25);
-      animateWalk(mesh, true, dt * speed);
+      animateWalk(mesh, true, dt); // 걸음 박자는 실제 빠르기에서(2026-10-31 선생님: 다리만 빨리 돌려 종종걸음처럼 보였다). speed는 예전 호출 호환용으로 받기만 한다
       if (t >= sec) {
         off(); mesh.rotation.x = 0; mesh.rotation.order = order; u.manual = false;
         for (const l of u.legs || []) l.rotation.x = 0;

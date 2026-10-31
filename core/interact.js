@@ -26,13 +26,15 @@ export async function turnTo(world, p, target, { speed = 4 } = {}) {
 
 // 목적지(부모 좌표 x, z)까지 걷는다: 먼저 그쪽으로 몸을 틀며 출발하고(가속), 가는 동안 방향을 부드럽게 맞추며, 다 와서는 감속해 멈춘 뒤 face 쪽으로 선다.
 // 걸음 박자는 실제 빠르기에서 정해지므로(motion.js) 발이 미끄러지지 않는다
+export const CARRY_SLOW = 0.85; // 짐을 든 사람의 걸음 빠르기 비율
 export function walkTo(world, p, [x, z], { speed = 1.6, face = null, accel = 0.5 } = {}) {
   return new Promise(res => {
     let sp = 0;
     const off = world.onUpdate(dt => {
       const dx = x - p.position.x, dz = z - p.position.z, d = Math.hypot(dx, dz);
       const slow = Math.min(1, d / 1.2); // 다 와 가면 늦춘다
-      sp = Math.min(speed * Math.max(0.25, slow), sp + speed / accel * dt);
+      const top = speed * (p.userData.carry ? CARRY_SLOW : 1); // 짐을 들면 조금 느리게(2026-10-31 선생님)
+      sp = Math.min(top * Math.max(0.25, slow), sp + top / accel * dt);
       const want = Math.atan2(dx, dz), turn = wrap(want - p.rotation.y);
       p.rotation.y += turn * Math.min(1, dt * 7);
       const go = Math.min(d, sp * dt * Math.max(0, Math.cos(turn))); // 크게 돌아야 하면 돌면서 천천히

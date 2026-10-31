@@ -1,5 +1,6 @@
 // 1장 장면: 노을 진 고려 진영, 강, 강 건너 거란 진영, 강동 6주 빛기둥.
 import * as THREE from 'three';
+import { stepRate } from '../../core/gait.js';
 import { backdropMountains, surroundings } from '../kit/terrain.js';
 import { curvedHipRoof, tent, cart, boat, watchtower, spearRack, archeryTarget } from '../kit/buildings.js';
 import { BUILD } from '../kit/town.js';
@@ -310,7 +311,7 @@ export function buildCh1Scene(world) {
         if (e < 1) continue;
         const sp = MARCH * Math.min(1, (k - 0.55) / 0.9); // 돌아선 뒤 천천히 빨라진다
         o.position.x += DX * sp * dt; o.position.z += DZ * sp * dt; u.dist = (u.dist || 0) + sp * dt;
-        const ph = u.dist * Math.PI / STEP + u.ph; // 반 바퀴가 한 걸음
+        u.walkPh = (u.walkPh || 0) + Math.PI * stepRate(sp) * dt; const ph = u.walkPh + u.ph; // 반 바퀴가 한 걸음, 박자는 사람 걸음 박자(core/gait.js, 2026-10-31 선생님: 1초에 3걸음 넘게 바빴다)
         o.position.y = Math.max(0, groundH(o.position.x, o.position.z)) + (o === horse ? 0 : marchGait(o, ph) * Math.min(1, u.dist)); // 말 걸음은 core/horse.js가 맡는다
         const a = Math.min(1, Math.max(0, (o.position.z - GONE) / (FADE_FROM - GONE)));
         for (const m of u.mats) m.opacity = a;

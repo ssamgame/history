@@ -10,6 +10,7 @@
 // 장 코드가 직접 정한 팔 자세(만세 등)는 걷지 않는 동안 건드리지 않는다(예전과 같다).
 import * as THREE from 'three';
 import { play, paceScale, manualGait, holdOnBody } from './body.js'; // 공통 뼈대 몸(2026-10-31): userData.skel이 있는 사람은 동작 묶음으로 움직인다
+import { stepRate } from './gait.js'; // 걸음 박자(사람 박자 안)
 
 export const HIP = 1.05; // 몸통 관절(upper) 높이: 상체·팔·머리·든 물건은 이 관절의 자식
 const LEGLEN = 0.55;    // 다리(골반 관절~발바닥) 길이: makePerson의 다리 관절 높이
@@ -167,7 +168,11 @@ export function animateWalk(person, moving, dt) {
   const heavy = c0 ? Math.max(c0.heavy, u.carry.obj.userData.heavy ? 1 : 0) : 0;
   const k = ss(0, 0.25, v), run = ss(3.2, 5, v) * (1 - heavy * 0.7);
   // 한 걸음 보폭(m): 느리면 짧게, 빠르면 길게. 달리기는 두 발이 뜬 사이만큼 더 나아간다
-  const sf = st.stride * (1 - heavy * 0.25) * (0.95 + ((u.ph * 7.3) % 1) * 0.1), walkStep = (0.36 + 0.3 * Math.min(1, v / 1.5) + 0.2 * ss(1.2, 2.8, v)) * sf, step = walkStep + 0.55 * run * sf;
+  // 걸음 박자는 사람 박자 안에서(core/gait.js), 한 걸음 길이 = 간 거리 ÷ 걸음 수. 짧게 걷는 모양(포로·지친 걸음)은 박자를 조금 더 빨리, 짐은 박자를 늦춘다(종종걸음·뛰는 모습이 되지 않게)
+  const sf = st.stride * (0.95 + ((u.ph * 7.3) % 1) * 0.1), cad = stepRate(v, heavy) * (1 + (1 - st.stride) * 0.45) / (0.95 + ((u.ph * 7.3) % 1) * 0.1);
+  const step = cad > 0 ? v / cad : 0;
+  if (moving) m.wStep = Math.max(0.3 * sf, step - 0.55 * run * sf); // 멈추는 동안에는 걷던 다리 폭을 그대로 두고 걸음을 마저 디디며 모은다(한 프레임에 확 줄지 않게)
+  const walkStep = m.wStep ?? 0.3 * sf;
   // 다리를 벌리는 각도는 그 보폭에서 바로 나온다: 디딘 발이 땅에 붙은 채 몸이 한 걸음 나아가려면 2 × 다리 길이 × sin(각도) = 보폭
   const amp = Math.asin(Math.min(0.78, walkStep / (2 * LEGLEN))) * (1 - 0.25 * run) + 0.06 * run; // 달릴 때는 뜬 사이에 나아가므로 다리를 덜 벌린다
   const was = u.stride || 0;
@@ -175,7 +180,7 @@ export function animateWalk(person, moving, dt) {
   if (u.stride < 0.002 && !moving) u.stride = 0;
   const kk = Math.min(u.stride, k + (moving ? 0 : u.stride * 0.6));
   // 걸음 박자 = 간 거리 ÷ 보폭(반 바퀴가 한 걸음). 멈추는 동안만 남은 걸음을 마저 디딘다
-  if (moving || u.stride > 0) u.walk = (u.walk || 0) + dt * Math.max(Math.PI * v / step, moving ? 0 : 2.5);
+  if (moving || u.stride > 0) u.walk = (u.walk || 0) + dt * Math.max(Math.PI * cad, moving ? 0 : 2.5);
   const ph = (u.walk || 0) + u.ph, s = Math.sin(ph), c = Math.cos(ph);
   const working = !moving && u.work;
   // 들썩임: 몸은 다리가 곧게 선 순간 가장 높고 두 다리가 벌어진 순간 내려앉는다(발이 땅에 붙어 있게). 지난 프레임에 더한 값을 빼고 새 값을 더한다
@@ -284,9 +289,9 @@ function animateSkel(person, moving, dt) {
   else if (c && c.style === 'arms') name = walking ? 'carry' : 'idle_carry';
   else if (u.gear === 'spear' && !c) name = walking ? 'walk_spear' : 'idle_spear';
   else if (u.gear === 'sword' && !c) name = walking ? 'walk_sword' : 'idle_sword';
-  else if (walking) name = u.gear === 'bow' && v < 2.8 ? 'walk_bow' : (v > 3.3 || (curName === 'run' && v > 2.9)) ? 'run' : 'walk';
+  else if (walking) name = u.gear === 'bow' && v < 2.8 ? 'walk_bow' : (v > 2.7 || (curName === 'run' && v > 2.4)) ? 'run' : 'walk'; // 걷기 동작은 보폭이 짧아 빨리 가면 발이 미끄러지므로 조금 일찍 달리기로
   else name = 'idle';
-  play(person, name, 0.25, paceScale(name, v));
+  play(person, name, 0.25, paceScale(name, v, c ? Math.max((CARRY[c.style] || CARRY.arms).heavy, c.obj?.userData?.heavy ? 1 : 0) : 0));
   // 예전 관절에 적는 자세
   const arms = u.arms, P0 = c && c.style !== 'arms' ? (CARRY[c.style] || null) : null;
   const G = u.talk && u.talk.role === 'speak' && u.talk.expr !== 'talk' ? (GESTURE[u.talk.expr] || null) : null;

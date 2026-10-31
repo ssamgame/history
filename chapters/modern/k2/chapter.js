@@ -104,7 +104,7 @@ function lantern(g, x, z, h = 2.4) {
 const names = (a, list) => list.forEach(n => nameBoard(a.group, n.text, n.x, n.z));
 
 // 달아나기(D-30 G-04): 몸을 앞으로 숙이고, 걷기보다 두 배 넘게 빠른 걸음으로 팔·다리를 크게 흔들며 to까지 sec초 동안 뛴다.
-// 공용 걸음(animateWalk)을 이 장에서 빠르게 돌린다. 끝나면 자세를 되돌린다
+// 공용 걸음(animateWalk), 박자는 실제 빠르기에서. 끝나면 자세를 되돌린다
 export function runAway(world, mesh, to, sec = 2.5, { lean = 0.3 } = {}) {
   const u = mesh.userData, p0 = mesh.position.clone(), order = mesh.rotation.order;
   u.manual = true; mesh.rotation.order = 'YXZ'; // 걷기 자동 움직임에서 잠깐 빼고, 숙임은 몸이 보는 쪽 기준으로
@@ -117,7 +117,7 @@ export function runAway(world, mesh, to, sec = 2.5, { lean = 0.3 } = {}) {
       const f = Math.min(1, e / 0.925);
       mesh.position.set(p0.x + (to.x - p0.x) * f, p0.y, p0.z + (to.z - p0.z) * f);
       mesh.rotation.y = ry; mesh.rotation.x = lean * Math.min(1, t / 0.25);
-      animateWalk(mesh, true, dt * 2.4);
+      animateWalk(mesh, true, dt); // 걸음 박자는 실제 빠르기에서(2026-10-31 선생님: 다리만 빨리 돌려 종종걸음처럼 보였다). 숙임·크게 흔드는 팔다리로 달아나는 느낌
       for (const a of u.arms || []) a.rotation.x *= 1.5;
       for (const l of u.legs || []) l.rotation.x *= 1.25;
       if (t >= sec) {

@@ -8,6 +8,7 @@
 // 그때만 동작 위에 얹힌다(관절이 쉬는 자세면 덧씌움 0). 그래서 지금 장 코드의 호출 방식은 그대로다.
 // body.glb를 못 불러오면(또는 꺼 두면) makePerson은 예전과 똑같다.
 import * as THREE from 'three';
+import { stepRate } from './gait.js';
 import { GLTFLoader } from '../vendor/jsm/loaders/GLTFLoader.js';
 import { clone as cloneSkinned } from '../vendor/jsm/utils/SkeletonUtils.js';
 
@@ -113,7 +114,8 @@ function blend(S, dt) {
   }
 }
 // 걷는 빠르기(m/s)에 맞춘 박자
-export const paceScale = (name, v) => { const p = PACE[name]; return p ? Math.max(0.35, v / (p[0] / p[1])) : 1; };
+// 동작 재생 빠르기: 동작 한 바퀴(두 걸음)를 사람 걸음 박자(core/gait.js)에 맞춘다(2026-10-31 선생님: 예전에는 빠르기에 비례해 다리만 바빠졌다)
+export const paceScale = (name, v, heavy = 0) => { const p = PACE[name]; return p ? Math.max(0.35, stepRate(v, heavy) * p[1] / 2) : 1; };
 // 장이 걸음 박자를 직접 주는 사람(gaitPose): 걷는 동작을 그 박자 자리에 세운다(ph 2π = 두 걸음)
 export function manualGait(g, ph, k) {
   const S = g.userData.skel; if (!S) return 0;

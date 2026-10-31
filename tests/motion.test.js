@@ -88,7 +88,7 @@ test('motion: 걷는 모양 — 포로는 숙이고 손을 모으고 짧게 걷�
   ok(rb.amp < ra.amp, '짧은 걸음');
   ok(b.userData.arms.every(x => x.rotation.x < -0.3), '앞으로 모은 손');
   const c = makePerson(LOOKS.worker, { track: false }); setCarry(c, new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5)), 'back');
-  ok(walkAt(c, 1.2, 40).amp < ra.amp, '등짐은 보폭이 준다');
+  ok(walkAt(c, 1.2 * 0.85, 40).amp < ra.amp, '등짐은 보폭이 준다'); // 짐을 든 사람은 15% 느리게 걷는다(core/interact.js CARRY_SLOW, 2026-10-31): 그 빠르기에서 보폭이 짧다(같은 빠르기에서 보폭만 줄이면 박자가 빨라져 뛰는 것처럼 보였다)
 });
 
 test('motion: 대화 손짓은 표정마다 다르고, 끝나면 팔을 내린다', () => {
@@ -261,3 +261,40 @@ test('motion: 걷기 전에 물건을 들려도(깃발·짐) 팔·몸 각도가 
     eq(bad, 0, `${style}: NaN인 조각`);
   }
 });
+
+// 2026-10-31 선생님: 인물 걸음 박자가 너무 빠르고(빨리 움직이는 인물은 다리만 바쁘다), 물건을 들면 빠르기는 그대로인데 보폭이 짧아져 뛰는 것처럼 보였다.
+// 걸음 박자(1초에 걷는 걸음 수)는 빠르기가 올라도 사람 박자 안에 머물고(대신 보폭이 길어진다), 짐을 들어도 박자가 빨라지지 않는다
+const cadence = (p, v) => { walkAt(p, v, 45); return walkAt(p, v, 90).steps / Math.PI / 3; };
+test('motion: 걸음 박자는 빠르기가 올라도 사람 박자 안(걷기 2.5·달리기 3.6걸음/초 이하)이고, 짐을 들어도 빨라지지 않는다', () => {
+  const box = () => new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5));
+  for (const v of [1.2, 2.0, 3.0, 4.2, 6.5]) {
+    const free = makePerson(LOOKS.villager, { track: false }); free.scale.setScalar(1);
+    const f = cadence(free, v);
+    ok(f <= (v <= 2.2 ? 2.5 : 3.6), `${v}m/s 빈손: 1초에 ${f.toFixed(2)}걸음`);
+    for (const style of ['arms', 'back', 'shoulder', 'side']) {
+      const c = makePerson(LOOKS.villager, { track: false }); c.scale.setScalar(1); setCarry(c, box(), style);
+      const k = cadence(c, v);
+      ok(k <= f * 1.08 + 0.05, `${v}m/s ${style} 짐: 1초에 ${k.toFixed(2)}걸음(빈손 ${f.toFixed(2)})`);
+    }
+  }
+});
+
+test('interact: 짐을 든 사람은 걸어가기가 조금(약 15%) 느리다, 학생도 짐을 들면 조금 느리다', async () => {
+  const w = testWorld();
+  try {
+    const timeTo = async carry => {
+      const p = makePerson(LOOKS.worker); p.position.set(0, 0, 0); w.level.add(p);
+      if (carry) setCarry(p, new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5)), 'arms');
+      let t = 0, done = false; walkTo(w, p, [12, 0], { speed: 2 }).then(() => { done = true; });
+      while (!done && t < 30) { w.step(1 / 30, { x: 0, z: 0 }); t += 1 / 30; await null; }
+      return t;
+    };
+    const a = await timeTo(false), b = await timeTo(true);
+    ok(b / a > 1.1 && b / a < 1.25, `빈손 ${a.toFixed(2)}초, 짐 ${b.toFixed(2)}초`);
+    const pl = w.player; pl.position.set(0, 0, 0); w.bounds = { x0: -50, x1: 50, z0: -50, z1: 50 };
+    for (let i = 0; i < 30; i++) w.step(1 / 30, { x: 1, z: 0 }); const free = pl.position.x;
+    setCarry(pl, new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5)), 'arms'); pl.position.set(0, 0, 0);
+    for (let i = 0; i < 30; i++) w.step(1 / 30, { x: 1, z: 0 }); const held = pl.position.x;
+    ok(held / free > 0.8 && held / free < 0.9, `학생 1초: 빈손 ${free.toFixed(2)}m, 짐 ${held.toFixed(2)}m`);
+  } finally { w.dispose(); }
+}, { timeout: 30000 });
