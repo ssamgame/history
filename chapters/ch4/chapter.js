@@ -282,7 +282,7 @@ export async function salitaiScene(ctx) {
   const from = new THREE.Vector3(kp.x, kp.y + 2.1, kp.z), to = new THREE.Vector3(sx, horse.position.y + 3.6, sz), pos = new THREE.Vector3(), ahead = new THREE.Vector3();
   await wait(world, 1.0, k => { pos.lerpVectors(from, to, k); pos.y += Math.sin(Math.PI * k) * 1.6; ahead.lerpVectors(from, to, Math.min(1, k + 0.05)); ahead.y += Math.sin(Math.PI * Math.min(1, k + 0.05)) * 1.6; arrow.position.copy(pos); arrow.lookAt(ahead); world.setFixedCamera(camAt.map((c, i) => c + ([sx, 2.2, sz][i] - c) * 0.35 * k), look); });
   sal.attach(arrow); // 화살은 꽂힌 채 남는다
-  await aim;
+  aim.catch(() => {}); await wait(world, 0.3); // 활을 내린다(동작이 끝나기를 기다리지 않는다)
   // 살리타가 뒤로 넘어가며 말에서 떨어진다
   const p0 = new THREE.Vector3(); sal.getWorldPosition(p0); g.worldToLocal(p0); g.attach(sal); sal.rotation.order = 'YXZ';
   const groundY = fieldH(sx, sz - 1.2);

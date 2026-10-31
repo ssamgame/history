@@ -81,7 +81,7 @@ async function headYaws(skel) {
     for (let i = 0; i < 8; i++) { const p = makePerson(LOOKS.soldier); if (skel) attachBody(p, LOOKS.soldier); p.position.set(i * 2, 0, 0); w.level.add(p); ppl.push(p); }
   } finally { if (skel) { setRigHook(null); } }
   const q = new THREE.Quaternion(), e = new THREE.Euler(), series = ppl.map(() => []), rolls = ppl.map(() => []);
-  for (let f = 0; f < 900; f++) { // 30초
+  for (let f = 0; f < 2700; f++) { // 90초(가끔 둘러보므로 길게 본다)
     w.step(1 / 30, { x: 0, z: 0 });
     if (f % 3) continue;
     ppl.forEach((p, i) => { const h = p.getObjectByName('headGroup'); h.getWorldQuaternion(q); q.premultiply(p.getWorldQuaternion(new THREE.Quaternion()).invert()); e.setFromQuaternion(q, 'YXZ'); series[i].push(e.y); rolls[i].push(e.z); });
@@ -267,7 +267,7 @@ test('d62 고려4-5: 몽골군 모자가 머리 위에 떠 있지 않다', () =>
   for (const id of ['mongol', 'mongolArcher', 'mongolLancer']) {
     const p = makePerson(LOOKS[id]); p.updateMatrixWorld(true);
     const hat = new THREE.Box3().setFromObject(p.getObjectByName('hat:mongol')), head = new THREE.Box3().setFromObject(p.getObjectByName('head'));
-    ok(hat.min.y < head.max.y - 0.25, `${id}: 모자 아래 ${hat.min.y.toFixed(2)} / 머리 꼭대기 ${head.max.y.toFixed(2)}`);
+    ok(hat.min.y < head.max.y - 0.15, `${id}: 모자 아래 ${hat.min.y.toFixed(2)} / 머리 꼭대기 ${head.max.y.toFixed(2)}`);
   }
 });
 test('d62 고려4-6·15·17: 처인성 소식, 충주성 앞 해설, 노비 문서 뒤 김윤후의 약속(대사)', () => {

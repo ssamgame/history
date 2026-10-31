@@ -65,11 +65,11 @@ test('goryeo4: 왜 강화도냐는 물음에 상황에 맞는 말로 답하고, 
   ok(done.includes('1232') && done.includes('함락'), done);
 });
 
-test('goryeo4: 처인성 화살은 멀리서도 보이게 크고 빛나는 꼬리가 있다', () => {
+test('goryeo4: 처인성 화살은 멀리서도 보이게 크다(D-62: 보통 화살, 불·빛줄기 없음)', () => {
   const s = touchSetup(ch4Script.speakers);
   try {
     const sc = ch4.buildScene(s.w, s.ctx);
-    ok(sc.arrows.every(a => a.scale.x >= 3.5 && a.getObjectByName('trail')), '큰 화살과 꼬리');
+    ok(sc.arrows.every(a => a.scale.x >= 3 && !a.getObjectByName('trail') && !a.getObjectByName('fireTip')), '크게 만든 보통 화살(D-62: 불·빛줄기 없음)');
   } finally { s.done(); }
 });
 
@@ -77,11 +77,12 @@ test('goryeo4: 노비 문서는 글씨가 있는 종이이고, 불꽃이 일며 
   const s = touchSetup(ch4Script.speakers);
   try {
     const sc = ch4.buildScene(s.w, s.ctx);
-    const paper = sc.documents.children[0];
-    ok(paper.material.map, '종이 그림(노비 문서)');
+    const paper = sc.documents.children[sc.documents.children.length - 1]; // 맨 위 종이(D-62: 쌓은 문서 뭉치, 위에서부터 탄다)
+    const face = paper.material.find(m => m.map);
+    ok(face, '종이 그림(노비 문서)');
     const burn = sc.burnDocuments();
     step(s.w, 2);
-    ok(sc.smoke.visible && paper.material.color.r < 0.9, '연기가 나고 종이 색이 변한다');
+    ok(sc.smoke.visible && (face.color.r < 0.9 || !paper.visible), '연기가 나고 종이 색이 변한다');
     ok(sc.fire.visible, '불꽃이 인다');
     step(s.w, 6.5); await burn;
     eq(sc.fire.visible, false, '불이 잦아든다');

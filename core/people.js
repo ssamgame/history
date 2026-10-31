@@ -360,9 +360,9 @@ export function makePerson(look = {}, { track = true, stable = false } = {}) {
     part(new THREE.SphereGeometry(0.327, 12, 6, Math.PI, Math.PI, Math.PI / 2.6, 0.5), hc, 0, 0, -0.02, hz, 'grain').scale.set(1, 1, 0.98); // 뒤통수 아래 머리
   } else if (hat === 'mongol') {    // 몽골 모자: 털 두른 챙과 둥글게 솟은 모자, 꼭대기 술. loops: 귀 뒤로 땋아 늘어뜨린 고리
     const hz = new THREE.Group(); hz.name = 'hat:mongol'; hg.add(hz); hz.rotation.x = -0.12; // 머리에 눌러 쓴다(D-62: 예전엔 정수리 위에 떠 있었다). 앞을 살짝 들어 눈썹이 보이게
-    part(new THREE.CylinderGeometry(0.39, 0.37, 0.11, 14), 0x6a5038, 0, 0.17, 0, hz, 'grain'); // 털 두른 챙(머리 둘레에 닿는다)
-    part(new THREE.SphereGeometry(0.33, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), trim, 0, 0.19, 0, hz, 'grain'); // 정수리를 덮는 둥근 모자
-    part(new THREE.SphereGeometry(0.06, 6, 4), 0xb8452f, 0, 0.53, 0, hz, 'grain');
+    part(new THREE.CylinderGeometry(0.37, 0.35, 0.1, 14), 0x6a5038, 0, 0.235, 0, hz, 'grain'); // 털 두른 챙(머리 둘레에 닿는다, 눈썹은 가리지 않는다)
+    part(new THREE.SphereGeometry(0.31, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), trim, 0, 0.25, 0, hz, 'grain'); // 정수리를 덮는 둥근 모자
+    part(new THREE.SphereGeometry(0.06, 6, 4), 0xb8452f, 0, 0.57, 0, hz, 'grain');
     if (hv.loops) for (const sx of [-1, 1]) { const t = part(new THREE.TorusGeometry(0.07, 0.022, 4, 8), hc, sx * 0.31, -0.06, -0.08, hz, 'grain'); t.rotation.y = Math.PI / 2; }
   } else if (hat === 'daenggi' || hat === 'braid') { // 땋은 머리와 댕기(가운데 가르마). braids 2면 양 갈래, short면 짧게 땋은 머리
     const hz = new THREE.Group(); hz.name = `hat:${hat}`; hg.add(hz);
