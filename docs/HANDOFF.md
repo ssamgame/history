@@ -1,5 +1,7 @@
 # 인계 문서 (2026-10-29) — 다른 Claude 계정이 이어서 할 때
 
+> **2026-10-31 최신 작업(선생님 전체 수정 요청 D-62)은 `docs/handoff/2026-10-31-d62-goryeo-fixes.md`부터 읽는다.**
+>
 > 이 파일을 먼저 읽고, 이어서 `CLAUDE.md` → `docs/STATUS.md` 순서로 읽는다. 자세한 결정은 `docs/team/decisions.md`(D-번호), 테스트 기록은 `docs/team/tested.md`.
 
 ## 0. 한눈에
