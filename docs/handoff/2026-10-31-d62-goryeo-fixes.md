@@ -63,11 +63,7 @@
 ## 3. 남은 일
 
 ### 바로 할 일(다음 세션)
-1. **테스트 묶음 결과 확인**: 고려편+관련 묶음(`ch1|ch2|ch3|ch4|ch5|ch6|story|d62|goryeo|motion|body|faces|hairstyle|j4|kit|play|carry|world|graphics|input|flow|roam`)을 돌리던 중 이 문서를 썼다. 결과를 아직 못 봤다(**통과로 보고하지 말 것**). 다시 돌린다:
-   ```bash
-   PORT=9313 NODE_PATH=$(npm root -g) timeout 2400 node tools/test-node.cjs "ch1|ch2|ch3|ch4|ch5|ch6|story|d62|goryeo|motion|body|faces|hairstyle|j4|kit|play|carry|world|graphics|input|flow|roam"
-   ```
-   - 앞선 묶음(고쳐지기 전)에서 나온 실패는 모두 고쳤다. `ch2 rescue: arrow up` 테스트는 묶음에서 한 번 실패·혼자서는 통과(불안정, 확인 필요).
+1. ~~테스트 묶음 결과 확인~~ → **344개 통과, 실패 0**(2026-10-31, `docs/team/tested.md`). 미리보기 판 30.
 2. **화면 확인(사진)**: `tools/qa/run.cjs`로 이야기 장면을 찍는 중이었다. 확인한 것: 2장 시작 장면, 곽주성, 5장 작업 자리. 아직 못 본 것: 2장 물러가는 대군, 3장 도입, 4장 강화 천도·처인성·살리타·충주성, 5장 솥·선반·가로 판·타임랩스, 6장 용장성·항파두리·노 젓기, 2장 포승줄 구출, 조선 4장 파도. 손볼 수 있는 것: 카메라 각도, 사람·성돌 겹침.
    - 이미 고친 것: 2장 클로즈업을 병사 쪽으로, 곽주 카메라를 뒤로(문루 지붕이 잘림).
 3. **전체 테스트(C단계)**: 공통 부품(얼굴·바다·움직임·입력·roam)을 바꿨으니 배포 전에 30장 전체를 돌린다. 조선~현대편도 무기 제거·얼굴·바다의 영향을 받는다(일제 4·6장·현대 3장 학생 총 제거, 바다 장면).
