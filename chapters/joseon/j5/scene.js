@@ -6,6 +6,7 @@ import { makeFire } from '../../../core/fire.js';
 import { curvedHipRoof, tent, woodpile, jars } from '../../kit/buildings.js';
 import { groundMaterial } from '../../../core/textures.js';
 import { mat, makePerson } from '../../../core/people.js';
+import { addElbows } from '../../../core/body.js';
 import { scatter } from '../../../core/props.js';
 import { LOOKS } from '../../../content/characters.js';
 import { createWeather } from '../../../core/weather.js';
@@ -26,6 +27,7 @@ export function groundH(x, z) {
 export function addJoints(person) {
   const u = person.userData;
   if (u.jointed) return person;
+  if (u.skel) { addElbows(person); u.jointed = true; return person; } // 공통 뼈대 몸: 무릎은 이미 있고, 팔꿈치는 아래팔 뼈가 따라간다(2026-10-31 점검: 소매가 뼈로 옮겨 가 예전 방식은 멈췄다)
   u.legs.forEach(l => {
     if (l.userData.knee) return; // 모든 인물에 무릎이 생겼다(D-32): 다리는 그대로 쓴다
     const [box, shoe] = l.children, m = box.material;

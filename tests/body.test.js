@@ -177,3 +177,50 @@ test('body: 걸음 박자는 빠르기가 올라도 사람 박자 안이고, 짐
     }
   } finally { off(); w.dispose(); }
 }, { timeout: 30000 });
+
+// 2026-10-31 점검: 장을 열 때 뼈대 몸을 불러오는 동안(장면이 아직 비어 있다) 빈 하늘에 학생(이전 장 생김새)만 서 있었다. 불러오는 동안 학생을 숨긴다
+test('body: 뼈대 몸을 불러오는 동안에는 빈 장면에 학생만 서 있지 않다', async () => {
+  const { prepareBodies } = await import('../core/flow.js');
+  const w = testWorld();
+  try {
+    localStorage.setItem('goryeo-body', '1');
+    w.player.visible = true;
+    const pr = prepareBodies({ world: w });
+    ok(!w.player.visible, '불러오는 동안 숨김');
+    await pr;
+    ok(w.player.visible, '다 불러오면 다시 보임');
+  } finally { localStorage.removeItem('goryeo-body'); off(); w.dispose(); }
+}, { timeout: 30000 });
+
+// 2026-10-31 점검: 뼈대 몸을 켜면 조선 5장 장면 짓기가 멈췄다(웅크린 백성의 팔에 팔꿈치를 새로 넣는 addJoints가 뼈로 옮겨 간 소매를 찾지 못함)
+test('body: 조선 5장 웅크린 백성(팔꿈치 넣기)도 뼈대 몸으로 팔꿈치를 굽힌다', async () => {
+  await loadBody(); on();
+  const { huddlePose } = await import('../chapters/joseon/j5/scene.js');
+  const w = testWorld();
+  try {
+    const p = makePerson(LOOKS.villager); w.level.add(p); off();
+    huddlePose(p);
+    ok(p.userData.arms.every(a => a.userData.elbow), '팔꿈치 관절');
+    for (let i = 0; i < 20; i++) w.step(1 / 20, { x: 0, z: 0 });
+    const B = p.userData.skel.bones, a = B('upperarm_R').getWorldQuaternion(Q()), b = B('forearm_R').getWorldQuaternion(Q());
+    ok(a.angleTo(b) > 0.8, `팔꿈치 ${a.angleTo(b).toFixed(2)}`);
+  } finally { off(); w.dispose(); }
+}, { timeout: 30000 });
+
+// 2026-10-31 점검: 악수·건네기가 손을 예전 팔 관절 안에서 찾아(뼈대 몸은 손이 손 뼈로 옮겨 감) 멈출 수 있었다
+test('body: 뼈대 몸끼리 악수·물건 건네기가 끝까지 되고 손이 만난다', async () => {
+  await loadBody(); on();
+  const { handshake, giveItem } = await import('../core/interact.js');
+  const w = testWorld();
+  try {
+    const a = makePerson(LOOKS.soldier), b = makePerson(LOOKS.villager); a.position.set(0, 0, 0); b.position.set(0, 0, 2); b.rotation.y = Math.PI; w.level.add(a, b); off();
+    const run = async pr => { let done = false, out; pr.then(r => { done = true; out = r; }); for (let i = 0; i < 400 && !done; i++) { w.step(1 / 30, { x: 0, z: 0 }); await null; } return { done, out }; };
+    const h = await run(handshake(w, a, b));
+    ok(h.done, '악수가 끝난다');
+    ok(h.out.contact < 0.35, `두 손 사이 ${h.out.contact?.toFixed(2)}m`);
+    const box = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.3, 0.3)); w.level.add(box);
+    const g = await run(giveItem(w, a, b, box));
+    ok(g.done && g.out.handed, '건네기가 끝난다');
+    ok(b.userData.carry?.obj === box, '받은 사람이 든다');
+  } finally { off(); w.dispose(); }
+}, { timeout: 40000 });

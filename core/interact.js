@@ -11,6 +11,8 @@ const wrap = a => Math.atan2(Math.sin(a), Math.cos(a));
 const tick = (world, sec, fn) => new Promise(res => { let t = 0; const off = world.onUpdate(dt => { t = Math.min(sec, t + dt); fn?.(t, dt); if (t >= sec) { off(); res(); } }); });
 const yawTo = (p, x, z) => { p.getWorldPosition(yv); return Math.atan2(x - yv.x, z - yv.z); };
 const worldOf = (o, out = new THREE.Vector3()) => o.getWorldPosition(out);
+// 손(i: 0 x−쪽, 1 x+쪽): 예전 팔 관절 안, 공통 뼈대 몸이면 손 뼈로 옮겨 간 손(2026-10-31 점검: 뼈대 몸에서 악수·건네기가 손을 못 찾아 멈췄다)
+const handOf = (p, i) => p.userData.arms[i].getObjectByName('hand') || p.userData.skel?.bones(i ? 'hand_L' : 'hand_R').getObjectByName('hand') || p.userData.skel?.bones(i ? 'hand_L' : 'hand_R');
 // 걸음이 다 멈출 때까지 잠깐 기다린다(멈추며 손을 뻗지 않게: 준비 동작 → 핵심 동작)
 const settle = (world, ...ps) => new Promise(res => { let t = 0; const off = world.onUpdate(dt => { t += dt; if (t > 0.8 || ps.every(p => (p.userData.stride || 0) < 0.05)) { off(); res(); } }); });
 
@@ -72,7 +74,7 @@ export async function handshake(world, a, b, { gap = 1.3 } = {}) {
   };
   const ta = playAction(a, { dur, pose, fadeIn: 0.05, fadeOut: 0.05, name: 'handshake' }), tb = playAction(b, { dur, pose, fadeIn: 0.05, fadeOut: 0.05, name: 'handshake' });
   await tick(world, T.reach + 0.05);
-  const ha = a.userData.arms[1].getObjectByName('hand'), hb = b.userData.arms[1].getObjectByName('hand');
+  const ha = handOf(a, 1), hb = handOf(b, 1);
   hook.contact = worldOf(ha, v).distanceTo(worldOf(hb, w));
   hook.shakes = 3;
   await Promise.all([ta, tb]);
@@ -100,7 +102,7 @@ export async function giveItem(world, giver, taker, obj, { style = 'arms' } = {}
   const pt = playAction(taker, { dur: reach + hold, pose: take, fadeIn: 0.1, fadeOut: 0.01, name: 'take' });
   await Promise.all([pg, pt]);
   // 받는 사람의 두 손과 물건 사이(넘겨받는 순간)
-  const hands = taker.userData.arms.map(a => worldOf(a.getObjectByName('hand'), new THREE.Vector3()));
+  const hands = [0, 1].map(i => worldOf(handOf(taker, i), new THREE.Vector3()));
   worldOf(obj, v); hook.gap = Math.min(...hands.map(h => h.distanceTo(v)));
   giver.userData.carry = null; // 넘겨준다(팔은 아래에서 천천히 내린다)
   blendArms(giver, 0.4); giver.userData.armRest = true;

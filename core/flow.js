@@ -10,14 +10,17 @@ import { bodyOn, loadBody, attachBody, updateBodies, resetBodies, setBodyView } 
 
 export const STAGES = ['intro', 'explore', 'minigame', 'quiz'];
 // 공통 뼈대 몸: 켜져 있으면(bodyOn) body.glb를 불러 makePerson 끝에 뼈대를 붙이게 하고, 매 프레임 동작을 갱신한다. 못 불러오면 예전 인물로 한다
-async function prepareBodies(ctx) {
+export async function prepareBodies(ctx) {
   setRigHook(null);
   if (!bodyOn()) return;
+  const pl = ctx.world?.player, shown = pl?.visible; // 불러오는 동안(장면이 아직 비어 있다) 빈 하늘에 학생만 서 있지 않게 숨긴다(2026-10-31 점검)
+  if (pl) pl.visible = false;
   try {
     await loadBody();
     resetBodies(); setRigHook(attachBody); POST_POSE.add(updateBodies); setBodyView(ctx.world); // 멀리 있는 사람은 가볍게
     if (ctx.world?.playerLookArgs) ctx.world.setPlayerLook(...ctx.world.playerLookArgs); // 학생도 뼈대 몸으로
   } catch (e) { console.warn('뼈대 몸(body.glb)을 불러오지 못해 예전 인물로 한다', e); }
+  finally { if (ctx.world?.player) ctx.world.player.visible = shown ?? true; }
 }
 
 // next: 다음 장 { title }(사건 이름) 또는 다음 편 { era } — 장 모듈에 portal이 있으면 퀴즈 전에 그쪽으로 가는 빛나는 문을 세운다(C-02)

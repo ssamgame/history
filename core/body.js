@@ -92,6 +92,22 @@ export function attachBody(g, look = {}) {
   return g;
 }
 
+// 팔꿈치 관절을 더 단다(조선 5장 웅크린 백성·무릎 꿇은 사람처럼 장이 팔꿈치를 직접 굽히는 사람): 예전 팔 관절 안에 팔꿈치 관절(빈 껍데기)을 두고
+// 그 회전을 아래팔 뼈가 따라가게 한다. 돌려주는 것은 [x−쪽 팔꿈치, x+쪽 팔꿈치]
+export function addElbows(g) {
+  const S = g.userData.skel; if (!S) return null;
+  g.updateMatrixWorld(true);
+  return g.userData.arms.map((arm, i) => {
+    if (arm.userData.elbow) return arm.userData.elbow;
+    const s = i === 0 ? 'R' : 'L', elbow = new THREE.Group(); elbow.position.y = -0.36; arm.add(elbow); elbow.updateMatrixWorld(true);
+    const bone = S.bones(`forearm_${s}`), up = S.links.find(L => L.proxy === arm);
+    if (up) up.extra = up.extra.filter(e => e.bone !== bone); // 위팔 덧씌움이 아래팔을 곧게 펴지 않게
+    S.links.push({ proxy: elbow, bone, C: elbow.getWorldQuaternion(wq).clone().invert().multiply(bone.getWorldQuaternion(wq2)), rest: bone.quaternion.clone(), extra: [], w: 0 });
+    arm.userData.elbow = elbow;
+    return elbow;
+  });
+}
+
 // 기본 동작을 바꾼다(같으면 박자만). timeScale: 걷는 빠르기에 맞춘 박자.
 // 섞기는 무게를 직접 정한다(update): 새 동작은 fade초 동안 0→1, 나머지는 1→0, 0이 되면 멈춘다.
 // (three의 crossFadeTo를 섞는 도중에 거듭 부르면 믹서 안의 무게 장부가 어긋나 동작이 먹지 않는 일이 있었다: 2026-10-31 짐 안고 걷기에서 팔이 내려가 있던 오류)
