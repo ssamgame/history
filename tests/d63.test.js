@@ -95,3 +95,61 @@ test('d63: 귀주 대첩은 고려군과 거란군이 짝지어 마주 서서 �
     ok(sc.gujuKhitan.some(k => k.rotation.x < -1) && sc.gujuKhitan.some(k => !k.visible), '쓰러진 거란군과 달아난 거란군');
   } finally { s.done(); }
 }, { timeout: 60000 });
+
+// D-65(2026-11-03 선생님): 싸움 장면이 움직이기만 하다 끝나지 않게, 짝지어 맞붙는다(chapters/kit/clash.js melee)
+test('d65: 고려 2장 끝 장면에서 양규와 군사들이 뒤를 지키던 거란군과 짝지어 맞붙는다', async () => {
+  const { touchSetup, touchBot } = await import('./bot.js');
+  const ch2 = (await import('../chapters/ch2/chapter.js')).default, script = (await import('../chapters/ch2/script.js')).default;
+  const s = touchSetup(script.speakers), bot = touchBot(s, { answers: new Set() });
+  try {
+    ch2.buildScene(s.w, s.ctx);
+    await ch2.stories.lastStand(s.ctx);
+    const m = s.ctx.testHooks.lastStand.melee;
+    ok(m && m.pairs >= 5 && m.strikes >= 8 && m.blocks >= 5, `맞붙기 짝 ${m?.pairs}, 찌르기 ${m?.strikes}, 막기 ${m?.blocks}`);
+    ok(m.fell >= 1 && m.fled >= 1 && m.side < 0.05, `쓰러짐 ${m.fell}, 달아남 ${m.fled}, 옆 흔들림 ${m.side.toFixed(2)}`);
+  } finally { bot.stop(); s.done(); }
+}, { timeout: 90000 });
+
+test('d65: 근대 3장 황토현은 농민군과 관군이 짝지어 맞붙고, 우금치는 고개 위에서 줄지어 쏜다', async () => {
+  const { touchSetup } = await import('./bot.js');
+  const { walkStage, WALK_ARENA } = await import('../chapters/modern/k3/chapter.js');
+  const { buildArena } = await import('../chapters/kit/play.js');
+  const script = (await import('../chapters/modern/k3/script.js')).default;
+  const s = touchSetup(script.speakers);
+  try {
+    const a = buildArena(s.w, WALK_ARENA), st = walkStage({ ctx: s.ctx, a, g: a.group, jeon: null });
+    const run = p => { let done = false; p.then(() => { done = true; }); return (async () => { for (let i = 0; i < 400 && !done; i++) { s.w.step(1 / 30, { x: 0, z: 0 }); await new Promise(r => setTimeout(r, 0)); } return done; })(); };
+    ok(await run(st.hwangto()), '황토현 끝남');
+    const h = st.hook; ok(h.pairs >= 6 && h.strikes >= 10 && h.blocks >= 6 && h.fell >= 1 && h.fled >= 1 && h.side < 0.05, `황토현 짝 ${h.pairs} 찌르기 ${h.strikes} 막기 ${h.blocks} 쓰러짐 ${h.fell} 달아남 ${h.fled}`);
+    ok(await run(st.ugeumchi()), '우금치 끝남');
+    ok(st.hook.volleys === 3 && st.hook.fell >= 2, `우금치 쏘기 ${st.hook.volleys}, 쓰러짐 ${st.hook.fell}`);
+    st.dispose(); a.dispose();
+  } finally { s.done(); }
+}, { timeout: 90000 });
+
+test('d65: 일제 4장 봉오동은 일본군이 열여섯, 맞으면 옆으로 쓰러지고, 되쏘고, 남은 군사는 돌아서 달아난다', async () => {
+  const { touchSetup, touchBot } = await import('./bot.js');
+  const { bongoScene } = await import('../chapters/colonial/i4/chapter.js');
+  const i4 = (await import('../chapters/colonial/i4/chapter.js')).default, script = (await import('../chapters/colonial/i4/script.js')).default;
+  const s = touchSetup(script.speakers), bot = touchBot(s, { answers: new Set() });
+  try {
+    i4.buildScene(s.w);
+    await bongoScene(s.ctx);
+    const h = s.ctx.testHooks.bongo;
+    ok(h.enemies >= 16 && h.fallen >= 9 && h.returnFire && h.retreated, `일본군 ${h.enemies}, 쓰러짐 ${h.fallen}, 되쏨 ${h.returnFire}, 물러남 ${h.retreated}`);
+  } finally { bot.stop(); s.done(); }
+}, { timeout: 90000 });
+
+test('d65: 고려 6장 용장성은 무너지기 전에 여몽 연합군이 몰려와 삼별초와 짝지어 맞붙는다', async () => {
+  const { touchSetup, touchBot } = await import('./bot.js');
+  const { yongjangScene } = await import('../chapters/ch6/story.js');
+  const ch6 = (await import('../chapters/ch6/chapter.js')).default, script = (await import('../chapters/ch6/script.js')).default;
+  const s = touchSetup(script.speakers), bot = touchBot(s, { answers: new Set() });
+  try {
+    ch6.buildScene(s.w, s.ctx);
+    await yongjangScene(s.ctx);
+    const h = s.ctx.testHooks.yongjang, m = h.melee;
+    ok(m && m.pairs >= 4 && m.strikes >= 6 && m.blocks >= 4 && m.fell >= 1 && m.side < 0.05, `짝 ${m?.pairs} 찌르기 ${m?.strikes} 막기 ${m?.blocks} 쓰러짐 ${m?.fell}`);
+    ok(h.collapsed && h.sailed >= 3, '그 뒤 성벽이 무너지고 배로 물러난다');
+  } finally { bot.stop(); s.done(); }
+}, { timeout: 90000 });

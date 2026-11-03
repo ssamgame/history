@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import * as BLD from '../kit/buildings.js';
 import { gateLeaves, nameBoard } from '../kit/gate.js';
 import { storyScene, person, wait, march, face, troop, facingShare } from '../kit/story.js';
+import { melee } from '../kit/clash.js';
 import { mat } from '../../core/people.js';
 import { setStyle } from '../../core/motion.js';
 import script from './script.js';
@@ -107,19 +108,27 @@ export function lastStandScene(ctx) {
     await fadeIn();
     await say(L[0]);
     ctx.dialogue.close();
-    // 대군이 돌아서(고려군 반대쪽) 북쪽으로 물러간다. 카메라는 높이 올라 대열 전체를 담는다
-    const c0 = K.units.map(u => u.position.clone());
-    const away = advance(world, K.units, 0, -30, 10, { stagger: 0.35 });
-    await glide([5, 7.5, 22], [0, 1.2, -6], [-4, 13, 20], [0, 0, -18], 6);
-    await away;
-    hook.feet = K.units.map(u => [u.position.x, u.position.z]); // 물러난 자리(발이 언덕에 묻히지 않는지 테스트가 본다)
-    const mv = K.units.reduce((a, u, i) => a.add(u.position.clone().sub(c0[i])), new THREE.Vector3()).normalize();
-    const toK = new THREE.Vector3(0, 0, -6).sub(yg.position).setY(0).normalize();
+    // 대군이 돌아서(고려군 반대쪽) 북쪽으로 물러간다. 카메라는 높이 올라 대열 전체를 담는다.
+    // 맨 뒤(고려군 쪽) 보병 다섯은 뒤를 지키느라 남는다: 양규와 군사들이 따라잡아 짝지어 맞붙는다(D-65, 2026-11-03 선생님)
+    const yg0 = yg.position.clone();
+    const guard = K.units.filter(u => u.userData.arms).sort((p, q) => q.position.z - p.position.z).slice(0, 5).sort((p, q) => p.position.x - q.position.x);
+    const goers = K.units.filter(u => !guard.includes(u));
+    const c0 = goers.map(u => u.position.clone());
+    const away = advance(world, goers, 0, -30, 10, { stagger: 0.35 });
+    await glide([5, 7.5, 22], [0, 1.2, -6], [-4, 13, 20], [0, 0, -18], 5);
+    // 양규와 군사들이 물러가는 거란군 뒤를 쫓아가 뒤를 지키던 거란군과 짝지어 맞붙는다(창으로 찌르고 막고 되받아친다)
+    guard.forEach(u => { u.rotation.y = 0; });
+    const fighters = [yg, ...few.slice(0, 4)].sort((p, q) => p.position.x - q.position.x);
+    const fight = melee(world, fighters.map((a, i) => ({ a, b: guard[i] })), { approach: 2.6, lose: 0.5, flee: [0, -1], seed: 3 });
+    march(world, [gflag], 0, -6, 2.6);
+    hook.melee = fight.hook;
+    await glide([-4, 13, 20], [0, 0, -18], [7, 3.2, 4], [0, 1.4, -6], 2.6);
+    await Promise.all([away, fight.done]);
+    hook.feet = K.units.filter(u => u.visible).map(u => [u.position.x, u.position.z]); // 물러난 자리(발이 언덕에 묻히지 않는지 테스트가 본다)
+    const mv = goers.reduce((a, u, i) => a.add(u.position.clone().sub(c0[i])), new THREE.Vector3()).normalize();
+    const toK = new THREE.Vector3(0, 0, -6).sub(yg0).setY(0).normalize();
     hook.away = mv.dot(toK); // 1이면 고려군에서 멀어지는 쪽으로 곧게
-    hook.retreated = K.units.filter(u => u.userData.person || u.userData.legs).length;
-    // 양규와 군사들이 물러가는 거란군 뒤를 쫓아 나간다
-    march(world, [yg, ...few, gflag], 0, -9, 3.2);
-    await glide([-4, 13, 20], [0, 0, -18], [6, 4, 16], [1, 1.6, -2], 3);
+    hook.retreated = goers.filter(u => u.userData.person || u.userData.legs).length;
     await say(L[1]);
     hook.flag = true;
   } });

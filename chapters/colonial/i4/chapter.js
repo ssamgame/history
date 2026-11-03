@@ -3,6 +3,7 @@
 // 김좌진에게 가면 학생의 결심 → 봉오동 골짜기 양쪽 숲에 숨은 홍범도 부대가 일본군을 무찌르는 장면 →
 // ① 흩어진 부대 모으기 ② 김좌진에게 말을 걸면 청산리 산비탈 풀숲에 엎드려 매복 ③ 홍범도에게 말을 걸면 승리한 진영 걷기.
 import * as THREE from 'three';
+import { fallDown, gunFlash } from '../../kit/clash.js';
 import { makeKitChapter } from '../../kit/chapter.js';
 import { buildArena, proneShooter, muzzleFire } from '../../kit/play.js';
 import { gateLeaves, nameBoard } from '../../kit/gate.js';
@@ -67,7 +68,7 @@ export async function bongoScene(ctx) {
   const hong = person(g, 'hongbeomdo', ...A.hong, Math.PI);
   const kim = person(g, 'kimjwajin', A.watch[0] + 1.4, A.watch[1] + 0.3, Math.PI);
   const enemy = [];
-  for (let r = 0; r < 4; r++) for (const sx of [-1, 1]) { const p = person(g, JAPAN, sx * 0.9, -30 - r * 1.6, 0); enemy.push(p); }
+  for (let r = 0; r < 4; r++) for (const sx of [-1.35, -0.45, 0.45, 1.35]) { const p = person(g, JAPAN, sx * 1.1 + (r % 2) * 0.3, -30 - r * 1.6, 0); enemy.push(p); } // 넷씩 네 줄(D-65: 여덟은 적어 보였다)
   hook.enemies = enemy.length;
   const W = a.at(...A.watch); placePlayer(world, [W.x, W.z], Math.PI);
   const C = a.at(0.5, 15.5), T = a.at(0, -8);
@@ -76,7 +77,7 @@ export async function bongoScene(ctx) {
     wide();
     await ctx.fade?.(false);
     const z0 = enemy.map(p => p.position.z);
-    const march = wait(world, 6, k => enemy.forEach((p, i) => { p.position.z = z0[i] + 26 * k; })); // 일본군이 골짜기 깊이 들어온다
+    const march = wait(world, 6, k => enemy.forEach((p, i) => { p.position.z = z0[i] + 31 * k; })); // 일본군이 골짜기 깊이 들어온다(엎드린 독립군 바로 앞까지)
     await dialogue.say(L[0]);
     await march;
     dialogue.close();
@@ -84,17 +85,19 @@ export async function bongoScene(ctx) {
     dialogue.close();
     wide();
     const front = [...enemy].sort((p, q) => q.position.z - p.position.z); // 앞줄부터
-    for (let v = 0; v < 3; v++) { // 양쪽 숲에서 세 번 쏘고, 맞은 앞줄 일본군이 뒤로 쓰러진다(D-45, 피는 없다)
+    for (let v = 0; v < 3; v++) { // 양쪽 숲에서 세 번 쏘고, 맞은 앞줄 일본군이 옆으로 쓰러져 누웠다가 사라진다(D-45·D-65, 피는 없다)
       shooters.forEach((sh, i) => { if ((i + v) % 2 === 0 || v === 2) muzzleFire(g, sh, ctx); });
       ctx.audio?.play?.('shot');
       hook.volleys += 1;
-      const hit = front.slice(v * 2, v * 2 + 2);
-      await wait(world, 0.7, k => hit.forEach((p, i) => { const u = Math.min(1, Math.max(0, k * 1.6 - i * 0.2)); p.rotation.x = -Math.PI / 2 * u * u; }));
+      const hit = front.slice(v * 3, v * 3 + 3);
+      hit.forEach((p, i) => fallDown(world, p, { side: i % 2 ? 1 : -1, sec: 2.6 }));
+      if (v === 1) { front.slice(9, 11).forEach(p => gunFlash(world, g, p)); hook.returnFire = true; } // 일본군도 숲을 향해 되쏜다
+      await wait(world, 0.8);
       hook.fallen += hit.length;
     }
-    const left = front.slice(6), z1 = left.map(p => p.position.z);
+    const left = front.slice(9), z1 = left.map(p => p.position.z);
     left.forEach(p => { p.rotation.y = Math.PI; });
-    await wait(world, 3, k => left.forEach((p, i) => { p.position.z = z1[i] - 24 * ease(k); })); // 남은 일본군은 크게 지고 물러난다
+    await wait(world, 3, k => left.forEach((p, i) => { p.position.z = z1[i] - 24 * ease(k); })); // 남은 일본군은 크게 지고 돌아서 달아난다
     hook.retreated = left.every((p, i) => p.position.z < z1[i] - 10);
     await dialogue.say(L[2]);
     await say(L[3], kim);
@@ -252,6 +255,7 @@ export default {
   ...base,
   anyOrder: true, // 진영 사람은 아무 차례로(차례 전 대사 tooEarly가 없다, tests/quest.test.js)
   introScene,
+  stories: { bongo: bongoScene }, // 개발용 ?debug=i4-story(봉오동 장면만 본다)
   portal: { at: [0, 3.4], ry: 0 }, // 미니게임 뒤 빛나는 문(C-02): 돌아온 학생(SPOT) 바로 앞, 앞면은 학생(남쪽) 쪽
   buildScene(world) { scene = base.buildScene(world); return scene; },
   enterStage(ctx, stage) { scene.gate.setOpen(0); ctx.world.closeView = true; base.enterStage(ctx, stage); },

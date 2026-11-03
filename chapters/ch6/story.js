@@ -1,6 +1,7 @@
 // 6장 이야기 장면(D-58): ① 1271년 5월 진도 용장성이 무너지고 김통정이 남은 군사를 배에 태워 제주로 건너간다.
 // ② 제주 항파두리 흙성에서 끝까지 맞서지만, 1273년 고려와 몽골의 연합군 배들이 몰려와 진압된다(피는 넣지 않는다).
 import * as THREE from 'three';
+import { melee } from '../kit/clash.js';
 import * as BLD from '../kit/buildings.js';
 import { burning } from '../kit/fire.js';
 import { storyScene, person, wait, march, face, troop, blk } from '../kit/story.js';
@@ -42,6 +43,16 @@ export function yongjangScene(ctx) {
     await fadeIn();
     await say(L[0]);
     ctx.dialogue.close();
+    // 고려 관군과 몽골군(여몽 연합군)이 왼쪽에서 몰려와 성 앞을 지키던 삼별초와 짝지어 맞붙는다(D-65, 2026-11-03 선생님: 성벽만 무너지고 싸움이 없었다)
+    const front = [...men].sort((p, q) => p.position.x - q.position.x).slice(0, 4);
+    const foes = front.map((m, i) => person(g, ['mongolLancer', 'soldier', 'mongolLancer', 'mongol'][i], m.position.x - 9 - i * 0.8, m.position.z + (i % 2) * 0.4, Math.PI / 2)); // 몽골군을 섞어 삼별초와 구별되게
+    const more = [0, 1, 2, 3, 4].map(i => person(g, i % 2 ? 'mongolLancer' : 'soldier', -15 - (i % 3) * 1.3, -2.6 - i * 0.9, Math.PI / 2)); // 뒤따르는 무리
+    const moreAt = more.map(p => p.position.clone());
+    const fight = melee(world, foes.map((a, i) => ({ a, b: front[i] })), { approach: 2.2, lose: 0.5, flee: false, chase: 0.6, seed: 7 });
+    hook.melee = fight.hook;
+    await glide([4, 4.2, 9], [0, 2.2, -7], [-4, 2.6, 4.5], [-1.5, 1.3, -5], 1.6);
+    await wait(world, 2.2, k => more.forEach((p, i) => { p.position.x = moreAt[i].x + 9.5 * k; })); // 뒤따르는 무리도 바짝 다가선다
+    await fight.done;
     // 성벽이 허물어진다: 가운데부터 금이 가 위 성돌부터 앞으로 쏟아져 내리고, 흙먼지가 인다
     ctx.audio?.play?.('whoosh');
     let seed = 5; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
@@ -70,7 +81,7 @@ export function yongjangScene(ctx) {
     face(kim, -6, 1);
     await say(L[2], kim);
     ctx.dialogue.close();
-    [kim, ...men].forEach(p => { p.visible = false; });
+    [kim, ...men, ...foes, ...more].forEach(p => { p.visible = false; });
     boats.forEach(({ b }, i) => { for (let k = 0; k < 3; k++) { const p = person(b, 'sambyeolcho', 0, (k - 1) * 1.1, Math.PI); p.position.y = 0.3; p.userData.noWalk = true; } if (i === 1) { const p = person(b, 'kimtongjeong', 0.4, 1.8, Math.PI); p.position.y = 0.3; p.userData.noWalk = true; } });
     const z0 = boats.map(({ b }) => b.position.z), offRow = autoRow(world, boats.map(x => x.rower));
     boats.forEach(({ b }) => { b.rotation.y = 0; });

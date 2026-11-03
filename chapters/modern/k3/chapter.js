@@ -10,6 +10,8 @@ import { gateLeaves, nameBoard } from '../../kit/gate.js';
 import { walkInAndTalk, anyOrderTalk } from '../../kit/talk.js';
 import { leadWalk } from '../../kit/lead.js';
 import { burning } from '../../kit/fire.js';
+import { melee, volley, fallDown } from '../../kit/clash.js';
+import { storyScene } from '../../kit/story.js';
 import { showHowTo } from '../../../core/minigame.js';
 import { makePerson, setCarry } from '../../../core/people.js';
 import { waitInteract } from '../../../core/portal.js';
@@ -189,7 +191,7 @@ async function gobuScene(ctx) {
 }
 
 // ── 전봉준을 따라 걷기: 멈춘 곳마다 그 일 ──
-function walkStage({ ctx, a, g, jeon }) {
+export function walkStage({ ctx, a, g, jeon }) { // (테스트가 싸움 장면을 따로 돌린다)
   const { world } = ctx;
   const heavy = torchLights(world) > 0; // 불길은 화질 '보통·높음'에서 크게
   const cam = (eye, look) => { const e = a.at(eye[0], eye[2]), l = a.at(look[0], look[2]); return () => world.setFixedCamera([e.x, eye[1], e.z], [l.x, look[1], l.z]); };
@@ -223,12 +225,12 @@ function walkStage({ ctx, a, g, jeon }) {
   army5.forEach((p, i) => setCarry(p, makeTool(i), 'side'));
   return {
     keepDark: false,
-    async hwangto() { // 농민군이 언덕으로 나아가고, 관군이 동쪽으로 물러나 흩어진다
+    async hwangto() { // 농민군이 언덕으로 달려 올라가 관군과 짝지어 맞붙고(D-65, 2026-11-03 선생님: 움직이기만 하다 끝났다), 진 관군은 쓰러지거나 동쪽으로 달아난다
       this.view = cam([-2, 3.6, -1], [10, 1.4, -9]); this.view();
-      army1.forEach(p => { const q = p.position; runTo(world, p, { x: q.x + 3.5, z: q.z }, 1.6, { lean: 0.15 }); });
-      await wait(world, 0.8);
-      gwangun.forEach((p, i) => runTo(world, p, { x: 19.5 + i * 0.3, z: p.position.z + (i - 2.5) * 0.8 }, 3.6 + i * 0.2, { speed: 1.8, heightAt: hill1.top })); // 언덕 너머 끝까지 물러나 선다(해설을 듣는 동안에도 보이게)
-      await wait(world, 1.2);
+      const A = [...army1].sort((p, q) => p.position.z - q.position.z), B = [...gwangun].sort((p, q) => p.position.z - q.position.z);
+      const fight = melee(world, A.map((a, i) => ({ a, b: B[i] })), { approach: 1.8, gap: 1.3, lose: 0.34, flee: [1, 0], fleeSpeed: 4, heightAt: hill1.top, seed: 4 });
+      this.hook = fight.hook;
+      await fight.done;
     },
     async jeonju() { // 성문이 열리고 농민군이 성 안으로, 성 위에 깃발
       this.view = cam([3, 3.2, -18], [0, 2.6, -32]); this.view();
@@ -250,11 +252,16 @@ function walkStage({ ctx, a, g, jeon }) {
         wait(world, 2.2, k => banners.forEach(b => { b.position.y = -4.6 + k * 4.6; })),
       ]);
     },
-    async ugeumchi() { // 고개 위에서 총소리와 불길, 농민군이 크게 져서 물러선다(체포는 해설로만, 잡힌 곳은 보여 주지 않는다)
+    async ugeumchi() { // 농민군이 고개로 올라가자 고개 위 일본군과 관군이 줄지어 총을 쏘고(불빛·연기), 몇이 쓰러진 뒤 농민군이 크게 져서 물러선다(D-65). 체포는 해설로만, 잡힌 곳은 보여 주지 않는다
       this.view = cam([4, 3.2, -80], [0, 2.4, -96]); this.view();
       ctx.audio?.play?.('boom');
       for (const [x, z] of heavy ? [[-4, -99.5], [2, -99], [6.5, -100]] : [[0, -99]]) fires.push(burning(world, { parent: g, x, y: ridge.top(x, z), z, size: heavy ? 0.9 : 0.6, level: 1 }));
-      await Promise.all(army5.map((p, i) => runTo(world, p, { x: (i % 2 ? 1 : -1) * (14 + i), z: p.position.z + 8 }, 2.2 + i * 0.1, { lean: 0.25 }).then(() => { p.visible = false; })));
+      const up = army5.map(p => runTo(world, p, { x: p.position.x * 0.9, z: p.position.z - 3 }, 1.6, { lean: 0.2, heightAt: ridge.top }));
+      const hook = this.hook = { volleys: 0, fell: 0 };
+      const hit = [army5[2], army5[5], army5[0]];
+      await volley(world, g, top, { rounds: 3, gap: 0.8, audio: ctx.audio, onRound: v => { hook.volleys += 1; if (hit[v]) { fallDown(world, hit[v], { side: v % 2 ? 1 : -1, sec: 3 }); hook.fell += 1; } } });
+      await Promise.all(up);
+      await Promise.all(army5.filter(p => !hit.includes(p)).map((p, i) => runTo(world, p, { x: (i % 2 ? 1 : -1) * (14 + i), z: p.position.z + 8 }, 2.2 + i * 0.1, { lean: 0.25 }).then(() => { p.visible = false; })));
     },
     dispose() { fires.forEach(f => f.setLevel(0)); },
   };
@@ -362,6 +369,7 @@ export default {
   ...base,
   anyOrder: true, // 고부 사람은 아무 차례로(차례 전 대사 tooEarly가 없다, tests/quest.test.js)
   introScene,
+  stories: { fights: ctx => storyScene(ctx, { key: 'fights', arena: WALK_ARENA, run: async ({ a, g, fadeIn }) => { const st = walkStage({ ctx, a, g, jeon: null }); st.hwangtoView?.(); await fadeIn(); await st.hwangto(); await wait(ctx.world, 1); await st.ugeumchi(); st.dispose(); } }) }, // 개발용 ?debug=k3-story(황토현·우금치 싸움만 본다)
   portal: { at: [0, 0], ry: 0 }, // 미니게임 뒤 빛나는 문(C-02): 돌아온 학생(SPOT) 바로 앞 마을 길 가운데, 앞면은 학생(남쪽) 쪽
   buildScene(world) { scene = base.buildScene(world); return scene; },
   enterStage(ctx, stage) { scene.gate.setOpen(0); ctx.world.closeView = true; base.enterStage(ctx, stage); },
