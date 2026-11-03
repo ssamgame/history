@@ -28,7 +28,14 @@ export async function loadBody(url = BODY_URL) {
   return base;
 }
 export const bodyReady = () => !!base;
-export function bodyOn() { try { return new URLSearchParams(location.search).get('body') === '1' || localStorage.getItem('goryeo-body') === '1'; } catch { return false; } }
+// 2026-11-03 선생님: 학생 사이트에서도 기본으로 켠다. ?body=0이나 localStorage goryeo-body=0이면 예전 인물(못 불러와도 예전 인물로 한다)
+export function bodyOn() {
+  try {
+    const q = new URLSearchParams(location.search).get('body');
+    if (q === '0' || q === '1') return q === '1';
+    return localStorage.getItem('goryeo-body') !== '0';
+  } catch { return true; }
+}
 
 const wq = new THREE.Quaternion(), wq2 = new THREE.Quaternion(), wv = new THREE.Vector3(), wv2 = new THREE.Vector3();
 const inside = (o, root) => { for (let q = o; q; q = q.parent) if (q === root) return true; return false; };
