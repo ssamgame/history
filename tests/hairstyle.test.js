@@ -98,3 +98,31 @@ test('outfit D-60: 같은 생김새도 시대마다 옷이 다르다(시민: 일
   setHairEra('present', 'h6'); const w2 = makePerson(LOOKS.woman, { stable: true }); ok(!w2.getObjectByName('goreum') && w2.getObjectByName('jeogori'), '1960~80년대 여인: 블라우스와 치마');
   setHairEra(null); void collarOf;
 });
+
+// 2026-11-03 생김새 점검(D-63): 모자를 쓴 사람은 뒤에서 봐도 모자 밑 뒤통수가 맨살로 보이지 않는다(복두·털모자·몽골 모자 밑에 머리).
+// 민머리(승려)와 정수리를 깎는 거란 곤발은 뺀다. 곤발의 뒷머리는 목덜미에만 있어 눈가리개 띠처럼 보이지 않는다.
+test('hairstyle D-63: 모자 밑 뒤통수가 맨살로 보이지 않는다', async () => {
+  const THREE = await import('three');
+  const ray = new THREE.Raycaster(), bad = [];
+  for (const era of ['goryeo', 'joseon', 'modern', 'colonial', 'present']) {
+    setHairEra(era);
+    for (const [id, look] of Object.entries(LOOKS)) {
+      if (['bald', 'kunfa'].includes(look.hat)) continue;
+      const p = makePerson(look, { track: false, stable: true }); p.updateMatrixWorld(true);
+      const head = p.getObjectByName('head'), c = head.getWorldPosition(new THREE.Vector3());
+      for (const dy of [0.02, 0.14]) {
+        ray.set(new THREE.Vector3(c.x, c.y + dy, c.z - 3), new THREE.Vector3(0, 0, 1));
+        const hit = ray.intersectObject(p, true).find(h => h.object.visible && h.object.isMesh);
+        if (hit?.object === head) { bad.push(`${era}:${id}(${look.hat})`); break; }
+      }
+    }
+  }
+  setHairEra(null);
+  eq([...new Set(bad)], [], '뒤통수가 맨살');
+});
+test('hairstyle D-63: 거란 곤발 뒷머리는 목덜미에(귀 높이의 띠가 아니다)', () => {
+  const p = makePerson(LOOKS.khitan, { track: false, stable: true });
+  const nape = p.getObjectByName('kunfaNape'); ok(nape, '곤발 뒷머리');
+  nape.geometry.computeBoundingBox();
+  ok(nape.position.y + nape.geometry.boundingBox.max.y < -0.05, `뒷머리 위 끝 ${(nape.position.y + nape.geometry.boundingBox.max.y).toFixed(2)}(머리 가운데보다 아래)`);
+});

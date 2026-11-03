@@ -59,3 +59,4 @@
 ## 2026-11-03 전체 테스트(C단계) + 2장 끝 장면 발 묻힘 고침
 - 전체: **818 통과, 실패 4** → 새 실패 2개 고침: `sw` PRECACHE에 `core/sea.js`가 빠져 있었음(넣음), `feedback` 역할 생김새 검사가 학생 총을 기대(D-62 무기 빼기에 맞춤). 남은 2개는 알려진 실패(arena k1 doc papers, stage3 G2).
 - 고려 2장 끝 장면: 물러가는 거란 대군 56명이 무대 밖 언덕에 발이 묻힘(새 검사 `d62 고려2-9·10`이 먼저 실패) → 무대 북쪽 걷는 땅을 z0 -20 → -40으로 넓힘. `d62 고려2-9|ch2|story` 36 통과, 화면 점검(`tools/qa/run.cjs` lastStand) 감지 0(전에는 40). 사진 `docs/team/shots/d62-ch2-retreat.jpg`.
+- 2026-11-03 D-63 모자 밑 뒷머리: `hairstyle D-63` 먼저 실패(7가지 모자, 곤발 띠) → 고친 뒤 `hairstyle|faces|facebuild|people|body|graphics|bake|smoke|motion|qa|feedback|j5|j1|k1|i4` 129 통과. 돌리지 않은 것: 전체(C).
