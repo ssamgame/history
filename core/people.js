@@ -115,6 +115,13 @@ const JOSEON_HATS = {
     [new THREE.CylinderGeometry(0.25, 0.28, 0.22, 14), 0x1e1c1a, 0, 2.38, -0.1],
     [new THREE.BoxGeometry(0.06, 0.26, 0.2), 0x1e1c1a, -0.17, 2.56, -0.2],
     [new THREE.BoxGeometry(0.06, 0.26, 0.2), 0x1e1c1a, 0.17, 2.56, -0.2]],
+  // 사모: 낮고 둥근 앞 모자, 뒤가 높이 솟고 양옆에 짧은 타원 날개 (조선·대한 제국 관리, D-63: 고려 복두의 긴 각과 다르다)
+  samo: () => [HAIR_B(),
+    [new THREE.CylinderGeometry(0.33, 0.335, 0.1, 16), 0x1a1816, 0, 2.27, -0.01], // 이마 위에 얹은 테(복두처럼 눈썹 위)
+    [new THREE.SphereGeometry(0.33, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), 0x1a1816, 0, 2.31, -0.01],
+    [new THREE.CylinderGeometry(0.21, 0.24, 0.26, 14), 0x1a1816, 0, 2.56, -0.12],
+    [new THREE.CylinderGeometry(0.15, 0.15, 0.02, 14).rotateX(Math.PI / 2).scale(1.1, 0.62, 1), 0x1a1816, -0.32, 2.56, -0.19],
+    [new THREE.CylinderGeometry(0.15, 0.15, 0.02, 14).rotateX(Math.PI / 2).scale(1.1, 0.62, 1), 0x1a1816, 0.32, 2.56, -0.19]],
   // 전립(벙거지): 챙 달린 둥근 모자와 붉은 술 (조선 군사)
   jeollip: () => [HAIR_T(), HAIR_B(), // 모자 밑 상투 머리(뒤에서 봐도 뒤통수가 맨살이 아니다, D-63)
     [new THREE.CylinderGeometry(0.5, 0.5, 0.03, 18), 0x2a2622, 0, 2.34, 0],
@@ -421,9 +428,10 @@ export function makePerson(look = {}, { track = true, stable = false } = {}) {
     part(new THREE.CylinderGeometry(0.035, 0.035, 2.6, 5), 0x5a3f2a, 0, 0.55, 0, s, 'wood');
     part(new THREE.ConeGeometry(0.08, 0.32, 4), 0xc9ccd0, 0, 2.0, 0, s, 'grain');
     part(new THREE.SphereGeometry(0.07, 5, 4), 0xb8452f, 0, 1.78, 0, s, 'grain'); // 창술
-  } else if (gear === 'sword') { // 왼쪽 허리에 찬 칼
-    const s = new THREE.Group(); s.name = 'sword'; s.position.set(-0.42, 1.0, 0.12); s.rotation.set(0.25, 0, 0.35); g.add(s);
+  } else if (gear === 'sword') { // 왼쪽 허리에 칼집째 비스듬히 찬 칼: 칼자루는 앞위로, 칼집 끝은 뒤아래로(D-63: 곧게 세우면 손에 든 것처럼 보였다)
+    const s = new THREE.Group(); s.name = 'sword'; s.position.set(-0.47, 0.95, 0.04); s.rotation.set(1.05, 0, 0.18); g.add(s);
     part(new THREE.BoxGeometry(0.08, 0.95, 0.12), 0x2b2118, 0, -0.2, 0, s, 'wood');
+    for (const y of [-0.62, 0.12]) part(new THREE.BoxGeometry(0.1, 0.05, 0.14), 0xb08a3e, 0, y, 0, s, 'grain'); // 칼집 끝과 고리 쇠붙이
     part(new THREE.BoxGeometry(0.2, 0.05, 0.16), 0xd9a441, 0, 0.29, 0, s, 'grain');
     part(new THREE.CylinderGeometry(0.035, 0.035, 0.24, 5), 0x3a2c20, 0, 0.42, 0, s, 'wood');
   } else if (gear === 'rifle') { // 등에 비스듬히 멘 총(독립군·광복군·국군)

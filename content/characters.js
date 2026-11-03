@@ -47,16 +47,16 @@ export const LOOKS = {
   yisunsin: { outfit: 'armor', armor: 0x8a2f24, named: true, robe: 0x7a2a1e, hat: 'general', gear: 'sword', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'full', shape: 'long' } },
   navy: { outfit: 'jeonbok', sleeve: 0xb8452f, pants: 0xd8cfbf, robe: 0x2f4a5e, hat: 'jeollip', gear: 'spear', trim: 0xb8452f, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   injo: { outfit: 'danryeong', royal: true, named: true, robe: 0xa3262a, hat: 'ikseon', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache' } },
-  kimsangheon: { outfit: 'danryeong', badge: 0x1e2440, named: true, robe: 0x55608a, hat: 'official', face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'full', beardColor: '#cfc9bd', age: 'old' } },
-  choemyeonggil: { outfit: 'danryeong', badge: 0x1e2440, named: true, robe: 0x5d6b52, hat: 'official', face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'goatee' } },
-  jobyeonggap: { outfit: 'danryeong', badge: 0x1e2440, named: true, robe: 0x6a4a6a, hat: 'official', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache' } }, // 고부 군수 조병갑
+  kimsangheon: { outfit: 'danryeong', badge: 0x1e2440, named: true, robe: 0x55608a, hat: 'samo', face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'full', beardColor: '#cfc9bd', age: 'old' } },
+  choemyeonggil: { outfit: 'danryeong', badge: 0x1e2440, named: true, robe: 0x5d6b52, hat: 'samo', face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'goatee' } },
+  jobyeonggap: { outfit: 'danryeong', badge: 0x1e2440, named: true, robe: 0x6a4a6a, hat: 'samo', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache' } }, // 고부 군수 조병갑
   qingSoldier: { outfit: 'deel', robe: 0x5a4632, hat: 'qing', gear: 'spear', trim: 0x2b241c, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   jeongjo: { outfit: 'danryeong', royal: true, named: true, robe: 0xa3262a, hat: 'ikseon', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache' } },
   jeongyakyong: { outfit: 'dopo', cord: 0x2f4a6b, named: true, robe: 0xc9d4d8, hat: 'gat', trim: 0x2b241c, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'goatee' } },
-  joseonOfficial: { outfit: 'danryeong', badge: 0x1e2440, robe: 0x55608a, hat: 'official', face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache' } },
+  joseonOfficial: { outfit: 'danryeong', badge: 0x1e2440, robe: 0x55608a, hat: 'samo', face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache' } },
   worker: { outfit: 'short', pants: 0xd8cfbf, robe: 0xc8b89a, hat: 'topknot', trim: 0x6b4a32, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   // 근대·일제 강점기·현대편
-  daewongun: { outfit: 'danryeong', badge: 0x1e2440, named: true, robe: 0x4f5f86, hat: 'official', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'goatee', beardColor: '#cfc9bd', age: 'old', shape: 'long', browColor: '#8a847a' } },
+  daewongun: { outfit: 'danryeong', badge: 0x1e2440, named: true, robe: 0x4f5f86, hat: 'samo', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'goatee', beardColor: '#cfc9bd', age: 'old', shape: 'long', browColor: '#8a847a' } },
   gojong: { outfit: 'danryeong', royal: true, named: true, robe: 0xc99a2e, hat: 'ikseon', trim: 0xa8392b, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'goatee', shape: 'long' } },
   // 왕이던 때(1897년 황제가 되기 전)의 고종: 붉은 곤룡포 (역사책 아관 파천 쪽)
   gojongKing: { outfit: 'danryeong', royal: true, named: true, robe: 0xa3262a, hat: 'ikseon', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'goatee', shape: 'long' } },
