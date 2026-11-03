@@ -3,6 +3,8 @@
 - 작업 브랜치 `claude/goryeo-game-handoff-vus00f`. 학생 사이트(main)는 **goryeo-v67**(2026-10-29 배포). 새 미리보기 아티팩트 https://claude.ai/artifact/Hfhs4Zdmb9WL1Q4dsULYuz (2026-10-29 이 계정에서 새로 만듦: 작업 브랜치 그대로 = v67 + 근대 4·5장, 모든 장 열림 사본). 옛 QSh1YhvtwooxoyDRsBZsCT는 더 고치지 않는다.
 - 선생님용 한눈 정리(계획·한 일·남은 일) `docs/PROGRESS.md`. 결정 기록 `docs/team/decisions.md`(D-번호), 공통 도구 안내 `docs/team/d30-guide.md`, 작업 목록 `docs/team/tasks-d30.md`, 사진 `docs/team/shots/`.
 
+- **2026-11-03**: 30장 전체 테스트 818 통과·실패 4 → 새 실패 2개(PRECACHE `core/sea.js`, 역할 생김새 테스트) 고침, 남은 2개는 알려진 실패. 고려 2장 끝 장면 발 묻힘 고침. 미리보기는 옛 주소 QSh1YhvtwooxoyDRsBZsCT(판 40, 이 계정)에 올림 — 자세히는 `docs/HANDOFF.md` 맨 위.
+
 ## 꼭 지킬 것
 - 선생님: 포항 초등 교사. 한국어·쉬운 말. **결정이 필요하면 바로 하지 말고 두세 가지를 먼저 여쭌다**(AskUserQuestion, 추천안 첫째).
 - main 병합·배포·미리보기 다시 올리기는 선생님 승인 때만.

@@ -1,5 +1,7 @@
 # 인계 문서 (2026-10-29) — 다른 Claude 계정이 이어서 할 때
 
+> **2026-11-03 미리보기**: 이 계정(원래 계정)은 Hfhs4Zdmb9WL1Q4dsULYuz(다른 계정 것)를 열 수 없어서, 선생님 결정으로 **옛 주소 https://claude.ai/artifact/QSh1YhvtwooxoyDRsBZsCT 에 작업 브랜치 전체(D-62 + 2장 발 묻힘 고침)를 다시 올렸다(판 40)**. 미리보기 전용 사본 3개: `chapters/index.js`(모든 장 열림), `core/body.js`(`bodyOn`이 늘 true, `loadBody`가 `assets/models/body.js`의 base64를 `GLTFLoader.parseAsync`로 읽음), `assets/models/body.js`(body.glb를 base64로 담은 `export default '...'`). 파일 목록은 PRECACHE에서 `index.html`·`body.glb`를 빼고 `assets/models/body.js`를 더한 것. 어느 계정이 올리는지에 따라 주소가 다르니, 올린 뒤 이 줄을 고친다.
+>
 > **2026-10-31 최신 작업(선생님 전체 수정 요청 D-62)은 `docs/handoff/2026-10-31-d62-goryeo-fixes.md`부터 읽는다.**
 >
 > 이 파일을 먼저 읽고, 이어서 `CLAUDE.md` → `docs/STATUS.md` 순서로 읽는다. 자세한 결정은 `docs/team/decisions.md`(D-번호), 테스트 기록은 `docs/team/tested.md`.
