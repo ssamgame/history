@@ -61,3 +61,4 @@
 - 고려 2장 끝 장면: 물러가는 거란 대군 56명이 무대 밖 언덕에 발이 묻힘(새 검사 `d62 고려2-9·10`이 먼저 실패) → 무대 북쪽 걷는 땅을 z0 -20 → -40으로 넓힘. `d62 고려2-9|ch2|story` 36 통과, 화면 점검(`tools/qa/run.cjs` lastStand) 감지 0(전에는 40). 사진 `docs/team/shots/d62-ch2-retreat.jpg`.
 - 2026-11-03 D-63 모자 밑 뒷머리: `hairstyle D-63` 먼저 실패(7가지 모자, 곤발 띠) → 고친 뒤 `hairstyle|faces|facebuild|people|body|graphics|bake|smoke|motion|qa|feedback|j5|j1|k1|i4` 129 통과. 돌리지 않은 것: 전체(C).
 - 2026-11-03 D-63 칼집·사모: `d63` 먼저 실패 → 고친 뒤 `d63|hairstyle|faces|facebuild|body|j1|j2|j3|j4|j5|j6|k1|k3|feedback|smoke` 166 통과. 그 앞 칼만: `d63|hairstyle|body|motion|qa|carry|ch2|ch3|ch6|j1|j4|j5` 145 통과. 돌리지 않은 것: 전체(C).
+- 2026-11-03 D-64 말 탄 다리·거란 왕 천막 앞·귀주 짝지어 맞붙기: 새 검사(`d63: 말`·`d63: 귀주`) 먼저 실패 → 고친 뒤 `d63|d62|motion|body|qa|ch1|ch2|ch4|ch6|j1|j5|story` 184 통과·1 실패(ch6 D-20 노 젓기, 앞 테스트에 따라 아슬아슬 → 0.6초로 고친 뒤 ch6 네 번 모두 11 통과), `d63: 귀주|goryeo3|ch3` 22 통과. 돌리지 않은 것: 전체(C).

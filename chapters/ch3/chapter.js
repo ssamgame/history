@@ -10,6 +10,7 @@ import { waitInteract } from '../../core/portal.js';
 import { labelSprite } from '../kit/play.js';
 import { setCarry, mat } from '../../core/people.js';
 import * as THREE from 'three';
+import { strike, block } from '../../core/interact.js';
 import script from './script.js';
 import { retreatScene } from './story.js';
 
@@ -270,37 +271,58 @@ export function gujuAttempt(ctx, easy, fail) {
   });
 }
 
-// 귀주 대첩: 공격 신호 뒤 고려군과 김종현의 지원군이 바람을 등지고 몰아쳐, 부딪친 거란군이 쓰러지고 나머지는 북쪽으로 달아난다(약 7초).
+// 귀주 대첩: 공격 신호 뒤 고려군과 김종현의 지원군이 바람을 등지고 몰아친다(약 8초 안).
+// 짝지어 맞붙기(D-63, 2026-11-03 선생님: 예전엔 몸을 좌우로만 흔들었다): 고려군 하나와 거란군 하나가 마주 서서 창으로 찌르고, 막고, 되받아친다.
+// 두 번째로 찔린 거란군 절반은 뒤로 쓰러지고 나머지는 돌아서 북쪽으로 달아난다. 지원군은 옆에서 들이쳐 오른쪽 거란군을 친다
 export function playGujuBattle(ctx) {
   const { world, audio } = ctx;
   const Z = scene.gujuZ;
-  const go = scene.gujuGoryeo.map(p => p.position.clone()), kh = scene.gujuKhitan.map(p => p.position.clone());
+  const G = scene.gujuGoryeo, K = scene.gujuKhitan, R = scene.reinforcements.children;
+  const go = G.map(p => p.position.clone()), kh = K.map(p => p.position.clone());
   const rf = scene.reinforcements.position.clone();
-  const CHARGE = go[0].z - kh[0].z - 3.2; // 언덕 아래 고려군이 들판을 가로질러 거란군 진까지 몰아친다(D-12: 두 군대가 멀리 떨어져 대치)
+  const CHARGE = go[0].z - kh[0].z - 2.8; // 언덕 아래 고려군이 들판을 가로질러 짝이 된 거란군 바로 앞까지 몰아친다(D-12: 두 군대가 멀리 떨어져 대치)
+  const hook = ctx.testHooks.gujuBattle = { goryeoStrikes: 0, khitanStrikes: 0, blocks: 0, reinforceStrikes: 0 };
+  // 짝마다 조금씩 다른 때에(한꺼번에 똑같이 움직이지 않게): [때, 누가, 무엇]
+  const plan = [];
+  G.forEach((g, i) => {
+    const s = (i % 4) * 0.22 + (i % 3) * 0.07, k = K[i];
+    plan.push([2.3 + s, g, 'spear', 'g'], [2.36 + s, k, 'block']); // 고려군이 찌르고 거란군이 막는다
+    if (i % 3 !== 1) plan.push([3.0 + s, k, 'spear', 'k'], [3.06 + s, g, 'block']); // 거란군이 되받아치고 고려군이 막는다
+    plan.push([3.7 + s, g, 'spear', 'g']); // 다시 찌른다: 짝수는 쓰러지고 홀수는 달아난다
+    k.userData.fallAt = i % 2 === 0 ? 3.95 + s : null; k.userData.fleeAt = i % 2 === 0 ? null : 4.2 + s;
+  });
+  R.forEach((r, i) => plan.push([3.2 + (i % 4) * 0.25, r, 'spear', 'r'], [4.3 + (i % 3) * 0.2, r, 'spear', 'r'])); // 지원군도 찌른다
+  plan.sort((a, b) => a[0] - b[0]);
   return new Promise(resolve => {
-    let t = 0, clashed = false;
+    let t = 0, clashed = false, next = 0;
     const off = world.onUpdate(dt => {
       t += dt;
       const adv = Math.min(1, t / 2.2), e = adv * adv * (3 - 2 * adv); // 돌격
-      scene.gujuGoryeo.forEach((p, i) => {
-        const jit = t > 2.2 && t < 4.4 ? Math.sin(t * 18 + i) * 0.25 : 0; // 맞붙어 싸운다
-        p.position.set(go[i].x + jit, 0, go[i].z - e * CHARGE - Math.max(0, t - 4.4) * 1.5);
-      });
+      const lunge = q => { const a = (t - (q.userData.hitAt ?? -9)) / 0.6; return a > 0 && a < 1 ? Math.sin(Math.PI * a) * 0.45 : 0; }; // 찌를 때 한 걸음 내디뎠다 돌아온다
+      G.forEach((p, i) => { p.position.set(go[i].x, 0, go[i].z - e * CHARGE - Math.max(0, t - 4.6) * 1.5 - lunge(p)); }); // 앞뒤로만 나아간다(옆으로 흔들지 않는다), 거란군이 무너지면 뒤쫓는다
       scene.reinforcements.position.set(rf.x - e * 10, 0, rf.z - e * 14); // 지원군은 옆에서 들이친다
-      scene.reinforcements.children.forEach(p => { p.rotation.y = -Math.PI / 2 - e * 0.6; });
+      R.forEach(p => { p.rotation.y = -Math.PI / 2 - e * 0.6; });
+      while (next < plan.length && plan[next][0] <= t) {
+        const [, who, what, side] = plan[next++];
+        if (!who.visible || who.rotation.x < -0.2) continue;
+        if (what === 'block') { block(who, 0.55); hook.blocks += 1; }
+        else { strike(who, 'spear'); who.userData.hitAt = t; if (side === 'g') hook.goryeoStrikes += 1; else if (side === 'k') hook.khitanStrikes += 1; else hook.reinforceStrikes += 1; if (next % 3 === 0) audio.play('whoosh'); }
+      }
       if (t > 2.2 && !clashed) { clashed = true; audio.play('whoosh'); scene.dust.forEach(d => { d.visible = true; }); }
       scene.gujuFires.forEach((f, i) => f.setLevel((t - 2.6 - i * 0.6) / 1.4)); // 거란 진영 천막에 불이 붙는다(D-16)
       scene.dust.forEach(d => {
-        const k = Math.max(0, Math.min(1, (t - 2.2) / 3));
-        d.material.opacity = k > 0 && k < 1 ? Math.sin(Math.PI * k) * 0.55 : 0;
+        const k = Math.max(0, Math.min(1, (t - 2.2) / 3.4));
+        d.material.opacity = k > 0 && k < 1 ? Math.sin(Math.PI * k) * 0.45 : 0;
         d.scale.setScalar(0.6 + k * 1.6 + Math.sin(t * 3 + d.userData.ph) * 0.15);
       });
-      scene.gujuKhitan.forEach((q, i) => {
+      K.forEach((q, i) => {
+        const u = q.userData;
         if (t < 2.2) { q.position.z = kh[i].z + e * 1.2; return; } // 버티며 조금 나선다
-        if (i % 2 === 0) q.rotation.x = -1.45 * Math.min(1, (t - 2.6 - (i % 4) * 0.2) / 0.5) * (t > 2.6 + (i % 4) * 0.2 ? 1 : 0); // 쓰러진다
-        else if (t > 3.6) { q.rotation.y = Math.PI; q.position.z -= dt * 7; if (q.position.z < Z - 40) q.visible = false; } // 달아난다
+        if (u.fleeAt == null || t < u.fleeAt) q.position.z = kh[i].z + 1.2 + lunge(q); // 되받아칠 때 내디딘다
+        if (u.fallAt != null && t > u.fallAt) q.rotation.x = -1.45 * Math.min(1, (t - u.fallAt) / 0.5); // 찔려 뒤로 쓰러진다
+        else if (u.fleeAt != null && t > u.fleeAt) { q.rotation.y = Math.PI; q.position.z -= dt * 8; if (q.position.z < Z - 40) q.visible = false; } // 돌아서 달아난다
       });
-      if (t >= 7.2) {
+      if (t >= 7.8) {
         off();
         scene.dust.forEach(d => { d.visible = false; });
         resolve();

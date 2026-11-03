@@ -84,7 +84,27 @@ export function mount(horse, person) {
     m.name = 'rideRobe'; m.position.set(at.x, (top + seat) / 2, at.z); m.castShadow = true; m.receiveShadow = c.receiveShadow;
     person.add(m);
   }
+  rideLegs(horse, person);
   return person;
+}
+
+// 걸터앉은 다리(D-63, 2026-11-03 선생님: 말 위에 서 있는 것처럼 보인다): 인물 다리가 짧아 탄 옷 속에 묻혀 몸이 기둥처럼 보였다.
+// 안장 양옆에 허벅지(앞으로)·정강이(옆구리를 따라 아래로)·신을 말 몸통에 붙여 둔다. 색은 그 사람의 바지·신 재질. 기수가 말을 떠나면 숨는다(animateHorse)
+function rideLegs(horse, person) {
+  const H = horse.userData;
+  for (const old of H.rideLegs || []) old.removeFromParent();
+  let pants = null, shoe = null;
+  person.traverse(o => { if (!o.isMesh) return; if (!pants && o.name === 'thigh') pants = o.material; if (!shoe && o.name === 'shoe') shoe = o.material; });
+  pants = pants || mat(0x3a3430, 'cloth', 'object'); shoe = shoe || mat(0x1e1c1a, 'cloth', 'object');
+  const lap = person.getObjectByName('rideRobe')?.material || pants; // 긴 옷(델·단령·갑옷 자락)은 앉으면 허벅지를 덮는다
+  H.rideLegs = [-1, 1].map(s => {
+    const leg = new THREE.Group(); leg.name = 'rideLeg'; H.body.add(leg);
+    const m = (geo, material, x, y, z, rx = 0) => { const o = new THREE.Mesh(geo, material); o.position.set(x, y, z); o.rotation.x = rx; o.castShadow = true; leg.add(o); return o; };
+    m(new THREE.BoxGeometry(0.17, 0.17, 0.46), lap, s * 0.31, SADDLE + 0.02, 0.1, 0.3); // 허벅지: 엉덩이에서 앞으로 조금 내려가 무릎
+    m(new THREE.BoxGeometry(0.15, 0.48, 0.15), pants, s * 0.39, SADDLE - 0.25, 0.3, -0.12); // 정강이: 옆구리를 따라 아래로
+    m(new THREE.BoxGeometry(0.17, 0.13, 0.27), shoe, s * 0.4, SADDLE - 0.52, 0.36).name = 'rideBoot';
+    return leg;
+  });
 }
 
 // 말 다리 하나의 각도: 디딘 동안(0~duty)은 앞에서 뒤로 고르게(발굽이 땅에 붙은 채 몸이 지나간다), 든 동안은 앞으로 휘둘러 온다.
@@ -151,6 +171,7 @@ export function animateHorse(horse, dt) {
   H.tail.rotation.x = -0.2 * kk * (m.gait === 'walk' ? 0.3 : 1);
   // 기수: body와 함께 오르내리고(자식), 빠를수록 앞으로 숙이며 말의 흔들림을 허리로 받는다
   const r = H.rider;
+  if (H.rideLegs) { const on = !!r && r.parent === H.body; for (const L of H.rideLegs) L.visible = on; } // 떨어진 기수의 다리는 말에 남기지 않는다
   if (r) { const ru = r.userData; ru.leanAdd = (0.05 + 0.12 * ss(2, 6, v)) * kk - H.body.rotation.x * 0.8; ru.rollAdd = -H.body.rotation.z * 0.6; }
   H.speed = v; H.gaitName = kk > 0.02 ? m.gait : 'stand';
 }

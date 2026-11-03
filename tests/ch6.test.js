@@ -113,7 +113,7 @@ test('ch6 D-20: sailing — low camera just behind the boat, oars row while movi
     sailLeg(s.ctx, sc.legs[0], false);
     ok(s.w.followOffset && s.w.followOffset.y < 3.5 && s.w.followOffset.z < 7, 'low camera behind the boat');
     const oar = sc.boat.userData.oars[0], r0 = oar.rotation.y;
-    for (let i = 0; i < 6; i++) s.w.step(0.05, { x: 0, z: -1 });
+    for (let i = 0; i < 12; i++) s.w.step(0.05, { x: 0, z: -1 }); // 0.6초: 출발해 힘을 주기 시작할 때까지(앞 테스트에 따라 0.3초로는 아슬아슬했다, 2026-11-03)
     ok(Math.abs(oar.rotation.y - r0) > 0.05, 'oars move while rowing');
     const arms = sc.boat.children.find(c => c.userData.arms)?.userData.arms;
     ok(arms && arms[0].rotation.x < -0.4, 'the rower pulls the oar');

@@ -231,6 +231,7 @@ function wallDefense(ctx, easy) {
   ctx.testHooks.wallAttempts = (ctx.testHooks.wallAttempts || 0) + 1;
   const spawnEvery = easy ? 5 : 3.6, climbTime = easy ? 10 : 7, duration = 45;
   resetLadders();
+  scene.kingToCamp(); // 왕은 천막 앞에서 장군들과 지켜본다(D-63)
   world.bounds = WALL_BOUNDS;
   const p = world.player.position;
   p.set(clamp(p.x, WALL_BOUNDS.x0, WALL_BOUNDS.x1), WALL_TOP, WALK_Z);
@@ -500,7 +501,7 @@ export default {
             offs.push(world.onUpdate(dt => { for (const k of chargers) { k.position.z = Math.min(k.position.z + dt * 3.6, -15.2); k.rotation.y = 0; } }));
           } },
       ],
-      done: () => { offs.forEach(o => o()); for (const k of scene.horde) { k.position.copy(k.userData.home); k.rotation.y = 0; k.userData.charging = false; } },
+      done: () => { scene.kingToCamp(); offs.forEach(o => o()); for (const k of scene.horde) { k.position.copy(k.userData.home); k.rotation.y = 0; k.userData.charging = false; } },
     };
   },
   // 미니게임 뒤 빛나는 문(C-02): 성안 눈길 가운데, 돌아온 학생(남쪽)을 본다

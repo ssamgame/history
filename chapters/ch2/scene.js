@@ -158,6 +158,12 @@ export function buildCh2Scene(world) {
   const KING = { ...LOOKS.khitan, robe: 0x7a5a24, trim: 0xd9a441, hat: 'fur', gear: 'sword', named: true };
   const khitanKing = rider(khitanFront, KING, 0.4, -20.5, 0, { armor: 0x6a5a40, saddle: 0x8a6a22 });
   const kingFlags = [-2.6, 3.2].map(x => { const f = new THREE.Group(); f.position.set(x, 0, -21.6); BUILD.banner(f, { color: 0x2e2a26, h: 3.6 }); khitanFront.add(f); return f; });
+  // 성벽 싸움 동안(D-63, 2026-11-03 선생님): 왕은 대군 뒤 천막 앞에서 말 탄 채 장군 몇 명과 함께 지켜본다. 도입 장면에서는 선봉(D-62)
+  const CAMP = { king: [-4, -36.9], flags: [[-6.7, -37.7], [-1.3, -37.7]] }, FRONT = { king: [0.4, -20.5], flags: [[-2.6, -21.6], [3.2, -21.6]] };
+  const GENERAL = { ...LOOKS.khitan, robe: 0x5a3a22, trim: 0xd9a441, hat: 'fur', gear: 'sword', named: true };
+  const kingGenerals = [[-5.9, -36.0, 0.25], [-2.1, -36.0, -0.25], [-7.4, -35.6, 0.15]].map(([x, z, ry]) => { const p = makePerson(GENERAL); p.position.set(x, 0, z); p.rotation.y = ry; khitanFront.add(p); return p; });
+  const placeKing = P => { khitanKing.position.set(P.king[0], 0, P.king[1]); khitanKing.rotation.y = 0; kingFlags.forEach((f, i) => f.position.set(P.flags[i][0], 0, P.flags[i][1])); };
+  const kingToCamp = () => placeKing(CAMP), kingToFront = () => placeKing(FRONT);
 
   // 사다리 6개와 오르는 거란 병사 (처음엔 숨김)
   const len = Math.hypot(WALL_H, LADDER_Z + HALF + 1.6 + 0.0);
@@ -223,7 +229,7 @@ export function buildCh2Scene(world) {
 
   backdropMountains(world.level, { color: 0xc8ccd0, radius: 130 }); // 먼 산줄기(깊이감)
   return {
-    ring, gate, wallRings, wallGauges, horde, stairs: { x: 0, z: -6, r: 1.6 }, ladders, captives, khitan, khitanFront, campFires, castle, khitanKing, kingFlags, allies,
+    ring, gate, wallRings, wallGauges, horde, stairs: { x: 0, z: -6, r: 1.6 }, ladders, captives, khitan, khitanFront, campFires, castle, khitanKing, kingFlags, kingGenerals, kingToCamp, kingToFront, allies,
     setField(on) { castle.visible = !on; khitan.visible = !on; }, // 들판 장면: 성과 거란 진영을 숨겨 황량한 들판만(D-62)
     field: { bounds: { x0: -24, x1: 24, z0: 20, z1: 72 }, start: [0, 68], lostZ: 21 }, // 플레이어는 남쪽에서 북쪽(화면 위)으로 쫓아간다
     start: [0, 6],
