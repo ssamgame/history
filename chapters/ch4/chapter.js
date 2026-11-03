@@ -278,10 +278,10 @@ export async function salitaiScene(ctx) {
   const aim = playAction(km, { dur: 2.2, fadeIn: 0.4, fadeOut: 0.3, pose: () => ({ arms: [[-Math.PI / 2, 0, 0], [-1.35, 0, 0]], upper: [0, 0.15, 0] }) });
   await wait(world, 0.9);
   const arrow = scene.arrows.find(a => !a.visible) || scene.arrows[0]; if (arrow.parent !== world.level) world.level.attach(arrow);
-  arrow.scale.setScalar(2.4); arrow.visible = true; hook.arrowFlew = true; ctx.audio?.play?.('whoosh');
-  const from = new THREE.Vector3(kp.x, kp.y + 2.1, kp.z), to = new THREE.Vector3(sx, horse.position.y + 3.6, sz), pos = new THREE.Vector3(), ahead = new THREE.Vector3();
+  arrow.scale.setScalar(1.1); hook.arrowScale = 1.1; arrow.visible = true; hook.arrowFlew = true; ctx.audio?.play?.('whoosh'); // 보통 화살 크기(D-66, 2026-11-03 선생님: 너무 컸다)
+  const from = new THREE.Vector3(kp.x, kp.y + 2.1, kp.z), to = sal.localToWorld(new THREE.Vector3(-0.2, 1.55, 0.3)), /* 살리타의 오른쪽 가슴(앞을 보는 사람의 오른쪽은 -x, D-66) */ pos = new THREE.Vector3(), ahead = new THREE.Vector3();
   await wait(world, 1.0, k => { pos.lerpVectors(from, to, k); pos.y += Math.sin(Math.PI * k) * 1.6; ahead.lerpVectors(from, to, Math.min(1, k + 0.05)); ahead.y += Math.sin(Math.PI * Math.min(1, k + 0.05)) * 1.6; arrow.position.copy(pos); arrow.lookAt(ahead); world.setFixedCamera(camAt.map((c, i) => c + ([sx, 2.2, sz][i] - c) * 0.35 * k), look); });
-  sal.attach(arrow); // 화살은 꽂힌 채 남는다
+  sal.attach(arrow); hook.hit = arrow.position.clone(); // 화살은 오른쪽 가슴에 꽂힌 채 남는다(D-66)
   aim.catch(() => {}); await wait(world, 0.3); // 활을 내린다(동작이 끝나기를 기다리지 않는다)
   // 살리타가 뒤로 넘어가며 말에서 떨어진다
   const p0 = new THREE.Vector3(); sal.getWorldPosition(p0); g.worldToLocal(p0); g.attach(sal); sal.rotation.order = 'YXZ';

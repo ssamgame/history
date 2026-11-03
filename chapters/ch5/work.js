@@ -124,7 +124,8 @@ export async function doWork(ctx, scene, id, hook = {}, beforeLift = null) {
   legs();
   const face = Math.atan2(put.x - player.position.x, put.z - player.position.z);
   const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, face, 0)); // 판 길이 방향이 학생 앞에 가로(왼쪽-오른쪽)로 놓이게(D-62)
-  if (W.up) q.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, Math.PI / 2))); // 말림 선반에는 긴 쪽이 위아래로 서게(세로로) 세워 꽂는다(D-62)
+  if (W.up) q.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, Math.PI / 2)));
+  if (id === 'ends') q.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI, 0))); // 1인칭으로 볼 때 새긴 글자가 학생 쪽에서 바로 읽히게(D-66) // 말림 선반에는 긴 쪽이 위아래로 서게(세로로) 세워 꽂는다(D-62)
   // 일하는 모습이 잘 보이게 옆에서 비스듬히 비춘다
   // 작업 대상 너머(학생 맞은편)에서 비스듬히: 학생의 얼굴·손과 판이 함께 보이고, 둘레 사람에 가리지 않는다
   const side = V(Math.cos(face), 0, -Math.sin(face)), fwd = V(Math.sin(face), 0, Math.cos(face));
@@ -167,6 +168,24 @@ export async function doWork(ctx, scene, id, hook = {}, beforeLift = null) {
   let gapOff = null;
   if (id === 'ends' && scene.endsTable) { const T = scene.endsTable; hook.tableGap = Infinity; // 학생 몸(반지름 약 0.3)이 탁자를 통과하지 않는지(테스트)
     gapOff = world.onUpdate(() => { const p = player.position, dx = Math.max(T.x0 - p.x, 0, p.x - T.x1), dz = Math.max(T.z0 - p.z, 0, p.z - T.z1); hook.tableGap = Math.min(hook.tableGap, Math.hypot(dx, dz)); }); }
+  // 마구리 박기는 1인칭(D-66, 2026-11-03 선생님: 두 눈으로 직접 보는 느낌): 카메라가 학생 눈으로 옮겨 가고, 몸은 숨기고 두 팔·망치만 보인다. 박는 판 끝을 내려다본다
+  let fpOff = null, fpHidden = [], fpLook = null, fpStriking = false, near0 = world.camera.near;
+  if (id === 'ends') {
+    const keep = new Set(); player.userData.arms.forEach(a => a.traverse(o => keep.add(o))); plank.traverse(o => keep.add(o)); tool?.g.traverse(o => keep.add(o)); ends?.traverse(o => keep.add(o));
+    player.traverse(o => { if (o.isMesh && o.visible && !keep.has(o)) { o.visible = false; fpHidden.push(o); } });
+    world.camera.near = 0.05; world.camera.updateProjectionMatrix();
+    const head = player.userData.head;
+    const eye = () => { head.updateWorldMatrix(true, false); return head.localToWorld(V(0, 0.26, -0.16)); }; // 눈보다 조금 위·뒤: 두 손과 망치, 판 끝이 함께 보인다(서가 1인칭과 같게)
+    fpLook = plank.localToWorld(V(-0.62, 0, 0));
+    hook.fp = true; hook.fpEye = 0; hook.fpBodyHidden = fpHidden.length > 0; hook.fpArms = player.userData.arms.every(a => { let v = false; a.traverse(o => { if (o.isMesh && o.visible) v = true; }); return v; }); hook.fpSees = 1;
+    fpOff = world.onUpdate(() => {
+      const e = eye(), at = fpLook.clone().add(V(0, -0.1, 0));
+      world.setFixedCamera(e.toArray(), at.toArray());
+      head.updateWorldMatrix(true, false); hook.fpEye = Math.max(hook.fpEye, world.camera.position.distanceTo(head.getWorldPosition(V(0, 0, 0))));
+      const d = at.clone().sub(world.camera.position).normalize(), f = V(0, 0, -1).applyQuaternion(world.camera.quaternion); hook.fpSees = Math.min(hook.fpSees, d.dot(f)); // 박는 판 끝이 화면 가운데 근처
+      if (tool && fpStriking) { world.camera.updateMatrixWorld(true); const m = tool.g.getWorldPosition(V(0, 0, 0)).project(world.camera); hook.fpTool = (hook.fpTool || 0) + 1; if (Math.abs(m.x) < 1 && Math.abs(m.y) < 1 && m.z < 1) hook.fpToolSeen = (hook.fpToolSeen || 0) + 1; } // 망치가 화면 안에 있는지
+    });
+  }
   for (let n = 0; n < W.n; n++) {
     hook.strokes += 1;
     hud.setCounter(`${W.verb} ${n}/${W.n}`);
@@ -185,7 +204,7 @@ export async function doWork(ctx, scene, id, hook = {}, beforeLift = null) {
         const sw = ss(0.2, 0.95, k) * Math.PI * 1.2; plank.position.set(pc.x + Math.cos(a + 2) * 0.12 * on, put.y, pc.z + Math.sin(a + 2) * 0.12 * on); plank.rotation.y = y0 + sw; plank.updateMatrixWorld(true);
         hook.spin = Math.max(hook.spin, n * Math.PI * 1.2 + sw); if (scene.pot && plank.position.y + 0.04 > scene.pot.waterY) hook.underwater = false; return p; }; }
     else if (id === 'ends') { // 박을 끝 쪽으로 반 발짝 옮겨 서서(오른손이 닿게) 그 끝을 두드린다
-      const sx = n % 2 ? 1 : -1, end = plank.localToWorld(V(sx * 0.62, 0, 0));
+      const sx = n % 2 ? 1 : -1, end = plank.localToWorld(V(sx * 0.62, 0, 0)); fpLook = end.clone(); // 1인칭 눈은 이번에 박을 끝을 본다
       const X = V(Math.cos(face), 0, -Math.sin(face)), F = V(Math.sin(face), 0, Math.cos(face)); // 학생의 오른쪽(오른팔 쪽)·앞
       const sc = player.getWorldScale(ws).x, at = end.clone().addScaledVector(X, 0.4 * sc).addScaledVector(F, -1.05 * sc); // 학생 크기(0.8배)에 맞춰 팔이 닿는 거리, 몸이 탁자에 묻히지 않게 조금 떨어져 선다(D-62)
       await walkTo(world, player, [at.x, at.z], { speed: 1, face: { x: at.x + F.x, z: at.z + F.z } });
@@ -193,13 +212,16 @@ export async function doWork(ctx, scene, id, hook = {}, beforeLift = null) {
       tip = (k, on) => plank.localToWorld(V(sx * 0.62, 0.02 + 0.25 * (1 - on), 0)); }
     else tip = (k, on) => plank.localToWorld(V(-0.38 + 0.76 * ss(0.25, 0.8, k), 0.06 + 0.12 * (1 - on), (id === 'carve' ? 0.05 : 0))); // 판 위를 한쪽 끝에서 다른 쪽 끝으로
     let near = Infinity;
+    fpStriking = true;
     await stroke(player, plank, W.tool, tip, { steady: id === 'ends' ? 0 : -1, onHit: () => audio?.play?.('tap'), // 마구리를 박을 때 왼손은 판 가운데를 누른다
       onTouch: at => { if (tool) { tool.g.updateWorldMatrix(true, false); near = Math.min(near, tool.g.localToWorld(V(0, -tool.len, 0)).distanceTo(at)); } } }); // 도구 끝과 닿을 곳 사이(닿아 있는 동안 가장 가까울 때)
+    fpStriking = false;
     if (tool) hook.contact = Math.max(hook.contact, near);
     wood.color.copy(c0).lerp(c1, f1); // 누를 때마다 판이 조금씩 바뀐다(젖고·삶기고·마르고·칠해진다)
     if (id === 'ends' && ends) { ends.visible = true; ends.children.forEach(c => { if (Math.sign(c.position.x) === (n % 2 ? 1 : -1)) c.userData.done = true; c.visible = !!c.userData.done; }); }
   }
   hud.setCounter(null); gapOff?.();
+  if (fpOff) { fpOff(); fpHidden.forEach(o => { o.visible = true; }); world.camera.near = near0; world.camera.updateProjectionMatrix(); } // 1인칭을 끝내고 몸을 다시 보인다
   if (tool) tool.g.removeFromParent();
   if (ends) ends.children.forEach(c => { c.visible = true; delete c.userData.done; });
   world.camMode = 'follow'; hid.forEach(m => { m.visible = true; });

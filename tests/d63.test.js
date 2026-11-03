@@ -140,16 +140,64 @@ test('d65: 일제 4장 봉오동은 일본군이 열여섯, 맞으면 옆으로 
   } finally { bot.stop(); s.done(); }
 }, { timeout: 90000 });
 
-test('d65: 고려 6장 용장성은 무너지기 전에 여몽 연합군이 몰려와 삼별초와 짝지어 맞붙는다', async () => {
+test('d66: 고려 6장 용장성은 삼별초 등 뒤에서, 성벽 밖 몽골군이 성벽을 무너뜨리는 것을 보고 곧바로 배로 달아난다', async () => {
   const { touchSetup, touchBot } = await import('./bot.js');
-  const { yongjangScene } = await import('../chapters/ch6/story.js');
   const ch6 = (await import('../chapters/ch6/chapter.js')).default, script = (await import('../chapters/ch6/script.js')).default;
   const s = touchSetup(script.speakers), bot = touchBot(s, { answers: new Set() });
   try {
     ch6.buildScene(s.w, s.ctx);
-    await yongjangScene(s.ctx);
-    const h = s.ctx.testHooks.yongjang, m = h.melee;
-    ok(m && m.pairs >= 4 && m.strikes >= 6 && m.blocks >= 4 && m.fell >= 1 && m.side < 0.05, `짝 ${m?.pairs} 찌르기 ${m?.strikes} 막기 ${m?.blocks} 쓰러짐 ${m?.fell}`);
-    ok(h.collapsed && h.sailed >= 3, '그 뒤 성벽이 무너지고 배로 물러난다');
+    await ch6.stories.yongjang(s.ctx);
+    const h = s.ctx.testHooks.yongjang;
+    ok(h.fromBehind && h.attackers >= 15, `등 뒤에서 본다 ${h.fromBehind}, 성벽 밖 몽골군 ${h.attackers}`);
+    ok(!h.melee, '성 앞에서 맞붙는 장면은 뺐다');
+    ok(h.collapsed && h.crumbled >= 20 && h.sailed >= 3, `성벽이 무너지고(${h.crumbled}) 배로 달아난다`);
+  } finally { bot.stop(); s.done(); }
+}, { timeout: 90000 });
+
+// D-66(2026-11-03 선생님): 살리타를 맞힌 화살은 보통 크기로, 오른쪽 가슴에 꽂힌다
+test('d66: 살리타를 맞힌 화살은 작고 오른쪽 가슴에 꽂힌다', async () => {
+  const { touchSetup, touchBot } = await import('./bot.js');
+  const ch4m = await import('../chapters/ch4/chapter.js'), script = (await import('../chapters/ch4/script.js')).default;
+  const s = touchSetup(script.speakers), bot = touchBot(s, { answers: new Set() });
+  try {
+    ch4m.default.buildScene(s.w, s.ctx); ch4m.setupCheoin(s.ctx);
+    await ch4m.salitaiScene(s.ctx);
+    const h = s.ctx.testHooks.salitai, p = h.hit;
+    ok(p, '꽂힌 자리');
+    ok(p.x < -0.08 && p.y > 1.3 && p.y < 1.8 && p.z > 0, `오른쪽 가슴(살리타 기준 x ${p.x.toFixed(2)}, 높이 ${p.y.toFixed(2)}, 앞 ${p.z.toFixed(2)})`);
+    ok(h.arrowScale <= 1.2, `화살 크기 ${h.arrowScale}`);
+  } finally { bot.stop(); s.done(); }
+}, { timeout: 150000 });
+
+test('d66: 팔만대장경 마구리 박기는 1인칭(학생 눈에서 두 손과 망치, 판 끝을 본다)', async () => {
+  const { touchSetup, touchBot } = await import('./bot.js');
+  const ch5m = await import('../chapters/ch5/chapter.js'), script = (await import('../chapters/ch5/script.js')).default;
+  const s = touchSetup(script.speakers), bot = touchBot(s, { answers: new Set() });
+  try {
+    ch5m.default.buildScene(s.w, s.ctx); ch5m.default.enterStage(s.ctx, 'minigame');
+    await ch5m.makeBlock(s.ctx);
+    const E = s.ctx.testHooks.work.ends;
+    ok(E.fp, '마구리 박기 동안 1인칭');
+    ok(E.fpEye < 0.45, `카메라가 학생 눈 자리 ${E.fpEye?.toFixed(2)}m`);
+    ok(E.fpBodyHidden && E.fpArms, '몸은 숨기고 두 팔은 보인다');
+    ok(E.fpSees > 0.8, `화면 가운데 근처에 박는 판 끝 ${E.fpSees?.toFixed(2)}`);
+    ok(E.fpToolSeen / E.fpTool > 0.7, `망치가 화면 안에 보인다 ${E.fpToolSeen}/${E.fpTool}`);
+    ok(s.w.camMode === 'follow' || s.w.camMode === 'fixed', '끝나면 되돌린다');
+    ok(!s.w.player.userData.head || s.w.player.userData.head.visible !== false, '머리 다시 보임');
+  } finally { bot.stop(); s.done(); }
+}, { timeout: 150000 });
+
+test('d66: 항파두리는 첫 장면부터 몇 안 되는 삼별초와 연합군이 조금 떨어져 마주 보다가 진압 해설로 맺는다', async () => {
+  const { touchSetup, touchBot } = await import('./bot.js');
+  const ch6 = (await import('../chapters/ch6/chapter.js')).default, script = (await import('../chapters/ch6/script.js')).default;
+  const s = touchSetup(script.speakers), bot = touchBot(s, { answers: new Set() });
+  try {
+    ch6.buildScene(s.w, s.ctx);
+    await ch6.stories.hangpaduri(s.ctx);
+    const h = s.ctx.testHooks.hangpaduri;
+    eq(h.phases, ['standoff'], '처음부터 대치');
+    ok(h.few <= 8, `삼별초는 몇 안 된다 ${h.few}`);
+    ok(h.gap > 4 && h.gap < 12, `조금 떨어진 거리 ${h.gap?.toFixed(1)}m`);
+    ok(h.lines >= 2, '김통정의 말과 진압 해설');
   } finally { bot.stop(); s.done(); }
 }, { timeout: 90000 });
