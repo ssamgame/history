@@ -187,7 +187,8 @@ test('feedback: 모든 장에 학생 역할(이름·하는 일·키)이 있고, 
   }
   ok(ROLES.j2.scale < 0.9 && ROLES.h5.scale < 0.9 && ROLES.h4.scale < 0.9, '아이 역할은 작다');
   eq(ROLES.h3.scale, 1);
-  eq(roleLook('h3', LOOKS.rokSoldier), LOOKS.rokSoldier, '역할에 생김새가 없으면 장의 생김새');
+  const { gear: _g, ...rokNoGear } = LOOKS.rokSoldier;
+  eq(roleLook('h3', LOOKS.rokSoldier), rokNoGear, '역할에 생김새가 없으면 장의 생김새(학생 무기는 뺀다, D-62)');
   eq(roleLook('ch5', null), LOOKS.kid);
   const w = testWorld();
   try {

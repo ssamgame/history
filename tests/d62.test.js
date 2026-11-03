@@ -200,6 +200,12 @@ test('d62 고려2-9·10: 물러나는 거란 대군은 고려군 반대쪽으로
     ok(h.retreated >= 40, `물러나는 거란군 ${h.retreated}`);
     ok(h.away > 0.85, `고려군 반대쪽으로 물러난다(방향 ${h.away?.toFixed(2)})`);
     ok(h.lines === 2, `해설 ${h.lines}줄`);
+    // 물러난 대군의 발이 무대 밖 언덕에 묻히지 않는다(2026-11-03): 끝까지 물러난 자리도 평평한 땅
+    const { terrainField } = await import('../chapters/kit/terrain.js');
+    const { LAST } = await import('../chapters/ch2/story.js');
+    const field = terrainField({ bounds: LAST.bounds, margin: LAST.edge ? 13 : 4, hill: LAST.hill ?? 0.8 });
+    const sunk = h.feet.filter(([x, z]) => field.heightAt(x, z) > 0.05);
+    eq(sunk.length, 0, `언덕에 발이 묻힌 거란군 ${sunk.length}명 (예: ${sunk[0]})`);
   } finally { bot.stop(); s.done(); }
 }, { timeout: 90000 });
 

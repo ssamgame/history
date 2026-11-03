@@ -88,7 +88,8 @@ export function gwakjuScene(ctx) {
 
 // 2장 끝 해설 장면(D-58 → D-62, 2026-10-31 선생님): 현종이 거란에 직접 찾아가겠다고 약속하자 웅장한 거란 대군이
 // 고려군 반대쪽(북쪽)으로 돌아서 물러가고, 양규와 적은 군사가 그 뒤를 쫓아 나간다. 양규의 대사 없이 해설 두 줄로 맺는다.
-export const LAST = { origin: [400, 0], ground: 'earth', groundColor: 0xdfe2e6, hill: 1, bounds: { x0: -24, x1: 24, z0: -20, z1: 14 }, edge: { style: 'forest', back: false } };
+// 북쪽(z0 -40)까지 걷는 땅: 물러가는 대군이 끝까지 가도 평평한 땅을 밟는다(2026-11-03, 예전 -20은 언덕에 발이 묻힘)
+export const LAST = { origin: [400, 0], ground: 'earth', groundColor: 0xdfe2e6, hill: 1, bounds: { x0: -24, x1: 24, z0: -40, z1: 14 }, edge: { style: 'forest', back: false } };
 export function lastStandScene(ctx) {
   const L = script.result;
   return storyScene(ctx, { key: 'lastStand', arena: LAST, mood: 'snow', async run({ g, hook, cam, glide, say, fadeIn }) {
@@ -111,6 +112,7 @@ export function lastStandScene(ctx) {
     const away = advance(world, K.units, 0, -30, 10, { stagger: 0.35 });
     await glide([5, 7.5, 22], [0, 1.2, -6], [-4, 13, 20], [0, 0, -18], 6);
     await away;
+    hook.feet = K.units.map(u => [u.position.x, u.position.z]); // 물러난 자리(발이 언덕에 묻히지 않는지 테스트가 본다)
     const mv = K.units.reduce((a, u, i) => a.add(u.position.clone().sub(c0[i])), new THREE.Vector3()).normalize();
     const toK = new THREE.Vector3(0, 0, -6).sub(yg.position).setY(0).normalize();
     hook.away = mv.dot(toK); // 1이면 고려군에서 멀어지는 쪽으로 곧게
