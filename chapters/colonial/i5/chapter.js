@@ -136,13 +136,13 @@ const ACT = {
     await ctx.fade?.(true);
     const [rx, rz] = CULTURE.room, room = classroom(g, rx, rz, { teacher: 'scholarModern', wall: 0xd8ccb0 }), O = a.at(rx, rz);
     room.kids.forEach((k, i) => { if (i % 3 === 1) { k.removeFromParent(); room.kids[i] = person(room.group, i % 2 ? 'woman' : 'peasant', k.position.x, k.position.z, Math.PI); } }); // 어른도 함께 배운다
-    const board = labelSprite('아는 것이 힘', { size: 0.9 }); board.position.set(0, 2.1, -3.2); room.group.add(board); hook.board = true;
+    const board = labelSprite('아는 것이 힘', { size: 0.9 }); board.position.set(-1.2, 3.2, -3.3); room.group.add(board); hook.board = true;
     hook.learners = room.kids.length;
     placePlayer(world, [O.x + 2.6, O.z + 4], Math.PI);
-    const view = () => world.setFixedCamera([O.x - 1.2, 5.2, O.z + 7.5], [O.x, 1.4, O.z - 2.2]);
+    const view = () => { room.frontView(world); board.visible = false; }; // 칠판 글판은 카메라 뒤(칠판 쪽)라 화면 끝에 크게 걸린다: 해설이 같은 말을 한다 // 칠판 쪽 위에서 글을 배우는 사람들 얼굴(2026-11-04 플레이 점검: 뒤통수만 보이던 것)
     view();
     await ctx.fade?.(false);
-    await say(st.lines[0], room.teacher);
+    await say(st.lines[0]);
     view();
     await say(st.lines[1]);
     ctx.dialogue.close();
@@ -274,7 +274,7 @@ function introScene(ctx) {
         act: () => { hide(false); buyers.forEach(p => { p.visible = true; }); } }, // 우리 물건을 고르는 사람들
       { cam: [-4.2, 2.5, 3.2], look: [-8.4, 1.4, -4.4], to: { cam: [-4.8, 2.4, 2.6], look: [-8.4, 1.4, -4.4] },
         act: () => { buyers.forEach(p => { p.visible = false; }); pupils.forEach(p => { p.visible = true; }); } }, // 학교 앞 학생들
-      { cam: [-6.2, 1.9, 0.4], look: [-8.4, 1.3, -4], to: { cam: [-6.8, 2, 0], look: [-8.4, 1.3, -4] } }, // 6·10 만세 운동(D-67 대사 정리 2): 학생들을 가까이
+      { cam: [-4.6, 2.5, 2.6], look: [-8.4, 1.3, -3.8], to: { cam: [-5.2, 2.4, 2.2], look: [-8.4, 1.3, -3.8] } }, // 6·10 만세 운동(D-67 대사 정리 2): 학생들을 가까이
     ],
     done: () => { hide(true); for (const o of [...buyers, ...pupils]) o.removeFromParent(); },
   };

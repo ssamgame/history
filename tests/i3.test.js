@@ -116,3 +116,16 @@ test('i3 D-41: 임시 정부 청사 걷기 — 다섯 자리를 대화 버튼으
     eq(s.w.bounds, b0, '걷는 곳도 마을로');
   } finally { bot.stop(); s.done(); }
 }, { timeout: 150000 });
+
+test('i3 플레이 점검: 도입 첫 장면에서 태극기를 든 사람들의 얼굴이 보인다(D-45, 등만 보이던 것)', async () => {
+  const { facingShare } = await import('../chapters/kit/walk.js');
+  const w = testWorld();
+  try {
+    i3.buildScene(w);
+    const before = new Set(w.level.children), film = i3.introScene({ world: w });
+    const marchers = w.level.children.filter(o => !before.has(o) && o.userData.legs).slice(0, 5);
+    const sh = film.shots[0]; sh.act({ world: w }); w.setFixedCamera(sh.to.cam, sh.to.look); w.step(1 / 20, { x: 0, z: 0 });
+    ok(facingShare(w, marchers) >= 0.8, `얼굴 ${facingShare(w, marchers)}`);
+    film.done();
+  } finally { w.dispose(); }
+});

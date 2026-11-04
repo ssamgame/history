@@ -247,10 +247,10 @@ const ACT = {
     const seat = a.at(room.seat[0], room.seat[1] + 1);
     placePlayer(world, [seat.x, seat.z], Math.PI);
     hook.classroom = room.kids.length;
-    world.setFixedCamera([O.x - 1.2, 5.6, O.z + 8], [O.x, 1.3, O.z - 2.6]); // 학생들 머리 너머로 선생님과 칠판이 보이게
+    world.setFixedCamera([O.x + 3.6, 5.6, O.z - 4.6], [O.x - 0.4, 0.9, O.z + 2.2]); // 칠판 쪽 위에서 내려다보며: 공부하는 학생들 얼굴과 선생님(2026-11-04 플레이 점검: 뒤통수만 보이던 것)
     await ctx.fade?.(false);
-    await say(st.lines[0], room.teacher);
-    world.setFixedCamera([O.x - 1.2, 5.6, O.z + 8], [O.x, 1.3, O.z - 2.6]); // 학생들 머리 너머로 선생님과 칠판이 보이게
+    await say(st.lines[0]); // 대화 카메라로 바꾸지 않는다: 학생 자리에서 보면 앞줄 뒤통수가 선생님을 가렸다(2026-11-04 플레이 점검)
+    world.setFixedCamera([O.x + 3.6, 5.6, O.z - 4.6], [O.x - 0.4, 0.9, O.z + 2.2]); // 칠판 쪽 위에서 내려다보며: 공부하는 학생들 얼굴과 선생님(2026-11-04 플레이 점검: 뒤통수만 보이던 것)
     await say(st.lines[1]);
     ctx.dialogue.close();
     await ctx.fade?.(true);
@@ -385,7 +385,8 @@ const base = makeKitChapter({
   // 전차가 선로 위를 천천히 오간다. 마을 어귀 나무 문과 「한성」 이름판(S51)은 굳히기에 합쳐지지 않게 돌려준다
   decorate(world, built) {
     const car = built.named.tram && built.named.tram.userData.car;
-    if (car) world.onUpdate((dt, t) => { car.position.z = Math.sin(t * 0.15) * 22; });
+    // 대화하는 동안에는 학생 가까이(9m)를 벗어난 곳에서 멈춘다: 대화 카메라 앞을 전차가 지나가 화면을 덮던 것(2026-11-04 플레이 점검)
+    if (car) { let ph = 0; world.onUpdate(dt => { const cw = car.getWorldPosition(new THREE.Vector3()), near = Math.hypot(cw.x - world.player.position.x, cw.z - world.player.position.z) < 9; if (world.camMode === 'talk' && !near) return; ph += dt * 0.15; car.position.z = Math.sin(ph) * 22; }); }
     const gate = gateLeaves(world.level, { x: 0, z: GATE_Z, width: 4, height: 2.6, inward: -1 });
     const board = nameBoard(world.level, '한성', 3.2, GATE_Z - 1.6);
     world.closeView = true; // 낮은 카메라·정면 대화(상시 규칙)

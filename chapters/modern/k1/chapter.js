@@ -95,12 +95,13 @@ export function warshipArrives(ctx, s, g) {
     const f = heavy ? burning(world, { parent: b, x: 0.3, y: 0, z: 0.2, size: 1.1, level: 1 }) : null;
     blasts.push({ b, flash, ball, dirt, dust, f, t: 0 });
   };
-  const shots = [[4.3, 1], [5.0, -1], [5.8, 1]];
+  const shots = [[4.3, -1], [5.0, -1], [5.8, -1]]; // 육지 쪽 뱃전(돌고 나면 배 왼쪽이 육지)
   let t = 0, nShot = 0;
   return new Promise(resolve => {
     const off = world.onUpdate(dt => {
       t += dt;
       const k = Math.min(1, t / 4); ship.position.z = -80 + 46 * (1 - (1 - k) * (1 - k)); // 다가오다 천천히 멈춘다
+      ship.rotation.y = Math.PI / 2 * Math.min(1, Math.max(0, (t - 2.6) / 1.5)); // 멈추며 뱃전을 육지로 돌려 옆모습을 보이고 쏜다(2026-11-04 플레이 점검)
       ship.rotation.z = Math.sin(t * 1.3) * 0.02;
       while (shots.length && t >= shots[0][0]) shoot(shots.shift()[1]);
       for (let i = puffs.length - 1; i >= 0; i--) {
@@ -177,7 +178,7 @@ const base = makeKitChapter({
     { ...script.parts.regent, goal: script.goals[2], arena: PALACE, from: [0, 10], bins: xy(script.parts.regent.bins, [{ x: -11, z: -4 }, { x: 0, z: -5 }, { x: 11, z: -4 }]) },
     // 둘째 놀이부터는 마을의 그 사람에게 가서 말을 걸어야 시작한다(D-30 C-05, intro 앞의 meet)
     { ...script.parts.coast, goal: script.goals[3], arena: COAST, from: [0, 21], intro: meet('elder', '마을 어르신과 이야기하기', script.parts.coast.intro),
-      route: xy(script.parts.coast.route, [{ x: -4, z: 12 }, { x: -12, z: 0 }, { x: 6, z: -2 }, { x: 6, z: 14 }]).map((r, i) => i === 1 ? { ...r, scene: warshipArrives, holdCenter: true } : i === 3 ? { ...r, scene: ctx => treatyScene(ctx) } : r) }, // 망루: 남은 시간을 화면 가운데 크게(D-02)
+      route: xy(script.parts.coast.route, [{ x: -4, z: 12 }, { x: -12, z: 0 }, { x: 6, z: -2 }, { x: 6, z: 14 }]).map((r, i) => i === 1 ? { ...r, scene: warshipArrives, holdCenter: true, look: 'scholar', ry: -Math.PI / 2 } : i === 2 ? { ...r, look: 'joseonOfficial', ry: -Math.PI / 2 } : i === 3 ? { ...r, scene: ctx => treatyScene(ctx) } : r) }, // 망루의 선비·포대의 관리가 그 자리에 선다(2026-11-04 플레이 점검: 목소리만 들리던 것) // 망루: 남은 시간을 화면 가운데 크게(D-02)
     { ...script.parts.paper, goal: script.goals[4], arena: YEONMU, from: [0, -3.6], view: { eye: [2.5, 3.2, -1.2], at: [0, 1, -6.5] }, scroll: true, // 연무당 탁자 앞에서 낡은 두루마리 조약문을 읽는다(D-05)
       intro: meet('official', '조선 관리와 이야기하기', script.parts.paper.intro) },
     { ...script.parts.rumor, goal: script.goals[5], arena: YEONMU, from: [0, 11], mark: '!', intro: meet('scholar', '젊은 선비와 이야기하기', script.parts.rumor.intro), // 머리 위는 느낌표(D-06)
@@ -207,24 +208,26 @@ function introScene(ctx) {
   const ship = new THREE.Group(); BUILD.steamship(ship, { old: true }); ship.position.set(-16, 0.3, -40); L.add(ship);
   let off = null, t = 0;
   const run = fn => { off?.(); t = 0; off = world.onUpdate(dt => { t += dt; fn(t); }); };
+  const near = world.npcs.get('official')?.mesh; // 첫 장면 카메라 바로 앞(화면 오른쪽 끝에 얼굴 반쪽이 걸리던 것, 2026-11-04 플레이 점검)
   return {
     shots: [
       { cam: [-3.4, 2.4, 0.4], look: [-3, 2.5, -6], to: { cam: [-3.1, 2.3, -0.8], look: [-3, 2.5, -6] },
-        act: () => run(u => { // 대원군이 축대 위를 옆에서 걸어와 왕 곁에 서서 마을 쪽을 본다(D-68: 관아 문·벽을 지나 나타나던 것 고침)
+        act: () => { if (near) near.visible = false; run(u => { // 대원군이 축대 위를 옆에서 걸어와 왕 곁에 서서 마을 쪽을 본다(D-68: 관아 문·벽을 지나 나타나던 것 고침)
           const k = Math.min(1, u / 2.4); regent.position.set(-6.6 + 2.7 * k, T, -4.9); regent.rotation.y = k < 1 ? Math.PI / 2 : 0;
-        }) },
-      { cam: [1.8, 2.6, -8.4], look: [-1.5, 1.5, -30], to: { cam: [1.6, 2.4, -9.4], look: [-2.5, 1.5, -32] }, // 관아 뒤 담 사이 바닷가
+        }); } },
+      { cam: [1.8, 2.6, -8.4], look: [-5, 1.5, -30], to: { cam: [1.6, 2.4, -9.4], look: [-6, 1.5, -32] }, // 관아 뒤 담 사이 바닷가(오른쪽 끝에 포구 배가 반쯤 걸리지 않게 조금 왼쪽을 본다)
         act: () => {
-          regent.position.set(1.2, 0, -12.6); regent.rotation.y = Math.PI; king.visible = false; ship.position.set(-5, 0.3, -40);
+          regent.position.set(1.2, 0, -12.6); regent.rotation.y = Math.PI; king.visible = false; if (near) near.visible = true; ship.position.set(-16, 0.3, -36); ship.rotation.y = Math.PI / 2;
           run(u => { // 배가 다가오다 뱃머리를 돌려 먼바다로 돌아가고, 대원군은 바다를 등지고 돌아선다
-            if (u < 2.2) ship.position.z = -40 + u * 2;
-            else if (u < 3.8) ship.rotation.y = Math.PI * (u - 2.2) / 1.6;
-            else { ship.rotation.y = Math.PI; ship.position.z = -35.6 - (u - 3.8) * 3; ship.position.x = -5 - (u - 3.8) * 1.5; }
+            // 옆모습(물레바퀴·굴뚝)이 보이게 뱃전을 보이며 가로질러 오다가 뱃머리를 먼바다로 돌린다(2026-11-04 플레이 점검: 뱃머리만 보여 버섯 같던 것)
+            if (u < 2.2) ship.position.x = -16 + u * 4.5;
+            else if (u < 3.8) ship.rotation.y = Math.PI / 2 + Math.PI / 2 * (u - 2.2) / 1.6;
+            else { ship.rotation.y = Math.PI; ship.position.z = -36 - (u - 3.8) * 3; }
             regent.rotation.y = u < 2.6 ? Math.PI : Math.PI * Math.max(0, 1 - (u - 2.6) / 1.2);
           });
         } },
     ],
-    done: () => { off?.(); off = null; for (const o of [king, regent, ship]) o.removeFromParent(); },
+    done: () => { off?.(); off = null; if (near) near.visible = true; for (const o of [king, regent, ship]) o.removeFromParent(); },
   };
 }
 

@@ -337,8 +337,8 @@ function introScene(ctx) {
   return {
     shots: [
       { cam: [5.5, 3, 6.5], look: [0, 1, 1.4], to: { cam: [5, 2.8, 6], look: [0, 1, 1.4] }, act: () => { hide(false); show([...south, ...north, line]); } },
-      { cam: [2.6, 2.4, 6.5], look: [0, 1.2, 1.2], to: { cam: [2.2, 2.3, 6], look: [0, 1.2, 1.2] }, act: () => show([table, ...talks]) },
-      { cam: [-2.6, 2.4, 5.5], look: [0, 1.2, 1.2], to: { cam: [-2.2, 2.3, 5.2], look: [0, 1.2, 1.2] }, act: () => show([table, ...talks]) },
+      { cam: [2.6, 2.5, -2.4], look: [0, 1.2, 1.8], to: { cam: [2.2, 2.4, -2], look: [0, 1.2, 1.8] }, act: () => show([table, ...talks]) }, // 회의 탁자 건너편에서 얼굴을(2026-11-04 플레이 점검: 등만 보이던 것)
+      { cam: [-2.6, 2.5, -2.2], look: [0, 1.2, 1.8], to: { cam: [-2.2, 2.4, -1.8], look: [0, 1.2, 1.8] }, act: () => show([table, ...talks]) },
       { cam: [0.5, 2.4, 7.5], look: [0, 1.3, 1.8], to: { cam: [0.4, 2.4, 7], look: [0, 1.3, 1.8] }, act: () => show([...sideA, ...sideB]) },
     ],
     done: () => { hide(true); for (const o of [...south, ...north, line, table, ...talks, ...sideA, ...sideB]) o.removeFromParent(); },

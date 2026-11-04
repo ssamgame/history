@@ -22,6 +22,8 @@ export function playIntro(ctx, meta, lines, scene) {
   const wasVisible = world.player.visible, wasInput = ctx.input?.enabled;
   world.player.visible = false;
   if (ctx.input) ctx.input.enabled = false;
+  const passers = []; world.level.traverse(o => { if (o.userData.passer && o.visible) passers.push(o); }); // 길 오가는 사람은 도입 장면의 앞을 가리지 않게 숨긴다(2026-11-04 플레이 점검)
+  passers.forEach(o => { o.visible = false; });
   const sub = h('p', { class: 'intro-sub-text' });
   const el = h('div', { class: 'intro-film', role: 'dialog', 'aria-label': `${meta.no}장 시작` },
     h('div', { class: 'intro-bar top' }), h('div', { class: 'intro-bar bottom' }),
@@ -57,6 +59,7 @@ export function playIntro(ctx, meta, lines, scene) {
     finish = () => {
       finish = null; off(); el.remove(); ui.classList.remove('filming'); removeEventListener('keydown', onKey, true);
       try { scene?.done?.(ctx); } catch (e) { console.warn('intro done', e); }
+      passers.forEach(o => { o.visible = true; });
       world.player.visible = wasVisible;
       if (ctx.input) ctx.input.enabled = wasInput;
       world.camMode = 'follow'; world.snapCamera?.();

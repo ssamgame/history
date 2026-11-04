@@ -308,7 +308,7 @@ const base = makeKitChapter({
 function introScene(ctx) {
   const { world } = ctx, L = world.level;
   const marchers = [['student', -1.4, 5.2], ['schoolgirl', 0, 5.8], ['citizen', 1.4, 5.2], ['peasant', -0.7, 6.8], ['woman', 0.8, 6.9]].map(([look, x, z]) => {
-    const p = person(L, look, x, z, Math.PI);
+    const p = person(L, look, x, z, 0); // 카메라 쪽을 본다(D-45, 2026-11-04 플레이 점검: 등만 보이던 것)
     const f = flagMesh(0.6, 0.4); f.position.set(0.5, 2.6, 0); p.add(f);
     p.visible = false; return p;
   });

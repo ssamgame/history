@@ -159,3 +159,52 @@ test('k1 D-30 D-06: 연무당 앞 사람들 머리 위에는 느낌표', async (
     p.catch(() => {});
   } finally { s.done(); }
 });
+
+// 플레이 점검(2026-11-04, 선생님: 근대~현대를 학생처럼 직접 플레이하며 오류·개선점 찾기) — 화면 구도
+test('k1 플레이 점검: 도입 첫 장면은 카메라 바로 앞의 관리를 숨기고(얼굴 반쪽이 화면 끝에 걸림), 끝나면 다시 보인다', () => {
+  const w = testWorld();
+  try {
+    k1.buildScene(w);
+    const off = w.npcs.get('official').mesh, film = k1.introScene({ world: w });
+    film.shots[0].act({ world: w });
+    eq(off.visible, false, '첫 장면 동안 숨김');
+    film.done();
+    eq(off.visible, true, '끝나면 다시');
+  } finally { w.dispose(); }
+});
+
+test('k1 플레이 점검: 도입 바닷가와 망루에서 보는 배는 뱃머리만이 아니라 옆모습(물레바퀴·굴뚝)이 보인다', async () => {
+  const w = testWorld(), cleanups = [];
+  try {
+    k1.buildScene(w);
+    const n0 = new Set(w.level.children), film = k1.introScene({ world: w });
+    const ship = w.level.children.find(o => !n0.has(o) && !o.userData.legs);
+    film.shots[1].act({ world: w });
+    for (let i = 0; i < 20; i++) w.step(1 / 20, { x: 0, z: 0 });
+    ok(Math.abs(Math.sin(ship.rotation.y)) > 0.9, `도입 배 옆모습 ${ship.rotation.y.toFixed(2)}`);
+    film.done();
+    const g = new THREE.Group(); w.level.add(g);
+    const s = { at: (x, z) => ({ x, z }), cleanup: f => cleanups.push(f) };
+    warshipArrives({ world: w, audio: { play: () => {} } }, s, g);
+    const war = g.children[0]; let side = null;
+    for (let i = 0; i < 120 && side === null; i++) { w.step(1 / 20, { x: 0, z: 0 }); if (g.children.some(o => o.name === 'shell')) side = Math.abs(Math.sin(war.rotation.y)); if (i % 40 === 0) await sleep(0); }
+    ok(side > 0.9, `첫 포를 쏠 때 군함 옆모습 ${side}`);
+  } finally { cleanups.forEach(f => f()); w.dispose(); }
+});
+
+test('k1 플레이 점검: 연무당 조약 장면은 두 나라 대표의 얼굴이 카메라 쪽으로 보인다(기둥 뒤 옆얼굴만 보이던 것)', async () => {
+  const { touchBot } = await import('./bot.js');
+  const s = touchSetup(script.speakers), bot = touchBot(s, { answers: new Set() });
+  try {
+    k1.buildScene(s.w, s.ctx);
+    await k1.stories.treaty(s.ctx);
+    const h = s.ctx.testHooks.treaty;
+    ok(h.repFacing >= 0.75, `대표 얼굴 ${h.repFacing}`);
+  } finally { bot.stop(); s.done(); }
+}, { timeout: 120000 });
+
+test('k1 플레이 점검: 해안 순찰에서 말하는 선비(망루)·관리(포대)가 그 자리에 서 있다(목소리만 들리던 것)', () => {
+  const r = k1.parts[1].route;
+  eq(r[1].look, 'scholar'); eq(r[2].look, 'joseonOfficial');
+  eq(r[1].talk[0].who, 'scholar'); eq(r[2].talk[0].who, 'official');
+});

@@ -199,6 +199,7 @@ function update(g, dt) {
   // 믹서가 지난번에 쓴 값으로 되돌려 둔 뒤 돌린다(2026-10-31: 짐 안기처럼 팔이 가만한 동작에서 집는 자세가 풀린 뒤에도 팔이 내려가 있던 오류)
   for (const [bone, q] of S.mixed) bone.quaternion.copy(q);
   S.mixed.clear();
+  if (S.lift) { S.bones('hips').position.sub(S.lift); S.lift = null; } // 지난 프레임에 올린 엉덩이를 되돌린 뒤 동작을 돌린다
   S.mixer.update(S.manual ? 0.0001 : dt); S.manual = false;
   let posed = false; // 덧씌울 관절이 있을 때만 사람 전체의 자리(행렬)를 새로 잰다(사람이 많은 장면에서 가볍게)
   for (const L of S.links) {
@@ -219,6 +220,7 @@ function update(g, dt) {
   }
   // 신분에 맞는 걸음(D-67 ⑤): 걸을 때만, 팔을 다른 일(집기·짐)에 쓰지 않을 때만
   if (g.userData.gait && /^walk/.test(S.target || '') && !g.userData.carry && S.links.every(L => L.w < 0.02)) gaitPose(S, g);
+  if (/^(walk|run)/.test(S.target || '')) footFloor(S, g);
   // 두 팔로 안은 짐: 짐 안기 동작이 다 섞이면 두 손 가운데로 옮겨 손에 붙인다(그 뒤로는 손과 함께 움직인다)
   const c = S.carry;
   const armsFree = S.links.every(L => L.extra.length === 0 || L.w < 0.02); // 집는 자세(덧씌움)가 다 풀리고 짐 안기 동작만 남았을 때
@@ -229,6 +231,19 @@ function update(g, dt) {
     c.obj.parent.worldToLocal(wv2.copy(wv)); c.obj.position.copy(wv2); c.obj.updateMatrixWorld(true);
     hl.attach(c.obj); c.pending = false;
   }
+}
+// 걷기·달리기 동작에서 발끝을 내릴 때 신 바닥이 땅 밑으로 0.08m 꺼지던 것(2026-11-04 플레이 점검): 낮은 쪽 신이 땅(사람 발밑) 아래로 내려가면 그만큼 엉덩이를 올린다
+const fb = new THREE.Box3(), fv = new THREE.Vector3();
+function footFloor(S, g) {
+  S.shoes ||= (() => { const a = []; g.traverse(o => { if (o.isMesh && o.name === 'shoe') a.push(o); }); return a; })();
+  if (!S.shoes.length) return;
+  g.updateMatrixWorld(true);
+  let low = Infinity; for (const m of S.shoes) low = Math.min(low, fb.setFromObject(m).min.y);
+  const below = g.getWorldPosition(fv).y - 0.01 - low;
+  if (below <= 0) return;
+  const hips = S.bones('hips'), par = hips.parent; // 뼈 좌표는 위가 y가 아니어서(뿌리 뼈가 앞을 향해 눕는다) 세상의 '위'를 부모 뼈 좌표로 바꿔 올린다
+  const a = par.worldToLocal(hips.getWorldPosition(fv).clone()), b = par.worldToLocal(hips.getWorldPosition(fv).add(new THREE.Vector3(0, below, 0)));
+  S.lift = b.sub(a); hips.position.add(S.lift); hips.updateMatrixWorld(true);
 }
 // 뼈의 +Y(뼈 방향)가 사람 기준 방향 dir을 향하게 돌린다
 const aimV = new THREE.Vector3(), aimQ = new THREE.Quaternion(), aimP = new THREE.Quaternion(), aimD = new THREE.Quaternion();

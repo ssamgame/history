@@ -184,9 +184,13 @@ async function walkWith(ctx, { arena, stops, lines, stage, start = [0, 15], kimA
   }
 }
 
+// 창덕궁 문(z -30) 안쪽 3~6m에서는 따라가는 카메라가 문 위 인방에 가려 학생이 안 보였다(2026-11-04 플레이 점검): 그동안만 높이 올려 내려다본다
+const GATE_CAM = new THREE.Vector3(0, 10, 6);
+export const nightCamOffset = z => (z <= -32.5 && z >= -36 ? GATE_CAM : null);
 // ① 정변의 밤(밤 하늘): 잔치 → 정변 → 창덕궁 → 새 정부와 개혁안
 function nightStage({ ctx, a, g, kim }) {
   const { world, dialogue } = ctx;
+  const offCam = world.onUpdate(() => { world.followOffset = nightCamOffset(world.player.position.z); });
   for (const [x, z] of [[-4.5, 3], [-4.5, 10], [5, 7], [5, -2], [-5.5, -12], [5.5, -16], [-3.6, -28.6], [3.6, -28.6], [-4, -42], [4, -42]]) lantern(g, x, z);
   // 잔치 자리: 우정총국 앞에 차린 상 두 개, 둘러앉은 관리들, 앞에 나선 우정총국 관리
   for (const z of [4.6, 7.6]) { const d = new THREE.Group(); BUILD.desk(d); d.position.set(-7, 0, z); d.rotation.y = Math.PI / 2; g.add(d); }
@@ -223,7 +227,7 @@ function nightStage({ ctx, a, g, kim }) {
     },
     async openGate() { guards.forEach((p, i) => { p.rotation.y = i ? -Math.PI / 2 : Math.PI / 2; }); await wait(world, 1.2, k => gate.setOpen(k)); },
     async council() { council.forEach(p => { p.visible = true; }); setCarry(kim.mesh, scroll, 'side'); },
-    dispose() { fires.forEach(f => f.setLevel(0)); setCarry(kim.mesh, null); },
+    dispose() { offCam(); world.followOffset = null; fires.forEach(f => f.setLevel(0)); setCarry(kim.mesh, null); },
     gate,
   };
 }
@@ -357,10 +361,12 @@ function introScene(ctx) {
   return {
     shots: [
       { cam: [0.3, 2.4, 5], look: [0, 2.4, -5], to: { cam: [0.2, 2.3, 2.6], look: [0, 2.4, -5] },
-        act: () => run(u => { officials.forEach((p, i) => { p.position.z = -2.6 + Math.min(1, u / 2) * 1.6; p.rotation.y = i ? -0.3 : 0.3; }); }) },
+        act: () => { // 화면 양끝에 뒤통수·반쪽 몸으로 걸리던 길손과 우정총국 관리는 첫 장면 동안 숨긴다(2026-11-04 플레이 점검)
+          folk.forEach(p => { p.visible = false; }); const ck = world.npcs.get('clerk'); if (ck) ck.mesh.visible = false;
+          run(u => { officials.forEach((p, i) => { p.position.z = -2.6 + Math.min(1, u / 2) * 1.6; p.rotation.y = i ? -0.3 : 0.3; }); }); } },
       { cam: [-7, 2.3, 6.2], look: [5, 1.5, 1.5], to: { cam: [-7.5, 2.2, 5.6], look: [2, 1.5, 1.5] },
         act: () => {
-          qing.forEach(p => { p.visible = true; }); officials.forEach(p => { p.visible = false; });
+          qing.forEach(p => { p.visible = true; }); officials.forEach(p => { p.visible = false; }); folk.forEach(p => { p.visible = true; }); const ck = world.npcs.get('clerk'); if (ck) ck.mesh.visible = true;
           const kim = world.npcs.get('kimokgyun'); if (kim) kim.mesh.visible = false; // 큰길가의 김옥균이 행렬을 가리지 않게(끝나면 다시)
           run(u => {
             qing.forEach((p, i) => { p.position.x = 16 + Math.floor(i / 2) * 1.6 - u * 3.4; });
@@ -368,7 +374,7 @@ function introScene(ctx) {
           });
         } },
     ],
-    done: () => { off?.(); off = null; const kim = world.npcs.get('kimokgyun'); if (kim) kim.mesh.visible = true; for (const o of [...officials, ...folk, ...qing, cart]) o.removeFromParent(); },
+    done: () => { off?.(); off = null; for (const id of ['kimokgyun', 'clerk']) { const n = world.npcs.get(id); if (n) n.mesh.visible = true; } for (const o of [...officials, ...folk, ...qing, cart]) o.removeFromParent(); },
   };
 }
 

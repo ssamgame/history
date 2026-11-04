@@ -271,9 +271,9 @@ export async function linePlay(ctx) {
     // 판문점 천막: 탁자 양쪽 대표가 협정문에 서명
     const tbl = new THREE.Group(); tbl.position.set(0, 0, 10.8); g.add(tbl);
     blk(tbl, 3, 0.8, 1.2, 0x6b5a44, 0, 0.4, 0); blk(tbl, 0.5, 0.02, 0.4, 0xf2ecd8, -0.8, 0.82, 0, 'cloth'); blk(tbl, 0.5, 0.02, 0.4, 0xf2ecd8, 0.8, 0.82, 0, 'cloth');
-    const d1 = person(tbl, 'gentleman', -0.8, -1.1, 0), d2 = person(tbl, { ...LOOKS.gentleman, robe: 0x4a4a3a }, 0.8, 1.1, Math.PI);
+    const d1 = person(tbl, 'gentleman', -0.8, -1.1, 0.6), d2 = person(tbl, { ...LOOKS.gentleman, robe: 0x4a4a3a }, 0.8, 1.1, Math.PI - 0.6); // 카메라 쪽으로 조금 돌아 얼굴이 보이게(2026-11-04 플레이 점검)
     const W = a.at(-4.4, 7.6); placePlayer(world, [W.x, W.z], Math.PI * 0.75);
-    const D = a.at(0, 10.8); world.setFixedCamera([D.x + 4.6, 2.6, D.z - 0.6], [D.x - 0.4, 1, D.z + 0.2]); // 탁자 옆에서 두 대표를 본다
+    const D = a.at(0, 10.8); world.setFixedCamera([D.x + 4.2, 3, D.z - 0.4], [D.x - 0.2, 1.1, D.z + 0.1]); // 탁자 옆에서 두 대표를 본다
     const arm = p => p.userData.arms?.[1];
     await wait(world, 1.6, k => { for (const p of [d1, d2]) { const ar = arm(p); if (ar) ar.rotation.x = -0.9 - Math.sin(k * Math.PI * 6) * 0.15; } });
     hook.signed = true;

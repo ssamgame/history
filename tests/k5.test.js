@@ -3,6 +3,7 @@
 // 학생에게 말을 걸면 문물 체험 걷기(전신 보내기·전화 걸기·전깃불 켜기·학교 들어가기·양화점). 역사책은 뺐다.
 // D-30 공통(퀘스트 차례·모두 들어야 메인 인물·도입 장면·빛나는 문·간판·다가가서 시작)
 import { test, eq, ok } from './harness.js';
+import * as THREE from 'three';
 import k5, { villageTalk, nightScene, munmulWalk, NIGHT_MOOD, MUNMUL } from '../chapters/modern/k5/chapter.js';
 import script from '../chapters/modern/k5/script.js';
 import { MOODS } from '../core/world.js';
@@ -134,3 +135,21 @@ test('k5 D-34: 문물 체험 걷기 — 다섯 자리를 차례로 걸어가 대
     eq(s.w.bounds, b0, '걷는 곳도 마을로');
   } finally { bot.stop(); s.done(); }
 }, { timeout: 120000 });
+
+test('k5 플레이 점검: 대화하는 동안 마을 전차는 학생 가까이를 벗어난 곳에서 멈춘다(대화 카메라 앞을 지나가지 않게)', async () => {
+  const { default: k5 } = await import('../chapters/modern/k5/chapter.js');
+  const w = testWorld();
+  try {
+    k5.buildScene(w);
+    let car = null; w.level.traverse(o => { if (o.name === 'tramCar') car = o; });
+    const V = () => car.getWorldPosition(new THREE.Vector3());
+    w.player.position.set(30, 0, 30); // 멀리
+    for (let i = 0; i < 20; i++) w.step(1 / 20, { x: 0, z: 0 });
+    w.camMode = 'talk'; const a = V();
+    for (let i = 0; i < 40; i++) w.step(1 / 20, { x: 0, z: 0 });
+    ok(V().distanceTo(a) < 0.01, '대화 동안 멈춤');
+    w.camMode = 'follow';
+    for (let i = 0; i < 40; i++) w.step(1 / 20, { x: 0, z: 0 });
+    ok(V().distanceTo(a) > 0.5, '대화가 끝나면 다시 달린다');
+  } finally { w.dispose(); }
+});
