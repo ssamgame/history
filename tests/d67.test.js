@@ -454,3 +454,33 @@ test('d68 근대1-1: 흥선 대원군은 관아 건물(문·벽)을 지나 나�
   ok(!/regent\.position\.set\(-3\.9, T, -7\.4 \+ 2\.6/.test(src), '건물 안에서 앞으로 걸어 나오지 않는다');
   ok(/regent\.position\.set\(-6\.6 \+ 2\.7/.test(src), '축대 위를 옆에서');
 });
+
+// D-68 근대 2장(갑신정변)
+test('d68 근대2-1: 개혁안 붙이기에는 빛기둥이 없고, 진짜 개혁안은 순서 상관없이 비어 있는 벽·게시판 어디에 붙여도 된다', async () => {
+  const src = await (await fetch('../chapters/modern/k2/chapter.js')).text(), script = (await import('../chapters/modern/k2/script.js')).default;
+  ok(!/nextPlaceBeacon/.test(src), '빛기둥 없음');
+  const R = script.parts.reform; ok(R.anyYes, '어디에 붙여도 된다');
+  ok(!/빛기둥/.test(R.howto + JSON.stringify(R.intro)), '안내 글에 빛기둥 없음');
+  const { deliverAccepts } = await import('../chapters/kit/play.js');
+  const bins = R.bins.map(b => ({ ...b }));
+  const real = R.cards.find(c => c.bin !== 'no');
+  ok(bins.filter(b => b.id !== 'no').every(b => deliverAccepts(R, real, b)), '진짜 개혁안은 어느 게시판이든');
+  ok(!deliverAccepts(R, real, bins.find(b => b.id === 'no')), '「개혁안이 아닌 것」에는 안 된다');
+  const fake = R.cards.find(c => c.bin === 'no'); ok(!deliverAccepts(R, fake, bins[0]) && deliverAccepts(R, fake, bins.find(b => b.id === 'no')), '가짜는 「아닌 것」에만');
+  bins[0].placed = 1; ok(!deliverAccepts(R, real, bins[0]), '이미 붙인 곳은 빼고');
+});
+test('d68 근대2-2·3: 청 군대는 서쪽 담 바로 밖에서 담 틈으로 들어오고, 김옥균·관리·잔치 손님은 벽·집을 지나지 않는 길로 달아난다', async () => {
+  const src = await (await fetch('../chapters/modern/k2/chapter.js')).text();
+  const m = /p\.position\.set\((-?\d+(?:\.\d+)?) - row\(i\) \* ([\d.]+), 0, \(i % 5 - 2\) \* ([\d.]+) \+ \(row\(i\) % 2\) \* ([\d.]+)\)/.exec(src);
+  ok(m, '청 군사 자리'); const x0 = +m[1], zs = +m[3], zo = +m[4];
+  ok(x0 >= -20 && x0 - 2 * +m[2] > -24, `담 바로 밖 x ${x0}`);
+  ok(2 * zs + zo + 0.35 <= 3 && -2 * zs - 0.35 >= -5, `담 틈(z −5~3) 안 ±${(2 * zs + zo).toFixed(2)}`);
+  ok(!/runAway\(world, kim\.mesh, far, 3\)/.test(src) || /far = a\.at\(2[01]/.test(src), '김옥균은 담 바로 밖까지만');
+  ok(/const away = \[\[-4, 18\]/.test(src), '잔치 손님은 큰길을 따라');
+});
+test('d68 근대2(끝 장면): 청 군사 행렬은 양옆 가게 줄(무대 밖 x ±18.5)을 지나지 않는다', async () => {
+  const src = await (await fetch('../chapters/modern/k2/story.js')).text();
+  const m = /troop\(g, 'qingSoldier', (-?\d+), 0, \{ cols: 2, rows: (\d), gap: ([\d.]+)/.exec(src), g2 = /march\(world, column, (\d+),/.exec(src);
+  const front = +m[1], back = front - (+m[2] - 1) * +m[3], d = +g2[1];
+  ok(back > -18.5 && front + d < 18.5, `행렬 ${back.toFixed(1)} → ${(front + d).toFixed(1)}`);
+});

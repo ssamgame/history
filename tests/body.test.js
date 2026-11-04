@@ -3,7 +3,7 @@
 import { test, eq, ok } from './harness.js';
 import * as THREE from 'three';
 import { testWorld, touchSetup, touchBot, memSave } from './bot.js';
-import { makePerson, setCarry, playAction, setRigHook, POST_POSE } from '../core/people.js';
+import { makePerson, setCarry, playAction, setRigHook, POST_POSE, animateWalk } from '../core/people.js';
 import { LOOKS } from '../content/characters.js';
 import { loadBody, attachBody, updateBodies, resetBodies, bodyPeople, bodyOn } from '../core/body.js';
 import { createProbe } from '../tools/qa/probe.js';
@@ -248,5 +248,18 @@ test('body: 학생 인물은 걸을 때 팔꿈치를 굽히지 않고 팔을 곧
     ok(/walk|run/.test(w.player.userData.skel.target), `학생이 걷는다 ${w.player.userData.skel.target}`);
     ok(worst < 0.12, `학생 팔꿈치 ${worst.toFixed(2)}`);
     ok(other > worst, `다른 사람은 예전처럼 ${other.toFixed(2)}`);
+  } finally { off(); w.dispose(); }
+});
+
+test('body: 장면이 직접 움직이던 사람(manual)이 멈춰 서면 걷기 동작이 남지 않고 서 있기로 바뀐다(D-68: 제자리걸음)', async () => {
+  await loadBody(); on();
+  const w = testWorld();
+  try {
+    const p = makePerson(LOOKS.soldier); w.level.add(p); off();
+    p.userData.manual = true;
+    for (let i = 0; i < 20; i++) { p.position.x += 0.08; animateWalk(p, true, 1 / 20); w.step(1 / 20, { x: 0, z: 0 }); }
+    ok(/walk/.test(p.userData.skel.target), `걷는 중 ${p.userData.skel.target}`);
+    for (let i = 0; i < 30; i++) w.step(1 / 20, { x: 0, z: 0 }); // 장면이 더는 걸음을 부르지 않는다
+    ok(!/walk|run/.test(p.userData.skel.target), `멈추면 서 있기 ${p.userData.skel.target}`);
   } finally { off(); w.dispose(); }
 });

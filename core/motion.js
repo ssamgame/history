@@ -280,6 +280,7 @@ export function setWork(person, kind) { person.userData.work = kind; return pers
 // core/body.js가 그 뼈에 덧씌운다. 뼈의 실제 회전과 짐을 손에 붙이는 일은 world.step 끝(POST_POSE)에 core/body.js가 한다
 function animateSkel(person, moving, dt) {
   const u = person.userData, m = state(u), S = u.skel;
+  S.picked = true; // 이 프레임에 동작을 골랐다(core/body.js 제자리걸음 막기가 끼어들지 않게)
   u.t = (u.t || 0) + dt;
   person.getWorldPosition(v3);
   let raw = 0;
