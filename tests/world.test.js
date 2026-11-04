@@ -264,3 +264,19 @@ test('world: 카메라에 아주 가까이 붙은 다른 사람(1.3m 안)은 잠
     eq(p.visible, false, '장면이 숨긴 사람은 그대로');
   } finally { w.dispose(); }
 });
+
+test('world: 가까운 대화 시점에서는 말하는 사람은 그대로 두고, 카메라 2.4m 안의 다른 사람만 숨긴다', async () => {
+  const { testWorld } = await import('./bot.js');
+  const w = testWorld();
+  try {
+    w.bounds = { x0: -30, x1: 30, z0: -30, z1: 30 }; w.closeView = true;
+    w.player.position.set(0, 0, 4);
+    w.addNpc('a', {}, 0, 0, 0); const sp = w.npcs.get('a').mesh;
+    w.setTalkCamera(sp);
+    for (let i = 0; i < 60; i++) w.step(1 / 20, { x: 0, z: 0 });
+    const cam = w.camera.position.clone();
+    const by = makePerson({}); by.position.set(cam.x + 1.8, 0, cam.z - 0.4); w.level.add(by);
+    for (let i = 0; i < 8; i++) w.step(1 / 20, { x: 0, z: 0 });
+    eq(sp.visible, true, '말하는 사람'); eq(by.visible, false, '카메라 옆 사람');
+  } finally { w.dispose(); }
+});

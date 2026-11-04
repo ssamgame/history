@@ -163,7 +163,7 @@ function skyMaterial() {
 }
 
 export function createWorld(container, { quality = 'medium', renderer: injected = null } = {}) {
-  const markV = new THREE.Vector3(), nearHid = []; let nearT = 0;
+  const markV = new THREE.Vector3(), talkAt = new THREE.Vector3(1e9, 0, 0), nearHid = []; let nearT = 0;
   let camLift = 0; // 0~1: 학생과 카메라 사이를 막는 것이 있어 카메라를 올린 정도
   let renderer;
   try { renderer = injected || new THREE.WebGLRenderer({ antialias: quality !== 'low' }); }
@@ -322,6 +322,7 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
     getGoal() { return goal; },
     // 대화 카메라: 플레이어 어깨 너머로 말하는 인물의 얼굴이 보이도록 다가간다. 끝나면 camMode를 'follow'로.
     setTalkCamera(npcMesh) {
+      talkAt.copy(npcMesh.position);
       const n = npcMesh.position, p = player.position;
       let dx = p.x - n.x, dz = p.z - n.z;
       const d = Math.hypot(dx, dz) || 1; dx /= d; dz /= d;
@@ -429,10 +430,12 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
         nearT = 0.15;
         for (const o of nearHid) { o.userData.camHid = false; o.visible = true; }
         nearHid.length = 0;
+        const talking = world.camMode === 'talk', reach = talking && world.closeView ? 2.4 : 1.3; // 가까운 대화 시점은 화각이 좁아 2.4m 안도 크게 보인다
         if (camera.position.y < 3.2) world.level.traverse(o => {
           if (!o.userData.legs || o === player || !o.visible) return;
           o.getWorldPosition(markV);
-          if (Math.hypot(markV.x - camera.position.x, markV.z - camera.position.z) < 1.3) { o.visible = false; o.userData.camHid = true; nearHid.push(o); }
+          if (talking && Math.hypot(markV.x - talkAt.x, markV.z - talkAt.z) < 0.6) return; // 말하는 사람은 그대로
+          if (Math.hypot(markV.x - camera.position.x, markV.z - camera.position.z) < reach) { o.visible = false; o.userData.camHid = true; nearHid.push(o); }
         });
       }
       placeSun();
