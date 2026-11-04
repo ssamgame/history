@@ -166,7 +166,7 @@ test('body: 뼈대 몸을 켜면(goryeo-body=1) 고려 1장을 터치만으로 �
     clearInterval(t);
     eq(r.quizCorrect, script.quizzes.length, '퀴즈까지 끝');
     ok(most >= 5, `뼈대 몸으로 움직인 사람 ${most}명`);
-  } finally { localStorage.removeItem('goryeo-body'); off(); bot.stop(); s.done(); }
+  } finally { localStorage.setItem('goryeo-body', '0'); off(); bot.stop(); s.done(); }
 }, { timeout: 240000 });
 
 // 2026-10-31 선생님: 걸음 박자가 너무 빠르고 짐을 들면 뛰는 것처럼 보였다. 뼈대 몸도 박자(동작 재생 빠르기 × 동작 한 바퀴 두 걸음)를 사람 박자 안에 둔다
@@ -198,7 +198,7 @@ test('body: 뼈대 몸을 불러오는 동안에는 빈 장면에 학생만 서 
     ok(!w.player.visible, '불러오는 동안 숨김');
     await pr;
     ok(w.player.visible, '다 불러오면 다시 보임');
-  } finally { localStorage.removeItem('goryeo-body'); off(); w.dispose(); }
+  } finally { localStorage.setItem('goryeo-body', '0'); off(); w.dispose(); }
 }, { timeout: 30000 });
 
 // 2026-10-31 점검: 뼈대 몸을 켜면 조선 5장 장면 짓기가 멈췄다(웅크린 백성의 팔에 팔꿈치를 새로 넣는 addJoints가 뼈로 옮겨 간 소매를 찾지 못함)
