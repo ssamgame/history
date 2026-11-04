@@ -247,3 +247,20 @@ test('world: 사람 머리 위 느낌표는 카메라 바로 앞(2.5m 안)이면
     ok(near < far * 0.1 && far > 0.3, `가까이 ${near.toFixed(3)} 멀리 ${far.toFixed(3)}`);
   } finally { w.dispose(); }
 });
+
+test('world: 카메라에 아주 가까이 붙은 다른 사람(1.3m 안)은 잠깐 숨겨 화면을 덮지 않고, 멀어지면 다시 보인다(2026-11-04 플레이 점검: 철모가 화면을 덮음)', async () => {
+  const { testWorld } = await import('./bot.js');
+  const w = testWorld();
+  try {
+    const p = makePerson({}); p.position.set(0, 0, 5); w.level.add(p);
+    w.setFixedCamera([0.3, 1.6, 5.4], [0, 1.4, -5]);
+    for (let i = 0; i < 8; i++) w.step(1 / 20, { x: 0, z: 0 });
+    eq(p.visible, false, '붙으면 숨김');
+    w.setFixedCamera([0, 3, 14], [0, 1, 0]);
+    for (let i = 0; i < 8; i++) w.step(1 / 20, { x: 0, z: 0 });
+    eq(p.visible, true, '멀어지면 다시');
+    p.visible = false; w.setFixedCamera([0.3, 1.6, 5.4], [0, 1.4, -5]); for (let i = 0; i < 8; i++) w.step(1 / 20, { x: 0, z: 0 });
+    w.setFixedCamera([0, 3, 14], [0, 1, 0]); for (let i = 0; i < 8; i++) w.step(1 / 20, { x: 0, z: 0 });
+    eq(p.visible, false, '장면이 숨긴 사람은 그대로');
+  } finally { w.dispose(); }
+});

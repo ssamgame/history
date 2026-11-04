@@ -163,7 +163,7 @@ function skyMaterial() {
 }
 
 export function createWorld(container, { quality = 'medium', renderer: injected = null } = {}) {
-  const markV = new THREE.Vector3();
+  const markV = new THREE.Vector3(), nearHid = []; let nearT = 0;
   let camLift = 0; // 0~1: 학생과 카메라 사이를 막는 것이 있어 카메라를 올린 정도
   let renderer;
   try { renderer = injected || new THREE.WebGLRenderer({ antialias: quality !== 'low' }); }
@@ -422,6 +422,18 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
         camera.position.lerp(tmp.copy(p).add(off), a);
         camTarget.lerp(tmp.copy(p).setY(world.followLookY ?? (world.closeView ? 1.2 : 1)).setZ(p.z + LOOK_AHEAD), a);
         camera.lookAt(camTarget);
+      }
+      // 카메라에 1.3m 안으로 붙은 다른 사람은 잠깐 숨긴다(대화·장면 카메라 앞에서 철모·뒤통수가 화면을 덮던 것, 2026-11-04 플레이 점검). 장면이 숨긴 사람은 건드리지 않는다
+      nearT -= dt;
+      if (nearT <= 0) {
+        nearT = 0.15;
+        for (const o of nearHid) { o.userData.camHid = false; o.visible = true; }
+        nearHid.length = 0;
+        if (camera.position.y < 3.2) world.level.traverse(o => {
+          if (!o.userData.legs || o === player || !o.visible) return;
+          o.getWorldPosition(markV);
+          if (Math.hypot(markV.x - camera.position.x, markV.z - camera.position.z) < 1.3) { o.visible = false; o.userData.camHid = true; nearHid.push(o); }
+        });
       }
       placeSun();
       sky.material.uniforms.time.value = elapsed;
