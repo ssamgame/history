@@ -47,10 +47,10 @@ function rowPose(rig, dt) {
   const sway = s * k;
   boat.updateMatrixWorld(true); oar.updateMatrixWorld(true);
   const hand = oar.localToWorld(v3.copy(rig.grip));
-  // 엉덩이째 손잡이 쪽으로 무게를 옮긴다(배 좌표에서 손잡이가 간 만큼 조금)
+  // 엉덩이째 손잡이 쪽으로 무게를 옮긴다(배 좌표에서 손잡이가 옆으로 간 만큼: 덜 따라가면 노를 끝까지 밀 때 손이 손잡이에서 떨어진다)
   const hb = boat.worldToLocal(w3.copy(hand));
   const ry = p.rotation.y, fx = Math.sin(ry), fz = Math.cos(ry); // 사공이 바라보는 쪽(배 좌표)
-  p.position.set(rig.base.x + (hb.x - rig.base.x) * 0.6 + fx * rig.step, rig.base.y, rig.base.z + fz * rig.step);
+  p.position.set(rig.base.x + (hb.x - rig.base.x) + fx * rig.step, rig.base.y, rig.base.z + fz * rig.step);
   u.legs[0].rotation.x = 0.12 * sway; u.legs[1].rotation.x = -0.12 * sway;
   p.updateMatrixWorld(true);
   // 사공 몸 좌표에서 두 손이 쥘 자리
