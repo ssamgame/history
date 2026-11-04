@@ -125,3 +125,10 @@ test('kit: 근대 5장부터 현대편까지는 찾기·차례 맞히기 대신 
     for (const [k, p] of Object.entries(script.parts || {})) ok(p.type !== 'find' && p.type !== 'stops', `${meta.id} ${k}: ${p.type}`);
   }
 });
+
+test('kit: 나무 부품의 막는 자리에는 잎 너비(canopy)가 붙는다(따라가는 카메라가 잎에 가리지 않게, 2026-11-04 플레이 점검)', async () => {
+  const { addFootprint } = await import('../chapters/kit/town.js');
+  const { testWorld } = await import('./bot.js');
+  const w = testWorld();
+  try { addFootprint(w, { type: 'tree', x: 1, z: 2 }, 0.6); ok(w.colliders.at(-1).canopy >= 1.5, `canopy ${w.colliders.at(-1).canopy}`); } finally { w.dispose(); }
+});

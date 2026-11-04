@@ -218,6 +218,11 @@ test('world: 따라가는 카메라와 학생 사이에 집·나무(막는 자�
     ok(w.camera.position.y > free.y + 1.5, `처마가 걸쳐도 올라간다 ${w.camera.position.y.toFixed(1)}`);
     w.colliders.length = 0;
     for (let i = 0; i < 80; i++) w.step(1 / 20, { x: 0, z: 0 });
+    w.addCollider({ x: 1.2, z: 5, r: 0.6, canopy: 1.8 }); // 나무: 줄기는 가늘어도 잎이 넓다
+    for (let i = 0; i < 60; i++) w.step(1 / 20, { x: 0, z: 0 });
+    ok(w.camera.position.y > free.y + 1.5, `나무 잎이 가리면 올라간다 ${w.camera.position.y.toFixed(1)}`);
+    w.colliders.length = 0;
+    for (let i = 0; i < 80; i++) w.step(1 / 20, { x: 0, z: 0 });
     w.addCollider({ x: 0, z: 4, r: 0.4 }); // 작은 소품(항아리)은 무시
     for (let i = 0; i < 60; i++) w.step(1 / 20, { x: 0, z: 0 });
     ok(w.camera.position.distanceTo(free) < 0.2, '작은 소품에는 그대로');
