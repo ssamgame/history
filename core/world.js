@@ -163,6 +163,7 @@ function skyMaterial() {
 }
 
 export function createWorld(container, { quality = 'medium', renderer: injected = null } = {}) {
+  let camLift = 0; // 0~1: 학생과 카메라 사이를 막는 것이 있어 카메라를 올린 정도
   let renderer;
   try { renderer = injected || new THREE.WebGLRenderer({ antialias: quality !== 'low' }); }
   catch (e) { const err = new Error('WEBGL_UNAVAILABLE'); err.cause = e; throw err; }
@@ -401,7 +402,16 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
       if (camera.fov !== fov) { const d = fov - camera.fov; camera.fov = Math.abs(d) < 0.05 ? fov : camera.fov + d * Math.min(1, dt * 3); camera.updateProjectionMatrix(); }
       if (world.camMode === 'follow') {
         const a = 1 - Math.exp(-dt * 4);
-        camera.position.lerp(tmp.copy(p).add(world.camOffset()), a);
+        const off = world.camOffset();
+        // 학생과 카메라 사이(땅 위 선분)에 집·나무 같은 막는 자리가 있으면 높이 올라 가까이서 내려다본다(2026-11-04 플레이 점검: 집 지붕·담이 학생을 가림)
+        const len = Math.hypot(off.x, off.z), blocked = len > 0.1 && world.colliders.some(c => {
+          if (c.r < 0.8) return false; // 항아리 같은 작은 소품은 가리지 않는다
+          const t = Math.max(0, Math.min(1, ((c.x - p.x) * off.x + (c.z - p.z) * off.z) / (len * len)));
+          return t * len > 0.8 && Math.hypot(p.x + off.x * t - c.x, p.z + off.z * t - c.z) < c.r;
+        });
+        camLift += ((blocked ? 1 : 0) - camLift) * Math.min(1, dt * 2.5);
+        if (camLift > 0.001) off.set(off.x * (1 - 0.45 * camLift), off.y * (1 + 0.35 * camLift), off.z * (1 - 0.45 * camLift));
+        camera.position.lerp(tmp.copy(p).add(off), a);
         camTarget.lerp(tmp.copy(p).setY(world.followLookY ?? (world.closeView ? 1.2 : 1)).setZ(p.z + LOOK_AHEAD), a);
         camera.lookAt(camTarget);
       }

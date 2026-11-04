@@ -197,3 +197,24 @@ test('world: closeView lowers the follow camera and faces the talk camera to the
   ok(w.player.position.z < -2, 'autoMove walks ' + w.player.position.z);
   w.dispose();
 });
+
+test('world: 따라가는 카메라와 학생 사이에 집·나무(막는 자리)가 있으면 카메라가 높이 올라 내려다보고, 없으면 제자리로(2026-11-04 플레이 점검: 집 지붕이 화면을 덮음)', async () => {
+  const { testWorld } = await import('./bot.js');
+  const w = testWorld();
+  try {
+    w.bounds = { x0: -30, x1: 30, z0: -30, z1: 30 };
+    w.player.position.set(0, 0, 0); w.camMode = 'follow'; w.snapCamera();
+    for (let i = 0; i < 40; i++) w.step(1 / 20, { x: 0, z: 0 });
+    const free = w.camera.position.clone();
+    w.addCollider({ x: 0, z: 4, r: 2.5 }); // 학생 바로 뒤(카메라 쪽)에 집
+    for (let i = 0; i < 60; i++) w.step(1 / 20, { x: 0, z: 0 });
+    const hid = w.camera.position.clone();
+    ok(hid.y > free.y + 1.5 && hid.z < free.z - 2, `가리면 높이·가까이 (${free.y.toFixed(1)},${free.z.toFixed(1)}) → (${hid.y.toFixed(1)},${hid.z.toFixed(1)})`);
+    w.colliders.length = 0;
+    for (let i = 0; i < 80; i++) w.step(1 / 20, { x: 0, z: 0 });
+    ok(w.camera.position.distanceTo(free) < 0.2, '막는 것이 없으면 제자리');
+    w.addCollider({ x: 0, z: 4, r: 0.4 }); // 작은 소품(항아리)은 무시
+    for (let i = 0; i < 60; i++) w.step(1 / 20, { x: 0, z: 0 });
+    ok(w.camera.position.distanceTo(free) < 0.2, '작은 소품에는 그대로');
+  } finally { w.dispose(); }
+});

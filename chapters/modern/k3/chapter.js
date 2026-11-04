@@ -351,7 +351,7 @@ function introScene(ctx) {
     shots: [
       { cam: [2.2, 2.6, 6.4], look: [-5, 1.1, 2.4], to: { cam: [1.4, 2.4, 5.6], look: [-5, 1.1, 2.4] },
         act: () => { hide(false); run(u => { const k = Math.min(1, u / 3); sacks.position.x = -7.6 + k * 4.1; sacks.position.y = Math.sin(k * Math.PI) * 0.3; farmers1.forEach(p => { p.rotation.x = 0.12 * Math.min(1, u); }); }); } },
-      { cam: [6.5, 3.4, 1.5], look: [-0.5, 1.4, -2.6], to: { cam: [5.6, 3.2, 0.8], look: [-0.5, 1.4, -2.6] },
+      { cam: [5, 2.7, -6.4], look: [-0.4, 1.3, 0.6], to: { cam: [4.4, 2.5, -5.8], look: [-0.4, 1.3, 0.6] }, // 군수 쪽에서 몰려온 농민들의 얼굴을 본다(D-45, 2026-11-04 플레이 점검: 등과 뒤통수만 보이던 것)
         act: () => {
           for (const o of [cart, sacks, ...taxmen, ...farmers1]) o.visible = false;
           gunsu.visible = true; crowd.forEach(p => { p.visible = true; });
