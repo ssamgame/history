@@ -274,6 +274,7 @@ function introScene(ctx) {
         act: () => { hide(false); buyers.forEach(p => { p.visible = true; }); } }, // 우리 물건을 고르는 사람들
       { cam: [-4.2, 2.5, 3.2], look: [-8.4, 1.4, -4.4], to: { cam: [-4.8, 2.4, 2.6], look: [-8.4, 1.4, -4.4] },
         act: () => { buyers.forEach(p => { p.visible = false; }); pupils.forEach(p => { p.visible = true; }); } }, // 학교 앞 학생들
+      { cam: [-6.2, 1.9, 0.4], look: [-8.4, 1.3, -4], to: { cam: [-6.8, 2, 0], look: [-8.4, 1.3, -4] } }, // 6·10 만세 운동(D-67 대사 정리 2): 학생들을 가까이
     ],
     done: () => { hide(true); for (const o of [...buyers, ...pupils]) o.removeFromParent(); },
   };

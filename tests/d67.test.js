@@ -484,3 +484,66 @@ test('d68 근대2(끝 장면): 청 군사 행렬은 양옆 가게 줄(무대 밖
   const front = +m[1], back = front - (+m[2] - 1) * +m[3], d = +g2[1];
   ok(back > -18.5 && front + d < 18.5, `행렬 ${back.toFixed(1)} → ${(front + d).toFixed(1)}`);
 });
+
+test('d67 넓히기: 마을 무리(crowd)는 몇 사람이 굳지 않고 둘씩 이야기하며, 태극기를 든 무리는 그대로 선다', async () => {
+  const { buildTown } = await import('../chapters/kit/town.js');
+  const { bakeLevel } = await import('../core/bake.js');
+  const w = testWorld();
+  try {
+    const t = buildTown(w, { ground: 'earth', bounds: { x0: -15, x1: 15, z0: -10, z1: 10 }, start: [0, 8], nature: false, mountains: false,
+      props: [{ type: 'crowd', x: -6, z: -4, n: 10, looks: ['commoner'] }, { type: 'crowd', x: 6, z: -4, n: 10, flags: 1, looks: ['commoner'] }] });
+    bakeLevel(w, t);
+    ok(t.chats >= 2, `이야기하는 짝 ${t.chats}`);
+    const live = []; w.level.traverse(o => { if (o.userData.legs && o.userData.chat) live.push(o); });
+    ok(live.length >= 4 && live.length <= 6, `굳지 않은 사람 ${live.length}`);
+    const r0 = live.map(p => p.rotation.y);
+    for (let i = 0; i < 60; i++) w.step(1 / 20, { x: 0, z: 0 });
+    ok(live.some((p, i) => Math.abs(p.rotation.y - r0[i]) > 0.05), '짝 쪽으로 몸을 돌린다');
+    ok(live.every(p => p.parent && p.parent.position.x < 0), '태극기 무리는 이야기하지 않는다');
+  } finally { w.dispose(); }
+});
+
+test('d67 넓히기: 길(roads)이 있는 마을에는 그 시대 사람 둘이 길을 따라 오가고, 집·안내판·사람 자리를 지나지 않는다', async () => {
+  const { buildTown } = await import('../chapters/kit/town.js');
+  const w = testWorld();
+  try {
+    const t = buildTown(w, { ground: 'earth', bounds: { x0: -20, x1: 20, z0: -10, z1: 10 }, start: [0, 8], nature: false, mountains: false,
+      roads: [{ x: 0, z: 0, w: 36, d: 3 }], props: [{ type: 'hanok', x: 10, z: 0 }, { type: 'crowd', x: -6, z: -7, n: 6, looks: ['peasant'] }, { type: 'crowd', x: 3, z: -1, n: 4, cols: 2, looks: ['peasant'] }], npcs: [{ id: 'a', look: 'commoner', x: -14, z: 0 }] });
+    eq(t.walkers.length, 2);
+    const blocks = [...w.colliders, { x: -14, z: 0, r: 1.2 }, { x: 3.7, z: -0.3, r: 1.4 }]; // 길 위에 선 무리
+    let worst = Infinity; const x0 = t.walkers.map(p => p.position.x);
+    for (let i = 0; i < 400; i++) { w.step(1 / 20, { x: 0, z: 0 }); for (const p of t.walkers) for (const c of blocks) worst = Math.min(worst, Math.hypot(p.position.x - c.x, p.position.z - c.z) - c.r); }
+    ok(worst > 0.2, `막힌 곳과 거리 ${worst.toFixed(2)}`);
+    ok(t.walkers.every((p, i) => Math.abs(p.position.x - x0[i]) > 1), '걸어 다닌다');
+    ok(t.walkers.every(p => /walk/.test(p.userData.skel?.target || 'walk')), '걷는 동작');
+  } finally { w.dispose(); }
+});
+
+test('d67 넓히기: 고려 4장 처인성 안에 모인 백성·승려는 둘씩 이야기한다', async () => {
+  const { buildCh4Scene } = await import('../chapters/ch4/scene.js');
+  const w = testWorld();
+  try {
+    const s = buildCh4Scene(w);
+    ok(s.cheoinFolk.length === 8, `백성·승려 ${s.cheoinFolk.length}`);
+    ok(s.cheoinChats >= 3, `이야기하는 짝 ${s.cheoinChats}`);
+    const r0 = s.cheoinFolk.map(p => p.rotation.y);
+    for (let i = 0; i < 60; i++) w.step(1 / 20, { x: 0, z: 0 });
+    ok(s.cheoinFolk.some((p, i) => Math.abs(p.rotation.y - r0[i]) > 0.05), '짝 쪽으로 몸을 돌린다');
+  } finally { w.dispose(); }
+});
+
+test('d67 대사 정리 2(선생님 답): 사람이 사실을 읊던 말은 해설로 옮기고, 말 속 괄호 연도는 뺀다', async () => {
+  const all = s => JSON.stringify(s);
+  const j6 = (await import('../chapters/joseon/j6/script.js')).default, k1 = (await import('../chapters/modern/k1/script.js')).default;
+  const k5 = (await import('../chapters/modern/k5/script.js')).default, i5 = (await import('../chapters/colonial/i5/script.js')).default;
+  const i6 = (await import('../chapters/colonial/i6/script.js')).default, h6 = (await import('../chapters/present/h6/script.js')).default;
+  ok(!j6.npc.worker.first.some(l => /1794/.test(l.text)), '조선 6장 일꾼은 연도를 말하지 않는다');
+  ok(/1794년 정월.*1796년/.test(all(j6.result || j6)), '조선 6장 공사 시작은 끝 해설에');
+  ok(!/결국 1876/.test(all(k1)) && /"who":"narr","text":"1876년, 조선은 이곳 강화도에서/.test(all(k1)), '근대 1장 연무당 1876년은 해설로');
+  ok(!k5.npc.woman.first.some(l => /1899/.test(l.text)), '근대 5장 아주머니는 전차 연도를 되풀이하지 않는다');
+  ok(!i5.npc.student.first.some(l => /1926/.test(l.text)) && i5.intro?.some?.(l => /1926년.*6·10 만세 운동/.test(l.text) && l.src?.length), '일제 5장 6·10 만세 운동은 첫 해설에');
+  for (const [s, who] of [[i6, 'officer'], [i6, 'kimgu'], [h6, 'citizen']]) {
+    const said = []; JSON.parse(all(s), (k, v) => { if (v && v.who === who && typeof v.text === 'string') said.push(v.text); return v; });
+    ok(said.length && said.every(t => !/[가-힣]\((\d{4}년|6월 민주 항쟁)\)/.test(t)), `${who} 말 속 괄호 없음`);
+  }
+});

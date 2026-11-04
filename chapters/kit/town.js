@@ -9,6 +9,7 @@ import { LOOKS } from '../../content/characters.js';
 import { createWeather } from '../../core/weather.js';
 import * as LM from '../joseon/landmarks.js';
 import * as BLD from './buildings.js';
+import { chatter } from './walk.js';
 import { terrainField, terrainMesh, mountainRing, skyline, hillColorFor } from './terrain.js';
 const { hipRoof, gableRoof } = LM;
 
@@ -106,6 +107,7 @@ export const BUILD = {
       person.position.set((i % cols - (cols - 1) / 2) * 1.3 + (row % 2) * 0.6 + j(1) * 0.55, 0, row * 1.35 + j(2) * 0.5);
       person.rotation.y = (p.face || 0) + j(3) * 0.7;
       if (p.flags && (i * 7) % 10 < p.flags * 10) holdFlag(person); // 손에 쥐고 가슴 앞에(D-43)
+      if (i < 4 && n >= 4 && !p.flags && p.talk !== false) person.userData.chat = true; // 앞줄 넷은 굳히지 않고 둘씩 이야기한다(D-67 ②, 나머지는 성능 때문에 굳힌다)
       g.add(person);
     }
     return 0;
@@ -339,11 +341,16 @@ export function buildTown(world, layout) {
   if (layout.skyline) { const sk = skyline(field, { center: [(layout.bounds.x0 + layout.bounds.x1) / 2, (layout.bounds.z0 + layout.bounds.z1) / 2], ...layout.skyline }); if (sk) L.add(sk); }
   if (layout.mountains !== false) { const mr = mountainRing(field, { color: hill ?? (kind === 'stone' ? 0x6a7a58 : color), center: [(layout.bounds.x0 + layout.bounds.x1) / 2, (layout.bounds.z0 + layout.bounds.z1) / 2] }); if (mr) L.add(mr); }
   for (const r of layout.roads || []) { const m = new THREE.Mesh(box(r.w, 0.05, r.d), mat(r.color || 0x8f7556, r.kind || 'earth')); m.position.set(r.x, 0.025, r.z); m.receiveShadow = true; L.add(m); }
-  const named = {};
+  const named = {}; let chats = 0;
   for (const p of layout.props || []) {
     const g = new THREE.Group(); g.position.set(p.x, p.y || 0, p.z); g.rotation.y = p.ry || 0; if (p.scale) g.scale.setScalar(p.scale); L.add(g); // y: 축대 위에 올린 부품
     const r = BUILD[p.type](g, p);
-    if (p.type === 'crowd') BLD.bakeStatic(g, m => !!flagTex && m.material.map === flagTex); // 서 있는 무리는 한 덩어리로(태블릿 성능), 깃발은 그대로 흔들린다
+    if (p.type === 'crowd') {
+      const live = g.children.filter(c => c.userData.chat); live.forEach(c => g.remove(c));
+      BLD.bakeStatic(g, m => !!flagTex && m.material.map === flagTex); // 서 있는 무리는 한 덩어리로(태블릿 성능), 깃발은 그대로 흔들린다
+      live.forEach(c => { c.userData.dynamic = true; g.add(c); });
+      if (live.length) chats += chatter(world, live, { seed: chats + 1 }).pairs;
+    }
     if (r && p.solid !== false) addFootprint(world, p, r);
     if (p.name) named[p.name] = g;
     if (p.type === 'hanok' && layout.dress !== false) dressHouse(world, L, p, layout);
@@ -358,5 +365,46 @@ export function buildTown(world, layout) {
   // 깃발 그림이 아직 없으면(flagTex null) 무늬 없는 산·땅·물까지 '깃발'로 잡혀 흔들리던 오류(D-32)를 막는다
   if (flagTex) L.traverse(o => { if (o.isMesh && o.material && o.material.map === flagTex && !flags.includes(o)) flags.push(o); });
   world.onUpdate((dt, t) => { flags.forEach((f, i) => { f.rotation.y = Math.sin(t * 2.5 + i) * 0.25; }); });
-  return { named, weather, start: layout.start };
+  const walkers = roadWalkers(world, layout);
+  return { named, weather, start: layout.start, chats, walkers };
+}
+
+// 길을 오가는 사람 둘(D-67 ③: 몇 사람은 자연스럽게 걷게). 가장 긴 길 가운데 줄에서 집·안내판·사람 자리를 피한 가장 긴 빈 구간을
+// 둘이 서로 반대로 천천히 오가고, 끝에서 잠깐 멈췄다 돌아선다. 생김새는 그 장의 무리(crowd)나 이름 없는 사람에게서 빌린다(시대에 맞게)
+function roadWalkers(world, layout) {
+  const looks = (layout.props || []).filter(p => p.type === 'crowd' && !p.flags).flatMap(p => p.looks || ['commoner'])
+    .concat((layout.npcs || []).map(n => n.look).filter(l => typeof l === 'string' && LOOKS[l] && !LOOKS[l].named));
+  if (!looks.length || layout.walkers === false) return [];
+  const b = layout.bounds, busy = [...(layout.npcs || []), ...(layout.signs || [])].map(o => ({ x: o.x, z: o.z, r: 1.6 }));
+  for (const c of (layout.props || []).filter(p => p.type === 'crowd')) { // 무리는 막는 자리가 없어서 따로 피한다
+    const cols = c.cols || 5, rows = Math.ceil((c.n || 10) / cols), dz = (rows - 1) * 1.35 / 2, ry = c.ry || 0;
+    busy.push({ x: c.x + dz * Math.sin(ry), z: c.z + dz * Math.cos(ry), r: Math.hypot(cols * 1.3, rows * 1.35) / 2 + 0.8 });
+  }
+  const free = (x, z) => x > b.x0 + 1 && x < b.x1 - 1 && z > b.z0 + 1 && z < b.z1 - 1
+    && world.colliders.every(c => Math.hypot(x - c.x, z - c.z) > c.r + 0.8) && busy.every(c => Math.hypot(x - c.x, z - c.z) > c.r);
+  let best = null;
+  for (const r of layout.roads || []) {
+    const along = r.w >= r.d, len = along ? r.w : r.d, at = t => (along ? [r.x + t, r.z] : [r.x, r.z + t]);
+    let run = null;
+    for (let t = -len / 2 + 0.5; t <= len / 2 - 0.5 + 1e-6; t += 0.5) {
+      const ok = free(...at(t)) && free(...at(t).map((v, k) => v + (along ? [0, 0.6] : [0.6, 0])[k])) && free(...at(t).map((v, k) => v - (along ? [0, 0.6] : [0.6, 0])[k]));
+      if (ok) { run ||= { a: t, b: t }; run.b = t; if (!best || run.b - run.a > best.b - best.a) best = { ...run, r, along }; } else run = null;
+    }
+  }
+  if (!best || best.b - best.a < 4) return [];
+  const { r, along } = best, side = Math.min(0.6, (along ? r.d : r.w) / 4);
+  return [0, 1].map(i => {
+    const p = makePerson(LOOKS[looks[(i * 3) % looks.length]] || LOOKS.commoner);
+    p.userData.dynamic = true; world.level.add(p);
+    const S = { t: i ? best.b : best.a, dir: i ? -1 : 1, rest: 0 }, off = i ? side : -side;
+    const place = () => { if (along) p.position.set(r.x + S.t, 0, r.z + off); else p.position.set(r.x + off, 0, r.z + S.t); p.rotation.y = along ? (S.dir > 0 ? Math.PI / 2 : -Math.PI / 2) : (S.dir > 0 ? 0 : Math.PI); };
+    place();
+    world.onUpdate(dt => {
+      if (S.rest > 0) { S.rest -= dt; return; }
+      S.t += S.dir * 1.1 * dt;
+      if (S.t > best.b || S.t < best.a) { S.t = Math.max(best.a, Math.min(best.b, S.t)); S.dir *= -1; S.rest = 1.2; }
+      place();
+    });
+    return p;
+  });
 }

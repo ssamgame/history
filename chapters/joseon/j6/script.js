@@ -29,7 +29,7 @@ export default {
     },
     worker: {
       first: [
-        { who: 'worker', text: '1794년 정월에 성 쌓는 공사를 시작했어.', src: ['S39'] },
+        { who: 'worker', text: '성 쌓는 일이 한창이야. 쉴 틈이 없어.' },
         { who: 'worker', expr: 'worry', text: '돌이 너무 무거워! 정약용 나리가 만든 기계가 있대.' },
       ],
       bridge: { who: 'worker', text: '관리 나리 말씀은 들었지? 우리는 돌 나르느라 정신이 없어.' },
@@ -83,7 +83,7 @@ export default {
     { who: 'narr', text: '문마다 반달 모양의 옹성을 둘러 문을 지켰어요.', src: ['S48'] },
   ],
   result: [
-    { who: 'narr', text: '수원 화성은 공사를 시작한 지 2년 반 만인 1796년에 완성되었어요.', src: ['S39'] },
+    { who: 'narr', text: '수원 화성은 1794년 정월에 공사를 시작해, 2년 반 만인 1796년에 완성되었어요.', src: ['S39'] },
     { who: 'narr', text: '화성을 쌓은 과정은 『화성성역의궤』라는 책에 자세히 기록했어요.', src: ['S42'] },
     { who: 'narr', text: '수원 화성은 1997년 유네스코 세계문화유산이 되었어요.', src: ['S44'] },
   ],

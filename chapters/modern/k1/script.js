@@ -79,7 +79,7 @@ export default {
         { label: '망루', hold: 4, holdLabel: '바다를 살피는 중', holdSay: '망루에 올라 먼바다를 살펴요.',
           talk: [{ who: 'scholar', text: '저기, 일본 군함이오! 대포를 앞세우고 다가오고 있소.' }] },
         { label: '포대', talk: [{ who: 'official', text: '일본이 무력을 앞세워 항구를 열라고 요구하고 있다.', src: ['S51'] }] },
-        { label: '연무당', talk: [{ who: 'official', text: '결국 1876년, 조선은 이곳 강화도에서 일본과 조약을 맺게 되었다.', src: ['S51'] }] },
+        { label: '연무당', talk: [{ who: 'narr', text: '1876년, 조선은 이곳 강화도에서 일본과 조약을 맺었어요.', src: ['S51'] }] },
       ],
       fail: '빛나는 곳을 따라 해안을 돌아봐요.',
     },
