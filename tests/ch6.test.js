@@ -99,7 +99,8 @@ test('ch6 D-19: port gate and 강화도 board, one-paragraph intro, people talk 
   eq([...w.npcs.values()].filter(n => n.spot).length, 0, 'no reading signs');
   w.dispose();
   eq(ch6Script.intro.length, 2); ok(ch6Script.intro.every(l => !l.text.includes('\n'))); // D-30: 자막 장면 두 문장
-  ok(['minister', 'sambyeolcho', 'villager'].every(id => ch6Script.npc[id].every(l => l.src && l.src.includes('S21'))));
+  ok(['minister', 'sambyeolcho'].every(id => ch6Script.npc[id].every(l => l.src && l.src.includes('S21'))));
+  ok(ch6Script.npc.villager.every(l => !l.text.includes('배중손')), 'D-67: 포구 백성은 배중손의 결정을 미리 말하지 않는다');
   ok(ch6Script.npc.baejungson.decide[0].text.includes('진도'));
   eq(ch6Script.sail.howto.steps.length, 2);
   ok(!JSON.stringify(ch6Script).includes('배중손 장군'));

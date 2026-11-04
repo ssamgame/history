@@ -547,6 +547,8 @@ const CARRY_THING = {
 };
 // 가져다 놓기 칸 이름표 자리: 원 앞쪽(카메라 쪽 dz)에 낮게(y는 글 가운데 높이) 두어, 먼 칸이어도 왼쪽 위 목표 상자 밑에 숨지 않게 한다
 export const BIN_LABEL = { y: 2.2, dz: 1.6 };
+// 이 물건을 이 자리에 놓아도 되는가. part.anyYes: 'no'(아닌 것)가 아닌 물건은 아직 비어 있는 'no'가 아닌 자리 어디든(D-68: 갑신정변 개혁안)
+export const deliverAccepts = (part, c, b) => (part.anyYes ? (c.bin === 'no' ? b.id === 'no' : b.id !== 'no' && !b.placed) : b.id === c.bin);
 export function deliver(ctx, part, easy) {
   const { world, audio } = ctx;
   const s = session(ctx, part, easy);
@@ -571,7 +573,7 @@ export function deliver(ctx, part, easy) {
     if (held) { held.position.set(0, 3.1 / (world.player.scale.y || 1), 0); held.scale.divideScalar(world.player.scale.x || 1); world.player.add(held); } // 키가 작아도 글은 같은 크기·높이
     setCarry(world.player, c ? thing(c) : null, c && c.carry === 'log' ? 'shoulder' : 'arms'); // 머리 위 글은 읽기용으로 두고, 손에는 그 물건(없으면 종이 한 장)을 든다(D-18)
     ctx.hud.setCounter(`${part.counter || '가져다 놓은 것'} ${i}/${part.cards.length}`);
-    const target = c && bins.find(b => b.id === c.bin);
+    const target = c && bins.find(b => deliverAccepts(part, c, b));
     ctx.testHooks.walkTo = target ? target.pos : null;
     world.setGoal((easy || missedCards.has(c)) && target ? target.pos : null); // 한 번 틀린 것은 화살표가 맞는 곳을 알려 준다
   };
@@ -593,7 +595,7 @@ export function deliver(ctx, part, easy) {
     stay += dt; b.disc.material.opacity = 0.35 + Math.min(1, stay / DWELL) * 0.5;
     if (stay < DWELL) return;
     stay = -1; b.disc.material.opacity = 0.35; // 같은 원 안에서는 한 번만
-    if (b.id === c.bin) {
+    if (deliverAccepts(part, c, b)) {
       audio.play('correct'); toast(ctx, `○ ${c.text} → ${b.label}`, 'good');
       if (c.carry) { // 가져간 것은 그 자리에 내려놓는다(기둥은 세우고, 방은 칸의 drop: [x, y, z, 옆 간격] 자리에 붙이거나 바닥에 눕힌다)
         const o = thing(c), k = b.placed = (b.placed || 0) + 1;

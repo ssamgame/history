@@ -23,9 +23,9 @@ export function rider(g, look, x, z, ry = 0, { y = 0, coat, armor = null, saddle
 }
 
 // 깃발 기수가 드는 긴 깃대(장수 곁). color 깃폭 색
-function standard(p, color) {
-  const f = new THREE.Group();
-  BLD.banner(f, { color, h: 3.4 });
+function standard(p, color, text) {
+  const f = new THREE.Group(); f.name = 'standard'; f.userData.text = text;
+  BLD.banner(f, { color, h: 3.4, text, bg: text && '#' + color.toString(16).padStart(6, '0'), fg: '#f3e9d2' }); // text: 깃폭에 세로 글자(깃폭 색 바탕)
   f.position.set(0.5, -0.55, 0.15); // 오른손 자리에서 위로
   p.userData.arms[1].add(f); p.userData.arms[1].rotation.set(-0.35, 0, -0.1);
   p.userData.spearHeld = true;
@@ -33,7 +33,7 @@ function standard(p, color) {
 }
 
 // spec: { x, z, ry(바라보는 방향), ground(x, z) → 높이, front: 'cavalry'|'infantry',
-//   cavalry: { looks, n, cols, gap }, infantry: { looks, n, cols, gap }, general: look, banner: 색, depth(줄 사이) }
+//   cavalry: { looks, n, cols, gap }, infantry: { looks, n, cols, gap }, general: look, banner: 색, bannerText: 깃폭 글자, depth(줄 사이) }
 // 돌려주는 것: { units(움직일 것 전부: 말과 보병), riders, foot, general, bearer }
 export function host(g, spec) {
   const { x = 0, z = 0, ry = 0, ground = () => 0 } = spec;
@@ -78,7 +78,7 @@ export function host(g, spec) {
       bearer = spec.generalOnFoot ? makePerson(L(spec.bearerLook || 'soldier')) : rider(g, spec.bearerLook || 'mongol', 0, 0, 0);
       if (bearer.parent) g.remove(bearer);
       const [qx, qz] = at(1.6, 1.8); bearer.position.set(qx, ground(qx, qz), qz); bearer.rotation.y = ry; g.add(bearer); units.push(bearer);
-      standard(bearer.userData.person || bearer, spec.banner);
+      standard(bearer.userData.person || bearer, spec.banner, spec.bannerText);
     }
   }
   const order = spec.front === 'infantry' ? ['infantry', 'cavalry'] : ['cavalry', 'infantry'];

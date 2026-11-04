@@ -10,7 +10,7 @@ export default {
   },
 
   intro: [
-    { who: 'narr', text: '1388년 고려는 명나라의 요동을 치려고 5만여 명의 군사를 보냈어요.', src: ['S23'] },
+    { who: 'narr', text: '1388년 고려는 명나라의 요동을 치려고 5만여 명의 군사와 2만여 필의 말을 보냈어요.', src: ['S23'] },
     { who: 'narr', text: '장수 이성계는 이 싸움에 반대했지만, 우왕과 최영의 뜻대로 군대가 떠났어요.', src: ['S23'] },
   ],
 
@@ -31,7 +31,6 @@ export default {
     },
     soldier: {
       first: [
-        { who: 'soldier', text: '요동 정벌에는 5만여 명의 군사와 2만여 필의 말이 나섰어.', src: ['S23'] },
         { who: 'soldier', text: '이성계와 조민수가 군대를 나누어 이끌고 있어.', src: ['S23'] },
         { who: 'soldier', expr: 'worry', text: '우리가 북쪽으로 간 사이 남쪽 바닷가에 왜구가 쳐들어오면 어쩌지?', src: ['S23'] },
       ],

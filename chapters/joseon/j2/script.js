@@ -21,8 +21,6 @@ export default {
     commoner: {
       first: [
         { who: 'commoner', expr: 'worry', text: '저는 한자를 몰라서 하고 싶은 말을 글로 적을 수가 없어요.', src: ['S27'] },
-        { who: 'commoner', text: '저 큰 전각은 근정전이에요. 1395년 경복궁을 지을 때 세운 으뜸 전각이지요.', src: ['S46'] },
-        { who: 'commoner', text: '왕의 즉위식 같은 나라의 큰 의식을 근정전에서 치른답니다.', src: ['S46'] },
       ],
       bridge: { who: 'commoner', text: '학자님들이 바쁘신 걸 보셨어요? 저 같은 사람에게도 글자가 있으면 좋겠어요.' },
       later: [{ who: 'commoner', expr: 'worry', text: '누구나 쓸 수 있는 글자가 있으면 얼마나 좋을까요.' }],
@@ -105,6 +103,7 @@ export default {
     { who: 'narr', text: '집현전 학자들이 훈민정음을 만드는 일을 도왔어요.', src: ['S29'] },
     { who: 'narr', text: '훈민정음 해례본은 글자를 만든 까닭과 원리를 풀어 1446년에 펴낸 책이에요.', src: ['S49'] },
     { who: 'narr', text: '해례본은 1940년 안동에서 발견되었고, 1997년 유네스코 세계기록유산이 되었어요.', src: ['S49'] },
+    { who: 'narr', text: '근정전은 1395년 경복궁을 지을 때 세운 으뜸 전각으로, 왕의 즉위식 같은 나라의 큰 의식을 치른 곳이에요.', src: ['S46'] }, // D-67: 백성의 대사에서 해설로 옮김
   ],
 
   quizzes: [

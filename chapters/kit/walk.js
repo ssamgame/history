@@ -117,3 +117,25 @@ export function facingShare(world, people, dot = 0.2) {
   }).length;
   return people.length ? n / people.length : 1;
 }
+
+// 모여 선 사람들이 둘씩 마주 보며 이야기를 주고받는다(D-67 선생님: 모인 사람들이 가만히 있지 않게). 가까운 사람끼리 짝을 짓고,
+// 몇 초마다 말하는 쪽이 바뀌며(손짓은 setTalking), 몸을 짝 쪽으로 조금 돌린다(등을 보이지 않게 최대 turn 라디안). 돌려준 함수를 부르면 멈추고 원래 방향으로 돌린다.
+export function chatter(world, people, { turn = 0.9, seed = 1 } = {}) {
+  const free = people.filter(p => p.userData.arms), pairs = [];
+  while (free.length > 1) {
+    const a = free.shift(); let bi = 0, bd = Infinity;
+    free.forEach((b, i) => { const d = a.position.distanceTo(b.position); if (d < bd) { bd = d; bi = i; } });
+    if (bd > 4) continue; // 너무 멀면 혼자 둔다
+    pairs.push({ a, b: free.splice(bi, 1)[0], t: (seed * 1.7 + pairs.length * 2.3) % 4, who: pairs.length % 2 });
+  }
+  const ry0 = new Map(people.map(p => [p, p.rotation.y]));
+  const toward = (p, q) => { const want = Math.atan2(q.position.x - p.position.x, q.position.z - p.position.z), r = ry0.get(p), d = Math.atan2(Math.sin(want - r), Math.cos(want - r)); return r + Math.max(-turn, Math.min(turn, d)); };
+  const off = world.onUpdate(dt => {
+    for (const P of pairs) {
+      P.t -= dt;
+      if (P.t <= 0) { P.t = 2.5 + ((P.t * 97 + seed) % 1 + 1) % 1 * 2.5; P.who = 1 - P.who; const [s, l] = P.who ? [P.b, P.a] : [P.a, P.b]; setTalking(s, 'talk', 'speak'); setTalking(l, 'talk', 'listen'); }
+      for (const [p, q] of [[P.a, P.b], [P.b, P.a]]) { const w = toward(p, q), d = Math.atan2(Math.sin(w - p.rotation.y), Math.cos(w - p.rotation.y)); p.rotation.y += d * Math.min(1, dt * 2); }
+    }
+  });
+  return Object.assign(() => { off(); for (const P of pairs) { setTalking(P.a, null); setTalking(P.b, null); } for (const [p, r] of ry0) p.rotation.y = r; }, { pairs: pairs.length });
+}

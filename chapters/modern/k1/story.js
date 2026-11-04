@@ -12,7 +12,7 @@ export function treatyScene(ctx) {
   const L = script.treaty;
   return storyScene(ctx, { key: 'treaty', arena: SIGNING, mood: 'overcast', async run({ g, hook, cam, glide, say, fadeIn }) {
     const { world } = ctx;
-    const ships = [-8, 6].map((x, i) => { const s = new THREE.Group(); BUILD.steamship(s, { old: true }); s.position.set(x, 0.3, -26 - i * 6); s.rotation.y = Math.PI / 2; g.add(s); return s; });
+    const ships = [-8, 6].map((x, i) => { const s = new THREE.Group(); BUILD.steamship(s, { old: true, flag: 'japan' }); s.position.set(x, 0.3, -26 - i * 6); s.rotation.y = Math.PI / 2; g.add(s); return s; });
     // 정자 아래 탁자와 조약문, 마주 앉은 두 나라 대표
     const fl = new THREE.Group(); fl.position.y = 0.6; g.add(fl); // 정자 마루 높이
     blk(fl, 2.6, 0.7, 1.2, 0x6b4a32, 0, 0.35, 2, 'wood');

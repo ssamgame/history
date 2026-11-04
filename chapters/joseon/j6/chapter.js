@@ -133,15 +133,16 @@ export async function hwaseongTour(ctx) {
   GAPS.forEach((_, i) => scene.fill(i, true));
   const jj = world.npcs.get('jeongjo');
   world.moveNpc('jeongjo', -16.4, WALL_Z, Math.PI); jj.mesh.position.y = WALL_H; jj.collider.r = 0;
-  const me = world.player.clone(true); me.position.set(-15, WALL_H, WALL_Z + 0.2); me.rotation.y = 0; me.visible = true; world.level.add(me);
-  world.player.visible = false;
+  // D-68: 학생 복사본 대신 학생을 성벽 위 정조 곁에 세운다(복사본은 새 몸 뼈대가 원래 학생에 묶여 엉뚱한 쪽을 보았다). 둘 다 성 밖(북쪽)을 본다
+  const me = world.player, home = me.position.clone(); ctx.input.enabled = false;
+  me.position.set(-15, WALL_H, WALL_Z + 0.2); me.rotation.y = Math.PI; me.visible = true;
   // 높은 곳에서 성벽·장안문·거중기를 한눈에(학생과 정조 뒤에서 내려다보며 천천히 옆으로). 둘은 같은 곳(성 밖 북쪽)을 바라본다
   let t = 0;
   let story = false;
   const off = world.onUpdate(dt => {
     if (story) return; // 이야기 장면 동안은 둘러보기 카메라를 멈춘다
     t += dt; const a = -0.25 + Math.min(1, t / 16) * 0.5;
-    jj.mesh.rotation.y = 0; me.rotation.y = 0; // 둘 다 성 밖(북쪽)을 바라본다(카메라는 뒤에서)
+    jj.mesh.rotation.y = Math.PI; me.rotation.y = Math.PI; me.position.y = WALL_H; // 둘 다 성 밖(북쪽)을 바라본다(카메라는 뒤에서)
     world.setFixedCamera([-12 + Math.sin(a) * 20, 17, WALL_Z + Math.cos(a) * 20], [-9, 1.5, WALL_Z - 4]);
   });
   await ctx.fade(false);
@@ -152,7 +153,7 @@ export async function hwaseongTour(ctx) {
   dialogue.close();
   off();
   await ctx.fade(true);
-  world.level.remove(me); world.player.visible = true;
+  me.position.copy(home); me.position.y = 0;
   jj.mesh.position.y = 0; world.moveNpc('jeongjo', -10, -3, 0); jj.collider.r = 0.5;
   placePlayer(world, SPOT);
   world.camMode = 'follow';

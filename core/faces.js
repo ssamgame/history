@@ -126,6 +126,13 @@ export function drawFeatures(g, face = {}, cx, cy, R, { solid = false } = {}) {
     if (!solid) { g.beginPath(); g.moveTo(ex - w * 0.7, ey + botH * 0.6); g.quadraticCurveTo(ex, ey + botH * 1.1, ex + w * 0.8, ey + botH * 0.5); g.stroke(); } // 아래 눈꺼풀
     g.restore();
   }
+  // 눈물(울음 표정): 두 눈 아래에서 볼을 타고 흐르는 줄기와 방울
+  if (v.tears) for (const sx of [-1, 1]) {
+    const ex = cx + sx * 0.33 * R * v.gap, y0 = eyeY + 0.07 * R;
+    g.strokeStyle = 'rgba(120, 180, 230, 0.85)'; g.lineWidth = Math.max(2, 0.045 * R);
+    g.beginPath(); g.moveTo(ex + sx * 0.04 * R, y0); g.quadraticCurveTo(ex + sx * 0.09 * R, y0 + 0.16 * R, ex + sx * 0.06 * R, y0 + 0.3 * R); g.stroke();
+    g.fillStyle = 'rgba(120, 180, 230, 0.95)'; g.beginPath(); g.ellipse(ex + sx * 0.06 * R, y0 + 0.34 * R, 0.035 * R, 0.05 * R, 0, 0, Math.PI * 2); g.fill();
+  }
   // 안경: 검은 둥근 테와 다리
   if (glasses === 'round') {
     g.strokeStyle = '#1a1614'; g.lineWidth = Math.max(2, 0.05 * R);

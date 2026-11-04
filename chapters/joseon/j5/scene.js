@@ -12,6 +12,7 @@ import { LOOKS } from '../../../content/characters.js';
 import { createWeather } from '../../../core/weather.js';
 import { addSigns } from '../common.js';
 import { gateLeaves, nameBoard } from '../../kit/gate.js';
+import { labelSprite } from '../../kit/play.js';
 
 const WALL = { rx: 20, rz: 16 };
 
@@ -97,7 +98,7 @@ export function buildJ5Scene(world) {
   const N = 44;
   for (let i = 0; i < N; i++) {
     const a = (i / N) * Math.PI * 2, x = Math.cos(a) * WALL.rx, z = Math.sin(a) * WALL.rz;
-    if (Math.abs(a - Math.PI) < 0.1) continue; // 서문 자리
+    if (Math.abs(a - Math.PI) < 0.2) continue; // 서문 자리(D-67: 이웃 성벽 조각도 비워 문을 넓힌다)
     const seg = mk(new THREE.BoxGeometry(3.2, 2.6, 1.2), 0xb3ada2, x, 1.3, z);
     seg.rotation.y = -Math.atan2(WALL.rz * Math.cos(a), -WALL.rx * Math.sin(a));
     const crown = mk(new THREE.BoxGeometry(1.2, 0.7, 1.0), 0x8c877e, x, 2.95, z); crown.rotation.y = seg.rotation.y;
@@ -105,11 +106,12 @@ export function buildJ5Scene(world) {
   }
   // 서문
   // 서문(D-26): 양쪽 문기둥 벽과 위 인방 사이에 나무 문짝 둘. 학생은 이 문으로 들어오고, 인조는 이 문으로 나간다
-  for (const sz of [-1, 1]) mk(new THREE.BoxGeometry(1.6, 3.4, 1.0), 0xb3ada2, -WALL.rx, 1.7, sz * 1.6);
-  mk(new THREE.BoxGeometry(1.6, 0.8, 4.2), 0xb3ada2, -WALL.rx, 3.0, 0);
-  hipRoof(3.2, 5.6, 1.6, 0x3d4846, -WALL.rx, 3.4, 0);
+  // D-67(2026-11-04 선생님): 인조 일행이 벽을 지나 들어오지 않게 문을 넓고 높게(사이 4.2m, 높이 3.2m)
+  for (const sz of [-1, 1]) mk(new THREE.BoxGeometry(1.6, 4.0, 1.4), 0xb3ada2, -WALL.rx, 2.0, sz * 2.8);
+  mk(new THREE.BoxGeometry(1.6, 0.8, 7.0), 0xb3ada2, -WALL.rx, 3.6, 0);
+  hipRoof(3.4, 8.2, 1.8, 0x3d4846, -WALL.rx, 4.0, 0);
   const gateG = new THREE.Group(); gateG.position.set(-WALL.rx + 0.5, 0, 0); gateG.rotation.y = Math.PI / 2; L.add(gateG);
-  const gate = gateLeaves(gateG, { x: 0, z: 0, width: 2.2, height: 2.6, color: 0x6b4a32, inward: 1 });
+  const gate = gateLeaves(gateG, { x: 0, z: 0, width: 4.2, height: 3.2, color: 0x6b4a32, inward: 1 });
   nameBoard(L, '남한산성', -12, 3.4); // S38·S47
   // 행궁(북쪽)과 창고(동쪽)
   const palace = new THREE.Group(); palace.position.set(0, 0, -12); L.add(palace);
@@ -166,7 +168,7 @@ export function buildJ5Scene(world) {
   // 길 위 안내판 대신 건물 간판(C-03): 행궁 처마 아래, 서문 인방 위(성안 쪽). 해설은 사람 대사로 옮겼다
   addSigns(world, [
     { id: 'plaqueHaenggung', title: '행궁', x: 0, z: -8.6, ry: 0, plaque: { y: 3.0, back: 0.8 } },
-    { id: 'plaqueWestGate', title: '서문', x: -18.2, z: 0, ry: Math.PI / 2, plaque: { y: 3.0, back: 0.92 } },
+    { id: 'plaqueWestGate', title: '서문', x: -18.2, z: 0, ry: Math.PI / 2, plaque: { y: 3.6, back: 0.92 } },
   ]);
 
   // 추위에 떠는 백성(N-03): 꺼진 화톳불 곁에 웅크려 앉아 떤다. 곁의 아이도 함께
@@ -186,16 +188,21 @@ export function buildJ5Scene(world) {
   groundAll(introQing); groundAll(introKing);
 
   world.addNpc('soldier', LOOKS.joseonSoldier, -9, 6, Math.PI * 0.7);
-  world.addNpc('keeper', LOOKS.worker, 9, -2, -Math.PI / 2);
+  world.addNpc('keeper', LOOKS.worker, 7.6, -2, -Math.PI / 2); // 창고 앞 통나무 줄(x 9.2) 앞에 선다(D-67: 통나무를 지나 서 있었다)
   world.addNpc('kimsangheon', LOOKS.kimsangheon, -3, -7, 0);
   world.addNpc('injo', LOOKS.injo, 0, -7.6, 0); world.npcs.get('injo').mesh.visible = false; // 삼전도로 갈 때 나온다
   world.addNpc('choemyeonggil', LOOKS.choemyeonggil, 3, -7, 0);
 
+  let warm = false;
+  const folkFire = fires.reduce((b, f) => (Math.hypot(f.x + 3.4, f.z - 8.3) < Math.hypot(b.x + 3.4, b.z - 8.3) ? f : b)); // 백성 곁 화톳불
   world.onUpdate((dt, t) => {
     for (const f of fires) f.fx.update(dt, t);
-    // 추위에 떠는 몸: 빠르고 잘게 좌우로 떨고, 이따금 더 세게 떤다(사람마다 박자가 다르다)
-    if (folk.mesh.visible) folk.mesh.rotation.z = Math.sin(t * 37) * 0.022 * (1 + 0.6 * Math.max(0, Math.sin(t * 0.9)));
-    kid.rotation.z = Math.sin(t * 41 + 1.3) * 0.025;
+    // 추위에 떠는 엄마와 아이(D-67 선생님): 몸을 좌우로 떨지 않고, 두 손을 모아 비빈다. 곁의 화톳불이 켜지면 손을 내려 쉰다
+    for (const [p, ph] of [[folk.mesh, 0], [kid, 1.3]]) {
+      const r = warm ? 0 : Math.sin(t * 9 + ph) * 0.14, A = p.userData.arms;
+      A[0].rotation.z = -0.35 + 0.2 + r; A[1].rotation.z = 0.35 - 0.2 + r; // 두 손을 가슴 앞에 모아 엇갈려 비빈다
+      A[0].rotation.x = A[1].rotation.x = warm ? -1.05 : -1.25;
+    }
     if (introQing.visible) groundAll(introQing);
     if (introKing.visible) groundAll(introKing);
   });
@@ -204,8 +211,17 @@ export function buildJ5Scene(world) {
   surroundings(world, { bounds: world.bounds, trees: ['pine', 'bare'], count: 10, snow: true, gap: 8, seed: 17 }); // 걷는 곳 바깥에 그 장소다운 집·나무(깊이감)
   return {
     start: [-12, 1], introFrom: [-26, 0], gate, fires, introQing, introKing, coldKid: kid, wood: { x: 1.6, z: 9.2 }, westGate: [-WALL.rx, 0],
-    resetFires() { fires.forEach(f => setFire(f, false)); },
-    light(f) { setFire(f, true); },
-    allLit() { fires.forEach(f => setFire(f, true)); },
+    folkFire,
+    resetFires() { fires.forEach(f => setFire(f, false)); warm = false; },
+    // 화톳불을 켠다. 백성 곁 불이면 백성이 고마워하고 손 비비기를 멈춘다(D-67)
+    // 대화창 대신 머리 위 말풍선(불 켜기 놀이를 끊지 않게)
+    light(f) {
+      setFire(f, true);
+      if (f !== folkFire || warm) return;
+      warm = true;
+      const tag = labelSprite('감사합니다!', { size: 0.9 }); tag.name = 'thanks'; tag.position.set(folk.mesh.position.x, 2.4, folk.mesh.position.z); L.add(tag);
+      let t = 0; const off = world.onUpdate(dt => { t += dt; tag.position.y = 2.4 + Math.min(t, 1) * 0.3; if (t > 3) { off(); tag.removeFromParent(); } });
+    },
+    allLit() { fires.forEach(f => setFire(f, true)); warm = true; },
   };
 }

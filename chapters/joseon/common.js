@@ -161,11 +161,11 @@ export function tileRow(world, list, { y = 1.7, size = 0.9 } = {}) {
 
 // 아무 차례로 찾아가기: spots 가운데 아직 안 한 곳에 서서 대화 버튼을 누르면 onPick(spot)을 기다린다. 모두 하면 끝.
 // 테스트 봇에게는 아직 안 한 첫 자리를 testHooks.walkTo로 알려 준다
-export function visitAny(ctx, spots, onPick) {
+export function visitAny(ctx, spots, onPick, { onNext = null } = {}) { // onNext(spot|null): 다음에 갈 곳(차례 안내 표시용)
   const { world, hud, dialogue } = ctx;
   const left = new Set(spots);
   let cur = null, busy = false;
-  const next = () => { const n = spots.find(x => left.has(x)); ctx.testHooks.walkTo = n ? { x: n.x, z: n.z } : null; };
+  const next = () => { const n = spots.find(x => left.has(x)); ctx.testHooks.walkTo = n ? { x: n.x, z: n.z } : null; onNext?.(n || null); };
   next();
   ctx.input.enabled = true;
   return new Promise(resolve => {

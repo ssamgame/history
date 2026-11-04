@@ -35,6 +35,9 @@ export function makeSea({ w = 200, d = 60, color = 0x3f7d9a, opacity = 0.93, shi
   const m = new THREE.Mesh(geo, new THREE.MeshPhongMaterial({ color, map: tex, shininess, specular, flatShading: true, transparent: opacity < 1, opacity }));
   m.receiveShadow = true; m.userData.dynamic = true; m.userData.sea = { amp };
   const pos = geo.attributes.position, base = Float32Array.from(pos.array), arr = pos.array;
+  // 판 가장자리 6m 안은 물결을 줄여 0으로(D-67: 물 칸 가장자리가 곧 바닷가인 무대에서 물결이 땅을 덮었다 드러냈다 하며 경계가 바뀌어 보였다)
+  const calm = new Float32Array(pos.count);
+  for (let i = 0; i < pos.count; i++) { const e = Math.min(w / 2 - Math.abs(base[i * 3]), d / 2 - Math.abs(base[i * 3 + 2])); calm[i] = Math.min(1, Math.max(0, e / 6)); }
   let flat = true, t0 = 0;
   const step = (dt, t, quality) => {
     tex.offset.x = (tex.offset.x + dt * flow[0] / tile) % 1; tex.offset.y = (tex.offset.y + dt * flow[1] / tile) % 1;
@@ -42,7 +45,7 @@ export function makeSea({ w = 200, d = 60, color = 0x3f7d9a, opacity = 0.93, shi
     t0 = t; flat = false;
     for (let i = 0; i < arr.length; i += 3) {
       const x = base[i] + m.position.x, z = base[i + 2] + m.position.z; // 판을 옮겨도 이웃 판과 물결이 맞게 세상 자리로
-      arr[i + 1] = amp * (Math.sin(x * 0.21 + t * 1.3) * 0.55 + Math.sin(z * 0.27 - t * 1.05) * 0.35 + Math.sin((x + z) * 0.53 + t * 2.1) * 0.18);
+      arr[i + 1] = calm[i / 3] * amp * (Math.sin(x * 0.21 + t * 1.3) * 0.55 + Math.sin(z * 0.27 - t * 1.05) * 0.35 + Math.sin((x + z) * 0.53 + t * 2.1) * 0.18);
     }
     pos.needsUpdate = true;
   };

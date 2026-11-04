@@ -213,9 +213,9 @@ function nightStage({ ctx, a, g, kim }) {
       if (heavy) fires.push(burning(world, { parent: g, x: -9.6, y: 2.6, z: -3, size: 1.1, level: 1 }));
       const glow = new THREE.Mesh(new THREE.SphereGeometry(3, 12, 8), new THREE.MeshBasicMaterial({ color: 0xff7a2e, transparent: true, opacity: 0.16, depthWrite: false })); glow.position.set(-9, 1.6, -4); g.add(glow);
       // 잔치 손님들이 놀라 사방으로 흩어진다(달음질)
-      const away = [[-16, 14], [-15, 16], [-6, 18], [6, 18], [16, 14], [15, 8]];
+      const away = [[-4, 18], [-2.4, 18.6], [-0.8, 18], [0.8, 18.6], [2.4, 18], [4, 18.6]]; // D-68: 집 사이로 흩어지지 않고 큰길을 따라 남쪽으로
       guests.forEach((p, i) => { p.userData.arms && (p.userData.arms[1].rotation.x = 0); flee.push(runAway(world, p, { x: away[i][0], z: away[i][1] }, 2.2 + i * 0.15, { lean: 0.25 }).then(() => { p.visible = false; })); });
-      flee.push(runAway(world, clerk, { x: -2, z: 18 }, 2.4, { lean: 0.25 }).then(() => { clerk.visible = false; }));
+      flee.push(runAway(world, clerk, { x: -1.6, z: 18 }, 2.4, { lean: 0.25 }).then(() => { clerk.visible = false; }));
       // 김옥균이 불길 쪽을 보는 동안 카메라가 불과 흩어지는 사람들을 함께 담는다
       const pp = world.player.position, eye = [pp.x + 4, 3.2, pp.z + 4], look = a.at(-8, 1);
       world.setFixedCamera(eye, [look.x, 1.8, look.z]);
@@ -234,7 +234,7 @@ function palaceStage({ ctx, a, g, kim }) {
   for (const [x, z] of [[-4, -11], [4, -11], [-4, 11], [4, 11]]) lantern(g, x, z);
   const allies = [[-3, -9], [3, -9], [5, -7]].map(([x, z]) => person(g, 'joseonOfficial', x, z, Math.PI));
   const QING = 15, row = j => Math.floor(j / 5); // 다섯 줄 세 겹, 줄마다 조금씩 엇갈려 몰려온다
-  const qing = Array.from({ length: QING }, (_, i) => { const p = makePerson(LOOKS.qingSoldier); p.position.set(-30 - row(i) * 1.5, 0, (i % 5 - 2) * 1.25 + (row(i) % 2) * 0.4); p.rotation.y = Math.PI / 2; p.visible = false; p.userData.manual = true; g.add(p); return p; });
+  const qing = Array.from({ length: QING }, (_, i) => { const p = makePerson(LOOKS.qingSoldier); p.position.set(-19 - row(i) * 1.5, 0, (i % 5 - 2) * 1.0 + (row(i) % 2) * 0.3); p.rotation.y = Math.PI / 2; p.visible = false; p.userData.manual = true; g.add(p); return p; });
   let step = 0;
   return {
     say: lines => sayAll(dialogue, lines),
@@ -242,7 +242,8 @@ function palaceStage({ ctx, a, g, kim }) {
       qing.forEach(p => { p.visible = true; });
       const pp = world.player.position, look = a.at(-12, 0);
       world.setFixedCamera([pp.x + 3, 3.4, pp.z + 5], [look.x, 1.4, look.z]);
-      await wait(world, 3.2, (k, dt) => qing.forEach((p, j) => { p.position.x = -30 - row(j) * 1.5 + 19 * k; animateWalk(p, k < 1, dt); }));
+      await wait(world, 3.2, (k, dt) => qing.forEach((p, j) => { p.position.x = -19 - row(j) * 1.5 + 8 * k; animateWalk(p, k < 1, dt); })); // D-68: 서쪽 담 바로 밖에서 담 틈(z −5~3)으로 들어온다(마당 둘레 집·담을 지나지 않게)
+      qing.forEach(p => { p.userData.manual = false; }); // 멈추면 저절로 서 있기(D-68: 계속 걷던 동작)
       allies.forEach(p => { p.rotation.y = -Math.PI / 2; });
       step = 1;
       return false; // 해설(narr)은 청 군사들을 본 채로
@@ -251,13 +252,13 @@ function palaceStage({ ctx, a, g, kim }) {
       if (i !== 0 || step !== 1) return;
       this.face(kim.mesh); await sayAll(dialogue, script.night.b[0].then); dialogue.close();
       // 김옥균이 동쪽 담 틈으로 몸을 숙이고 뛰어 멀리 달아난다(같이 있던 관리들도)
-      const gap = a.at(16, 0), far = a.at(46, 2);
+      const gap = a.at(16, 0), far = a.at(21, 0.5); // D-68: 담 틈 바로 밖까지만 뛰고 사라진다(둘레 집을 지나지 않게)
       const e = a.at(4, 10), l = a.at(9, -2);
       world.setFixedCamera([e.x, 2.6, e.z], [l.x, 1.2, l.z]); // 옆에서: 몸을 숙이고 뛰는 모습이 보이게
       const m = kim.mesh.position;
-      allies.forEach((p, j) => runAway(world, p, { x: 36 + j * 3, z: 1 - j }, 2.6 + j * 0.2, { lean: 0.25 }).then(() => { p.visible = false; }));
+      allies.forEach((p, j) => { const gp = { x: 16, z: 1 - j * 1.4 }; runAway(world, p, gp, Math.hypot(gp.x - p.position.x, gp.z - p.position.z) / 7.5 + j * 0.2, { lean: 0.25 }).then(() => runAway(world, p, { x: 21, z: gp.z }, 0.8, { lean: 0.25 })).then(() => { p.visible = false; }); }); // 동쪽 담 틈으로 나가 담 바로 밖에서 사라진다
       await runAway(world, kim.mesh, { x: gap.x, z: gap.z }, Math.hypot(gap.x - m.x, gap.z - m.z) / 8);
-      await runAway(world, kim.mesh, far, 3);
+      await runAway(world, kim.mesh, far, 0.9);
       kim.mesh.visible = false;
       world.camMode = 'follow'; world.snapCamera();
     },
@@ -297,21 +298,6 @@ export function docLine(ctx, { doc }) {
   return showDocument(ctx, { title: doc.title, heading: doc.heading, items: doc.items, src: doc.src, scroll: true, button: '다 읽었어요' });
 }
 
-// 다음에 붙일 곳 위의 빛기둥: 지금 든 방이 진짜든 아니든, 아직 비어 있는 다음 자리를 가리킨다(어느 방이 진짜인지는 알려 주지 않는다)
-function nextPlaceBeacon(ctx) {
-  const { world } = ctx, cards = script.parts.reform.cards;
-  const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 7, 16, 1, true), new THREE.MeshBasicMaterial({ color: 0xffd27a, transparent: true, opacity: 0.22, side: THREE.DoubleSide, depthWrite: false }));
-  beam.visible = false; world.level.add(beam);
-  const off = world.onUpdate((dt, t) => {
-    const held = world.player.children.find(o => o.isSprite && o.userData.text);
-    const i = held ? cards.findIndex(c => c.text === held.userData.text) : -1;
-    const next = i < 0 ? null : cards.slice(i).find(c => c.bin !== 'no');
-    beam.visible = !!next;
-    if (next) { const p = PLACES[next.bin]; beam.position.set(400 + p.x, 3.5, p.z - 1.2); beam.material.opacity = 0.18 + Math.sin((t || 0) * 3) * 0.06; }
-  });
-  return () => { off(); beam.removeFromParent(); };
-}
-let beaconOff = null;
 
 const reform = script.parts.reform;
 const base = makeKitChapter({
@@ -346,8 +332,7 @@ const base = makeKitChapter({
   parts: [
     { type: 'scene', title: script.night.title, goal: script.goals[2], mood: NIGHT_MOOD, play: ctx => nightWalk(ctx) },
     { ...reform, goal: script.goals[3], arena: STREETS, from: [0, 8], intro: meet('kimokgyun', '김옥균과 이야기하기', reform.intro),
-      bins: reform.bins.map(b => ({ ...b, ...PLACES[b.id] })),
-      before: ctx => { beaconOff = nextPlaceBeacon(ctx); }, after: () => { beaconOff?.(); beaconOff = null; } },
+      bins: reform.bins.map(b => ({ ...b, ...PLACES[b.id] })) },
     { type: 'scene', title: '청의 군대가 몰려와요', goal: script.goals[4], intro: meet('kimokgyun', '김옥균과 이야기하기', script.parts.palace.intro), play: async ctx => { await qingWalk(ctx); await qingStreetScene(ctx); } }, // 끝에 이야기 장면(D-58): 갑신정변 뒤 한성 큰길의 청 군사
   ],
   decorate(world) { // 큰길 어귀 나무 문과 「우정총국 앞 큰길」 이름판(S51). 문짝은 굳히기에 합쳐지지 않게 돌려준다
@@ -403,6 +388,6 @@ export default {
   async minigame(ctx) {
     const d = ctx.dialogue, say = d.say;
     d.say = line => (line && line.meet ? meetPerson(ctx, line.meet) : line && line.doc ? (d.close(), docLine(ctx, line)) : say.call(d, line));
-    try { return await base.minigame(ctx); } finally { d.say = say; beaconOff?.(); beaconOff = null; ctx.setGoal(null); } // 퀴즈 목표는 빛나는 문이 대신(C-01)
+    try { return await base.minigame(ctx); } finally { d.say = say; ctx.setGoal(null); } // 퀴즈 목표는 빛나는 문이 대신(C-01)
   },
 };

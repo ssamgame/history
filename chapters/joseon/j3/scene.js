@@ -17,14 +17,15 @@ const HOUR_TAGS = [['🐰', '묘시'], ['🐲', '진시'], ['🐍', '사시'], [
 function hourTag([emoji, name]) {
   const cv = document.createElement('canvas'); cv.width = 128; cv.height = 140;
   const c = cv.getContext('2d');
-  c.fillStyle = 'rgba(239,227,198,0.95)'; c.fillRect(0, 0, 128, 140);
-  c.strokeStyle = '#6b4a32'; c.lineWidth = 6; c.strokeRect(3, 3, 122, 134);
+  // D-67: 흰 바탕 상자 없이, 청동 그릇에 새긴 것처럼 어두운 구릿빛 한 가지 빛깔로(그림 글자를 세피아로 바꿔 어둡게)
   c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.filter = 'grayscale(1) sepia(1) brightness(0.3) contrast(1.6)';
   c.font = '68px "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", sans-serif'; c.fillText(emoji, 64, 56);
-  c.font = 'bold 28px "Nanum Myeongjo", Batang, serif'; c.fillStyle = '#231c14'; c.fillText(`(${name})`, 64, 118);
+  c.filter = 'none';
+  c.font = 'bold 28px "Nanum Myeongjo", Batang, serif'; c.lineWidth = 6; c.strokeStyle = '#e3c486'; c.strokeText(`(${name})`, 64, 118); c.fillStyle = '#3a2610'; c.fillText(`(${name})`, 64, 118); // 시각선 위에서도 읽히게 밝은 구릿빛 테두리
   const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
   const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true }));
-  sp.scale.set(0.2, 0.22, 1); return sp;
+  sp.scale.set(0.3, 0.33, 1); return sp; // 앙부일구를 낮추며 작아진 만큼(D-67) 그림을 조금 크게
 }
 
 export function buildJ3Scene(world) {
@@ -48,8 +49,13 @@ export function buildJ3Scene(world) {
   // 1) 길가의 앙부일구 (종묘 앞 길가에 두었다): 두 단 돌받침, 십자 받침, 네 다리, 시각선을 새긴 청동 그릇
   // 크게 만든 앙부일구(D-23): 그릇 안에 그림자 바늘의 그림자(검은 줄)가 시각선을 따라 움직인다
   const DIAL = [-8, 5];
-  const dial = angbuilgu(); dial.position.set(DIAL[0], 0, DIAL[1]); dial.scale.setScalar(2.6); L.add(dial); // D-30 S-01: 더 크게
-  world.addCollider({ x: DIAL[0], z: DIAL[1], r: 3 });
+  // D-67(2026-11-04 선생님): 사람이 많이 다니는 길가에 두어 백성이 들여다보게 했으니, 그릇 테두리를 가슴 높이(1.6m)로 낮춘다.
+  // 높은 두 단 돌받침은 떼고 낮은 받침돌(0.3m) 위에 십자 받침이 바로 놓인다
+  const DS = 1.3;
+  const dial = angbuilgu(); dial.remove(dial.children[0], dial.children[1]);
+  dial.position.set(DIAL[0], 0.3 - 1.25 * DS, DIAL[1]); dial.scale.setScalar(DS); L.add(dial);
+  mk(new THREE.BoxGeometry(2.2, 0.3, 2.2), 0xb3ab99, DIAL[0], 0.15, DIAL[1]);
+  world.addCollider({ x: DIAL[0], z: DIAL[1], r: 1.7 });
   // 그릇 테두리 안쪽의 동물 그림과 시각 이름(묘시~유시). 시각 칸을 누르는 동안에는 숨기고 누르는 단추가 그 자리에 뜬다
   const hourTags = [];
   for (let k = 0; k < ANGBU_HOURS; k++) {
@@ -135,7 +141,7 @@ export function buildJ3Scene(world) {
   nameBoard(L, '한양', 2.8, 10.2); // 조선의 도읍(S24)
 
   world.addNpc('commoner', LOOKS.commoner, -3.6, 6.8, Math.PI * 0.8);
-  world.addNpc('jangyeongsil', LOOKS.jangyeongsil, 4.5, -1.5, -Math.PI / 2);
+  world.addNpc('jangyeongsil', LOOKS.jangyeongsil, 3.1, -1.2, -Math.PI / 2); // 보루각 돌 기단(x 4~14) 앞 땅에(D-67: 기단에 발이 묻혀 보였다)
   world.addNpc('crownPrince', LOOKS.crownPrince, -3.5, -9, -Math.PI * 0.4);
 
   const rain = createWeather(world, 'rain', { count: 700 });
@@ -144,7 +150,7 @@ export function buildJ3Scene(world) {
   world.onUpdate((dt, t) => {
     if (ring > 0) {
       ring -= dt;
-      puppets.forEach((p, k) => { p.position.y = 2.8 + (ring > 0 ? Math.max(0, Math.sin(t * 6 - k * 2)) * 0.25 : 0); });
+      puppets.forEach((p, k) => clock.userData.swing(k, ring > 0 ? Math.max(0, Math.sin(t * 6 - k * 2)) : 0)); // 인형이 차례로 채를 휘둘러 친다(D-67)
     }
   });
 
@@ -155,7 +161,7 @@ export function buildJ3Scene(world) {
     start: [0, 9], introFrom: [0, 15], gate, dial, gauge, clock, shadow, rain, tween,
     dialAt: DIAL, gaugeAt: GAUGE, gaugeStand: [GAUGE[0], GAUGE[1] + 4],
     // 다가가 살펴보는 자리(C-05): 앙부일구·보루각·측우기 바로 앞(학생 쪽)
-    dialFront: { x: DIAL[0], z: DIAL[1] + 3.6 }, dialStand: [DIAL[0], DIAL[1] + 3.8],
+    dialFront: { x: DIAL[0], z: DIAL[1] + 2.4 }, dialStand: [DIAL[0], DIAL[1] + 2.6],
     clockFront: { x: 9, z: 1.8 }, gaugeFront: { x: GAUGE[0], z: GAUGE[1] + 2.4 },
     setRain(on) { rain.points.visible = on; },
     ringClock() { ring = 3; },

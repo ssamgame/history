@@ -3,6 +3,8 @@
 // 펼쳐진 학익진의 빈자리로 배를 몰아 넣기 → 거북선이 앞장서 나서고(S43) 한꺼번에 공격 → 빛나는 문 → 퀴즈.
 import * as THREE from 'three';
 import { buildJ4Scene, STRAIT_Z } from './scene.js';
+import { MAP_OUTLINE } from '../../../core/screens.js';
+export { STRAIT_Z };
 import { roam } from '../../../core/flow.js';
 import { showHowTo } from '../../../core/minigame.js';
 import { LOOKS } from '../../../content/characters.js';
@@ -16,7 +18,7 @@ import { victoryScene } from './story.js';
 const PEOPLE = ['navy', 'commoner'];
 const SPOT = [-5, 7.5];
 const SAIL_CAM = { offset: [0, 6, 11], lookY: 3 }; // 배 바로 뒤 낮은 시점(고려 6장과 같은 방식, 판옥선이 커서 조금 뒤로)
-export const LURE = { start: [0, -30], mouth: { x: 0, z: STRAIT_Z + 4, r: 3.5 }, open: { x: 0, z: -52, r: 4 } };
+export const LURE = { start: [0, -30], mouth: { x: 0, z: STRAIT_Z + 4, r: 3.5 }, open: { x: 4, z: -37, r: 4 } }; // D-68: 넓은 바다 도착 지점을 대장선 가까이(더 멀리 몰고 내려온다)
 const CATCH = 5;
 let scene = null;
 
@@ -41,11 +43,16 @@ function board(ctx, [x, z]) {
   world.closeView = false; world.bounds = scene.seaBounds;
   world.followOffset = new THREE.Vector3(...SAIL_CAM.offset); world.followLookY = SAIL_CAM.lookY;
   placePlayer(world, [x, z]); scene.myShip.visible = true; world.player.visible = false;
+  for (const o of [scene.lure, scene.flagship, ...scene.portShips]) o.visible = false; // D-68: 내 배가 다른 배와 겹쳐 보이지 않게(바다에는 내 배와 적선만)
+  world.goalArrowLift = 3.2; world.goalArrowScale = 2.4; // 어디로 갈지 알려 주는 노란 화살표를 배 위에 크게(D-68)
 }
+export const boardForTest = (ctx, at) => board(ctx, at); // 시험용
 function unboard(ctx) {
   const { world } = ctx;
   scene.myShip.visible = false; world.followOffset = null; world.followLookY = null; world.closeView = true;
+  world.goalArrowLift = null; world.goalArrowScale = null;
 }
+export const unboardForTest = ctx => unboard(ctx); // 시험용
 
 // 원에 닿을 때까지 몬다: 닿으면 true. chase가 있으면 매 프레임 부르고, false를 돌려주면(잡힘) 실패
 function sailTo(ctx, ring, chase = null) {
@@ -67,17 +74,21 @@ function sailTo(ctx, ring, chase = null) {
 export async function lureEnemy(ctx, easy) {
   const { world, dialogue, audio } = ctx;
   scene.setStage('sail');
-  scene.enemy.position.set(0, 0, STRAIT_Z - 16); scene.enemy.rotation.y = 0; // 견내량 안에 모여 있는 적
+  scene.enemy.position.set(0, 0, STRAIT_Z - 28); scene.enemy.rotation.y = Math.PI; // 견내량 안 깊이 있는 적(D-67: 유인 지점에서 멀리, 30척)
+  scene.setFormation(0); // 꾀어내기 전에는 넓게 흩어진 대열
   board(ctx, LURE.start);
   await sailTo(ctx, LURE.mouth);
   await dialogue.say(script.lure.seen); dialogue.close();
   audio.play('whoosh');
   const speed = easy ? 3 : 4.2; // 학생 배(6.5)보다 느리다: 머뭇거리면 잡힌다
   const e = scene.enemy.position;
-  e.set(0, 0, STRAIT_Z - 16); scene.enemy.rotation.y = Math.PI; // 견내량 안에 있던 적이 뱃머리를 돌려 남쪽(학생 쪽)으로
+  e.set(0, 0, STRAIT_Z - 28); scene.enemy.rotation.y = Math.PI; // 견내량 안에 있던 적이 뱃머리를 돌려 남쪽(학생 쪽)으로
+  let t = 0, hinted = false; // 쫓아오기 시작하면 3초 동안 촘촘한 대열로 모인다(D-67)
   const ok = await sailTo(ctx, LURE.open, dt => {
+    t += dt; scene.setFormation(Math.min(1, t / 3));
+    if (!hinted && t > 4 && !dialogue.isOpen()) { hinted = true; dialogue.say(script.lure.hint).then(() => dialogue.close()); } // D-67: 쫓기는 동안 한 번 더 길을 알려 준다
     const p = world.player.position, lead = e.z; // 적 무리의 맨 앞 줄(남쪽을 보면 앞줄이 e.z)
-    if (Math.hypot(p.x - e.x, p.z - lead) < CATCH) { audio.play('wrong'); return false; }
+    if (Math.hypot(p.x - e.x, p.z - lead) < CATCH) { audio.play('wrong'); e.set(0, 0, STRAIT_Z - 28); scene.setFormation(0); return false; } // 잡히면 적선을 견내량 안으로 되돌린다(D-68: 내 배 위에 겹쳐 보였다)
     const dx = p.x - e.x, dz = p.z - lead, d = Math.hypot(dx, dz) || 1;
     e.x += dx / d * speed * dt * 0.4; e.z += dz / d * speed * dt;
     return true;
@@ -132,7 +143,7 @@ export async function fillWing(ctx, easy) {
   audio.play('correct');
   for (const r of rings) world.level.remove(r.r);
   world.setGoal(null); ctx.testHooks.walkTo = null; ctx.input.enabled = false; ctx.input.releaseJoystick?.();
-  world.player.rotation.y = Math.PI; // 뱃머리를 적 쪽(북쪽)으로
+  world.player.rotation.y = scene.slot.ry - Math.PI; // D-67: 다른 판옥선처럼 옆구리(포혈)를 적 쪽으로(학생 배는 학생 방향 + 180도)
   return missed ? 'missed' : true;
 }
 
@@ -152,10 +163,25 @@ export async function turtleAndBattle(ctx) {
   await scene.turtleCharge(3.5);
   await sayAll(dialogue, [script.turtle[1]]); dialogue.close();
   follow();
-  await new Promise(resolve => { let k = 0; const off = world.onUpdate(dt => { k = Math.min(1, k + dt / 2.5); scene.setAdvance(k * 0.8); if (k >= 1) { off(); resolve(); } }); }); // 적이 날개 안으로
-  world.fitFixedCamera([0, 0, -38], [0.9, 1.25, 0.45], [[-20, 0, -32], [20, 0, -32], [-6, 0, -49], [6, 0, -49]], 0.9); // 싸움을 옆에서 가까이(넓어진 날개 양 끝까지)
+  await new Promise(resolve => { let k = 0; const off = world.onUpdate(dt => { k = Math.min(1, k + dt / 2.5); scene.setAdvance(k * scene.FIRE_AT); if (k >= 1) { off(); resolve(); } }); }); // 적이 날개 안으로
+  world.fitFixedCamera([0, 0, -42], [0.9, 1.25, 0.45], [[-28, 0, -30], [28, 0, -30], [-6, 0, -60], [6, 0, -64]], 0.9); // 멀리 떨어진 두 함대가 함께 보이게(D-67)
   ctx.testHooks.sunk = await scene.playBattle(ctx.audio);
   scene.setStage('won');
+}
+
+// 선조의 피란길 지도(D-67): 화면 오른쪽에 한반도 지도를 띄우고 한양에서 의주까지 북쪽으로 올라가는 길을 그려 나간다(S34 문장 그대로, 들른 곳은 적지 않는다)
+function routeMap(ui) {
+  if (!ui) return null;
+  const box = document.createElement('div'); box.className = 'route-map';
+  box.innerHTML = `<svg viewBox="0 0 300 400" aria-hidden="true"><polygon points="${MAP_OUTLINE}" fill="#d9cfa8" stroke="#6b5a3a" stroke-width="3"/>
+    <path class="route" d="M132 228 C 118 200, 108 170, 98 140 S 70 95, 55 82" fill="none" stroke="#a3262a" stroke-width="6" stroke-linecap="round" stroke-dasharray="6 10" pathLength="100"/>
+    <circle cx="132" cy="228" r="7" fill="#2b241c"/><circle cx="55" cy="82" r="7" fill="#a3262a"/>
+    <text x="142" y="236" font-size="22" font-weight="bold" fill="#2b241c">한양</text><text x="64" y="76" font-size="22" font-weight="bold" fill="#a3262a">의주</text></svg>`;
+  Object.assign(box.style, { position: 'absolute', right: '3%', top: '12%', height: '58%', aspectRatio: '3 / 4', background: 'rgba(127,168,191,0.92)', border: '4px solid #6b4a32', borderRadius: '10px', zIndex: 5, pointerEvents: 'none' });
+  const r = box.querySelector('.route');
+  r.animate([{ strokeDashoffset: 100, opacity: 0.2 }, { strokeDashoffset: 0, opacity: 1 }], { duration: 2600, fill: 'forwards' });
+  ui.appendChild(box);
+  return { removeFromParent: () => box.remove() };
 }
 
 export const devScene = () => scene; // 개발용(사진 찍기)
@@ -178,6 +204,7 @@ export default {
   // 서둘러 떠난다(의주로 피란). 끝나면 배와 사람을 치우고 포구를 처음 모습으로 돌린다.
   introScene(ctx) {
     const { world } = ctx, offs = [], temp = [];
+    let mapBox = null;
     return {
       shots: [
         { cam: [9, 5, 12], look: [0, 1.5, -20], to: { cam: [4, 4, 8], look: [0, 1.5, -28] },
@@ -187,6 +214,7 @@ export default {
           } },
         { cam: [12, 3.2, 13.4], look: [8, 1.5, 8], to: { cam: [3, 3.2, 13.4], look: [0.5, 1.5, 8] }, // 떠나는 임금 일행을 따라간다
           act: () => {
+            mapBox = routeMap(ctx.ui); // D-67: 한반도 지도에 한양에서 의주까지 피란길
             const KING = LOOKS.injo; // 임금 차림(붉은 곤룡포와 익선관)
             [[KING, 0], [LOOKS.minister, 1.6], [LOOKS.minister, 2.6], [LOOKS.joseonSoldier, -1.6], [LOOKS.joseonSoldier, 3.8]].forEach(([look, dx], i) => {
               const p = makePerson(look); p.position.set(10 + dx, 0, 8.2 + (i % 2) * 0.7); p.rotation.y = -Math.PI / 2; world.level.add(p); temp.push(p);
@@ -194,7 +222,7 @@ export default {
             offs.push(world.onUpdate(dt => { for (const p of temp) p.position.x -= dt * 1.3; })); // 서둘러 길을 떠난다
           } },
       ],
-      done: () => { offs.forEach(f => f()); temp.forEach(p => p.removeFromParent()); scene.setStage('harbor'); },
+      done: () => { offs.forEach(f => f()); temp.forEach(p => p.removeFromParent()); mapBox?.removeFromParent(); scene.setStage('harbor'); },
     };
   },
   // 미니게임 뒤 빛나는 문(C-02): 포구 앞 빈 땅, 학생 쪽(서쪽)을 본다

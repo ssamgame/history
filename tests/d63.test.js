@@ -195,7 +195,7 @@ test('d66: 항파두리는 첫 장면부터 몇 안 되는 삼별초와 연합�
     ch6.buildScene(s.w, s.ctx);
     await ch6.stories.hangpaduri(s.ctx);
     const h = s.ctx.testHooks.hangpaduri;
-    eq(h.phases, ['standoff'], '처음부터 대치');
+    eq(h.phases, ['standoff', 'advance', 'collapse'], '처음부터 대치 → 연합군 진격 → 흙성이 무너짐(D-67)');
     ok(h.few <= 8, `삼별초는 몇 안 된다 ${h.few}`);
     ok(h.gap > 4 && h.gap < 12, `조금 떨어진 거리 ${h.gap?.toFixed(1)}m`);
     ok(h.lines >= 2, '김통정의 말과 진압 해설');

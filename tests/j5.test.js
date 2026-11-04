@@ -126,7 +126,7 @@ test('j5 C-01·C-02·C-03: intro film (청군 → 인조가 산성으로), porta
   ok(!j5Script.goals.some(g => g.includes('배운 내용')), 'no quiz goal');
   ok(!Object.keys(j5Script.npc).some(k => k.startsWith('sign')), 'no sign npc entries');
   const lines = JSON.stringify(j5Script);
-  ok(lines.includes('2014') && lines.includes('1625'), 'sign facts kept in someone\'s words');
+  ok(lines.includes('1625') && !lines.includes('2014'), 'sign facts kept in someone\'s words (D-68: 2014 유네스코는 선생님 뜻으로 뺐다)');
   const s = touchSetup(j5Script.speakers);
   try {
     const sc = j5.buildScene(s.w, s.ctx);
@@ -189,13 +189,13 @@ test('j5 N-02·N-03·N-04: names over the two ministers, a shivering 백성 star
     j5.enterStage(s.ctx, 'minigame');
     s.w.onUpdate(() => {
       frame += 1;
-      const rz = folk.mesh.rotation.z; if (lastRz != null) shiver = Math.max(shiver, Math.abs(rz - lastRz)); lastRz = rz;
+      const rz = folk.mesh.userData.arms[0].rotation.z; if (lastRz != null) shiver = Math.max(shiver, Math.abs(rz - lastRz)); lastRz = rz; // D-67: 몸을 떠는 대신 손을 비빈다
       if (frame % 5) return;
       s.w.level.traverse(o => { if (o.isSprite && o.visible && o.name && o.name.startsWith('name:')) { const p = o.getWorldPosition(o.position.clone()); if (p.y > 2.5) seen.add(o.name); } });
     });
     await j5.minigame(s.ctx);
     ok(seen.has('name:김상헌') && seen.has('name:최명길'), `names shown ${[...seen]}`);
-    ok(shiver > 0.005, 'the 백성 shivers');
+    ok(shiver > 0.005, 'the 백성 rubs the hands (D-67)');
     const F = j5Script.fires, iCold = said.indexOf(j5Script.npc.coldfolk.first[0]), iHow = said.indexOf(F.howto[0]);
     ok(iCold >= 0 && iHow > iCold, `cold story (${iCold}) before the braziers (${iHow})`);
     const lament = j5Script.npc.injo.first, iL = said.indexOf(lament[0]), iW = said.indexOf(j5Script.walk.start[0]), iS = said.indexOf(j5Script.samjeondo[0]);

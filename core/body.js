@@ -95,6 +95,7 @@ export function attachBody(g, look = {}) {
   const mixer = new THREE.AnimationMixer(root), acts = {};
   for (const clip of base.animations) { const a = mixer.clipAction(clip); acts[clip.name] = a; if (clip.name === 'give' || clip.name === 'put_down') { a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = true; } }
   const S = { root, mixer, acts, links, cur: null, target: null, w: {}, fade: FADE, manual: null, bones: B, look, mixed: new Map(), skinOn: true };
+  S.foreRest = ['R', 'L'].map(s => [B(`forearm_${s}`), B(`forearm_${s}`).quaternion.clone()]); // 곧게 편 아래팔(묶인 자세)
   S.rehome = (from, to) => { people.delete(from); people.add(to); };
   S.freeze = () => { root.traverse(o => { if (o.isSkinnedMesh) o.visible = false; }); people.delete(g); S.frozen = true; }; // 움직이지 않는 군중으로 굳힐 때(core/bake.js)
   Object.defineProperty(u, 'skel', { value: S, writable: true, configurable: true }); // 숨긴 칸: three의 clone·toJSON이 userData를 JSON으로 복사할 때 동작기(mixer)의 순환 참조로 죽지 않게
@@ -186,6 +187,13 @@ function update(g, dt) {
     if (low && d > FAR_STOP) return;
     if (d > FAR_STEP) { S.acc = (S.acc || 0) + dt; if ((S.tick = ((S.tick || 0) + 1) % 3) !== 0) return; dt = S.acc; S.acc = 0; }
   }
+  // 제자리걸음 막기(D-68): 장이 직접 걷게 하다가(manual) 멈추면 걷기 동작을 고르는 쪽이 더는 불리지 않아 걷기 동작이 남았다.
+  // 걷기·달리기 동작인데 0.4초 넘게 제자리면 서 있기로 바꾼다(박자만 맞춰 제자리에서 걷게 하는 manualGait는 뺀다)
+  g.getWorldPosition(wv);
+  const picked = S.picked; S.picked = false;
+  if (!picked && /^(walk|run)/.test(S.target || '') && !S.manual && S.lastP && wv.distanceTo(S.lastP) < 0.01 * Math.max(dt, 0.001) / 0.05) { S.still = (S.still || 0) + dt; if (S.still > 0.4) { play(g, S.target.endsWith('_spear') ? 'idle_spear' : S.target.endsWith('_sword') ? 'idle_sword' : 'idle', 0.3); S.still = 0; } }
+  else S.still = 0;
+  (S.lastP ||= new THREE.Vector3()).copy(wv);
   blend(S, dt);
   // three의 믹서는 값이 지난 프레임과 같으면 뼈에 다시 쓰지 않는다(뼈가 지난 값을 그대로 갖고 있다고 여긴다). 덧씌움이 뼈를 바꿨다면
   // 믹서가 지난번에 쓴 값으로 되돌려 둔 뒤 돌린다(2026-10-31: 짐 안기처럼 팔이 가만한 동작에서 집는 자세가 풀린 뒤에도 팔이 내려가 있던 오류)
@@ -204,6 +212,10 @@ function update(g, dt) {
     L.bone.quaternion.slerp(par.invert().multiply(tmp), L.w);
     for (const e of L.extra) e.bone.quaternion.slerp(e.rest, L.w);
     L.bone.updateMatrixWorld(true);
+  }
+  // 학생 인물(straightArms)은 걸을 때 팔꿈치를 굽히지 않고 팔을 곧게 편다(D-68 선생님). 덧씌운 팔(집기·건네기)이 없을 때만
+  if (g.userData.straightArms && /^(walk|run)/.test(S.target || '') && !g.userData.carry && S.links.every(L => L.extra.length === 0 || L.w < 0.02)) {
+    for (const [bone, rest] of S.foreRest) { if (!S.mixed.has(bone)) S.mixed.set(bone, bone.quaternion.clone()); bone.quaternion.copy(rest); }
   }
   // 두 팔로 안은 짐: 짐 안기 동작이 다 섞이면 두 손 가운데로 옮겨 손에 붙인다(그 뒤로는 손과 함께 움직인다)
   const c = S.carry;

@@ -185,7 +185,7 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
 
   const level = new THREE.Group();
   scene.add(level);
-  const player = makePerson(LOOKS.player, { track: false, stable: true });
+  const player = makePerson(LOOKS.player, { track: false, stable: true }); player.userData.straightArms = true; // 학생은 걸을 때 팔을 곧게(D-68)
   scene.add(player);
 
   const goalArrow = new THREE.Mesh(
@@ -279,7 +279,7 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
       const fresh = makePerson(opts, { track: false, stable: true });
       for (const c of [...player.children]) { player.remove(c); c.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
       for (const c of [...fresh.children]) player.add(c);
-      player.userData = fresh.userData;
+      player.userData = fresh.userData; player.userData.straightArms = true; // 학생은 걸을 때 팔을 곧게(D-68)
       player.userData.skel?.rehome(fresh, player); // 뼈대 몸(core/body.js)은 학생 물체에서 돈다
     },
     addCollider(c) { world.colliders.push(c); return c; },
@@ -375,11 +375,11 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
       }
       const mv = lastPP ? Math.hypot(p.x - lastPP.x, p.z - lastPP.z) / dt : 0; lastPP = { x: p.x, z: p.z };
       animateWalk(player, moving || (mv > 0.12 && mv < 8), dt); // 장이 학생을 몇 걸음 옮길 때(walkTo)도 다리를 움직인다(미끄러지듯 떠가지 않게)
-      for (const n of world.npcs.values()) if (n.mark.visible) n.mark.position.y = (n.spot ? (n.mesh.userData.markY ?? 3.1) : 3.5) + Math.sin(elapsed * 3) * 0.12;
+      for (const n of world.npcs.values()) if (n.mark.visible) n.mark.position.y = (n.spot ? (n.mesh.userData.markY ?? 3.1) : 3.5 + (n.mesh.userData.seatLift || 0)) + Math.sin(elapsed * 3) * 0.12; // 높이 앉은 사람(단상 위 세종)은 머리 위로(D-67: 관 속에 묻혀 안 보였다)
       if (goal) {
         const dx = goal.x - p.x, dz = goal.z - p.z;
         goalArrow.visible = Math.hypot(dx, dz) > 3;
-        goalArrow.position.set(p.x, 0.15, p.z);
+        goalArrow.position.set(p.x, world.goalArrowLift ?? 0.15, p.z); goalArrow.scale.setScalar(world.goalArrowScale ?? 1); // 배를 탔을 때는 갑판 위로 크게(D-68)
         goalArrow.rotation.y = Math.atan2(dx, dz);
       } else goalArrow.visible = false;
       for (const fn of [...updaters]) fn(dt, elapsed); // 도중에 해제해도 안전하도록 복사본을 돈다

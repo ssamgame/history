@@ -144,6 +144,9 @@ export function buildCh6Scene(world) {
   // 도착 지점 원
   const ring = new THREE.Mesh(new THREE.RingGeometry(1.6, 2.2, 32), new THREE.MeshBasicMaterial({ color: 0xd9a441, transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
   ring.rotation.x = -Math.PI / 2; ring.visible = false; L.add(ring);
+  // 바닷길에서 도착 지점을 멀리서도 찾게 원 위로 솟는 빛기둥(D-67). 원이 누워 있어(x축 -90도) 원의 z축이 위쪽
+  const beam = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 1.9, 14, 20, 1, true), new THREE.MeshBasicMaterial({ color: 0xffd27a, transparent: true, opacity: 0.25, side: THREE.DoubleSide, depthWrite: false }));
+  beam.rotation.x = Math.PI / 2; beam.position.z = 7; beam.name = 'goalBeam'; ring.add(beam);
 
   // 포구 문(시작 장면): 낮은 나무 울타리 사이 문. 들어온 뒤 낮은 카메라를 가리지 않게 낮게
   const GATE_Z = 86.6;

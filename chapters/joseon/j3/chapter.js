@@ -26,7 +26,7 @@ export const hourLabel = k => ({ text: `${HOUR_ANIMALS[k][1]} ${HOUR_ANIMALS[k][
 export const DIAL_ROUNDS = [1, 4, 6];
 // 측우기에 고이는 빗물 높이(눈금). 소나기가 두 번 온다
 export const GAUGE_ROUNDS = [5, 3];
-// 자격루 장면의 차례: 물 붓기 → 물이 차오름 → 잣대가 떠오름 → 구슬이 구름 → 인형이 종·북을 침
+// 자격루 장면의 차례: 물 붓기 → 수수호에 물이 차오름 → 살대가 떠오름 → 구슬이 굴러 동판을 침 → 인형이 종·북·징을 침
 export const CLOCK_STEPS = ['pour', 'rise', 'rod', 'ball', 'strike'];
 
 // 탐험 표시: 아직 안 들은 사람에게 느낌표, 화살표는 다음 사람
@@ -101,8 +101,8 @@ function pickOnScreen(ctx, { cls, items, answer, easy, hint, width = 92 }) {
 // 1) 커다란 앙부일구 속을 가까이: 해가 움직여 그림자가 시각 칸을 옮겨 가고, 학생은 그림자가 닿은 칸의 단추를 누른다
 async function readDial(ctx, easy) {
   const { world, dialogue } = ctx;
-  const d = scene.dial.position, y = 2.25 * scene.dial.scale.x;
-  world.setFixedCamera([d.x, y + 3.6, d.z + 3.2], [d.x, y - 0.9, d.z - 0.5]); // 그릇 안이 다 보이게 남쪽 위에서(놀이 카메라 예외)
+  const d = scene.dial.position, k = scene.dial.scale.x / 2.6, y = d.y + 2.25 * scene.dial.scale.x; // 그릇 테두리 높이(D-67: 낮춘 앙부일구)
+  world.setFixedCamera([d.x, y + 3.6 * k, d.z + 3.2 * k], [d.x, y - 0.9 * k, d.z - 0.5 * k]); // 그릇 안이 다 보이게 남쪽 위에서(놀이 카메라 예외)
   scene.showHourTags(false);
   const items = HOURS.map((_, k) => ({ ...hourLabel(k), at: scene.hourPoint(k) }));
   let missed = false;
@@ -142,7 +142,7 @@ async function readGauge(ctx, easy) {
   return missed ? 'missed' : true;
 }
 
-// 2) 자격루 한 장면(D-30 S-03): 물을 부으면 물그릇을 차례로 흘러 물통에 차오르고, 잣대가 떠올라 구슬이 굴러 가고, 인형이 종·북을 친다.
+// 2) 자격루 한 장면(D-30 S-03): 물을 부으면 물그릇을 차례로 흘러 수수호에 차오르고, 살대가 떠올라 구슬이 굴러 동판을 치면, 인형이 채로 종·북·징을 친다(D-67 선생님 그림).
 // 카메라가 움직이는 곳을 따라간다. 설명 대사는 넣지 않고 부분 이름만 잠깐 띄운다(출처 S31 문장보다 자세히 말하지 않는다)
 async function clockScene(ctx) {
   const { world, audio } = ctx;
@@ -172,37 +172,44 @@ async function clockScene(ctx) {
   // 0) 물 붓기: 물동이를 기울이면 물이 맨 위 물그릇으로, 다시 아래 물그릇으로 흘러내린다
   act(0); tag('물', -3, 4.1, 0.3); audio.play('water');
   const bucket = put(new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.2, 0.36, 12), lm(0x6b4a32))); bucket.position.set(-3.45, 3.75, 0.1);
-  const stream = (x, y0, y1) => { const m = put(new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 1, 6), lm(0x6fb0d8))); m.position.set(x, y0, 0.05); m.scale.y = 0.001; m.userData.span = [y0, y1]; return m; };
-  const falls = [stream(-3.05, 3.7, 3.0), stream(-2.4, 3.05, 2.2), stream(-0.95, 2.25, 1.4)];
+  // 물줄기: 물동이 → 맨 위 물그릇, 그다음은 물그릇마다 홈통(spouts)을 따라 흘러 다음 그릇·수수호로 떨어진다(D-67)
+  const flow = (from, to) => { const m = put(new THREE.Mesh(new THREE.BoxGeometry(1, 0.05, 0.1), lm(0x6fb0d8))); m.userData.span = [from.clone(), to.clone()]; m.visible = false; return m; };
+  const setFlow = (m, f) => { const [a, b] = m.userData.span, e = b.clone().sub(a).multiplyScalar(f), len = Math.max(0.001, e.length()); m.visible = f > 0; m.scale.x = len; m.position.copy(a).addScaledVector(e, 0.5); m.position.y += 0.02; m.rotation.set(0, -Math.atan2(e.z, e.x), Math.atan2(e.y, Math.hypot(e.x, e.z)), 'YZX'); };
+  const falls = [flow(new THREE.Vector3(-3.25, 3.6, 0.1), new THREE.Vector3(-3.0, 3.0, 0.05)), ...u.spouts.map(s => flow(s.from, s.to))];
   await shot([-2.0, 3.0, 2.9], [-2.2, 2.5, 0], 3.2, k => {
     bucket.rotation.z = -Math.min(1, k * 3) * 1.1;
-    falls.forEach((m, i) => { const f = Math.max(0, Math.min(1, k * 3 - i * 0.7)); const [y0, y1] = m.userData.span; m.scale.y = Math.max(0.001, (y0 - y1) * f); m.position.y = y0 - (y0 - y1) * f / 2; });
+    falls.forEach((m, i) => setFlow(m, Math.max(0, Math.min(1, k * 3.4 - i * 0.75))));
+    u.potWater.forEach((w, i) => { const f = Math.max(0, Math.min(1, k * 3 - 0.3 - i * 0.7)); w.visible = f > 0; const [a, b] = w.userData.span; w.position.y = a + (b - a) * Math.min(1, f * 1.4); }); // 물그릇마다 물이 고였다가 넘쳐 아래로
   });
-  // 1) 물이 긴 물통에 차오른다(물통 앞에 물 기둥을 보인다)
-  act(1); tag('물통', 1.3, 3.1, 0.6); audio.play('water');
-  const level = [-0.4, 0.4].map(dz => { const w = put(new THREE.Mesh(new THREE.CylinderGeometry(0.29, 0.29, 1, 14), new THREE.MeshLambertMaterial({ color: 0x5a9ac0, transparent: true, opacity: 0.9 }))); w.position.set(1.3, 0.02, dz + 0.01); w.scale.y = 0.001; return w; });
-  await shot([0.7, 1.9, 2.8], [1.3, 1.5, 0], 3, k => { for (const w of level) { w.scale.y = Math.max(0.001, 2.5 * k); w.position.y = 0.02 + 1.25 * k; } });
+  // 1) 물이 수수호 안에 차오른다: 겉을 잠깐 비쳐 보이게 해서 안쪽 물이 아래에서부터 차는 모습을 보인다(D-67)
+  act(1); tag('수수호', 1.3, 3.1, 0.6); audio.play('water');
+  const shells = u.tanks.map(t => { const m0 = t.material; t.material = m0.clone(); t.material.transparent = true; t.material.opacity = 0.3; t.material.depthWrite = false; return [t, m0]; });
+  u.waters.forEach(w => { w.visible = true; });
+  await shot([0.7, 1.9, 2.8], [1.3, 1.5, 0], 3, k => { for (const w of u.waters) { w.scale.y = Math.max(0.001, 2.5 * k); w.position.y = 0.02 + 1.25 * k; } for (const r of u.rods) r.position.y = r.userData.y0 - 1.0 + 1.0 * k; }); // 살대도 물에 떠서 함께 오른다
   falls.forEach(m => { m.visible = false; });
-  // 2) 잣대가 떠오른다
-  act(2); tag('잣대', 1.0, 3.5, 0.4); audio.play('tap');
+  // 2) 살대가 끝까지 떠올라 쇠구슬을 민다
+  act(2); tag('살대', 1.0, 3.5, 0.4); audio.play('tap');
   await shot([0.9, 2.8, 2.6], [1.4, 2.9, 0], 2, k => { for (const r of u.rods) r.position.y = r.userData.y0 + 0.55 * k; });
-  // 3) 쇠구슬이 비탈 홈을 굴러 나무 상자로
+  // 3) 쇠구슬이 비탈 홈을 굴러 내려가 동판을 친다
   act(3); tag('쇠구슬', 2.0, 3.4, 0.4); audio.play('tap');
   const { from, to } = u.chute;
-  await shot([2.2, 2.9, 2.6], [2.4, 2.5, 0], 1.8, k => { const f = Math.min(1, k * 1.2); u.ball.position.lerpVectors(from, to, f * f); u.ball.rotation.z = -f * 9; u.ball.visible = f < 1; });
-  // 4) 나무 인형이 종·북을 친다
+  await shot([2.2, 2.9, 2.6], [2.4, 2.5, 0], 1.8, k => { const f = Math.min(1, k * 1.3); u.ball.position.lerpVectors(from, to, f * f); u.ball.rotation.z = -f * 9; u.plate.rotation.z = f >= 1 ? -0.5 * Math.min(1, (k * 1.3 - 1) * 6) : 0; });
+  tag('동판', 2.4, 2.75, 0.4);
+  // 4) 동판이 전한 힘으로 나무 인형이 차례로 채를 휘둘러 종·북·징을 친다
   act(4); tag('나무 인형', 3.4, 4.25, 0.3);
   let rang = 0;
-  await shot([3.3, 3.0, 2.7], [3.4, 3.2, -0.1], 3.2, k => {
-    u.puppets.forEach((p, i) => { const s = Math.max(0, Math.sin(k * 18 - i * 2)); p.rotation.x = -s * 0.5; p.position.y = 2.8 + s * 0.08; });
-    const n = Math.floor(k * 3); if (n >= rang && n < 3) { rang = n + 1; audio.play('bell'); }
+  await shot([5.6, 3.9, 1.6], [3.4, 3.0, -0.2], 3.6, k => { // 옆에서: 채가 악기를 치는 모습이 인형에 가리지 않게
+    u.mallets.forEach((_, i) => { const t = k * 3 - i; u.swing(i, t > 0 && t < 1 ? Math.sin(t * Math.PI) : 0); });
+    const n = Math.floor(k * 3 + 0.5); if (n > rang && n <= 3) { rang = n; audio.play('bell'); }
   });
-  u.puppets.forEach(p => { p.rotation.x = 0; p.position.y = 2.8; });
+  u.mallets.forEach((_, i) => u.swing(i, 0));
   await ctx.wait(400);
-  // 정리: 장면에서 더한 물·이름을 치우고 잣대·구슬을 제자리로
+  // 정리: 장면에서 더한 물·이름을 치우고 살대·구슬·동판을 제자리로
   made.forEach(o => o.removeFromParent());
+  shells.forEach(([t, m0]) => { t.material = m0; });
+  u.waters.forEach(w => { w.visible = false; w.scale.y = 0.001; }); u.potWater.forEach(w => { w.visible = false; });
   for (const r of u.rods) r.position.y = r.userData.y0;
-  u.ball.position.copy(from); u.ball.visible = true; u.ball.rotation.z = 0;
+  u.ball.position.copy(from); u.ball.visible = true; u.ball.rotation.z = 0; u.plate.rotation.z = 0;
   world.player.visible = true; ctx.ui.classList.remove('filming');
 }
 
@@ -229,7 +236,7 @@ export default {
       shots: [
         { cam: [6, 11, 16], look: [-6, 1, -4], to: { cam: [-12, 9, 12], look: [-7, 1.5, -6] },
           act: () => { scene.setRain(true); } },
-        { cam: [-8, 9.5, 11.5], look: [-8, 4.6, 4.4], to: { cam: [6.5, 3.3, 3.5], look: [9.6, 2.6, -4] },
+        { cam: [-8, 6.5, 10.5], look: [-8, 1.6, 4.6], to: { cam: [6.5, 3.3, 3.5], look: [9.6, 2.6, -4] },
           act: () => { scene.setRain(false); let t = 0; off = world.onUpdate(dt => { t += dt; scene.shadow.rotation.y = Math.PI + Math.sin(t * 0.6) * 1.1; }); setTimeout(() => scene.ringClock(), 3500); } },
       ],
       done: () => { off?.(); scene.setRain(false); scene.shadow.rotation.y = 0; },
@@ -278,7 +285,7 @@ export default {
     ctx.testHooks.j3Started = [];
     const parts = [];
     // 1) 앙부일구: 다가가서 살펴보면 시작(C-05)
-    await waitInteract(ctx, { pos: scene.dialFront, quest: script.goals[1], label: '앙부일구 살펴보기', markY: 3.4 });
+    await waitInteract(ctx, { pos: scene.dialFront, quest: script.goals[1], label: '앙부일구 살펴보기', markY: 2.6 });
     ctx.testHooks.j3Started.push('dial');
     await sayAll(dialogue, script.dial.intro); dialogue.close();
     await showHowTo(ctx.ui, script.dial.howto);
