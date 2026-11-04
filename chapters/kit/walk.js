@@ -67,12 +67,24 @@ export function sitDown(p) {
   p.position.y = SEAT_Y - 0.55; u.seated = true;
 }
 // 학교 교실: 앞(+z)이 열린 방, 칠판·선생님 책상·책상 여덟과 학생들. teacher: 선생님 생김새. seated: 학생들이 의자에 앉는다
-export function classroom(g, x, z, { teacher = 'scholarModern', wall = 0xe6dcc3, seated = false } = {}) {
+// japan: 1930년대 후반 교실(2026-11-04 선생님): 칠판에 일본어 글씨, 칠판 위 벽에 일장기
+function canvasPlane(w, h, px, draw) {
+  const cv = document.createElement('canvas'); cv.width = px; cv.height = Math.round(px * h / w); const c = cv.getContext('2d'); draw(c, cv.width, cv.height);
+  const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
+  return new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshLambertMaterial({ map: tex }));
+}
+export function classroom(g, x, z, { teacher = 'scholarModern', wall = 0xe6dcc3, seated = false, japan = false } = {}) {
   const c = new THREE.Group(); c.position.set(x, 0, z); g.add(c);
   const box = (w, h, d, color, bx, by, bz, kind = 'wood') => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color, kind)); m.position.set(bx, by, bz); m.castShadow = true; m.receiveShadow = true; c.add(m); return m; };
   box(9, 0.1, 7, 0x8a6a48, 0, 0.05, 0);
   box(9, 3.4, 0.2, wall, 0, 1.7, -3.5, 'stone'); box(0.2, 3.4, 7, wall, -4.5, 1.7, 0, 'stone'); box(0.2, 3.4, 7, wall, 4.5, 1.7, 0, 'stone');
   box(3.4, 1.3, 0.06, 0x24382e, 0, 1.9, -3.36, 'grain'); // 칠판
+  if (japan) {
+    const words = canvasPlane(3.2, 1.15, 512, (c, w, h) => { c.fillStyle = '#24382e'; c.fillRect(0, 0, w, h); c.fillStyle = '#f2efe6'; c.font = 'bold 64px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('こくご', w / 2, h * 0.32); c.font = 'bold 46px sans-serif'; c.fillText('ヨミカタ  サクラ', w / 2, h * 0.7); });
+    words.name = 'boardJapanese'; words.position.set(0, 1.9, -3.32); c.add(words);
+    const flag = canvasPlane(1.1, 0.74, 192, (c, w, h) => { c.fillStyle = '#f4f1ea'; c.fillRect(0, 0, w, h); c.fillStyle = '#c0282d'; c.beginPath(); c.arc(w / 2, h / 2, h * 0.3, 0, Math.PI * 2); c.fill(); });
+    flag.name = 'wallJapanFlag'; flag.position.set(0, 3.0, -3.38); c.add(flag);
+  }
   box(1.2, 0.8, 0.6, 0x6b4a32, 0, 0.4, -2.2);            // 선생님 책상
   const t = person(c, teacher, 0.9, -2.7, 0);
   const kids = [];

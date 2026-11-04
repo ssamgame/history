@@ -210,7 +210,7 @@ export function moveMap(ui) {
   ui.appendChild(box);
   const draw = n => { // 0번(고부)부터 n번 곳까지
     const pts = MOVE_MAP.slice(0, n + 1), last = pts[pts.length - 1];
-    box.innerHTML = `<svg viewBox="60 220 160 160" aria-hidden="true"><polygon points="${MAP_OUTLINE}" fill="#d9cfa8" stroke="#6b5a3a" stroke-width="2"/>
+    box.innerHTML = `<svg viewBox="50 175 205 205" aria-hidden="true"><polygon points="${MAP_OUTLINE}" fill="#d9cfa8" stroke="#6b5a3a" stroke-width="2"/>
       <polyline class="route" points="${pts.map(q => `${q[1]},${q[2]}`).join(' ')}" fill="none" stroke="#a3262a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 4"/>
       ${pts.map((q, i) => `<circle cx="${q[1]}" cy="${q[2]}" r="${i === n ? 3.6 : 2.4}" fill="${i === n ? '#a3262a' : '#2b241c'}"/>`).join('')}
       <text x="${last[1] + 5}" y="${last[2] + 4}" font-size="10" font-weight="bold" fill="#a3262a">${last[0]}</text>

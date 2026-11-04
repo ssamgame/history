@@ -32,7 +32,7 @@ const ALLEY = { edge: { style: 'shanghai', seed: 546 }, center: [{ type: 'lamp',
   ],
 };
 // 임시 정부 청사 걷기: 남쪽 문에서 들어와 연락 방 → 신문 찍는 방 → 공채 책상 → 외교관이 떠나는 길 → 만주로 떠나는 독립군
-export const OFFICE = { edge: { style: 'shanghai', seed: 852 },
+export const OFFICE = { edge: { style: 'shanghai', seed: 852, back: false }, // 북쪽(만주로 가는 길 끝) 건물 줄은 뺐다(2026-11-04 선생님: 독립군이 건물로 걸어 들어가던 것)
   origin: [400, 0], ground: 'stone', groundColor: 0x8a6a4a, bounds: { x0: -18, x1: 18, z0: -28, z1: 18 },
   roads: [{ x: 0, z: -5, w: 4, d: 46, color: 0x7a746a }],
   props: [
@@ -167,16 +167,20 @@ const ACT = {
     await say(st.lines[0], set.kimgu);
     ctx.dialogue.close();
     world.setFixedCamera([D.x + 5, 3.4, D.z - 4.5], [D.x + 0.8, 1.1, D.z + 0.4]); // 북동쪽에서 책상과 줄 선 동포들
+    // 동포들이 책상 앞에 줄을 서 있다가 한 사람씩 돈을 내고 비켜 가고, 뒷사람이 한 걸음씩 앞으로(2026-11-04 선생님)
+    const [bx, bz] = OFFICE.bondDesk, slot = k => new THREE.Vector3(bx + 1.1, 0, bz - 1.4 - k * 1.1);
+    set.donors.forEach((p, k) => { p.visible = true; p.position.copy(slot(k)); face(p, bx, bz + 4); });
+    await wait(world, 0.4);
     for (const [i, p] of set.donors.entries()) {
-      p.visible = true;
-      const p0 = p.position.clone(), to = new THREE.Vector3(OFFICE.bondDesk[0] + 1.1, 0, OFFICE.bondDesk[1] - 1.4 + i * 0.1);
-      face(p, to.x, to.z);
-      await wait(world, 0.8, k => p.position.lerpVectors(p0, to, ease(k)));
-      face(p, OFFICE.bondDesk[0], OFFICE.bondDesk[1]);
-      const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.03, 10), mat(0xc9a441, 'stone')); coin.position.set(OFFICE.bondDesk[0] + 0.1 - i * 0.2, 0.88, OFFICE.bondDesk[1] - 0.2); g.add(coin);
+      face(p, bx, bz);
+      const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.03, 10), mat(0xc9a441, 'stone')); coin.position.set(bx + 0.1 - i * 0.2, 0.88, bz - 0.2); g.add(coin);
       ctx.audio?.play?.('tap'); hook.coins += 1;
-      await wait(world, 0.3);
-      await wait(world, 0.7, k => p.position.lerpVectors(to, new THREE.Vector3(p0.x - 2, 0, p0.z - 3), ease(k)));
+      await wait(world, 0.5);
+      const p0 = p.position.clone(), away = new THREE.Vector3(bx + 4.5 + i * 0.9, 0, bz - 3.6 - i * 0.6);
+      face(p, away.x, away.z);
+      const rest = set.donors.slice(i + 1), r0 = rest.map(q => q.position.clone());
+      await wait(world, 0.9, k => { p.position.lerpVectors(p0, away, ease(k)); rest.forEach((q, j) => q.position.lerpVectors(r0[j], slot(j), ease(k))); });
+      face(p, bx, bz);
     }
     const bond = paper(0.46, 0.32, 0xe8d8a8); bond.rotation.x = -Math.PI / 2.4; setCarry(world.player, bond, 'arms'); hook.bond = true; // 공채 한 장을 받아 든다
     ctx.audio?.play?.('correct');

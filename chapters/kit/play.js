@@ -23,7 +23,7 @@
 //        좌표는 모두 무대 기준. arena가 없으면 장 마을에서 한다.
 import * as THREE from 'three';
 import { makeSea } from '../../core/sea.js';
-import { BUILD, addFootprint, taegukgiTexture, addNature, ROAD_STEP } from './town.js';
+import { BUILD, addFootprint, taegukgiTexture, addNature, ROAD_STEP, flagMesh } from './town.js';
 import { bakeStatic } from './buildings.js';
 import { terrainField, terrainMesh, hillColorFor } from './terrain.js';
 import { mat, makePerson, setCarry, playAction } from '../../core/people.js';
@@ -311,6 +311,7 @@ export function drive(ctx, part, easy) {
     if (r.post) { const p = new THREE.Group(); p.position.set(r.x + 2.2, 0, r.z); g.add(p); add(p, new THREE.CylinderGeometry(0.1, 0.12, 2.6, 6), 0x5a3f2a, 0, 1.3, 0); add(p, box(1.6, 0.5, 0.08), 0xefe3c6, 0, 2.3, 0.08); } // 이정표 기둥
     let person = null;
     if (r.look) { person = standPerson(g, r.look, r.x + (r.post ? -1.6 : 1.6), r.z - 0.6); person.rotation.y = r.ry ?? 0; }
+    for (const [k, lk] of (r.crowd || []).entries()) { const q = standPerson(g, lk, r.x - 1.5 + k * 1.5, r.z - 2.3 - (k % 2) * 0.5); q.rotation.y = Math.atan2(r.x - q.position.x, r.z + 3 - q.position.z); } // 그 이름표의 사람들(학생들·시민들)
     if (part.showAll) m.visible = true; // 이정표를 처음부터 모두 보이고 차례대로 걷는다
     return { ...r, m, lab, person, pos: s.at(r.x, r.z) };
   });
@@ -330,9 +331,15 @@ export function drive(ctx, part, easy) {
   const pickups = (part.pickups || []).map(pk => {
     const pg = new THREE.Group(); pg.position.set(pk.x, 0, pk.z); g.add(pg);
     // 사람을 모으는 것(follow)은 들판에 선 사람으로, 물건은 빛나는 상자로 보인다
-    const item = pk.follow ? standPerson(pg, pk.follow, 0, 0) : add(pg, box(0.5, 0.5, 0.5), 0xd9a441, 0, 1.0, 0); if (!pk.follow) item.rotation.set(0.5, 0.5, 0);
+    let item;
+    if (pk.follow) item = standPerson(pg, pk.follow, 0, 0);
+    else if (pk.flag) { // 깃대에 단 큰 태극기(2026-11-04 선생님: 상자 대신 태극기 모양으로)
+      item = new THREE.Group(); pg.add(item);
+      add(item, new THREE.CylinderGeometry(0.04, 0.05, 2.2, 6), 0x5a3f2a, 0, 1.1, 0, 'wood');
+      const cloth = flagMesh(1.2, 0.8); cloth.position.set(0.04, 1.75, 0); item.add(cloth);
+    } else { item = add(pg, box(0.5, 0.5, 0.5), 0xd9a441, 0, 1.0, 0); item.rotation.set(0.5, 0.5, 0); }
     const m = ring(0xd9a441, 0.6, 0.85); m.position.set(0, 0.09, 0); pg.add(m);
-    if (pk.label) { const lab = labelSprite(pk.label, { size: 0.7 }); lab.position.set(0, 2.1, 0); pg.add(lab); }
+    if (pk.label) { const lab = labelSprite(pk.label, { size: 0.7 }); lab.position.set(0, pk.flag ? 2.8 : 2.1, 0); pg.add(lab); }
     return { ...pk, pg, item, pos: s.at(pk.x, pk.z), got: false };
   });
   const left = () => pickups.filter(x => !x.got);
@@ -444,7 +451,7 @@ export function drive(ctx, part, easy) {
     }
     for (const pk of pickups) {
       if (pk.got) continue;
-      if (!pk.follow) pk.item.rotation.y += dt * 2; else pk.item.rotation.y = Math.atan2(p.x - pk.pos.x, p.z - pk.pos.z); // 사람은 학생 쪽을 본다
+      if (pk.flag) pk.item.rotation.y = Math.sin(el * 1.5 + pk.x) * 0.5; else if (!pk.follow) pk.item.rotation.y += dt * 2; else pk.item.rotation.y = Math.atan2(p.x - pk.pos.x, p.z - pk.pos.z); // 사람은 학생 쪽을 본다
       if (near(p, pk.pos, 1.5)) {
         pk.got = true; pk.pg.visible = false; audio.play('tap'); toast(ctx, pk.say || (pk.follow ? `${pk.label || '한 사람'}이(가) 함께해요!` : `${pk.label || '하나'}를 주웠어요!`), 'good'); show();
         if (pk.follow) { const f = new THREE.Group(); BUILD.crowd(f, { n: 1, looks: [pk.follow] }); f.scale.setScalar(pk.small ? 0.7 : 1); f.position.copy(p); g.parent.add(f); followers.push(f); } // 찾은 사람이 뒤따라온다
