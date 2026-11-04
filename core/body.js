@@ -217,6 +217,8 @@ function update(g, dt) {
   if (g.userData.straightArms && /^(walk|run)/.test(S.target || '') && !g.userData.carry && S.links.every(L => L.extra.length === 0 || L.w < 0.02)) {
     for (const [bone, rest] of S.foreRest) { if (!S.mixed.has(bone)) S.mixed.set(bone, bone.quaternion.clone()); bone.quaternion.copy(rest); }
   }
+  // 신분에 맞는 걸음(D-67 ⑤): 걸을 때만, 팔을 다른 일(집기·짐)에 쓰지 않을 때만
+  if (g.userData.gait && /^walk/.test(S.target || '') && !g.userData.carry && S.links.every(L => L.w < 0.02)) gaitPose(S, g);
   // 두 팔로 안은 짐: 짐 안기 동작이 다 섞이면 두 손 가운데로 옮겨 손에 붙인다(그 뒤로는 손과 함께 움직인다)
   const c = S.carry;
   const armsFree = S.links.every(L => L.extra.length === 0 || L.w < 0.02); // 집는 자세(덧씌움)가 다 풀리고 짐 안기 동작만 남았을 때
@@ -226,6 +228,34 @@ function update(g, dt) {
     hl.getWorldPosition(wv); hr.getWorldPosition(wv2); wv.add(wv2).multiplyScalar(0.5);
     c.obj.parent.worldToLocal(wv2.copy(wv)); c.obj.position.copy(wv2); c.obj.updateMatrixWorld(true);
     hl.attach(c.obj); c.pending = false;
+  }
+}
+// 뼈의 +Y(뼈 방향)가 사람 기준 방향 dir을 향하게 돌린다
+const aimV = new THREE.Vector3(), aimQ = new THREE.Quaternion(), aimP = new THREE.Quaternion(), aimD = new THREE.Quaternion();
+function aim(S, bone, dir, gq) {
+  if (!S.mixed.has(bone)) S.mixed.set(bone, bone.quaternion.clone());
+  bone.getWorldQuaternion(aimQ);
+  aimV.set(0, 1, 0).applyQuaternion(aimQ);
+  aimD.setFromUnitVectors(aimV, dir.clone().applyQuaternion(gq).normalize());
+  bone.parent.getWorldQuaternion(aimP);
+  bone.quaternion.copy(aimP.invert().multiply(aimD.multiply(aimQ)));
+  bone.updateMatrixWorld(true);
+}
+const KING_ARM = { up: [0.12, -0.75, -0.65], fore: [-0.95, 0.2, -0.25] }; // 위팔은 아래·뒤로, 아래팔은 등 뒤 가운데로(두 손이 허리 뒤에서 만난다)
+function gaitPose(S, g) {
+  g.updateMatrixWorld(true);
+  const gq = g.getWorldQuaternion(new THREE.Quaternion());
+  if (g.userData.gait === 'king') {
+    for (const s of ['L', 'R']) {
+      const sx = Math.sign(g.worldToLocal(S.bones(`upperarm_${s}`).getWorldPosition(new THREE.Vector3())).x) || 1;
+      aim(S, S.bones(`upperarm_${s}`), new THREE.Vector3(KING_ARM.up[0] * sx, KING_ARM.up[1], KING_ARM.up[2]), gq);
+      aim(S, S.bones(`forearm_${s}`), new THREE.Vector3(KING_ARM.fore[0] * sx, KING_ARM.fore[1], KING_ARM.fore[2]), gq);
+    }
+  } else { // humble: 목·머리를 앞으로 조금 숙인다
+    for (const [b, a] of [['neck', 0.2], ['head', 0.25]]) {
+      const bone = S.bones(b); if (!S.mixed.has(bone)) S.mixed.set(bone, bone.quaternion.clone());
+      bone.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), a)); bone.updateMatrixWorld(true);
+    }
   }
 }
 export function updateBodies(dt) { for (const g of people) update(g, dt); }

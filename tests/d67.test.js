@@ -484,3 +484,37 @@ test('d68 근대2(끝 장면): 청 군사 행렬은 양옆 가게 줄(무대 밖
   const front = +m[1], back = front - (+m[2] - 1) * +m[3], d = +g2[1];
   ok(back > -18.5 && front + d < 18.5, `행렬 ${back.toFixed(1)} → ${(front + d).toFixed(1)}`);
 });
+
+test('d67 넓히기: 마을 무리(crowd)는 몇 사람이 굳지 않고 둘씩 이야기하며, 태극기를 든 무리는 그대로 선다', async () => {
+  const { buildTown } = await import('../chapters/kit/town.js');
+  const { bakeLevel } = await import('../core/bake.js');
+  const w = testWorld();
+  try {
+    const t = buildTown(w, { ground: 'earth', bounds: { x0: -15, x1: 15, z0: -10, z1: 10 }, start: [0, 8], nature: false, mountains: false,
+      props: [{ type: 'crowd', x: -6, z: -4, n: 10, looks: ['commoner'] }, { type: 'crowd', x: 6, z: -4, n: 10, flags: 1, looks: ['commoner'] }] });
+    bakeLevel(w, t);
+    ok(t.chats >= 2, `이야기하는 짝 ${t.chats}`);
+    const live = []; w.level.traverse(o => { if (o.userData.legs && o.userData.chat) live.push(o); });
+    ok(live.length >= 4 && live.length <= 6, `굳지 않은 사람 ${live.length}`);
+    const r0 = live.map(p => p.rotation.y);
+    for (let i = 0; i < 60; i++) w.step(1 / 20, { x: 0, z: 0 });
+    ok(live.some((p, i) => Math.abs(p.rotation.y - r0[i]) > 0.05), '짝 쪽으로 몸을 돌린다');
+    ok(live.every(p => p.parent && p.parent.position.x < 0), '태극기 무리는 이야기하지 않는다');
+  } finally { w.dispose(); }
+});
+
+test('d67 넓히기: 길(roads)이 있는 마을에는 그 시대 사람 둘이 길을 따라 오가고, 집·안내판·사람 자리를 지나지 않는다', async () => {
+  const { buildTown } = await import('../chapters/kit/town.js');
+  const w = testWorld();
+  try {
+    const t = buildTown(w, { ground: 'earth', bounds: { x0: -20, x1: 20, z0: -10, z1: 10 }, start: [0, 8], nature: false, mountains: false,
+      roads: [{ x: 0, z: 0, w: 36, d: 3 }], props: [{ type: 'hanok', x: 10, z: 0 }, { type: 'crowd', x: -6, z: -7, n: 6, looks: ['peasant'] }, { type: 'crowd', x: 3, z: -1, n: 4, cols: 2, looks: ['peasant'] }], npcs: [{ id: 'a', look: 'commoner', x: -14, z: 0 }] });
+    eq(t.walkers.length, 2);
+    const blocks = [...w.colliders, { x: -14, z: 0, r: 1.2 }, { x: 3.7, z: -0.3, r: 1.4 }]; // 길 위에 선 무리
+    let worst = Infinity; const x0 = t.walkers.map(p => p.position.x);
+    for (let i = 0; i < 400; i++) { w.step(1 / 20, { x: 0, z: 0 }); for (const p of t.walkers) for (const c of blocks) worst = Math.min(worst, Math.hypot(p.position.x - c.x, p.position.z - c.z) - c.r); }
+    ok(worst > 0.2, `막힌 곳과 거리 ${worst.toFixed(2)}`);
+    ok(t.walkers.every((p, i) => Math.abs(p.position.x - x0[i]) > 1), '걸어 다닌다');
+    ok(t.walkers.every(p => /walk/.test(p.userData.skel?.target || 'walk')), '걷는 동작');
+  } finally { w.dispose(); }
+});
