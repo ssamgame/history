@@ -103,6 +103,7 @@ test('k6 D-35: 을사늑약 소식 장면 — 신문 앞에 사람이 모이고 
     ok(h.crowd >= 5, `모인 사람 ${h.crowd}`);
     ok(h.paper, '신문을 펼쳐 든다');
     ok(h.shut >= 1, `문을 닫은 가게 ${h.shut}`);
+    ok(h.facing >= 0.8, `신문 앞에 모인 사람들 얼굴이 보인다(D-45, 플레이 점검) ${h.facing}`);
     eq(s.w.moodName, k6.mood, '분위기를 되돌렸다');
     eq(s.w.level.children.length, n0, '더한 것을 치웠다');
     ok(s.w.player.visible, '학생이 보인다');
