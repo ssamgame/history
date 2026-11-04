@@ -187,3 +187,14 @@ test('play: 무대의 길(roads)은 마을 길과 같은 높이(윗면 0.05m 이
     a.dispose();
   } finally { w.dispose(); }
 });
+
+test('play: 성문(gate) 부품은 문 지붕이 따라가는 카메라를 가리는 자리로 알리고(world.camBlocks), 무대를 치우면 함께 없앤다(2026-11-04 플레이 점검: 동대문)', () => {
+  const w = testWorld();
+  try {
+    const a = buildArena(w, { origin: [400, 0], ground: 'stone', bounds: { x0: -15, x1: 15, z0: -25, z1: 10 }, props: [{ type: 'gate', x: 0, z: -20, wing: 8 }], nature: false });
+    eq(w.camBlocks.length, 1);
+    ok(Math.abs(w.camBlocks[0].x - 400) < 0.01 && Math.abs(w.camBlocks[0].z + 20) < 0.01, `자리 ${w.camBlocks[0].x}, ${w.camBlocks[0].z}`);
+    a.dispose();
+    eq(w.camBlocks.length, 0, '치우면 없어진다');
+  } finally { w.dispose(); }
+});

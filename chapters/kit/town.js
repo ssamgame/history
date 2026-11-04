@@ -351,6 +351,7 @@ export function buildTown(world, layout) {
       live.forEach(c => { c.userData.dynamic = true; g.add(c); });
       if (live.length) chats += chatter(world, live, { seed: chats + 1 }).pairs;
     }
+    if (p.type === 'gate') world.addCamBlock({ x: p.x, z: p.z, r: (BLD.GATE.R + 0.4) * (p.scale || 1) }); // 성문 지붕이 따라가는 카메라를 가리지 않게
     if (r && p.solid !== false) addFootprint(world, p, r);
     if (p.name) named[p.name] = g;
     if (p.type === 'hanok' && layout.dress !== false) dressHouse(world, L, p, layout);
