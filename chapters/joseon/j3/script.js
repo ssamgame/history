@@ -31,8 +31,7 @@ export default {
       ],
       bridge: { who: 'commoner', text: '새 기구를 보러 다니는군요. 이 길가에도 하나 있어요.' },
       later: [
-        { who: 'commoner', text: '저 서쪽의 긴 건물은 종묘예요. 조선의 왕과 왕비의 신주를 모신 곳이지요.', src: ['S45'] },
-        { who: 'narr', text: '종묘 정전은 한 칸마다 한 왕을 모셔서 옆으로 아주 길어요. 1995년 유네스코 세계유산이 되었어요.', src: ['S45'] },
+        { who: 'commoner', text: '저도 길을 지나다 앙부일구를 보고 시각을 알아요.' }, // D-67: 과학 기구 장과 맞지 않던 종묘 이야기를 뺐다
       ],
     },
     jangyeongsil: {
@@ -47,7 +46,6 @@ export default {
     crownPrince: {
       first: [
         { who: 'crownPrince', text: '비가 얼마나 왔는지 재면 가뭄과 홍수에 대비할 수 있다.', src: ['S31'] },
-        { who: 'crownPrince', text: '깊이 약 31cm, 지름 약 15cm인 쇠 원통을 돌로 된 측우대 위에 올려 둔다.', src: ['S33'] },
         { who: 'crownPrince', text: '비가 그치면 원통에 고인 빗물의 깊이를 자로 잰다.', src: ['S33'] },
       ],
       bridge: { who: 'crownPrince', text: '시간을 재는 기구를 보았느냐? 비를 재는 일도 중요하다.' },
@@ -74,7 +72,10 @@ export default {
     shower: { who: 'guide', text: '앗, 소나기가 쏟아진다! 측우기에 빗물이 고이고 있어.' },
     read: { who: 'guide', text: '비가 그쳤어. 물 높이와 같은 눈금은 몇일까?' },
     fail: '물의 윗면과 같은 높이에 있는 눈금 번호를 눌러요.',
-    done: [{ who: 'narr', text: '측우기는 서울의 서운관과 여러 도에 두고, 비가 온 양을 재어 나라에 알리게 했어요.', src: ['S33'] }],
+    done: [
+      { who: 'narr', text: '측우기는 깊이 약 31cm, 지름 약 15cm인 쇠 원통으로, 돌로 된 측우대 위에 올려 두었어요.', src: ['S33'] }, // D-67: 세자의 대사(cm)에서 해설로 옮김
+      { who: 'narr', text: '측우기는 서울의 서운관과 여러 도에 두고, 비가 온 양을 재어 나라에 알리게 했어요.', src: ['S33'] },
+    ],
   },
 
   quizzes: [

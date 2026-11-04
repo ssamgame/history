@@ -22,7 +22,7 @@ export default {
   npc: {
     minister: [{ who: 'minister', text: '조정은 몽골과 싸움을 멈추고 개경으로 돌아가기로 했소.', src: ['S21'] }],
     sambyeolcho: [{ who: 'sambyeolcho', expr: 'anger', text: '개경으로 돌아간다니! 우리 삼별초는 이에 반대하오. 끝까지 싸울 것이오.', src: ['S21'] }],
-    villager: [{ who: 'villager', text: '개경으로 돌아간다는데, 배중손이 군사와 백성을 이끌고 남쪽으로 간다고 하오.', src: ['S21'] }],
+    villager: [{ who: 'villager', expr: 'worry', text: '조정이 개경으로 돌아간다니, 우리 포구는 앞으로 어찌 될지 걱정이오.' }], // D-67: 배중손이 정하기 전에 결과를 말하던 문장을 뺐다
     baejungson: {
       wait: [{ who: 'baejungson', text: '포구 사람들의 이야기를 모두 들어 보게.' }],
       decide: [{ who: 'baejungson', text: '배에 군사와 백성을 태워 남쪽 진도로 가자.', src: ['S21'] }],
