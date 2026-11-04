@@ -204,6 +204,7 @@ export function walkStage({ ctx, a, g, jeon }) { // (테스트가 싸움 장면�
   // 2 전주성: 성문(문짝), 성 위 깃발은 차지한 뒤 올린다
   const gate = gateLeaves(g, { x: 0, z: -32, width: 5.4, height: 3.2, inward: -1, color: 0x6b4a32 });
   const lintel = new THREE.Mesh(new THREE.BoxGeometry(6.4, 0.6, 1.2), new THREE.MeshLambertMaterial({ color: 0x3d4846 })); lintel.position.set(0, 3.5, -32); g.add(lintel);
+  const GL = a.at(0, -32), unCam = world.addCamBlock({ x: GL.x, z: GL.z, r: 3.2 }); // 성문 지붕이 따라가는 카메라를 가리지 않게(2026-11-04 플레이 점검)
   const flags = [-4, 4].map(x => { const b = new THREE.Group(); BUILD.banner(b, { text: '보국안민', h: 3 }); b.position.set(x, 3.2, -32); b.visible = false; g.add(b); return b; });
   const army2 = torchCrowd(g, [[-1.2, -21], [1.2, -21], [-1.2, -19.6], [1.2, -19.6], [0, -18.4]], () => 'peasant');
   army2.forEach((p, i) => setCarry(p, makeTool(i + 1), 'side'));
@@ -263,7 +264,7 @@ export function walkStage({ ctx, a, g, jeon }) { // (테스트가 싸움 장면�
       await Promise.all(up);
       await Promise.all(army5.filter(p => !hit.includes(p)).map((p, i) => runTo(world, p, { x: (i % 2 ? 1 : -1) * (14 + i), z: p.position.z + 8 }, 2.2 + i * 0.1, { lean: 0.25 }).then(() => { p.visible = false; })));
     },
-    dispose() { fires.forEach(f => f.setLevel(0)); },
+    dispose() { unCam(); fires.forEach(f => f.setLevel(0)); },
   };
 }
 export function historyWalk(ctx) {
