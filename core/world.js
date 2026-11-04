@@ -413,7 +413,7 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
           return t * len > 0.8 && Math.hypot(p.x + off.x * t - c.x, p.z + off.z * t - c.z) < (cb ? c.r : c.canopy ? c.canopy + 0.3 : c.r + 1.2); // 처마가 막는 자리보다 1m쯤 더 나온다, 나무는 잎 너비
         });
         camLift += ((blocked ? 1 : 0) - camLift) * Math.min(1, dt * 2.5);
-        if (camLift > 0.001) off.set(off.x * (1 - 0.45 * camLift), off.y * (1 + 0.35 * camLift), off.z * (1 - 0.45 * camLift));
+        if (camLift > 0.001) off.set(off.x * (1 - 0.6 * camLift), off.y * (1 + 0.4 * camLift), off.z * (1 - 0.6 * camLift)); // 거의 위에서(약 68°) 내려다본다
         camera.position.lerp(tmp.copy(p).add(off), a);
         camTarget.lerp(tmp.copy(p).setY(world.followLookY ?? (world.closeView ? 1.2 : 1)).setZ(p.z + LOOK_AHEAD), a);
         camera.lookAt(camTarget);
