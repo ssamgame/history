@@ -37,7 +37,7 @@ export function bodyOn() {
   } catch { return true; }
 }
 
-const wq = new THREE.Quaternion(), wq2 = new THREE.Quaternion(), wv = new THREE.Vector3(), wv2 = new THREE.Vector3();
+const wq = new THREE.Quaternion(), wq2 = new THREE.Quaternion(), wv = new THREE.Vector3(), wv2 = new THREE.Vector3(), wv3 = new THREE.Vector3();
 const inside = (o, root) => { for (let q = o; q; q = q.parent) if (q === root) return true; return false; };
 
 // 사람(makePerson이 만든 g)에 뼈대를 넣고 조각을 뼈로 옮긴다. 돌려주는 것은 같은 g(userData.skel이 생긴다)
@@ -164,7 +164,8 @@ export function holdOnBody(g, obj, style, at) {
   g.updateMatrixWorld(true);
   const p = g.localToWorld(wv.set(at[0], at[1], at[2]));
   chest.add(obj); chest.worldToLocal(obj.position.copy(p));
-  S.carry = style === 'arms' ? { obj, pending: true } : null;
+  // 옆구리에 쥔 것(죽창·횃불)·태극기는 팔 자세가 다 섞인 뒤 손 뼈로 옮겨 붙인다(2026-11-04 선생님: 손과 물건이 어긋나고, 만세 때 깃발만 오르내렸다)
+  S.carry = style === 'arms' ? { obj, pending: true } : style === 'side' || style === 'flag' ? { obj, pending: true, hand: true, t: 0, q: obj.quaternion.clone() } : null;
   return true;
 }
 
@@ -224,7 +225,16 @@ function update(g, dt) {
   // 두 팔로 안은 짐: 짐 안기 동작이 다 섞이면 두 손 가운데로 옮겨 손에 붙인다(그 뒤로는 손과 함께 움직인다)
   const c = S.carry;
   const armsFree = S.links.every(L => L.extra.length === 0 || L.w < 0.02); // 집는 자세(덧씌움)가 다 풀리고 짐 안기 동작만 남았을 때
-  if (c && c.pending && armsFree && /carry/.test(S.target || '') && (S.w[S.target] || 0) > 0.98) {
+  if (c && c.pending && c.hand && (c.t += dt) > 0.5) { // 쥔 손: 물건이 있던 자리에서 가까운 손 뼈에, 사람 기준으로 곧게 세워 붙인다
+    g.updateMatrixWorld(true);
+    c.obj.getWorldPosition(wv);
+    const hl = S.bones('hand_L'), hr = S.bones('hand_R');
+    const hand = hl.getWorldPosition(wv2).distanceTo(wv) <= hr.getWorldPosition(wv3).distanceTo(wv) ? hl : hr;
+    hand.getWorldPosition(wv);
+    g.add(c.obj); c.obj.position.copy(g.worldToLocal(wv)); c.obj.quaternion.copy(c.q); c.obj.updateMatrixWorld(true);
+    hand.attach(c.obj); c.pending = false;
+  }
+  if (c && c.pending && !c.hand && armsFree && /carry/.test(S.target || '') && (S.w[S.target] || 0) > 0.98) {
     g.updateMatrixWorld(true);
     const hl = S.bones('hand_L'), hr = S.bones('hand_R');
     hl.getWorldPosition(wv); hr.getWorldPosition(wv2); wv.add(wv2).multiplyScalar(0.5);

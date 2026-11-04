@@ -29,6 +29,7 @@ export const CARRY = {
   shoulder: { at: [0.48, 2.0, -0.08], arms: [null, [-2.9, -0.15]], heavy: 0.7 },
   flag: { at: [0.5, 1.23, 0.66], arms: [null, [-1.0, 0]], heavy: 0 },
   back: { at: [0, 1.5, -0.42], arms: [[-0.35, 0.18], [-0.35, -0.18]], heavy: 0.8 },
+  aim: { at: [0.12, 1.5, 0.45], arms: [[-1.45, 0.4], [-1.5, -0.08]], heavy: 0.2 }, // 총을 두 손으로 들어 앞으로 겨눈다(clash.js aimRifle)
 };
 // 걷는 모양: 'guard' 경계하며 걷기(무기를 든 팔을 붙이고 고개로 둘레를 살핀다) · 'captive' 포로(움츠린 어깨, 고개 숙임, 앞으로 모은 손, 짧은 걸음)
 //   · 'weary' 지친 걸음(피란길) · 'elder' 나이 든 사람. 생김새의 나이와 들고 있는 것에서도 저절로 고른다
@@ -308,6 +309,7 @@ function animateSkel(person, moving, dt) {
   const G = u.talk && u.talk.role === 'speak' && u.talk.expr !== 'talk' ? (GESTURE[u.talk.expr] || null) : null;
   if (u.talk) u.talk.t += dt;
   if (G && !u.carry) { const b = Math.sin(u.talk.t * 4.2 + u.ph) * G.beat; arms[1].rotation.set(G.r[0] + b, 0, G.r[1]); arms[0].rotation.set(G.l[0] + b * 0.4, 0, G.l[1]); }
+  else if (P0 && c.style === 'flag' && u.cheerU > 0) { const t = -1.0 + (-Math.PI * 0.95 + 1.0) * u.cheerU; arms[1].rotation.set(t, 0, 0); arms[0].rotation.set(-Math.PI * 0.62 * u.cheerU, 0, 0); } // 만세(cheerFlag): 깃발 든 팔을 번쩍(깃발은 손에 붙어 함께 오른다)
   else if (P0) P0.arms.forEach((a, i) => { arms[i].rotation.set(a ? a[0] : 0, 0, a ? a[1] : 0); });
   else if (st.bound) arms.forEach((a, i) => a.rotation.set(-0.42, 0, (i ? -1 : 1) * 0.3));
   else if (u.armRest && !u.act) { const f = Math.exp(-dt * 7); arms.forEach(a => { a.rotation.x *= f; a.rotation.y *= f; a.rotation.z *= f; }); if (arms.every(a => Math.abs(a.rotation.x) + Math.abs(a.rotation.z) < 0.01)) { arms.forEach(a => a.rotation.set(0, 0, 0)); u.armRest = false; } }

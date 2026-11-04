@@ -20,12 +20,13 @@ test('k1 D-28: 마을 사람은 아무 차례로, 두 번째 사람은 이어 �
 });
 
 test('k1 D-28: 놀이는 물건 나르기·해안 순찰·조약문·말 가려내기(팻말 찾기 없음)', () => {
-  eq(k1.parts.map(p => p.type), ['deliver', 'drive', 'doc', 'judge']);
-  const regent = k1.parts[0];
-  eq(regent.cards.map(c => c.carry), ['log', 'sack', 'letter']); // D-30 D-01: 셋, 다른 때의 일은 뺐다
-  eq(regent.bins.length, 3);
-  for (const b of regent.bins) eq(regent.cards.filter(c => c.bin === b.id).length, 1, `${b.label}에 놓을 것 하나`);
+  eq(k1.parts.map(p => p.type), ['drive', 'drive', 'doc', 'judge']);
+  const regent = k1.parts[0]; // 2026-11-04: 공사장 기둥 → 경복궁 터 → 세금 관리 임무 → 양반 댁 세금 → 관리
+  eq(regent.route.map(r => r.give || (r.drop ? 'drop' : '')), ['log', 'drop', '', 'sack', 'drop']);
+  ok(regent.route.every(r => Number.isFinite(r.x) && r.label), '자리와 이름표');
+  ok(regent.done.some(l => l.who === 'daewongun'), '척화 한 줄');
   const rumor = k1.parts[3];
+  ok(!rumor.arena, '마을에서 백성들 이야기를 듣는다');
   eq(rumor.items.filter(x => x.correct).length, 2);
   ok(rumor.items.every(x => x.talk?.length && Number.isFinite(x.x)));
   ok(k1.parts.every(p => p.goal), '부분마다 목표 문장');
@@ -100,7 +101,7 @@ test('k1 D-30 D-02: 망루에서 바다를 살피는 남은 시간이 화면 가
 });
 
 test('k1 D-30 D-03: 해안 무대의 앞쪽은 모두 바다다(군함이 지나는 곳에 산·언덕이 없다)', () => {
-  for (const arena of [k1.parts[1].arena, k1.parts[3].arena]) {
+  for (const arena of [k1.parts[1].arena, k1.parts[2].arena]) {
     const f = terrainField({ bounds: arena.bounds, props: [...arena.props, ...(arena.center || [])], margin: 13, hill: 0.8 });
     for (let x = -80; x <= 80; x += 4) for (let z = -140; z <= arena.bounds.z0 - 10; z += 4) ok(f.heightAt(x, z) <= 0, `바다 앞에 언덕 (${x}, ${z})`);
     ok(!arena.props.some(p => p.type === 'island'), '섬 없음');
@@ -144,7 +145,7 @@ test('k1 D-30 D-05: 조약문은 낡은 두루마리(양끝 축·얼룩), 작은
     ok(!ui.textContent.includes('S51') && ui.textContent.includes('첫째 조항'));
     ui.querySelector('.doc-ok').click(); eq(await p, true);
     const p2 = showDocument({ ui }, { title: 't', heading: 'h', items });
-    ok(ui.querySelector('.doc-paper small') && !ui.querySelector('.doc-scroll'), '다른 장은 예전 모양 그대로');
+    ok(!ui.querySelector('.doc-paper small') && !ui.querySelector('.doc-scroll'), '다른 장도 작은 글씨 해설 없음(2026-11-04)');
     ui.querySelector('.doc-ok').click(); await p2;
   } finally { ui.remove(); }
 });

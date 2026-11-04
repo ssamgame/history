@@ -16,6 +16,7 @@ import { showHowTo } from '../../../core/minigame.js';
 import { makePerson, setCarry } from '../../../core/people.js';
 import { waitInteract } from '../../../core/portal.js';
 import { LOOKS } from '../../../content/characters.js';
+import { MAP_OUTLINE } from '../../../core/screens.js';
 import { placePlayer } from '../../joseon/common.js';
 import { NIGHT_MOOD, wait, person, JAPAN, makeTorch, makeTool, flicker, torchLights, addTorchLight, equipFollowers, runTo, mound, followJeon } from './stage.js';
 import script from './script.js';
@@ -63,6 +64,7 @@ const GOBU = {
   props: [
     { type: 'hanok', x: 0, z: -11, tile: true, scale: 1.6 }, { type: 'wall', x: -9, z: -6, w: 12 }, { type: 'wall', x: 9, z: -6, w: 12 },
     { type: 'hanok', x: 11, z: -12, tile: true, scale: 1.1 }, { type: 'flagpole', x: -3, z: -4.5, color: 0xe8e0c0 },
+    { type: 'hanok', x: 13, z: -0.5, ry: -Math.PI / 2 }, // 곡식 창고(담 앞마당 동쪽, 문은 마당 쪽): 농민들이 곡식을 내온다(2026-11-04 선생님)
   ],
 };
 // 전봉준을 따라 걷는 길(D-31): 남쪽에서 북쪽으로 황토현(동쪽 언덕) → 전주성(성벽과 문) → 집강소(성 안 기와집) → 다시 일어선 들판 → 공주 우금치(북쪽 고개)
@@ -155,27 +157,36 @@ async function gobuScene(ctx) {
   const was = world.player.visible; world.player.visible = false;
   const crowd = new THREE.Group(); BUILD.crowd(crowd, { n: 12, cols: 4, looks: ['peasant', 'commoner', 'peasant', 'peasant'], face: Math.PI }); crowd.position.set(-2, 0, 16); g.add(crowd);
   const leader = makePerson(LOOKS.jeonbongjun); leader.rotation.y = Math.PI; crowd.add(leader); leader.position.set(0, 0, -2);
+  const porters = [0, 1, 2].map(i => { const p = makePerson(LOOKS.peasant); p.rotation.y = Math.PI; p.position.set(0.6 + i * 1.1, 0, 15 + (i % 2) * 0.6); g.add(p); return p; }); // 곡식 창고에서 가마를 내올 농민(무리 몸은 한 덩어리로 합쳐져 따로 움직일 수 없다)
   const torches = [];
   crowd.children.forEach((p, i) => { if (!p.userData.legs) return; const t = i % 3 === 1 ? makeTool(i) : makeTorch(); if (t.userData.flame) torches.push(t); setCarry(p, t, 'side'); });
   const offFlicker = flicker(world, torches);
   const lights = torchLights(world) ? [addTorchLight(torches[0]), addTorchLight(torches[Math.floor(torches.length / 2)])] : [];
   const jo = makePerson(LOOKS.jobyeonggap); jo.position.set(0, 0, -4); g.add(jo);
+  const dg = new THREE.Group(); dg.position.set(10.75, 0, -0.5); dg.rotation.y = -Math.PI / 2; g.add(dg); const granary = gateLeaves(dg, { width: 1.6, height: 1.9, inward: -1, color: 0x6b4a32 }); // 곡식 창고 문(앞면이 마당 쪽)
   world.setFixedCamera([O.x + 14, 9, O.z + 16], [O.x, 1.5, O.z - 3]);
   await ctx.fade(false);
   const anim = (sec, fn) => wait(world, sec, k => fn(k));
   try {
     await dialogue.say(L[0]); dialogue.close();
-    const march = anim(4, t => { crowd.position.z = 16 - t * 13; });
+    const march = anim(4, t => { crowd.position.z = 16 - t * 13; porters.forEach((p, i) => { p.position.z = 15 + (i % 2) * 0.6 - t * 13; }); });
     await anim(0.8, () => {});
     await dialogue.say(L[1]); dialogue.close();
     // 조병갑은 담 옆으로 빠져나가 전주 쪽(동쪽)으로 달아난다
-    await runTo(world, jo, { x: 22, z: -2 }, 2.4);
+    await runTo(world, jo, { x: 22, z: -5 }, 2.4);
     jo.visible = false;
     await march;
     ctx.audio.play('correct');
-    // 관아 앞에 곡식 가마를 내어 놓고 농민들에게 나눈다
-    const rice = new THREE.Group(); BUILD.rice(rice, { n: 9 }); rice.position.set(4, 0, -1); g.add(rice);
-    await anim(1.0, t => { rice.position.y = -1 + t; });
+    // 곡식 창고 문을 열고 농민들이 곡식 가마를 안아 내와 관아 앞마당에 내려놓는다(2026-11-04 선생님)
+    const carriers = porters;
+    const via = async (p, pts, sp) => { for (const [x, z] of pts) await runTo(world, p, { x, z }, Math.hypot(x - p.position.x, z - p.position.z) / sp + 0.05, { lean: 0.1 }); };
+    await Promise.all(carriers.map((p, i) => via(p, [[9.2, -1.8 + i * 0.9]], 3.4)));
+    await anim(0.8, k => granary.setOpen(k));
+    const sacks = carriers.map(p => { const b = new THREE.Group(); BUILD.rice(b, { n: 1 }); setCarry(p, b, 'arms'); return b; });
+    await anim(0.4, () => {});
+    await Promise.all(carriers.map((p, i) => via(p, [[2.6 + i * 1.3, 0.6]], 2.2)));
+    carriers.forEach((p, i) => { setCarry(p, null); sacks[i].position.set(2.6 + i * 1.3, 0, -0.6); sacks[i].rotation.set(0, 0, 0); g.add(sacks[i]); });
+    const rice = new THREE.Group(); BUILD.rice(rice, { n: 6 }); rice.position.set(4, 0, -2.4); g.add(rice); // 먼저 내온 가마들
     await dialogue.say(L[2]); dialogue.close();
     await dialogue.say(L[3]); dialogue.close();
     ctx.testHooks.gobu = { fled: !jo.visible, rice: true, torches: torches.length };
@@ -190,6 +201,25 @@ async function gobuScene(ctx) {
   }
 }
 
+// 동학 농민 운동이 퍼져 간 길 지도(2026-11-04 선생님: 조선 4장 피란 지도처럼): 화면 오른쪽 한반도 지도에 고부에서 멈춘 곳까지 길을 이어 그린다
+export const MOVE_MAP = [['고부', 112, 336], ['황토현', 117, 331], ['전주성', 125, 318], ['집강소', 112, 322], ['다시 일어섬', 128, 312], ['공주 우금치', 122, 282]]; // [이름, x, y](지도 300×400)
+export function moveMap(ui) {
+  if (!ui) return null;
+  const box = document.createElement('div'); box.className = 'route-map';
+  Object.assign(box.style, { position: 'absolute', right: '3%', top: '12%', height: '58%', aspectRatio: '3 / 4', background: 'rgba(127,168,191,0.92)', border: '4px solid #6b4a32', borderRadius: '10px', zIndex: 5, pointerEvents: 'none' });
+  ui.appendChild(box);
+  const draw = n => { // 0번(고부)부터 n번 곳까지
+    const pts = MOVE_MAP.slice(0, n + 1), last = pts[pts.length - 1];
+    box.innerHTML = `<svg viewBox="60 220 160 160" aria-hidden="true"><polygon points="${MAP_OUTLINE}" fill="#d9cfa8" stroke="#6b5a3a" stroke-width="2"/>
+      <polyline class="route" points="${pts.map(q => `${q[1]},${q[2]}`).join(' ')}" fill="none" stroke="#a3262a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 4"/>
+      ${pts.map((q, i) => `<circle cx="${q[1]}" cy="${q[2]}" r="${i === n ? 3.6 : 2.4}" fill="${i === n ? '#a3262a' : '#2b241c'}"/>`).join('')}
+      <text x="${last[1] + 5}" y="${last[2] + 4}" font-size="10" font-weight="bold" fill="#a3262a">${last[0]}</text>
+      <text x="${MOVE_MAP[0][1] - 26}" y="${MOVE_MAP[0][2] + 12}" font-size="8" font-weight="bold" fill="#2b241c">고부</text></svg>`;
+  };
+  draw(0);
+  return { to: i => draw(i + 1), remove: () => box.remove() };
+}
+
 // ── 전봉준을 따라 걷기: 멈춘 곳마다 그 일 ──
 export function walkStage({ ctx, a, g, jeon }) { // (테스트가 싸움 장면을 따로 돌린다)
   const { world } = ctx;
@@ -197,9 +227,9 @@ export function walkStage({ ctx, a, g, jeon }) { // (테스트가 싸움 장면�
   const cam = (eye, look) => { const e = a.at(eye[0], eye[2]), l = a.at(look[0], look[2]); return () => world.setFixedCamera([e.x, eye[1], e.z], [l.x, look[1], l.z]); };
   const fires = [];
   // 1 황토현: 동쪽 언덕 위 관군, 길가 농민군
-  const hill1 = mound(g, 14, -9, { r: 7, h: 3.4, color: 0x8a8a4a });
-  const gwangun = [[9.5, -11], [10, -9], [9.6, -7], [11, -12], [11.4, -8.5], [11, -6.5]].map(([x, z]) => { const p = person(g, 'joseonSoldier', x, z, -Math.PI / 2); p.position.y = hill1.top(x, z); return p; });
-  const army1 = torchCrowd(g, [[2.8, -10], [3.2, -8.4], [3, -6.8], [4.3, -9.4], [4.4, -7.6], [2.6, -11.6]], () => 'peasant');
+  const hill1 = mound(g, 19, -9, { r: 12, h: 3.6, sx: 1.2, color: 0x8a8a4a }); // 2026-11-04 선생님: 언덕을 넓히고 두 쪽 사이를 띄운다
+  const gwangun = [[12, -12.5], [12.4, -9.5], [12, -6.5], [14, -11], [14.2, -8], [13.8, -14]].map(([x, z]) => { const p = person(g, 'joseonSoldier', x, z, -Math.PI / 2); p.position.y = hill1.top(x, z); return p; });
+  const army1 = torchCrowd(g, [[2.4, -11], [2.8, -8.8], [2.4, -6.6], [4.2, -10], [4.4, -7.6], [2.2, -13.2]], () => 'peasant');
   army1.forEach((p, i) => { p.rotation.y = Math.PI / 2; setCarry(p, makeTool(i), 'side'); });
   // 2 전주성: 성문(문짝), 성 위 깃발은 차지한 뒤 올린다
   const gate = gateLeaves(g, { x: 0, z: -32, width: 5.4, height: 3.2, inward: -1, color: 0x6b4a32 });
@@ -223,16 +253,22 @@ export function walkStage({ ctx, a, g, jeon }) { // (테스트가 싸움 장면�
   const top = [[-6, -98.5, JAPAN], [-3, -98, JAPAN], [0, -98, JAPAN], [3, -98, JAPAN], [6, -98.5, 'joseonSoldier'], [8.5, -99, 'joseonSoldier']].map(([x, z, look]) => { const p = person(g, look, x, z, 0); p.position.y = ridge.top(x, z); return p; });
   const army5 = torchCrowd(g, [[-3, -91], [-1.6, -91.6], [0, -91], [1.6, -91.6], [3, -91], [-2.2, -92.8], [2.2, -92.8]], () => 'peasant');
   army5.forEach((p, i) => setCarry(p, makeTool(i), 'side'));
+  const map = moveMap(ctx.ui);
   return {
     keepDark: false,
-    async hwangto() { // 농민군이 언덕으로 달려 올라가 관군과 짝지어 맞붙고(D-65, 2026-11-03 선생님: 움직이기만 하다 끝났다), 진 관군은 쓰러지거나 동쪽으로 달아난다
-      this.view = cam([-2, 3.6, -1], [10, 1.4, -9]); this.view();
-      const A = [...army1].sort((p, q) => p.position.z - q.position.z), B = [...gwangun].sort((p, q) => p.position.z - q.position.z);
-      const fight = melee(world, A.map((a, i) => ({ a, b: B[i] })), { approach: 1.8, gap: 1.3, lose: 0.34, flee: [1, 0], fleeSpeed: 4, heightAt: hill1.top, seed: 4 });
-      this.hook = fight.hook;
-      await fight.done;
+    map,
+    async hwangto() { // 농민군이 무기를 들고 언덕으로 달려가고, 관군은 돌아서서 언덕 너머 동쪽으로 달아난다(2026-11-04 선생님)
+      map?.to(0);
+      this.view = cam([-2, 3.6, -1], [11, 1.4, -9]); this.view();
+      const hook = this.hook = { charged: 0, fled: 0 };
+      const up = army1.map((p, i) => runTo(world, p, { x: 9 + (i % 3) * 0.4, z: p.position.z }, 2.6 + i * 0.12, { lean: 0.25, heightAt: hill1.top }).then(() => { hook.charged += 1; }));
+      await wait(world, 0.9);
+      const off = gwangun.map((p, i) => { p.rotation.y = Math.PI / 2; return runTo(world, p, { x: p.position.x + 13, z: p.position.z + (i % 2 ? 1 : -1) }, 2.4 + i * 0.1, { lean: 0.3, heightAt: hill1.top }).then(() => { p.visible = false; hook.fled += 1; }); });
+      await Promise.all([...up, ...off]);
+      army1.forEach(p => { p.rotation.y = Math.PI / 2; });
     },
     async jeonju() { // 성문이 열리고 농민군이 성 안으로, 성 위에 깃발
+      map?.to(1);
       this.view = cam([3, 3.2, -18], [0, 2.6, -32]); this.view();
       await wait(world, 1.2, k => gate.setOpen(k));
       army2.forEach((p, i) => runTo(world, p, { x: (i - 2) * 1.2, z: -38 - (i % 2) }, 2.4, { lean: 0.1, speed: 1.4 }));
@@ -240,11 +276,13 @@ export function walkStage({ ctx, a, g, jeon }) { // (테스트가 싸움 장면�
       flags.forEach(f => { f.visible = true; });
     },
     async jipgang() { // 청·일본 군대가 들어온다 → 관리와 농민군이 화약을 맺고 집강소에서 고을 일을 본다
+      map?.to(2);
       this.view = cam([4, 3.6, -43], [-1, 1.4, -54]); this.view();
-      foreign.forEach(p => { p.visible = true; });
-      await wait(world, 1.4, (k, dt) => foreign.forEach(p => { p.position.x -= dt * 1.4; p.position.z += dt * 1.4; }));
+      foreign.forEach(p => { p.visible = true; p.rotation.y = Math.atan2(-4 - p.position.x, -51 - p.position.z); }); // 농민군이 선 곳을 보며 그쪽으로 다가온다(2026-11-04 선생님)
+      await wait(world, 1.4, (k, dt) => foreign.forEach(p => { p.position.x += Math.sin(p.rotation.y) * dt * 2; p.position.z += Math.cos(p.rotation.y) * dt * 2; }));
     },
     async rise() { // 양쪽 들판에서 농민군이 몰려와 길가에 서고, 깃발이 오른다
+      map?.to(3);
       this.view = cam([0, 3.4, -58], [0, 1.6, -71]); this.view();
       rise.forEach(p => { p.visible = true; });
       await Promise.all([
@@ -252,7 +290,8 @@ export function walkStage({ ctx, a, g, jeon }) { // (테스트가 싸움 장면�
         wait(world, 2.2, k => banners.forEach(b => { b.position.y = -4.6 + k * 4.6; })),
       ]);
     },
-    async ugeumchi() { // 농민군이 고개로 올라가자 고개 위 일본군과 관군이 줄지어 총을 쏘고(불빛·연기), 몇이 쓰러진 뒤 농민군이 크게 져서 물러선다(D-65). 체포는 해설로만, 잡힌 곳은 보여 주지 않는다
+    async ugeumchi() {
+      map?.to(4); // 농민군이 고개로 올라가자 고개 위 일본군과 관군이 줄지어 총을 쏘고(불빛·연기), 몇이 쓰러진 뒤 농민군이 크게 져서 물러선다(D-65). 체포는 해설로만, 잡힌 곳은 보여 주지 않는다
       this.view = cam([4, 3.2, -80], [0, 2.4, -96]); this.view();
       ctx.audio?.play?.('boom');
       for (const [x, z] of heavy ? [[-4, -99.5], [2, -99], [6.5, -100]] : [[0, -99]]) fires.push(burning(world, { parent: g, x, y: ridge.top(x, z), z, size: heavy ? 0.9 : 0.6, level: 1 }));
@@ -263,7 +302,7 @@ export function walkStage({ ctx, a, g, jeon }) { // (테스트가 싸움 장면�
       await Promise.all(up);
       await Promise.all(army5.filter(p => !hit.includes(p)).map((p, i) => runTo(world, p, { x: (i % 2 ? 1 : -1) * (14 + i), z: p.position.z + 8 }, 2.2 + i * 0.1, { lean: 0.25 }).then(() => { p.visible = false; })));
     },
-    dispose() { fires.forEach(f => f.setLevel(0)); },
+    dispose() { fires.forEach(f => f.setLevel(0)); map?.remove(); },
   };
 }
 export function historyWalk(ctx) {
@@ -340,7 +379,8 @@ function introScene(ctx) {
   const add = (look, x, z, ry) => { const p = makePerson(LOOKS[look]); p.position.set(x, 0, z); p.rotation.y = ry; L.add(p); return p; };
   const cart = new THREE.Group(); BUILD.cart(cart, {}); cart.position.set(-3.5, 0, 3.2); cart.rotation.y = Math.PI / 2; L.add(cart);
   const taxmen = [add('joseonOfficial', -4.6, 1.8, -Math.PI / 2), add('joseonSoldier', -2.4, 1.6, -Math.PI / 2)];
-  const sacks = new THREE.Group(); BUILD.rice(sacks, { n: 3 }); sacks.position.set(-7.6, 0, 3.4); L.add(sacks);
+  const sacks = new THREE.Group(); BUILD.rice(sacks, { n: 1 }); sacks.position.set(-7.6, 0, 3.4); L.add(sacks); // 군졸이 두 팔로 안아 수레에 싣는다(2026-11-04 선생님: 볏짐이 저절로 올라가던 것)
+  const pile = new THREE.Group(); BUILD.rice(pile, { n: 2 }); pile.position.set(-8.2, 0, 2.4); L.add(pile);
   const farmers1 = [add('peasant', -8.4, 4.6, Math.PI / 2), add('peasant', -8.8, 1.4, Math.PI / 2)];
   const gunsu = add('jobyeonggap', 0, -4.6, 0); gunsu.visible = false;
   const crowd = [[-2, -1], [-0.8, -0.6], [0.6, -0.8], [1.8, -1.2], [-1.4, 0.4], [1.2, 0.4]].map(([x, z]) => { const p = add(x > 0 ? 'peasant' : 'commoner', x, z + 2.5, Math.PI); p.visible = false; return p; });
@@ -350,15 +390,22 @@ function introScene(ctx) {
   return {
     shots: [
       { cam: [2.2, 2.6, 6.4], look: [-5, 1.1, 2.4], to: { cam: [1.4, 2.4, 5.6], look: [-5, 1.1, 2.4] },
-        act: () => { hide(false); run(u => { const k = Math.min(1, u / 3); sacks.position.x = -7.6 + k * 4.1; sacks.position.y = Math.sin(k * Math.PI) * 0.3; farmers1.forEach(p => { p.rotation.x = 0.12 * Math.min(1, u); }); }); } },
+        act: () => { hide(false);
+          const sol = taxmen[1]; sol.position.set(-6.9, 0, 3.4); sol.rotation.y = -Math.PI / 2; let got = false, put = false;
+          run(u => {
+            farmers1.forEach(p => { p.rotation.x = 0.12 * Math.min(1, u); });
+            if (!got && u > 0.5) { got = true; sacks.position.set(0, 0, 0); setCarry(sol, sacks, 'arms'); } // 볏짐을 안아 들고
+            if (got && !put) { const k = Math.min(1, (u - 0.5) / 2); sol.position.x = -6.9 + k * 2.2; sol.rotation.y = Math.PI / 2; // 수레 앞까지 걸어가
+              if (k >= 1) { put = true; setCarry(sol, null); sacks.position.set(-3.5, 0.75, 3.2); L.add(sacks); } } // 수레 위에 올린다
+          }); } },
       { cam: [6.5, 3.4, 1.5], look: [-0.5, 1.4, -2.6], to: { cam: [5.6, 3.2, 0.8], look: [-0.5, 1.4, -2.6] },
         act: () => {
-          for (const o of [cart, sacks, ...taxmen, ...farmers1]) o.visible = false;
+          for (const o of [cart, sacks, pile, ...taxmen, ...farmers1]) o.visible = false;
           gunsu.visible = true; crowd.forEach(p => { p.visible = true; });
           run(u => crowd.forEach((p, i) => { p.position.z = [-1, -0.6, -0.8, -1.2, 0.4, 0.4][i] + 2.5 - Math.min(1, u / 1.5) * 1.6; const arm = p.userData.arms?.[1]; if (arm) arm.rotation.x = -1.2 - Math.sin(u * 5 + i) * 0.4; }));
         } },
     ],
-    done: () => { off?.(); off = null; hide(true); for (const o of [cart, sacks, ...taxmen, ...farmers1, gunsu, ...crowd]) o.removeFromParent(); },
+    done: () => { off?.(); off = null; hide(true); for (const o of [cart, sacks, pile, ...taxmen, ...farmers1, gunsu, ...crowd]) o.removeFromParent(); },
   };
 }
 

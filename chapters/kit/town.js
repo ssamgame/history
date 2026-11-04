@@ -65,9 +65,10 @@ export function holdFlag(person) {
 // 만세(D-43): u(0~1)만큼 태극기 든 오른팔을 앞으로 번쩍 들어 머리 위로, 왼팔도 함께 든다. 깃발은 손을 따라 곧게 선 채 오른다
 export function cheerFlag(person, u) {
   const a = person.userData.arms, c = person.userData.carry; if (!a) return;
+  person.userData.cheerU = u; // 뼈대 몸은 걸음 계산(animateSkel)이 이 값으로 팔을 든다
   const t = -1.0 + (-Math.PI * 0.95 + 1.0) * u;
   a[1].rotation.set(t, 0, 0); a[0].rotation.set(-Math.PI * 0.62 * u, 0, 0);
-  if (c?.style === 'flag') { person.updateMatrixWorld(true); c.obj.parent.worldToLocal(person.localToWorld(c.obj.position.set(0.5, 1.65 - 0.78 * Math.cos(t), -0.78 * Math.sin(t)))); } // 몸 기준 자리를 깃발이 붙은 곳(몸통 관절·뼈대 몸의 가슴 뼈) 기준으로
+  if (c?.style === 'flag' && !c.obj.parent?.isBone) { person.updateMatrixWorld(true); c.obj.parent.worldToLocal(person.localToWorld(c.obj.position.set(0.5, 1.65 - 0.78 * Math.cos(t), -0.78 * Math.sin(t)))); } // 몸 기준 자리를 깃발이 붙은 곳(몸통 관절·뼈대 몸의 가슴 뼈) 기준으로
 }
 
 // 부품마다 만드는 법. 모두 (0,0,0) 기준, 앞은 +z.
@@ -324,6 +325,8 @@ export function addNature(world, layout, field, kind, color, parent = world.leve
   if (hsl.h > 0.17 && hsl.h < 0.45 && hsl.s > 0.2) scatter(world, { parent, kind: 'flower', count: 25, area: { x0: f.x0, x1: f.x1, z0: f.z0, z1: f.z1 }, avoid: busy, keep: (x, z) => !onRoad(x, z), seed: seed + 4 });
 }
 
+// 겹친 길 윗면이 같은 높이에서 다투지(반짝이지) 않게 길마다 올리는 높이
+export const ROAD_STEP = 0.008;
 export function buildTown(world, layout) {
   const L = world.level;
   world.bounds = layout.bounds;
@@ -340,7 +343,7 @@ export function buildTown(world, layout) {
   // skyline: { style: 'hanok'|'brick'|'concrete', arc: [시작, 끝] 라디안, color } — 도시 장면의 먼 건물 실루엣
   if (layout.skyline) { const sk = skyline(field, { center: [(layout.bounds.x0 + layout.bounds.x1) / 2, (layout.bounds.z0 + layout.bounds.z1) / 2], ...layout.skyline }); if (sk) L.add(sk); }
   if (layout.mountains !== false) { const mr = mountainRing(field, { color: hill ?? (kind === 'stone' ? 0x6a7a58 : color), center: [(layout.bounds.x0 + layout.bounds.x1) / 2, (layout.bounds.z0 + layout.bounds.z1) / 2] }); if (mr) L.add(mr); }
-  for (const r of layout.roads || []) { const m = new THREE.Mesh(box(r.w, 0.05, r.d), mat(r.color || 0x8f7556, r.kind || 'earth')); m.position.set(r.x, 0.025, r.z); m.receiveShadow = true; L.add(m); }
+  for (const [i, r] of (layout.roads || []).entries()) { const m = new THREE.Mesh(box(r.w, 0.05, r.d), mat(r.color || 0x8f7556, r.kind || 'earth')); m.position.set(r.x, 0.025 + i * ROAD_STEP, r.z); m.receiveShadow = true; L.add(m); } // 겹치는 길은 조금씩 높이를 달리한다(같은 높이면 겹친 곳이 번갈아 반짝였다, 2026-11-04 선생님)
   const named = {}; let chats = 0;
   for (const p of layout.props || []) {
     const g = new THREE.Group(); g.position.set(p.x, p.y || 0, p.z); g.rotation.y = p.ry || 0; if (p.scale) g.scale.setScalar(p.scale); L.add(g); // y: 축대 위에 올린 부품

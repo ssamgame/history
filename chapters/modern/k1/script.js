@@ -10,6 +10,8 @@ export default {
     official: { name: '조선 관리', mark: '官', color: '#55608a', look: 'joseonOfficial' },
     daewongun: { name: '흥선 대원군', mark: '雲', color: '#4f5f86', look: 'daewongun' },
     fisher: { name: '어부', mark: '漁', color: '#5d6b3e', look: 'peasant' },
+    worker: { name: '공사장 일꾼', mark: '工', color: '#7a5a3a', look: 'worker' },
+    yangban: { name: '양반', mark: '班', color: '#3a4a5a', look: 'gentleman' },
   },
   intro: [
     { who: 'narr', text: '19세기 후반, 어린 나이로 왕이 된 고종을 대신해 아버지 흥선 대원군이 나라를 다스렸어요.', src: ['S51'] },
@@ -51,28 +53,31 @@ export default {
     },
   },
   parts: {
-    regent: {
-      type: 'deliver', src: ['S51'], title: '흥선 대원군이 한 일을 되짚어 봐요', counter: '가져다 놓은 것',
-      howto: '두 팔에 안은 것을 알맞은 곳의 빛나는 원 안으로 가져가 잠깐 서 있어요. 그러면 처음 자리에서 다음 것을 안아요.',
-      intro: [{ who: 'official', text: '어르신께 들은 흥선 대원군이 한 일을 떠올리며, 이것들을 알맞은 곳에 가져다 놓아라.' }],
-      bins: [
-        { id: 'palace', label: '경복궁 공사장', look: 'worker' },
-        { id: 'tax', label: '세금 거두는 관리', look: 'joseonOfficial' },
-        { id: 'regent', label: '흥선 대원군', look: 'daewongun' },
+    regent: { // 2026-11-04 선생님: 목적이 분명하게 — 공사장에서 기둥을 받아 경복궁 터로, 세금 관리에게 임무를 받아 양반 댁 세금을 걷어 온다
+      type: 'drive', src: ['S51'], title: '흥선 대원군이 한 일을 되짚어 봐요', counter: '한 일',
+      howto: '빛나는 곳으로 가서 맡은 일을 해요.',
+      intro: [{ who: 'official', text: '흥선 대원군께서 하신 일을 직접 도와 보아라. 먼저 경복궁 공사장으로 가거라.' }],
+      route: [
+        { label: '경복궁 공사장', look: 'worker', give: 'log', say: '나무 기둥을 받았어요!',
+          talk: [{ who: 'worker', text: '이 나무 기둥을 경복궁 터로 날라 주게.' }] },
+        { label: '경복궁 터', drop: [1.4, -1.6], say: '기둥을 세웠어요!',
+          talk: [{ who: 'narr', text: '흥선 대원군은 경복궁을 고쳐 지었어요.', src: ['S51'] }] },
+        { label: '세금 거두는 관리', look: 'joseonOfficial',
+          talk: [{ who: 'official', text: '이제는 양반도 세금을 내야 한다. 저 양반 댁에 가서 세금을 받아 오너라.', src: ['S51'] }] },
+        { label: '양반 댁', look: 'gentleman', give: 'sack', say: '세금 꾸러미를 받았어요!',
+          talk: [{ who: 'yangban', text: '예전엔 우리 양반은 내지 않던 세금이오. 이제는 우리도 내야 한다니.' }] },
+        { label: '세금 거두는 관리', drop: [1.4, -1.6], say: '세금을 건넸어요!',
+          talk: [{ who: 'official', text: '잘했다. 흥선 대원군께서는 양반에게도 세금을 내게 하셨다.', src: ['S51'] }] },
       ],
-      cards: [
-        { text: '경복궁에 세울 나무 기둥', carry: 'log', bin: 'palace', talk: [{ who: 'narr', text: '흥선 대원군은 경복궁을 고쳐 지었어요.', src: ['S51'] }] },
-        { text: '양반 댁에서 낸 세금', carry: 'sack', bin: 'tax', talk: [{ who: 'official', text: '이제는 양반 댁에서도 세금을 낸다.', src: ['S51'] }] },
-        { text: '서양 배가 보낸 편지', carry: 'letter', bin: 'regent', talk: [
-          { who: 'daewongun', text: '서양 나라와는 교류하지 않겠다. 돌려보내라.' },
-          { who: 'narr', text: '흥선 대원군은 서양 나라들의 교류 요구를 거절했어요.', src: ['S51'] },
-        ] },
+      fail: '빛나는 곳을 차례로 찾아가요.',
+      done: [
+        { who: 'daewongun', text: '서양 나라와는 교류하지 않겠다. 돌려보내라.' },
+        { who: 'narr', text: '흥선 대원군은 서양 나라들의 교류 요구도 거절했어요.', src: ['S51'] },
       ],
-      fail: '마을 어르신이 한 이야기를 떠올려 보세요. 궁궐을 고쳐 짓고, 양반에게도 세금을 내게 하고, 서양 나라의 교류 요구를 거절했어요.',
     },
     coast: {
       type: 'drive', src: ['S51'], title: '강화도 해안을 순찰해요', counter: '살핀 곳', seconds: 120,
-      howto: '빛나는 곳을 차례로 지나며 바다를 살펴요. 망루에서는 바다를 살피는 동안 잠깐 기다려요.',
+      howto: '빛나는 곳을 차례로 지나가요.',
       intro: [{ who: 'elder', text: '바다 건너 낯선 배들이 자꾸 찾아온다네. 해안을 한번 둘러봐 주게. 망루에서는 먼바다를 잘 살피게.' }],
       route: [
         { label: '갯벌 길', say: '바닷바람이 거세요.' },
@@ -96,10 +101,10 @@ export default {
       ],
     },
     rumor: {
-      type: 'judge', src: ['S51'], title: '사람들의 말이 조약과 맞는지 가려내요', counter: '들은 이야기',
-      howto: '연무당 앞 사람들에게 다가가 대화 버튼을 눌러 이야기를 듣고, 방금 읽은 조약과 맞는지 골라요.',
+      type: 'judge', src: ['S51'], title: '마을 사람들의 말이 조약과 맞는지 가려내요', counter: '들은 이야기',
+      howto: '마을 사람들 말을 듣고 맞는지 골라요.',
       question: '이 말이 방금 읽은 강화도 조약의 내용과 맞나요?', options: ['맞아요', '아니에요'],
-      intro: [{ who: 'scholar', text: '연무당 앞에서는 조약을 두고 이런저런 말이 돈다오. 방금 읽은 조약문을 떠올리며 누구 말이 맞는지 가려 보시오.' }],
+      intro: [{ who: 'scholar', text: '마을 사람들이 조약을 두고 이런저런 말을 한다오. 방금 읽은 조약문을 떠올리며 누구 말이 맞는지 가려 보시오.' }],
       items: [
         { look: 'peasant', talk: [{ who: 'fisher', text: '이제 일본 배가 우리 바다를 마음대로 재고 다닌다던데?' }], correct: true,
           after: [{ who: 'scholar', text: '맞소. 일본인은 조선의 해안을 자유롭게 측량할 수 있게 되었소.', src: ['S51'] }] },

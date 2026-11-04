@@ -23,7 +23,7 @@
 //        좌표는 모두 무대 기준. arena가 없으면 장 마을에서 한다.
 import * as THREE from 'three';
 import { makeSea } from '../../core/sea.js';
-import { BUILD, addFootprint, taegukgiTexture, addNature } from './town.js';
+import { BUILD, addFootprint, taegukgiTexture, addNature, ROAD_STEP } from './town.js';
 import { bakeStatic } from './buildings.js';
 import { terrainField, terrainMesh, hillColorFor } from './terrain.js';
 import { mat, makePerson, setCarry, playAction } from '../../core/people.js';
@@ -135,7 +135,7 @@ export function buildArena(world, arena) {
       if (!arena.map && arena.nature !== false) addNature(world, { bounds: arena.bounds, props: [...(arena.props || []), ...(arena.center || [])], roads: arena.roads || [], start: arena.from, hillColor: arena.hillColor }, field, kind, color, g);
     }
     if (arena.map) g.add(mapFloor(arena.map));
-    for (const r of arena.roads || []) { const m = new THREE.Mesh(box(r.w, 0.05, r.d), mat(r.color || 0x8f7556, r.kind || 'earth')); m.position.set(r.x, r.y ?? 0.025, r.z); m.rotation.y = r.ry || 0; m.receiveShadow = true; g.add(m); } // 마을 길과 같은 높이(윗면 0.05): 0.04였을 때 신이 길에 묻혀 보였다(2026-11-04 플레이 점검)
+    for (const [i, r] of (arena.roads || []).entries()) { const m = new THREE.Mesh(box(r.w, 0.05, r.d), mat(r.color || 0x8f7556, r.kind || 'earth')); m.position.set(r.x, r.y ?? 0.025 + i * ROAD_STEP, r.z); m.rotation.y = r.ry || 0; m.receiveShadow = true; g.add(m); } // 마을 길과 같은 높이(윗면 0.05): 0.04였을 때 신이 길에 묻혀 보였다(2026-11-04 플레이 점검)
     const cg = new THREE.Group(); // 가운데 소품은 움직이지 않으니 다 놓은 뒤 재질별로 한 덩어리로 합친다
     for (const p of [...(arena.props || []), ...(arena.center || []).map(c => ({ scale: CENTER_SCALE, ...c, center: true }))]) { // center: 무대 가운데 역사 소품(배치표에서 따로 적어 길·목표를 피했는지 검사한다)
       const pg = new THREE.Group(); pg.position.set(p.x, p.y || 0, p.z); pg.rotation.y = p.ry || 0; if (p.scale) pg.scale.setScalar(p.scale); (p.center ? cg : g).add(pg);
@@ -355,16 +355,23 @@ export function drive(ctx, part, easy) {
   // 건네받기: give가 있는 곳에 닿으면 그곳 사람이 꾸러미를 건네고, 학생이 두 손에 들고 다닌다. hand가 있는 곳에서는 하나씩 건넨다
   let carried = null;
   s.cleanup(() => { if (carried) setCarry(world.player, null); });
+  // give: true면 신문 꾸러미, 'log'·'sack' 같은 이름이면 그 물건(CARRY_THING). drop이 있는 곳에 닿으면 든 것을 그 자리에 내려놓는다(근대 1장 기둥·세금)
+  const thingMode = () => (carried?.userData.kind === 'log' ? 'shoulder' : 'arms');
   const giveBundle = r => {
-    const b = new THREE.Group(); for (let k = 0; k < 5; k++) add(b, box(0.7, 0.07, 0.5), k % 2 ? 0xf2ede0 : 0xe6dfcc, 0, k * 0.075, 0); add(b, box(0.08, 0.42, 0.52), 0x8a6a48, 0, 0.18, 0);
+    const named = typeof r.give === 'string' && CARRY_THING[r.give];
+    let b;
+    if (named) { b = CARRY_THING[r.give](); b.userData.kind = r.give; }
+    else { b = new THREE.Group(); for (let k = 0; k < 5; k++) add(b, box(0.7, 0.07, 0.5), k % 2 ? 0xf2ede0 : 0xe6dfcc, 0, k * 0.075, 0); add(b, box(0.08, 0.42, 0.52), 0x8a6a48, 0, 0.18, 0); }
+    const keep = () => { carried = b; setCarry(world.player, b, thingMode()); };
     if (r.person) { // 그 자리 사람이 학생 쪽으로 돌아서 두 손으로 내밀고, 학생 손에 닿을 때 넘겨준다(꾸러미가 날아오지 않게, 2026-10-30 움직임 개선)
-      const giver = r.person; b.scale.setScalar(1.3); setCarry(giver, b, 'arms');
+      const giver = r.person; if (!named) b.scale.setScalar(1.3); setCarry(giver, b, 'arms');
       (async () => {
         await turnTo(world, giver, world.player.getWorldPosition(new THREE.Vector3()), { speed: 6 });
         await playAction(giver, { dur: 0.45, pose: t => { const k = Math.min(1, t / 0.45); return { arms: [[-1.0 - 0.45 * k, 0, 0.33], [-1.0 - 0.45 * k, 0, -0.33]], carryAt: [0, 1.3, 0.6 + 0.4 * k], upper: [0.1 * k, 0, 0] }; }, fadeIn: 0.1, fadeOut: 0.01, name: 'give' });
         if (s.done) return;
         giver.userData.carry = null; giver.userData.armRest = true;
-        setCarry(world.player, b, 'arms'); carried = b; // 두 팔로 안고 다닌다(D-18). 내민 자리에서 학생 손으로 이어 옮겨 온다
+        if (!named) b.scale.setScalar(1.3);
+        keep(); // 두 팔로 안고 다닌다(D-18). 내민 자리에서 학생 손으로 이어 옮겨 온다(기둥은 어깨에 멘다)
       })();
       return;
     }
@@ -375,7 +382,7 @@ export function drive(ctx, part, easy) {
       k = Math.min(1, k + dt / 0.6);
       world.player.localToWorld(to.set(0, 1.22, 0.6)); g.worldToLocal(to);
       b.position.lerpVectors(from, to, k); b.position.y += Math.sin(k * Math.PI) * 0.6;
-      if (k >= 1) { off(); g.remove(b); b.scale.setScalar(1.3); setCarry(world.player, b, 'arms'); carried = b; } // 두 팔로 안고 다닌다(D-18, 꾸러미가 몸보다 넓어 뒤에서도 보인다)
+      if (k >= 1) { off(); g.remove(b); if (!named) b.scale.setScalar(1.3); keep(); } // 두 팔로 안고 다닌다(D-18, 꾸러미가 몸보다 넓어 뒤에서도 보인다)
     });
     s.cleanup(off);
   };
@@ -400,6 +407,10 @@ export function drive(ctx, part, easy) {
     audio.play('correct');
     if (r.give) giveBundle(r);
     if (r.hand && carried) carried.scale.y = Math.max(0.3, carried.scale.y - 0.22);
+    if (r.drop && carried) { // 든 것을 그 자리에 내려놓는다(기둥은 세운다)
+      const o = carried, log = o.userData.kind === 'log'; carried = null; setCarry(world.player, null);
+      o.rotation.set(0, 0, 0); o.scale.setScalar(1); o.position.set(r.x + (r.drop[0] ?? 1.2), log ? 1.3 : 0.02, r.z + (r.drop[1] ?? -1.4)); g.add(o);
+    }
     r.m.visible = false; if (r.lab) r.lab.visible = false;
     if (r.say) toast(ctx, r.say, 'good');
     last = [r.x, r.z]; next += 1; held = 0;
@@ -582,10 +593,12 @@ export function deliver(ctx, part, easy) {
   // 놓은 뒤에는 처음 자리로 돌아가 다음 것을 든다
   const home = () => { if (part.from) { const a = s.at(...part.from); place(world, [a.x, a.z], part.face ?? Math.PI); } };
   // 지나가다 밟은 것은 놓지 않는다: 원 안에서 멈춰 잠깐(DWELL초) 서 있어야 놓인다. 원은 서 있는 동안 점점 밝아진다.
+  // part.press: 원 안에서 대화 버튼을 눌러야 놓인다(2026-11-04 선생님: 근대 2장 개혁안 붙이기)
   const DWELL = 0.7;
   let inside = null, stay = 0;
   const last = world.player.position.clone();
-  s.update(dt => {
+  if (part.press) pickWithButton(ctx, s, () => (part.cards[i] ? bins : []), b => drop(part.cards[i], b), 2.1);
+  else s.update(dt => {
     const moved = world.player.position.distanceTo(last) / Math.max(dt, 1e-3); last.copy(world.player.position);
     const c = part.cards[i];
     const b = c && bins.find(x => near(world.player.position, x.pos, 2.1));
@@ -595,6 +608,9 @@ export function deliver(ctx, part, easy) {
     stay += dt; b.disc.material.opacity = 0.35 + Math.min(1, stay / DWELL) * 0.5;
     if (stay < DWELL) return;
     stay = -1; b.disc.material.opacity = 0.35; // 같은 원 안에서는 한 번만
+    drop(c, b);
+  });
+  function drop(c, b) {
     if (deliverAccepts(part, c, b)) {
       audio.play('correct'); toast(ctx, `○ ${c.text} → ${b.label}`, 'good');
       if (c.carry) { // 가져간 것은 그 자리에 내려놓는다(기둥은 세우고, 방은 칸의 drop: [x, y, z, 옆 간격] 자리에 붙이거나 바닥에 눕힌다)
@@ -611,7 +627,7 @@ export function deliver(ctx, part, easy) {
       missedCards.add(c); home(); hold();
       s.wrong(`「${c.text}」은(는) ${b.label}이(가) 아니에요. 다시 들고 가 봐요. 이번에는 화살표가 맞는 곳을 알려 줄게요.`);
     }
-  });
+  }
   return s.promise;
 }
 

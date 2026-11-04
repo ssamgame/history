@@ -1,6 +1,6 @@
 // 근대편 1장 「흥선 대원군과 강화도 조약」(D-28): 강화도 바닷가 마을과 관아, 바다 위의 배.
 // 마을 문으로 걸어 들어와 어르신·선비의 이야기를 아무 차례로 듣고(막지 않음), 관아 앞 관리에게 가면 학생의 결심 →
-// 물건을 안고 흥선 대원군이 한 일의 자리로 → 해안 순찰 → 연무당에서 조약문 읽기 → 사람들의 말이 조약과 맞는지 가려내기.
+// 흥선 대원군이 한 일 돕기(기둥 나르기·양반 세금) → 해안 순찰 → 연무당에서 조약문 읽기 → 마을 사람들의 말이 조약과 맞는지 가려내기.
 import * as THREE from 'three';
 import { makeKitChapter } from '../../kit/chapter.js';
 import { BUILD } from '../../kit/town.js';
@@ -175,14 +175,15 @@ const base = makeKitChapter({
   },
   parts: [
     // 물건 셋을 저마다 그 일의 자리로(D-30 D-01): 경복궁 공사장 · 세금 거두는 관아 · 흥선 대원군(바다 너머 서양 배)
-    { ...script.parts.regent, goal: script.goals[2], arena: PALACE, from: [0, 10], bins: xy(script.parts.regent.bins, [{ x: -11, z: -4 }, { x: 0, z: -5 }, { x: 11, z: -4 }]) },
+    { ...script.parts.regent, goal: script.goals[2], arena: PALACE, from: [0, 10],
+      route: xy(script.parts.regent.route, [{ x: -15, z: 1, ry: Math.PI / 2 }, { x: -11, z: -6 }, { x: 0, z: -6, ry: 0 }, { x: 11, z: -6, ry: 0 }, { x: 0, z: -6 }]) }, // 공사장 → 경복궁 터 → 세금 관리 → 양반 댁 → 세금 관리
     // 둘째 놀이부터는 마을의 그 사람에게 가서 말을 걸어야 시작한다(D-30 C-05, intro 앞의 meet)
     { ...script.parts.coast, goal: script.goals[3], arena: COAST, from: [0, 21], intro: meet('elder', '마을 어르신과 이야기하기', script.parts.coast.intro),
       route: xy(script.parts.coast.route, [{ x: -4, z: 12 }, { x: -12, z: 0 }, { x: 6, z: -2 }, { x: 6, z: 14 }]).map((r, i) => i === 1 ? { ...r, scene: warshipArrives, holdCenter: true, look: 'scholar', ry: -Math.PI / 2 } : i === 2 ? { ...r, look: 'joseonOfficial', ry: -Math.PI / 2 } : i === 3 ? { ...r, scene: ctx => treatyScene(ctx) } : r) }, // 망루의 선비·포대의 관리가 그 자리에 선다(2026-11-04 플레이 점검: 목소리만 들리던 것) // 망루: 남은 시간을 화면 가운데 크게(D-02)
     { ...script.parts.paper, goal: script.goals[4], arena: YEONMU, from: [0, -3.6], view: { eye: [2.5, 3.2, -1.2], at: [0, 1, -6.5] }, scroll: true, // 연무당 탁자 앞에서 낡은 두루마리 조약문을 읽는다(D-05)
       intro: meet('official', '조선 관리와 이야기하기', script.parts.paper.intro) },
-    { ...script.parts.rumor, goal: script.goals[5], arena: YEONMU, from: [0, 11], mark: '!', intro: meet('scholar', '젊은 선비와 이야기하기', script.parts.rumor.intro), // 머리 위는 느낌표(D-06)
-      items: xy(script.parts.rumor.items, [{ x: -10, z: 4, ry: 0.5 }, { x: -4, z: 8, ry: 0.2 }, { x: 4, z: 8, ry: -0.2 }, { x: 10, z: 4, ry: -0.5 }]) },
+    { ...script.parts.rumor, goal: script.goals[5], mark: '!', intro: meet('scholar', '젊은 선비와 이야기하기', script.parts.rumor.intro), // 마을에서 백성들 이야기를 듣는다(2026-11-04 선생님: 연무당 앞 → 마을). 머리 위는 느낌표(D-06)
+      items: xy(script.parts.rumor.items, [{ x: -5, z: 9.5, ry: 0.6 }, { x: 5, z: 9.5, ry: -0.6 }, { x: -7.5, z: 0.5, ry: 1.2 }, { x: 6.5, z: -1.5, ry: -1.2 }]) },
   ],
   decorate(world) { // 마을 어귀 나무 문과 「강화도」 이름판(S51). 문짝은 굳히기에 합쳐지지 않게 돌려준다
     const gate = gateLeaves(world.level, { x: 0, z: GATE_Z, width: 4, height: 2.6, inward: -1 });

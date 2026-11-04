@@ -5,7 +5,7 @@
 // 쓰러진 사람은 피 없이 옆으로 누웠다가 사라진다(D-45). 테스트 훅: 돌려주는 hook({ strikes, counters, blocks, fell, fled, side })
 import * as THREE from 'three';
 import { strike, block } from '../../core/interact.js';
-import { animateWalk } from '../../core/motion.js';
+import { animateWalk, setCarry } from '../../core/motion.js';
 
 const ss = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 
@@ -71,7 +71,15 @@ export function gunFlash(world, g, p) {
     if (t > 1.3) { off(); g.remove(flash, smoke); }
   });
 }
+// 등에 멘 총을 두 손에 들고 앞으로 겨눈다(2026-11-04 선생님: 일본군이 조총을 직접 손에 들고 쏘게). 총이 없으면 아무것도 하지 않는다
+export function aimRifle(p) {
+  const r = p.getObjectByName('rifle'); if (!r || p.userData.carry) return false;
+  r.removeFromParent(); r.position.set(0, 0, 0); r.rotation.set(Math.PI / 2, 0, 0);
+  setCarry(p, r, 'aim');
+  return true;
+}
 export async function volley(world, g, shooters, { rounds = 3, gap = 0.9, audio = null, onRound = null } = {}) {
+  shooters.forEach(aimRifle);
   for (let v = 0; v < rounds; v++) {
     shooters.forEach((p, i) => { if ((i + v) % 2 === 0 || v === rounds - 1) gunFlash(world, g, p); });
     audio?.play?.('shot');

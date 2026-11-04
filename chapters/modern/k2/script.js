@@ -9,6 +9,7 @@ export default {
     merchant: { name: '한성 상인', mark: '商', color: '#6b4a32', look: 'commoner' },
     clerk: { name: '우정총국 관리', mark: '郵', color: '#55608a', look: 'joseonOfficial' },
     kimokgyun: { name: '김옥균', mark: '金', color: '#3a4a5a', look: 'kimokgyun' },
+    guard: { name: '궁궐 문지기', mark: '守', color: '#6b3a2a', look: 'joseonSoldier' },
   },
   intro: [
     { who: 'narr', text: '조선은 서양 문물을 받아들이고 개화 정책을 펼쳤지만 뚜렷한 성과를 거두지 못했어요.', src: ['S51'] },
@@ -53,7 +54,7 @@ export default {
   // 김옥균을 따라 걷는 밤길: 멈추는 곳마다 그때 일을 본다(읽기·장면이라 첫 시도 점수에 넣지 않는다)
   night: {
     title: '김옥균을 따라 그날 밤을 걸어요',
-    howto: { title: '김옥균을 따라 걷기', steps: ['김옥균 뒤를 따라 걸어요. 너무 멀어지면 김옥균이 멈춰 기다려요.', '김옥균이 멈춘 곳의 빛나는 원에 서면 그곳에서 일어난 일을 봐요.'] },
+    howto: { title: '김옥균을 따라 걷기', steps: ['김옥균을 따라 걸어요.', '빛나는 원에 서면 그곳의 일을 봐요.'] },
     // 첫 밤: 우정총국 잔치 → 정변(불길과 소란) → 궁으로 가는 길 → 새 정부와 개혁안
     a: [
       { label: '우정총국 축하 잔치', talk: [{ who: 'clerk', text: '우리나라 최초로 우편 업무를 맡은 우정총국이 생긴 것을 축하하는 잔치라네.', src: ['S51'] }] },
@@ -61,7 +62,11 @@ export default {
         { who: 'kimokgyun', expr: 'tension', text: '지금이오! 청에 의지하는 세력을 몰아내고 새로운 조선을 만들 것이오!', src: ['S51'] },
         { who: 'kimokgyun', text: '궁으로 가야 하오. 놓치지 말고 따라오시오.' },
       ] },
-      { label: '창덕궁으로', talk: [{ who: 'kimokgyun', text: '궁 안으로 들어갑시다. 오늘 밤 조선이 달라질 것이오.' }] },
+      { label: '창덕궁으로', talk: [
+        { who: 'guard', expr: 'tension', text: '멈추시오! 이 밤중에 누가 궁으로 들어가려 하오?' },
+        { who: 'kimokgyun', text: '밖에서 큰 변이 일어났소. 임금을 모셔야 하니 문을 여시오!' },
+        { who: 'guard', text: '…알겠소. 어서 들어가시오.' },
+      ] },
       { label: '새 정부와 개혁안', talk: [
         { who: 'kimokgyun', text: '새 정부를 세우고 개혁안을 발표하겠소.', src: ['S51'] },
         { who: 'kimokgyun', text: '이 개혁안을 한성 곳곳에 붙여 백성에게 알려야 하오.' },
@@ -80,8 +85,8 @@ export default {
   parts: {
     reform: {
       type: 'deliver', src: ['S51'], title: '한성 곳곳에 진짜 개혁안만 붙여요', counter: '붙인 방',
-      howto: '두 팔에 든 방을 읽고, 진짜 개혁안이면 벽·게시판 어디든 빈 곳에, 아니면 「개혁안이 아닌 것」 원 안에 잠깐 서 있어요.',
-      anyYes: true, // D-68: 진짜 개혁안은 순서·자리 상관없이 비어 있는 벽·게시판 어디에 붙여도 된다(빛기둥은 뺐다)
+      howto: '방을 읽고 알맞은 곳에서 대화 버튼을 눌러요.',
+      anyYes: true, press: true, // 원 안에서 대화 버튼을 눌러 붙인다(2026-11-04 선생님) // D-68: 진짜 개혁안은 순서·자리 상관없이 비어 있는 벽·게시판 어디에 붙여도 된다(빛기둥은 뺐다)
       intro: [
         { who: 'kimokgyun', text: '내가 건네는 방을 하나씩 읽어 보시오. 진짜 개혁안이면 벽이나 게시판 빈 곳에 붙여 주시오.' },
         { who: 'kimokgyun', text: '개혁안이 아닌 것은 「개혁안이 아닌 것」 자리에 두시오.' },
