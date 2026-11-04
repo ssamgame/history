@@ -734,7 +734,63 @@ export function muzzleFire(g, shooter, ctx) {
     if (t > 1.3) { off(); g.remove(flash, smoke); }
   });
 }
+// 사격장(2026-11-04 선생님): 움직이지 않는 과녁을 거리마다(10·25·50·100·200m) 세워 두고, 하나씩 아무렇게나 일어서면 그 과녁 위 버튼을 눌러 맞힌다.
+// part.popup: { lanes: [{ m, x, z, s }], need, up(초) }. 거리는 화면에 맞게 줄여 세우고(안개 속에서도 보이게) 거리판과 과녁 크기로 멀고 가까움을 보인다
+function popupRange(ctx, part, easy) {
+  const { world, audio } = ctx;
+  const s = session(ctx, { ...part, from: null }, easy);
+  const g = s.arena.group;
+  ctx.input.enabled = false; world.player.visible = false;
+  s.cleanup(() => { world.player.visible = true; world.camMode = 'follow'; });
+  const cam = part.camera, cp = s.at(cam.pos[0], cam.pos[2]), ct = s.at(cam.target[0], cam.target[2]);
+  world.setFixedCamera([cp.x, cam.pos[1], cp.z], [ct.x, cam.target[1], ct.z]);
+  const taps = createTapTargets(ctx); s.cleanup(() => taps.dispose());
+  const shooters = (part.shooters || []).map((sp, i) => proneShooter(g, { seed: i + 1, ...sp }));
+  const P = part.popup, need = Math.max(1, P.need - (easy ? 2 : 0)), upFor = (P.up || 2.4) * (easy ? 1.5 : 1);
+  const hook = ctx.testHooks.ambush = { prone: shooters.length, shots: 0, flashes: 0, targets: 0, lanes: P.lanes.length, popped: 0 };
+  const lanes = P.lanes.map(L => {
+    const u = new THREE.Group(); u.position.set(L.x, 0, L.z); u.scale.setScalar(L.s || 1); g.add(u);
+    add(u, box(1.8, 0.3, 0.9), 0x7a6a50, 0, 0.15, -0.3); // 과녁 받침 흙더미
+    const board = new THREE.Group(); board.position.set(0, 0.3, 0); u.add(board);
+    for (const sx of [-1, 1]) add(board, box(0.1, 1.9, 0.1), 0x5e4330, sx * 0.62, 0.95, 0);
+    [[0.78, 0xd2b07a], [0.55, 0xe6dcc3], [0.3, 0xb8452f], [0.1, 0xe6dcc3]].forEach(([r, c], k) => { const d = add(board, new THREE.CylinderGeometry(r, r, 0.06, 18), c, 0, 1.45, 0.06 + k * 0.015); d.rotation.x = Math.PI / 2; });
+    board.rotation.x = -Math.PI / 2; // 처음엔 누워 있다
+    const lab = labelSprite(`${L.m}m`, { size: 0.9 }); lab.position.set(L.x, 0.9 + 3.2 * (L.s || 1), L.z); g.add(lab); // 거리판
+    const lane = { ...L, u, board, state: 'down', t: 0, rise: 0 };
+    const aim = new THREE.Object3D(); aim.position.set(0, 1.45, 0); board.add(aim); // 버튼은 과녁 판 가운데 위에
+    lane.tap = taps.add(aim, { label: part.label || '쏴라!', onTap: () => {
+      if (lane.state !== 'up') return;
+      lane.state = 'hit'; lane.t = 0; hits += 1; hook.targets += 1; hook.shots += 1;
+      const near = shooters.map(sh => ({ sh, d: Math.abs(sh.group.position.x - L.x) })).sort((a, b) => a.d - b.d)[0];
+      if (near) { muzzleFire(g, near.sh, ctx); hook.flashes += 1; }
+      audio.play('shot'); audio.play('correct'); count();
+      if (hits >= need) setTimeout(() => s.finish(true), 700);
+    } });
+    lane.tap.btn.hidden = true;
+    return lane;
+  });
+  let hits = 0, wait = 0.8, last = -1;
+  const count = () => ctx.hud.setCounter(`${part.counter || '맞힌 과녁'} ${hits}/${need}`);
+  count();
+  s.update(dt => {
+    let busy = false;
+    for (const L of lanes) {
+      if (L.state === 'up') { busy = true; L.t += dt; L.rise = Math.min(1, L.rise + dt / 0.25); if (L.t > upFor) { L.state = 'drop'; toast(ctx, part.miss || '과녁이 내려갔어요! 다음 과녁을 기다려요.', 'bad'); } }
+      else if (L.state === 'hit' || L.state === 'drop') { busy = true; L.rise = Math.max(0, L.rise - dt / 0.3); if (!L.rise) L.state = 'down'; }
+      L.board.rotation.x = -Math.PI / 2 * (1 - L.rise);
+      L.tap.used = L.state !== 'up'; // 서 있는 과녁에만 버튼(누르면 꺼지고, 다시 서면 또 누를 수 있다)
+    }
+    ctx.testHooks.ready = lanes.some(L => L.state === 'up' && L.rise > 0.6); // 테스트 봇: 과녁이 섰을 때
+    if (busy) return;
+    wait -= dt; if (wait > 0) return;
+    let i; do { i = Math.floor(Math.random() * lanes.length); } while (lanes.length > 1 && i === last); // 같은 과녁이 두 번 잇따라 서지 않게
+    last = i; lanes[i].state = 'up'; lanes[i].t = 0; hook.popped += 1; wait = 0.5 + Math.random() * 0.9;
+  });
+  return s.promise;
+}
+
 export function ambush(ctx, part, easy) {
+  if (part.popup) return popupRange(ctx, part, easy);
   const { world, audio } = ctx;
   const s = session(ctx, { ...part, from: null }, easy);
   const g = s.arena.group;

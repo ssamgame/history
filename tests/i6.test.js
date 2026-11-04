@@ -66,7 +66,7 @@ test('i6 D-46 C-05: 놀이는 엎드려 과녁 쏘기 → 걷기, 다음 놀이�
   eq(i6.parts[1].intro?.[0]?.meet?.who, 'kimgu');
   ok(i6.parts[1].intro.slice(1).every(l => l.who === 'kimgu'), '말 건 김구가 알려 준다');
   const amb = i6.parts[0];
-  eq(amb.unit, 'target', '움직이는 과녁');
+  ok(amb.popup?.lanes.map(l => l.m).join() === '10,25,50,100,200', '거리마다 세운 과녁(2026-11-04)');
   ok(amb.shooters?.length >= 4 && amb.shooters.every(s => s.look === 'gwangbokgun' && s.band === false), '군모 쓴 광복군이 엎드려 있다');
   ok(!amb.flag, '과녁에는 깃발이 없다');
   ok(!script.parts.run && !script.parts.sort, '통나무 달리기·가져다 놓기는 뺐다');
@@ -98,7 +98,7 @@ test('i6 D-46: 태극기 장면 — 대원들이 차례로 이름을 적고, 들
   } finally { bot.stop(); s.done(); }
 }, { timeout: 90000 });
 
-test('i6 D-46: 엎드려 과녁 쏘기 — 맞은 과녁이 넘어가고, 세 차례를 마친다', async () => {
+test('i6 D-46: 엎드려 과녁 쏘기 — 거리마다 선 과녁이 하나씩 일어서고, 맞히면 넘어간다', async () => {
   const s = touchSetup(script.speakers);
   const bot = touchBot(s, { answers: new Set() });
   try {
@@ -107,10 +107,8 @@ test('i6 D-46: 엎드려 과녁 쏘기 — 맞은 과녁이 넘어가고, 세 �
     const r = await PLAY.ambush(s.ctx, i6.parts[0], false);
     ok(r, `끝냄 ${r}`);
     const h = s.ctx.testHooks.ambush;
-    ok(h.prone >= 4 && h.aimPose, '엎드려 겨눈다');
-    ok(h.shots >= 3, `쏨 ${h.shots}`);
-    ok(h.targets >= 3, `넘어간 과녁 ${h.targets}`);
-    eq(h.fallen, 0, '과녁은 사람이 아니다');
+    ok(h.prone >= 4, '엎드려 겨눈다');
+    ok(h.lanes === 5 && h.targets >= 7 && h.popped >= h.targets, `과녁 ${h.lanes}, 맞힘 ${h.targets}, 일어선 ${h.popped}`);
   } finally { bot.stop(); s.done(); }
 }, { timeout: 120000 });
 

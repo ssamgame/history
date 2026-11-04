@@ -39,15 +39,15 @@ const fall = (world, people, side = 1) => wait(world, 0.7, k => people.forEach((
 
 // ── 무대(마을에서 떨어진 x 400) ──
 // 사격장: 앞쪽(-z)으로 과녁 길 두 줄, 엎드린 대원들 뒤 낮은 곳에서 본다
-const RANGE = { edge: { style: 'camp', seed: 216 }, center: [{ type: 'sandbags', x: -14, z: 6, w: 4 }, { type: 'rifles', x: 14, z: 6 }, { type: 'sandbags', x: 14, z: 14, w: 4 }, { type: 'cargo', x: -15, z: 15, kind: 'crate', n: 3 }],
-  origin: [400, 0], ground: 'earth', groundColor: 0x8a7a5a, bounds: { x0: -26, x1: 26, z0: -22, z1: 22 },
-  roads: [{ x: 0, z: 0, w: 52, d: 3, color: 0x7a6a50 }, { x: 0, z: -4.5, w: 52, d: 3, color: 0x7a6a50 }],
+const RANGE = { edge: { style: 'camp', seed: 216 }, center: [{ type: 'sandbags', x: -12, z: 6, w: 4 }, { type: 'rifles', x: 12, z: 6 }, { type: 'sandbags', x: 12, z: 14, w: 4 }, { type: 'cargo', x: -13, z: 15, kind: 'crate', n: 3 }],
+  origin: [400, 0], ground: 'earth', groundColor: 0x8a7a5a, bounds: { x0: -16, x1: 16, z0: -72, z1: 20 }, // 앞쪽(-z)으로 멀리 과녁을 세우는 긴 사격장(2026-11-04 선생님)
   props: [
-    { type: 'wall', x: 0, z: -9, w: 30, h: 2.2, color: 0xa08a62 }, // 과녁 뒤 흙둑
-    { type: 'tent', x: -15, z: 18, color: 0x6b6a4a }, { type: 'tent', x: 15, z: 18, color: 0x6b6a4a },
-    { type: 'flagpole', x: -18, z: -15 }, { type: 'flagpole', x: 18, z: -15 },
+    { type: 'tent', x: -13, z: 18, color: 0x6b6a4a }, { type: 'tent', x: 13, z: 18, color: 0x6b6a4a },
+    { type: 'flagpole', x: -14, z: 2 }, { type: 'flagpole', x: 14, z: 2 },
   ],
 };
+// 거리마다 하나씩 세운 과녁: m은 거리판 글, (x, z)는 무대 자리(화면에 들게 줄였다), s는 크기(멀수록 크게 해 보이게)
+const LANES = [{ m: 10, x: -4.5, z: -1, s: 1 }, { m: 25, x: 4, z: -9, s: 1.3 }, { m: 50, x: -3.5, z: -20, s: 1.8 }, { m: 100, x: 4.5, z: -36, s: 2.6 }, { m: 200, x: 0, z: -60, s: 3.6 }];
 // 태극기에 각오 적기(탐험 끝 장면): 훈련장 막사 앞 탁자
 export const FLAGROOM = { edge: { style: 'camp', seed: 787 },
   origin: [400, 0], ground: 'earth', groundColor: 0x9a8a6a, bounds: { x0: -14, x1: 14, z0: -14, z1: 12 },
@@ -68,22 +68,21 @@ export const ROAD = { edge: { style: 'modern', seed: 466 },
 };
 
 // 서명이 늘어나는 태극기 그림(가운데 태극기, 둘레 흰 여백에 붓글씨)
+// 이름을 적는 태극기(2026-11-04 선생님: 더 크게, 한글 이름이 보이게): 가운데 태극기, 둘레 여백에 대원들이 세로로 이름을 하나씩 적는다.
+// 이름은 그 무렵 흔하던 남자 이름으로 지은 것이다(실제 대원 명단이 아니다)
+export const SIGN_NAMES = ['김덕순', '김철수', '박상철', '이만복', '최영식', '정병호', '윤석구', '한재봉', '오춘길', '장기철'];
 function signedFlag() {
-  const cv = document.createElement('canvas'); cv.width = 384; cv.height = 280; const c = cv.getContext('2d');
-  c.fillStyle = '#f7f4ec'; c.fillRect(0, 0, 384, 280);
-  c.drawImage(taegukgiTexture().image, 96, 70, 192, 128);
+  const W = 768, H = 560, cv = document.createElement('canvas'); cv.width = W; cv.height = H; const c = cv.getContext('2d');
+  c.fillStyle = '#f7f4ec'; c.fillRect(0, 0, W, H);
+  c.drawImage(taegukgiTexture().image, 204, 150, 360, 240);
   const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
-  // 여백 자리(위·아래·왼쪽·오른쪽)를 돌아가며 세로 붓글씨 한 줄씩
-  const slots = []; for (let i = 0; i < 6; i++) slots.push([24 + i * 62, 8], [24 + i * 62, 210]); for (let j = 0; j < 2; j++) slots.push([14 + j * 34, 74], [314 + j * 34, 74]);
-  let n = 0, r = 7;
-  const rnd = () => (r = (r * 9301 + 49297) % 233280) / 233280;
+  // 여백 자리: 위 다섯·아래 다섯 칸에 세로쓰기(글자마다 아래로)
+  const slots = []; for (let i = 0; i < 5; i++) slots.push([90 + i * 147, 12], [90 + i * 147, 404]);
+  let n = 0;
   const sign = () => {
-    const [x0, y0] = slots[n % slots.length]; n += 1;
-    c.strokeStyle = '#1e1c1a'; c.lineWidth = 3; c.lineCap = 'round';
-    for (let k = 0; k < 4; k++) { // 글자 넷
-      const y = y0 + k * 15, x = x0 + rnd() * 4;
-      c.beginPath(); c.moveTo(x, y + 2); c.lineTo(x + 10, y + 2 + rnd() * 3); c.moveTo(x + 4, y); c.lineTo(x + 3, y + 12); c.moveTo(x + 9, y + 4); c.lineTo(x + 12, y + 11); c.stroke();
-    }
+    const [x, y0] = slots[n % slots.length], name = SIGN_NAMES[n % SIGN_NAMES.length]; n += 1;
+    c.fillStyle = '#1e1c1a'; c.font = 'bold 40px "Nanum Myeongjo", Batang, serif'; c.textAlign = 'center'; c.textBaseline = 'top';
+    [...name].forEach((ch, k) => c.fillText(ch, x, y0 + k * 44));
     tex.needsUpdate = true;
   };
   return { tex, sign, get count() { return n; } };
@@ -99,20 +98,20 @@ export async function flagScene(ctx) {
   const a = buildArena(world, A), g = a.group;
   const hook = ctx.testHooks.flag = { signers: 0, written: 0, lifted: false, cheers: 0, facing: 0 };
   // 탁자와 그 위에 펼친 커다란 태극기
-  blk(g, 4, 0.12, 2.6, 0x7a5a3c, 0, 0.84, 0);
-  for (const [lx, lz] of [[-1.8, -1.1], [1.8, -1.1], [-1.8, 1.1], [1.8, 1.1]]) blk(g, 0.12, 0.8, 0.12, 0x5e432c, lx, 0.4, lz);
+  blk(g, 5.2, 0.12, 3.8, 0x7a5a3c, 0, 0.84, 0);
+  for (const [lx, lz] of [[-2.4, -1.7], [2.4, -1.7], [-2.4, 1.7], [2.4, 1.7]]) blk(g, 0.12, 0.8, 0.12, 0x5e432c, lx, 0.4, lz);
   const F = signedFlag();
-  const flag = new THREE.Mesh(new THREE.PlaneGeometry(3.3, 2.4), new THREE.MeshLambertMaterial({ map: F.tex, side: THREE.DoubleSide }));
+  const flag = new THREE.Mesh(new THREE.PlaneGeometry(4.8, 3.5), new THREE.MeshLambertMaterial({ map: F.tex, side: THREE.DoubleSide }));
   flag.rotation.x = -Math.PI / 2; flag.position.set(0, 0.92, 0); g.add(flag);
   // 탁자 건너편과 양옆에 둘러선 대원들(모두 탁자와 카메라 쪽을 본다)
-  const spots = [[-1.5, -1.9], [-0.5, -2.0], [0.5, -2.0], [1.5, -1.9], [-2.6, -0.8], [-2.7, 0.4], [2.6, -0.8], [2.7, 0.4]];
+  const spots = [[-1.9, -2.5], [-0.65, -2.6], [0.65, -2.6], [1.9, -2.5], [-3.2, -1.0], [-3.3, 0.5], [3.2, -1.0], [3.3, 0.5]];
   const team = spots.map(([x, z]) => { const p = person(g, 'gwangbokgun', x, z, 0); face(p, x * 0.3, 3); return p; });
   hook.signers = team.length;
-  const kim = person(g, 'kimgu', -3.3, 1.4, Math.PI * 0.6);
-  const P0 = a.at(3.6, 0.6), C = a.at(0.2, 6.2), T = a.at(0, -1.2);
+  const kim = person(g, 'kimgu', -3.9, 1.9, Math.PI * 0.6);
+  const P0 = a.at(4.2, 1.2), C = a.at(0.2, 7.0), T = a.at(0, -1.2);
   placePlayer(world, [P0.x, P0.z], -Math.PI / 2); // 학생은 탁자 오른쪽 끝(카메라를 가리지 않게)
   const view = () => world.setFixedCamera([C.x, 4.4, C.z], [T.x, 1.0, T.z]); // 탁자 앞(남쪽) 높은 곳에서 대원들을 마주 본다
-  const C2 = a.at(0.2, 8.6), T2 = a.at(0, -2);
+  const C2 = a.at(0.2, 10.4), T2 = a.at(0, -2.4);
   const wide = () => world.setFixedCamera([C2.x, 2.4, C2.z], [T2.x, 2.0, T2.z]); // 펼친 태극기와 대원들의 얼굴이 함께 보이게 조금 물러나 낮게
   const write = async (p, arm = p.userData.arms?.[1]) => { // 몸을 숙이고 붓을 움직이면 여백에 이름이 하나 늘어난다
     await wait(world, 0.55, k => { p.rotation.x = 0.25 * Math.sin(k * Math.PI); if (arm) arm.rotation.x = -0.9 - 0.25 * Math.sin(k * Math.PI * 4); });
@@ -137,11 +136,11 @@ export async function flagScene(ctx) {
     dialogue.close();
     // 두 대원이 태극기를 들어 사람들 뒤에 세워 펼친다
     const holders = [team[0], team[3]], h0 = holders.map(p => p.position.clone());
-    const hTo = [new THREE.Vector3(-1.75, 0, -3.1), new THREE.Vector3(1.75, 0, -3.1)];
+    const hTo = [new THREE.Vector3(-2.5, 0, -3.6), new THREE.Vector3(2.5, 0, -3.6)];
     wide();
     await wait(world, 1.6, k => {
       const e = ease(k);
-      flag.position.set(0, 0.92 + (3.25 - 0.92) * e, -3.2 * e); flag.rotation.x = -Math.PI / 2 * (1 - e); // 머리 위로 높이 들어 사람들 뒤에 펼친다
+      flag.position.set(0, 0.92 + (3.6 - 0.92) * e, -3.7 * e); flag.rotation.x = -Math.PI / 2 * (1 - e); // 머리 위로 높이 들어 사람들 뒤에 펼친다
       holders.forEach((p, i) => { p.position.lerpVectors(h0[i], hTo[i], e); const ar = p.userData.arms; if (ar) { ar[0].rotation.x = -Math.PI * 0.95 * e; ar[1].rotation.x = -Math.PI * 0.95 * e; } });
     });
     hook.lifted = flag.position.y > 3 && Math.abs(flag.rotation.x) < 0.1;
@@ -294,7 +293,7 @@ const base = makeKitChapter({
       { id: 'signGov', title: '대한민국 임시 정부', x: -11, z: -8.5, ry: 0, plaque: { y: 2.55, back: 0.45 } }],
   },
   parts: [
-    { ...script.parts.shoot, goal: script.goals[3], arena: RANGE, camera: { pos: [0.5, 4, 16.5], target: [0, 0.9, -2] }, paths: [[[-30, 0], [30, 0]], [[30, -4.5], [-30, -4.5]]], zones: [{ x: 0, z: 0, r: 4 }, { x: 0, z: -4.5, r: 4 }], shooters: SHOOTERS }, // 엎드린 대원들 등 뒤 낮은 곳에서 과녁 길을 본다
+    { ...script.parts.shoot, goal: script.goals[3], arena: RANGE, camera: { pos: [0.5, 4.2, 16.5], target: [0, 1.4, -14] }, popup: { lanes: LANES, need: 7, up: 2.6 }, shooters: SHOOTERS }, // 엎드린 대원들 등 뒤에서 거리별 과녁을 본다
     { ...script.parts.road, goal: script.goals[4], intro: meet('kimgu', '김구와 이야기하기', script.parts.road.intro), play: ctx => roadWalk(ctx) },
   ],
   // 훈련장 문과 「한국광복군 훈련장」 이름판은 굳히기에 합쳐지지 않게 돌려준다
