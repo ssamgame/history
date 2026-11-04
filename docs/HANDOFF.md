@@ -1,65 +1,37 @@
-# 인계 문서 (2026-10-29) — 다른 Claude 계정이 이어서 할 때
+# 인수인계 (2026-11-04 밤) — 새 세션은 이 파일부터
 
-> **2026-11-03 최신: `docs/handoff/2026-11-03-next.md`부터 읽는다**(오늘 한 일·다음 할 일 추천·미리보기 올리는 법).
+`CLAUDE.md`(꼭 지킬 것·내용 원칙) → 이 파일 순서로 읽는다. 결정은 `docs/team/decisions.md`, 테스트 기록은 `docs/team/tested.md`.
 
-> **2026-11-03 미리보기**: 이 계정(원래 계정)은 Hfhs4Zdmb9WL1Q4dsULYuz(다른 계정 것)를 열 수 없어서, 선생님 결정으로 **옛 주소 https://claude.ai/artifact/QSh1YhvtwooxoyDRsBZsCT 에 작업 브랜치 전체(D-62 + 2장 발 묻힘 고침)를 다시 올렸다(판 40)**. 미리보기 전용 사본 3개: `chapters/index.js`(모든 장 열림), `core/body.js`(`bodyOn`이 늘 true, `loadBody`가 `assets/models/body.js`의 base64를 `GLTFLoader.parseAsync`로 읽음), `assets/models/body.js`(body.glb를 base64로 담은 `export default '...'`). 파일 목록은 PRECACHE에서 `index.html`·`body.glb`를 빼고 `assets/models/body.js`를 더한 것. 어느 계정이 올리는지에 따라 주소가 다르니, 올린 뒤 이 줄을 고친다.
->
-> **2026-10-31 최신 작업(선생님 전체 수정 요청 D-62)은 `docs/handoff/2026-10-31-d62-goryeo-fixes.md`부터 읽는다.**
->
-> 이 파일을 먼저 읽고, 이어서 `CLAUDE.md` → `docs/STATUS.md` 순서로 읽는다. 자세한 결정은 `docs/team/decisions.md`(D-번호), 테스트 기록은 `docs/team/tested.md`.
+## 1. 지금 상태
+- 작업 브랜치 `claude/goryeo-game-handoff-vus00f`(push 완료, main과 같음). 학생 사이트 **goryeo-v75** 배포(GitHub Pages 빌드 success 확인은 v74까지, v75는 push만 확인).
+- 미리보기 https://claude.ai/artifact/QSh1YhvtwooxoyDRsBZsCT **판 62** = v75와 같은 코드(모든 장 열림 사본).
+- 전체 테스트(C) **896 통과·실패 2**. 실패 2개는 예전부터: `arena … k1 doc papers(0,-8.5)`, `stage3 G2 … 해가 카메라 뒤쪽`.
+- 새 몸(뼈대 몸, `core/body.js`)은 학생 사이트에서도 켜져 있다(v71부터).
 
-## 0. 한눈에
-- 무엇: 초등 5학년 사회 한국사를 3D로 걸어 다니며 배우는 브라우저 게임 「역사 속으로 걸어가기」. 5편 × 6장 = 30장.
-- 저장소: https://github.com/ssamgame/history, **작업 브랜치 `claude/goryeo-game-handoff-vus00f`**(이 브랜치에서 이어서 한다). 학생 사이트는 `main`에서 GitHub Pages로 바로 배포된다(https://ssamgame.github.io/history/).
-- 선생님 확인용 미리보기: **https://claude.ai/artifact/Hfhs4Zdmb9WL1Q4dsULYuz** (2026-10-29 새로 만듦). 옛 미리보기 https://claude.ai/artifact/QSh1YhvtwooxoyDRsBZsCT (링크 공유 중이라 다시 올리면 보는 사람 모두에게 바로 바뀐다). **이 아티팩트는 원래 계정 소유이므로 다른 계정에서는 고칠 수 없을 수 있다.** 그때는 선생님께 여쭙고 새 미리보기를 만든다.
-- 사용자: 포항 초등 교사. 늘 한국어·쉬운 말. **결정이 필요하면 바로 하지 말고 두세 가지 선택지를 먼저 여쭌다**(추천안을 첫째에).
+## 2. 오늘(2026-11-04) 한 일 요약
+- D-67 선생님 목록: 고려 6장·조선 1~5장 고침, 전체 수정을 다른 편으로 넓힘(임금 뒷짐 걸음, 마을 무리 앞줄 넷이 둘씩 이야기, 길 있는 마을에 길 오가는 두 사람, 고려 4장 처인성 백성 이야기), 대사 정리 2.
+- D-68 선생님 목록 2: 학생 팔 곧게 걷기, 제자리걸음 막기, 조선 4~6장·근대 1·2장.
+- D-69 플레이 점검: 근대 1장~현대 6장 18장을 점검 봇으로 끝까지 돌리며 화면을 모아 보고 고침.
+- D-70 선생님: ① 백성·농민 고개 숙인 걸음 뺌 ② **카메라 시점은 D-69 전으로 되돌림**(가리면 저절로 올라가던 카메라와 장면마다 옮긴 카메라 자리 모두). 남긴 것: 카메라 1.3m(가까운 대화 2.4m) 안의 다른 사람·2.5m 안 느낌표 잠깐 숨기기, 걸을 때 신이 땅에 묻히지 않게(엉덩이 올림), 무대 길 높이, 사람 방향·배 옆모습 같은 카메라 밖 수정.
 
-## 1. 지금 상태 (2026-10-29 마지막)
-| 구분 | 상태 |
-|---|---|
-| 학생 사이트(main) | **goryeo-v67** 배포 완료(GitHub Actions 'pages build and deployment' 성공). 고려 1~6장, 조선 1~6장, 근대 1~3장 새 모습 + D-32 공통(무릎 관절, 도입 장면 끝까지, 먼 산 흔들림 고침) |
-| 미리보기 | 작업 브랜치 그대로(판 29(D-62 중간 반영), 점검 오류 고침 + 2026-10-31 공통 뼈대 몸 연결 + 김윤후·거란군 겹침·발 묻힘·지도 병사 고침 + 걸음 박자·보폭) + **모든 장 열림(임시)** + **공통 뼈대 몸을 늘 켬**(`core/body.js`의 `bodyOn`이 true를 돌려주고 모델을 `assets/models/body.js`(base64)로 읽는 사본) — 학생 태블릿에서 `?perf=1`로 점검한 뒤 배포 여부를 정함 |
-| 작업 브랜치 | v67 + 근대 4장(D-33) + 근대 5장(D-34) + 근대 6장(D-35, 2026-10-29 새 계정). push 완료 |
-| 만드는 중인 에이전트 | 없음 |
+## 3. 다음에 할 일(추천 순서)
+1. 선생님이 학생 사이트(v75)를 보고 주시는 수정 목록을 장 하나씩 고친다. 카메라 자리는 선생님 확인 없이 바꾸지 않는다(D-70).
+2. 고려 1~5장에 마을 무리 이야기·길 걷는 사람 넣기는 처인성만 했다(나머지는 싸움 줄·연설 듣기라 그대로).
+3. 임금이 더 천천히 걷기는 하지 않았다(장마다 걸음 빠르기를 바꿔야 함).
+4. 묵은 일: 알려진 실패 2개, 실제 갤럭시 탭 측정(`docs/tablet-measure-guide.md`), 교과서 대조, 출처 S66~S70 주소 확인, 배경음악, 별점 규칙, `content/sources.md` 다시 만들기(`tools/gen-sources.cjs`).
 
-### 이번에 한 일 (순서대로)
-1. 근대 3장(D-31: 고부 마을 문, 죽창·낫 든 농민 모으기, 횃불 밤 행진, 전봉준 따라 황토현~우금치 걷기)을 작업 브랜치에 합침 → 사진 확인 → 선생님 승인으로 **v67 배포**(근대 3장의 새 파일 `chapters/modern/k3/stage.js`를 PRECACHE에 넣음).
-2. **근대 4장(D-33)**: 탐험에서 한성 사람들 이야기를 모두 들으면 서재필이 퀘스트 → 탐험 끝 **환구단 즉위식 장면**(고종이 황제 옷으로, 신하들이 절함) → 독립신문 배달(그대로) → 역사책 대신 **종로 만민 공동회**(연설 듣고 시민 5명 말이 맞는지 고르기 judge). 합침, 미리보기에만 올림. 사진 `docs/team/shots/d33-k4-*.png`.
-3. 선생님 요청: **미리보기에서만 모든 장 열기(임시)**. 저장소 코드는 그대로이고, 미리보기에 올리는 `chapters/index.js`만 `isUnlocked`가 늘 true인 사본이다(아래 3절).
-4. **근대 5장(D-34)**: 거리 사람들 이야기를 모두 들으면 전차 운전수가 퀘스트 → 탐험 끝 **해 질 녘→밤, 가로등·창 전깃불이 켜지는 장면** → 근대 문물 가져다 놓기·전차 몰기(그대로) → 역사책 대신 **문물 체험 걷기**(전신 보내기·전화 걸기·성당 전깃불·학교 교실·양화점). 합침, 테스트 통과. **아직 선생님께 사진을 보내지 않았고 미리보기에도 안 올렸다.** 사진 `docs/team/shots/d34-k5-*.png`(town·night·tram·munmul·school).
-5. `tools/book-preview.html` 기본 장을 k5 → i1로(k5에 역사책이 없어져서).
-
-## 2. 바로 다음에 할 일
-1. ~~새 미리보기 아티팩트를 이 계정에서 새로 만든다~~ → **끝남**: https://claude.ai/artifact/Hfhs4Zdmb9WL1Q4dsULYuz (`index.html`을 페이지로, PRECACHE 124개 파일을 files로, `chapters/index.js`만 모든 장 열림 사본). 다시 올릴 때는 같은 `file_path`(`index.html`)로 올리면 같은 주소가 유지된다. 원래 지시:(선생님 결정 2026-10-29: 옛 미리보기 QSh1YhvtwooxoyDRsBZsCT는 옛 계정 것이라 더 고치지 않는다). 작업 브랜치 그대로(근대 4·5장 포함) + 모든 장 열림 사본으로, 3절 방법대로 `index.html` + PRECACHE 전체를 `files`로 올린다. 만든 새 주소를 선생님께 알리고 `CLAUDE.md`·`docs/STATUS.md`·이 파일의 미리보기 주소를 바꾼다. 근대 5장 사진 5장은 이미 선생님께 보냈다.
-2. 학생 사이트 **v68 배포**는 선생님 승인 때만(근대 4·5장이 아직 학생 사이트에 없다). 배포 순서는 4절.
-3. 근대 6장(D-35)은 만듦(사진 `d35-k6-*.png`, 선생님 확인, 미리보기에 올림). 일제 1장(D-36)과 근대 6장 고갯길(D-37·38)도 만들어 미리보기에 올림(v3). 일제 2장(D-39)·3장(D-41)·4장(D-42)·5장(D-44)도 만듦(사진 `d39-i2-*.png`·`d41-i3-*.jpg`·`d42-i4-*.jpg`·`d44-i5-*.jpg`). 일제 6장(D-46, 미리보기 v8)·현대 1장(D-47, 새 놀이 문패 바꿔 달기·첫 한글 수업, 장 틀 `type: 'act'`)도 만듦. 현대 2장(D-48, 새 놀이 투표하기·헌법 완성하기)도 만듦. 현대 3~6장(D-50~D-53)도 선생님 지시(묻지 말고 추천안대로, 기존 놀이와 겹치지 않게)로 만들어 미리보기 v12에 올림. **이제 30장을 모두 새로 만들었다.** 다음은 선생님 확인 뒤 고칠 것, 그리고 D-49 계획(모든 인물 생김새 한꺼번에 바꾸기). 선생님 2026-10-29: 놀이는 다른 장과 겹치지 않는 새 놀이·역사 장면 연출로. 걸으며 겪는 장면은 공용 `chapters/kit/walk.js`(walkStations·stationMarks·classroom·meet·minigameWithMeet)를 쓴다: 장마다 ① 탐험 ② 놀이 ③ (역사책이 있으면) 무엇으로 바꿀지를 선택지 두세 개로 여쭌다 → `docs/team/decisions.md`에 D-35부터 적는다 → 만든다(장 담당 에이전트를 `isolation: worktree`로 맡기면 편하다) → 합치고 테스트 → 사진 → 미리보기.
-   - 지금까지 선생님이 고른 방향(본보기): 탐험은 "아무 차례로 모두 들으면 메인 인물이 퀘스트" + 탐험 끝 그 사건다운 장면, 놀이는 기존 놀이 하나는 두고 **역사책은 걸으며 보는 장면/고르기 놀이로 바꿈**.
-   - 본보기 코드: `chapters/modern/k3/`, `k4/`, `k5/`와 `tests/k3~k5.test.js`. 공통 도구 안내 `docs/team/d30-guide.md`.
-
-## 3. 미리보기 올리는 법 (모든 장 열림 유지)
-- 미리보기는 `index.html`을 페이지로, 나머지는 `files`로 올린다(파일 목록 = `core/precache.js`의 PRECACHE). 바뀐 파일만 `files`에 넣어도 나머지는 그대로 남는다.
-- 모든 장 열림 사본 만들기: `chapters/index.js`의 `isUnlocked`에서 `if (!chapter.load) return false;` 바로 다음 줄에 `return true; // 미리보기 전용` 한 줄을 넣은 사본을 스크래치패드에 만들어 `files`의 `chapters/index.js`로 올린다. **저장소에는 넣지 않는다.**
-- 선생님이 "닫자"고 하시면 저장소 그대로의 `chapters/index.js`를 올린다.
-
-## 4. 배포 순서 (선생님 승인 때만)
-1. 전체 테스트: `PORT=8300 NODE_PATH=$(npm root -g) timeout 1800 node tools/test-node.cjs > 결과.txt` 후 `FAIL|RESULT` 줄만 본다(약 20분). 원래부터 실패하는 2개는 괜찮다: `arena ... k1 doc papers`, `stage3 G2 ... 해가 카메라 뒤쪽`.
-2. `core/precache.js`의 `CACHE`를 `goryeo-v68`로, `tests/sw.test.js`도 맞춤. 새 코드 파일이 있으면 PRECACHE에(`git diff --name-only --diff-filter=A origin/main HEAD`로 확인; 근대 4·5장은 새 코드 파일 없음).
-3. 커밋(한국어) → `main` 체크아웃 → `git pull origin main` → 작업 브랜치 merge → `git push origin main` → 작업 브랜치로 돌아옴.
-4. GitHub MCP `actions_list`(list_workflow_runs)로 'pages build and deployment'가 success인지 확인(이 환경에서는 github.io가 막혀 직접 못 연다).
-5. 미리보기 다시 올림(3절).
-
-## 5. 꼭 지킬 것
-- 역사 사실은 출처(`src: ['S..']`) 있는 문장만(`core/content.js` 검사기가 막는다). 새 사실을 지어내지 않는다. 내용 원칙은 `CLAUDE.md`.
-- main 병합·배포·미리보기 다시 올리기는 선생님 승인 때만.
-- 커밋 메시지는 한국어, 끝에 Co-Authored-By 줄(계정이 바뀌면 그 계정 안내를 따른다).
-- 고친 파일마다 `node --check`. 새 기능은 테스트 먼저(`tests/<장>.test.js`, `tests/index.html` 목록에 넣기).
-- 화면 확인: `python3 -m http.server <포트>` + Playwright(`--use-angle=swiftshader`), 1000×560, `index.html?debug=<장>-intro|explore|minigame|quiz`.
-- **얼굴이 보이게(D-45)**: 만세·환호·함께 외치기 장면에서 사람들이 등을 보이면 안 된다. 카메라를 사람들 앞쪽에 두거나 사람들이 카메라를 보게 하고, `facingShare(world, people)`(chapters/kit/walk.js)를 테스트 훅에 남겨 0.8 이상인지 테스트한다. 팔은 앞으로 든다(`rotation.x` 음수). 태극기는 `holdFlag`·`cheerFlag`(chapters/kit/town.js).
-- **전투(D-45)**: 총에 맞은 적은 옆으로 쓰러져 잠시 누웠다가 사라진다(피 없음). 공용 `PLAY.ambush`가 그렇게 하고, 장면을 새로 짤 때도 같게 한다.
-- 장면 사진: 스크래치패드 `botshot.cjs`(테스트 봇으로 장면 함수를 돌리며 캔버스를 찍는다, `node botshot.cjs <폴더> /chapters/.../chapter.js <함수|ambush> 300 400`). 게임 화면 흐름 대신 이 방법이 빠르고 확실하다.
-
-## 6. 남은 묵은 일 (`docs/STATUS.md` 3절과 같음)
-- 실제 갤럭시 탭 측정(`docs/tablet-measure-guide.md`), 교과서 대조, 출처 S66~S70 주소 확인, 배경음악 들어 보기, 별점 규칙.
-- 원래부터 실패하는 테스트(arena k1 doc papers 위치, stage3 G2 고려 1장 담판 카메라·해, carry 다리 걸음은 함께 돌 때만).
-- `content/sources.md` 다시 만들기(`tools/gen-sources.ps1`/`.cjs`)는 배포 때 한 번에(다른 장 대사까지 많이 바뀌어 있음).
-- `.claude/worktrees/` 아래 예전 에이전트 작업 사본이 여럿 남아 있다(모두 합친 것). 새 컨테이너에서는 없을 수 있고, 지워도 된다.
+## 4. 일하는 법
+- 테스트: `PORT=8183 NODE_PATH=$(npm root -g) timeout 900 node tools/test-node.cjs "k5"`(이름 앞부분, `|`로 여럿). 전체는 인자 없이 `PORT=8180 … timeout 3300`(약 50분, run_in_background). 출력은 `FAIL|RESULT` 줄만.
+- 테스트 먼저 → 실패 확인 → 고침. 고친 파일 `node --check`. 한 줄에 `//` 주석을 코드 앞에 두지 않는다(뒤 코드가 주석이 된다).
+- 화면 점검 도구(`tools/qa/`):
+  - `play.cjs k1 900 intro`: 장을 끝까지 학생처럼(0.4초마다 화면, `qa-out/play/k1-intro/log.txt`에 대사·감지 기록). 다음 장으로 넘어가면 멈춘다.
+  - `python3 tools/qa/sheet.py qa-out/play/k1-intro 1 64 4 4`: 화면 16장을 한 판으로.
+  - `introshot.cjs k4 0 2 out.jpg`(도입 n번째 화면), `partshot.cjs k5-minigame "대사 글" out.jpg 260`(그 대사가 뜰 때 화면).
+  - `run.cjs game:k2-explore+bot --sec 150`(감지기: 묻힘·겹침·순간이동, 자리와 사진). 매복 놀이의 '묻힘'은 엎드린 사람이라 오류 아님.
+- 배포: 전체 테스트 → `core/precache.js` CACHE(다음 **goryeo-v76**)와 `tests/sw.test.js` → 커밋 → main 병합·push(GitHub 500 오류가 잦다: 4·8·16초 간격으로 다시) → GitHub MCP `actions_list`로 'pages build and deployment' success 확인(github.io는 이 환경에서 막힘) → 미리보기 다시 올림.
+- 미리보기 올리는 법: 페이지 `index.html`, url 위 주소, 바뀐 파일만 `files`로(나머지는 남는다). 미리보기 전용 사본 셋은 스크래치패드에 만들어 보낸다(저장소에 넣지 않음):
+  - `core/body.js`: `loadBody`의 `base = await new GLTFLoader().loadAsync(url);`를 `url === BODY_URL`이면 `(await import('../assets/models/body.js')).default`(base64)를 `parseAsync`로 읽게 바꾼 사본.
+  - `chapters/index.js`: `isUnlocked`에서 `if (!chapter.load) return false;` 다음 줄에 `return true;`(모든 장 열림). 이 파일을 안 바꿨으면 다시 보낼 필요 없다.
+  - `assets/models/body.js`: `export default '<body.glb base64>';`(이미 올라가 있음).
+  - 처음 보내는 파일이 아니면 Artifact가 "먼저 읽으라"며 거절할 수 있다: `action: read`로 읽은 뒤 다시 올린다.
+- 선생님: 결정이 필요하면 바로 하지 말고 두세 가지를 먼저 여쭌다(추천안 첫째). 답은 한국어로 쉽게.
