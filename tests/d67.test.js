@@ -547,3 +547,20 @@ test('d67 대사 정리 2(선생님 답): 사람이 사실을 읊던 말은 해�
     ok(said.length && said.every(t => !/[가-힣]\((\d{4}년|6월 민주 항쟁)\)/.test(t)), `${who} 말 속 괄호 없음`);
   }
 });
+
+test('d67 넓히기(플레이 점검): 길 오가는 사람은 장 도입 장면 동안 숨었다가 끝나면 다시 보인다', async () => {
+  const { buildTown } = await import('../chapters/kit/town.js');
+  const { playIntro } = await import('../core/intro.js');
+  const s = touchSetup({});
+  try {
+    const t = buildTown(s.w, { ground: 'earth', bounds: { x0: -20, x1: 20, z0: -10, z1: 10 }, start: [0, 8], nature: false, mountains: false,
+      roads: [{ x: 0, z: 0, w: 36, d: 3 }], props: [{ type: 'crowd', x: -6, z: -7, n: 6, looks: ['peasant'] }] });
+    eq(t.walkers.length, 2);
+    const p = playIntro(s.ctx, { no: 1, years: '', event: '', title: '' }, [{ who: 'narr', text: '가' }], { shots: [{ cam: [0, 3, 8], look: [0, 1, 0], ms: 300 }] });
+    s.w.step(1 / 20, { x: 0, z: 0 });
+    ok(t.walkers.every(w => !w.visible), '도입 동안 숨김');
+    for (let i = 0; i < 40; i++) s.w.step(1 / 20, { x: 0, z: 0 });
+    await p;
+    ok(t.walkers.every(w => w.visible), '끝나면 다시');
+  } finally { s.done(); }
+});

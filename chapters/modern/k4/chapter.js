@@ -7,6 +7,7 @@ import { makeKitChapter } from '../../kit/chapter.js';
 import { buildArena } from '../../kit/play.js';
 import { gateLeaves, nameBoard } from '../../kit/gate.js';
 import { walkInAndTalk, anyOrderTalk } from '../../kit/talk.js';
+import { facingShare } from '../../kit/walk.js';
 import { makePerson, mat } from '../../../core/people.js';
 import { waitInteract } from '../../../core/portal.js';
 import { LOOKS } from '../../../content/characters.js';
@@ -113,7 +114,7 @@ export async function coronation(ctx) {
     const emperor = person(g, 'gojong', ax, az, 0); emperor.position.y = TOP;
     king.visible = false;
     hook.robe = LOOKS.gojong.robe; hook.top = emperor.position.y;
-    cam([0, 2.2, 6.5], [0, 2.6, -6]);
+    cam([0, 6.4, 9.5], [0, 2.2, -6]); // 사람들 뒤 높은 곳에서 제단의 왕을 정면으로(D-68 병자호란 절 장면과 같은 방식, 2026-11-04 플레이 점검: 낮은 카메라에 뒤통수가 화면을 가림)
     ctx.audio?.play?.('correct');
     officials.forEach(o => { o.rotation.order = 'YXZ'; o.rotation.y = Math.PI; });
     await wait(world, 1.2, k => officials.forEach(o => { o.rotation.x = 0.5 * ease(k); }));
@@ -144,7 +145,7 @@ async function speechScene(ctx) {
   const speaker = person(g, 'scholarModern', sx, sz, 0); speaker.position.y = 0.8;
   const cheer = [[-2, -0.6], [-0.7, -0.2], [0.7, -0.4], [2, -0.8], [-1.4, 0.9], [1.4, 0.8]].map(([x, z], i) => person(g, ['commoner', 'citizen', 'woman', 'student'][i % 4], x, z, Math.PI));
   const p0 = a.at(...JONGNO.from); placePlayer(world, [p0.x, p0.z]);
-  const wide = () => world.setFixedCamera([O.x + 7, 5, O.z + 9], [O.x, 1.6, O.z - 6]);
+  const wide = () => world.setFixedCamera([O.x + 6.5, 4.6, O.z - 11.5], [O.x, 1.3, O.z + 0.5]); // 연단 뒤쪽 위에서 듣는 사람들의 얼굴을(D-45, 2026-11-04 플레이 점검: 뒷모습만 보이던 것)
   const face = () => world.setFixedCamera([O.x + sx + 0.6, 0.8 + 2.2, O.z + sz + 4.6], [O.x + sx, 0.8 + 1.75, O.z + sz]); // 연사 얼굴을 정면에서
   const arm = p => p.userData.arms?.[1];
   ctx.testHooks.speech = { audience: cheer.length };
@@ -158,7 +159,7 @@ async function speechScene(ctx) {
       if (l.text.includes('자주독립')) { // 사람들이 손을 들어 호응한다
         dialogue.close(); wide();
         await wait(world, 1.4, k => cheer.forEach((p, i) => { for (const m of p.userData.arms || []) m.rotation.x = -2.6 * Math.sin(Math.min(1, k * 2) * Math.PI / 2) - Math.sin(k * 12 + i) * 0.2; }));
-        ctx.testHooks.speech.cheered = true;
+        ctx.testHooks.speech.cheered = true; ctx.testHooks.speech.facing = facingShare(world, cheer);
       }
     }
     dialogue.close();
@@ -242,7 +243,7 @@ function introScene(ctx) {
   const s0 = soldiers.map(p => p.position.clone());
   return {
     shots: [
-      { cam: [3.2, 2.6, 4.2], look: [11, 1.4, -2], to: { cam: [4, 2.5, 3.4], look: [11, 1.4, -2] },
+      { cam: [9.6, 2.3, 4.6], look: [9.8, 1.3, -2.2], to: { cam: [9.9, 2.2, 3.8], look: [9.8, 1.3, -2.2] }, // 옆에서: 다가서는 일본군과 왕이 함께 보이게(2026-11-04 플레이 점검: 왕이 군인 등 뒤에 가려짐)
         act: () => { hide(false); run(u => { // 일본군이 다가서고, 왕은 공사관(러시아 깃발) 쪽으로 돌아선다
           soldiers.forEach((p, i) => { p.position.x = s0[i].x + Math.min(1, u / 1.6) * 1.2; });
           king.rotation.y = -Math.PI / 2 + (Math.PI / 2 + 0.25) * ease(Math.min(1, Math.max(0, (u - 1.8) / 1.2)));

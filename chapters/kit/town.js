@@ -395,7 +395,7 @@ function roadWalkers(world, layout) {
   const { r, along } = best, side = Math.min(0.6, (along ? r.d : r.w) / 4);
   return [0, 1].map(i => {
     const p = makePerson(LOOKS[looks[(i * 3) % looks.length]] || LOOKS.commoner);
-    p.userData.dynamic = true; world.level.add(p);
+    p.userData.dynamic = true; p.userData.passer = true; world.level.add(p); // passer: 도입 장면 동안 숨긴다(core/intro.js)
     const S = { t: i ? best.b : best.a, dir: i ? -1 : 1, rest: 0 }, off = i ? side : -side;
     const place = () => { if (along) p.position.set(r.x + S.t, 0, r.z + off); else p.position.set(r.x + off, 0, r.z + S.t); p.rotation.y = along ? (S.dir > 0 ? Math.PI / 2 : -Math.PI / 2) : (S.dir > 0 ? 0 : Math.PI); };
     place();
