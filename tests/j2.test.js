@@ -103,7 +103,7 @@ test('j2 C-01/C-03: quest list without quiz, everyone first, no road signs (fact
   ok(j2Script.npc.sejong.wait[0].text.includes('모두'), 'wait says everyone');
   ok(j2Script.more.text.includes('모두'), 'more says everyone');
   for (const k of ['signThrone', 'signJiphyeon', 'signHaerye']) ok(!(k in j2Script.npc), k);
-  ok(j2Script.npc.commoner.first.some(l => l.text.includes('근정전') && l.src.includes('S46')), '근정전 to the commoner');
+  ok(j2Script.result.some(l => l.who === 'narr' && l.text.includes('근정전') && l.src.includes('S46')) && !j2Script.npc.commoner.first.some(l => l.text.includes('근정전')), 'D-67: 근정전은 백성 대신 끝 해설에');
   ok(j2Script.npc.scholar.first.some(l => l.text.includes('1420') && l.src.includes('S29')), '집현전 year to the scholar');
   ok(j2Script.result.some(l => l.text.includes('해례본') && l.src.includes('S49')), '해례본 in the closing lines');
   ok(j2Script.intro.every(l => !l.text.includes('\n')));

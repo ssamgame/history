@@ -120,7 +120,7 @@ test('j1 D-22: camp gate and 위화도 board, no reading signs, one-paragraph in
   ok(j1Script.intro.length <= 3); ok(j1Script.intro.every(l => !l.text.includes('\n'))); // 자막 장면(C-03): 짧은 문장 몇 개
   eq(j1Script.hanyang.howto.steps.length, 2);
   ok(j1Script.npc.archer.first.some(l => l.text.includes('압록강에 있는 섬')), 'island fact moved into a person');
-  ok(j1Script.npc.soldier.first.some(l => l.text.includes('5만여 명')), 'army fact moved into a person');
+  ok(j1Script.intro.some(l => l.text.includes('5만여 명') && l.text.includes('2만여 필')), 'D-67: 군대 규모는 첫 해설에(병사가 숫자를 외우지 않는다)');
 });
 
 test('j1 D-22/D-30: soldiers talk in any order and pick up from each other; 이성계 waits until all were heard', () => {
