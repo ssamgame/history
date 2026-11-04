@@ -184,13 +184,9 @@ async function walkWith(ctx, { arena, stops, lines, stage, start = [0, 15], kimA
   }
 }
 
-// 창덕궁 문(z -30) 안쪽 3~6m에서는 따라가는 카메라가 문 위 인방에 가려 학생이 안 보였다(2026-11-04 플레이 점검): 그동안만 높이 올려 내려다본다
-const GATE_CAM = new THREE.Vector3(0, 10, 6);
-export const nightCamOffset = z => (z <= -32.5 && z >= -36 ? GATE_CAM : null);
 // ① 정변의 밤(밤 하늘): 잔치 → 정변 → 창덕궁 → 새 정부와 개혁안
 function nightStage({ ctx, a, g, kim }) {
   const { world, dialogue } = ctx;
-  const offCam = world.onUpdate(() => { world.followOffset = nightCamOffset(world.player.position.z); });
   for (const [x, z] of [[-4.5, 3], [-4.5, 10], [5, 7], [5, -2], [-5.5, -12], [5.5, -16], [-3.6, -28.6], [3.6, -28.6], [-4, -42], [4, -42]]) lantern(g, x, z);
   // 잔치 자리: 우정총국 앞에 차린 상 두 개, 둘러앉은 관리들, 앞에 나선 우정총국 관리
   for (const z of [4.6, 7.6]) { const d = new THREE.Group(); BUILD.desk(d); d.position.set(-7, 0, z); d.rotation.y = Math.PI / 2; g.add(d); }
@@ -227,7 +223,7 @@ function nightStage({ ctx, a, g, kim }) {
     },
     async openGate() { guards.forEach((p, i) => { p.rotation.y = i ? -Math.PI / 2 : Math.PI / 2; }); await wait(world, 1.2, k => gate.setOpen(k)); },
     async council() { council.forEach(p => { p.visible = true; }); setCarry(kim.mesh, scroll, 'side'); },
-    dispose() { offCam(); world.followOffset = null; fires.forEach(f => f.setLevel(0)); setCarry(kim.mesh, null); },
+    dispose() { fires.forEach(f => f.setLevel(0)); setCarry(kim.mesh, null); },
     gate,
   };
 }

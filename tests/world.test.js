@@ -199,41 +199,6 @@ test('world: closeView lowers the follow camera and faces the talk camera to the
   w.dispose();
 });
 
-test('world: 따라가는 카메라와 학생 사이에 집·나무(막는 자리)가 있으면 카메라가 높이 올라 내려다보고, 없으면 제자리로(2026-11-04 플레이 점검: 집 지붕이 화면을 덮음)', async () => {
-  const { testWorld } = await import('./bot.js');
-  const w = testWorld();
-  try {
-    w.bounds = { x0: -30, x1: 30, z0: -30, z1: 30 };
-    w.player.position.set(0, 0, 0); w.camMode = 'follow'; w.snapCamera();
-    for (let i = 0; i < 40; i++) w.step(1 / 20, { x: 0, z: 0 });
-    const free = w.camera.position.clone();
-    w.addCollider({ x: 0, z: 4, r: 2.5 }); // 학생 바로 뒤(카메라 쪽)에 집
-    for (let i = 0; i < 60; i++) w.step(1 / 20, { x: 0, z: 0 });
-    const hid = w.camera.position.clone();
-    ok(hid.y > free.y + 1.5 && hid.z < free.z - 2, `가리면 높이·가까이 (${free.y.toFixed(1)},${free.z.toFixed(1)}) → (${hid.y.toFixed(1)},${hid.z.toFixed(1)})`);
-    w.colliders.length = 0;
-    for (let i = 0; i < 80; i++) w.step(1 / 20, { x: 0, z: 0 });
-    ok(w.camera.position.distanceTo(free) < 0.2, '막는 것이 없으면 제자리');
-    w.addCollider({ x: 2.6, z: 5, r: 1.6 }); // 카메라 선 옆으로 처마가 걸치는 집(막는 자리 가장자리는 선에서 1m)
-    for (let i = 0; i < 60; i++) w.step(1 / 20, { x: 0, z: 0 });
-    ok(w.camera.position.y > free.y + 1.5, `처마가 걸쳐도 올라간다 ${w.camera.position.y.toFixed(1)}`);
-    w.colliders.length = 0;
-    for (let i = 0; i < 80; i++) w.step(1 / 20, { x: 0, z: 0 });
-    w.addCollider({ x: 1.2, z: 5, r: 0.6, canopy: 1.8 }); // 나무: 줄기는 가늘어도 잎이 넓다
-    for (let i = 0; i < 60; i++) w.step(1 / 20, { x: 0, z: 0 });
-    ok(w.camera.position.y > free.y + 1.5, `나무 잎이 가리면 올라간다 ${w.camera.position.y.toFixed(1)}`);
-    w.colliders.length = 0;
-    for (let i = 0; i < 80; i++) w.step(1 / 20, { x: 0, z: 0 });
-    w.addCollider({ x: 0, z: 4, r: 0.4 }); // 작은 소품(항아리)은 무시
-    for (let i = 0; i < 60; i++) w.step(1 / 20, { x: 0, z: 0 });
-    ok(w.camera.position.distanceTo(free) < 0.2, '작은 소품에는 그대로');
-    const rm = w.addCamBlock({ x: 0, z: 4, r: 0.5 }); // 걷는 길 위의 문 지붕(인방): 발은 지나가도 카메라는 가린다
-    for (let i = 0; i < 60; i++) w.step(1 / 20, { x: 0, z: 0 });
-    ok(w.camera.position.y > free.y + 1.5, `문 지붕이 가리면 올라간다 ${w.camera.position.y.toFixed(1)}`);
-    rm(); eq(w.camBlocks.length, 0, '치우면 없어진다');
-  } finally { w.dispose(); }
-});
-
 test('world: 사람 머리 위 느낌표는 카메라 바로 앞(2.5m 안)이면 숨는다(2026-11-04 플레이 점검: 커다란 ! 가 화면을 덮음)', async () => {
   const { testWorld } = await import('./bot.js');
   const w = testWorld();
@@ -278,5 +243,20 @@ test('world: 가까운 대화 시점에서는 말하는 사람은 그대로 두�
     const by = makePerson({}); by.position.set(cam.x + 1.8, 0, cam.z - 0.4); w.level.add(by);
     for (let i = 0; i < 8; i++) w.step(1 / 20, { x: 0, z: 0 });
     eq(sp.visible, true, '말하는 사람'); eq(by.visible, false, '카메라 옆 사람');
+  } finally { w.dispose(); }
+});
+
+test('world: 따라가는 카메라는 집·나무가 사이에 있어도 늘 같은 높이·거리다(2026-11-04 선생님: 저절로 올라가던 카메라를 예전으로)', async () => {
+  const { testWorld } = await import('./bot.js');
+  const w = testWorld();
+  try {
+    w.bounds = { x0: -30, x1: 30, z0: -30, z1: 30 };
+    w.player.position.set(0, 0, 0); w.camMode = 'follow'; w.snapCamera();
+    for (let i = 0; i < 40; i++) w.step(1 / 20, { x: 0, z: 0 });
+    const free = w.camera.position.clone();
+    w.addCollider({ x: 0, z: 4, r: 2.5 });
+    for (let i = 0; i < 60; i++) w.step(1 / 20, { x: 0, z: 0 });
+    ok(w.camera.position.distanceTo(free) < 0.05, `그대로 ${w.camera.position.y.toFixed(2)} / ${free.y.toFixed(2)}`);
+    ok(!('addCamBlock' in w), '카메라 가림 자리 알림도 없앴다');
   } finally { w.dispose(); }
 });

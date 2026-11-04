@@ -24,7 +24,7 @@
 import * as THREE from 'three';
 import { makeSea } from '../../core/sea.js';
 import { BUILD, addFootprint, taegukgiTexture, addNature } from './town.js';
-import { bakeStatic, GATE } from './buildings.js';
+import { bakeStatic } from './buildings.js';
 import { terrainField, terrainMesh, hillColorFor } from './terrain.js';
 import { mat, makePerson, setCarry, playAction } from '../../core/people.js';
 import { turnTo } from '../../core/interact.js';
@@ -119,7 +119,7 @@ export function buildArena(world, arena) {
   const [ox, oz] = arena ? arena.origin : [0, 0];
   const g = new THREE.Group(); g.position.set(ox, 0, oz);
   const at = (x, z) => ({ x: x + ox, z: z + oz });
-  const colStart = world.colliders.length, camStart = world.camBlocks.length, oldBounds = world.bounds;
+  const colStart = world.colliders.length, oldBounds = world.bounds;
   world.level.add(g); // 무대가 없으면 마을 자리(0,0)에 표시물만 둔다
   if (arena) {
     const color = arena.groundColor ?? 0x8a7a62, kind = arena.ground || 'earth';
@@ -142,7 +142,6 @@ export function buildArena(world, arena) {
       const r = BUILD[p.type](pg, p);
       if (p.type === 'crowd') bakeStatic(pg, m => m.material.map === taegukgiTexture()); // 서 있는 무리는 한 덩어리로
       if (p.type === 'water') pg.position.y = 0.32; // 무대 땅 위로 물이 보이게
-      if (p.type === 'gate') world.addCamBlock({ ...at(p.x, p.z), r: (GATE.R + 0.4) * (p.scale || 1) }); // 성문 지붕이 따라가는 카메라를 가리지 않게(2026-11-04 플레이 점검)
       if (r && p.solid !== false) addFootprint(world, { ...p, ...at(p.x, p.z) }, r); // 긴 건물·기차는 작은 원을 줄지어
     }
     if (cg.children.length) g.add(bakeStatic(cg));
@@ -156,7 +155,7 @@ export function buildArena(world, arena) {
     group: g, at,
     dispose() {
       world.level.remove(g);
-      if (arena) { world.colliders.splice(colStart); world.camBlocks.splice(camStart); world.bounds = oldBounds; }
+      if (arena) { world.colliders.splice(colStart); world.bounds = oldBounds; }
     },
   };
 }

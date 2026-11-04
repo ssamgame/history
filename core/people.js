@@ -454,8 +454,8 @@ export function makePerson(look = {}, { track = true, stable = false } = {}) {
   const grip = gear === 'spear' ? [null, [-0.25, -0.04]] : gear === 'sword' ? [[-0.2, 0.12], null] : null;
   if (gear === 'spear') { const sp = arms[1].getObjectByName('spear'); if (sp) sp.rotation.x = 0.25; } // 팔을 앞으로 든 만큼 창을 세운다
   g.userData = { legs, arms, walk: 0, head: hg, upper, grip, gear, lookAge: face.age, ph: rnd * 20, spear: gear === 'spear' ? arms[1].getObjectByName('spear') : null };
-  // 신분에 맞는 걸음(D-67 ⑤): 임금은 뒷짐을 지고, 옛 시대(현대편 밖) 농민·백성은 고개를 조금 숙이고 걷는다(core/body.js가 걸을 때만 덧씌운다)
-  { const gait = look.royal && !look.gear ? 'king' : roleOf(look) === 'farmer' && !/^present/.test(eraKey() || '') ? 'humble' : null; if (gait) g.userData.gait = gait; }
+  // 신분에 맞는 걸음(D-67 ⑤): 임금은 뒷짐을 지고 걷는다(core/body.js가 걸을 때만 덧씌운다). 농민·백성 고개 숙임은 뺐다(2026-11-04 선생님: 땅을 보고 걷지 않게)
+  if (look.royal && !look.gear) g.userData.gait = 'king';
   if (track) walkers.add(g);
   return rigHook ? rigHook(g, look) : g; // 공통 뼈대 몸(core/body.js): 켜져 있으면 조각을 뼈에 옮겨 붙인다
 }

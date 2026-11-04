@@ -86,9 +86,7 @@ export function classroom(g, x, z, { teacher = 'scholarModern', wall = 0xe6dcc3,
     } else
     kids.push(person(c, i % 2 ? 'schoolgirl' : 'student', kx, kz, Math.PI));
   }
-  // 칠판 쪽 위에서 학생들 얼굴을 내려다보는 카메라(2026-11-04 플레이 점검: 교실 장면이 뒤통수만 보이던 것). 교실을 돌려 놓아도 맞는다
-  const frontView = world => { c.updateMatrixWorld(true); const e = c.localToWorld(new THREE.Vector3(3, 5.6, -4.4)), l = c.localToWorld(new THREE.Vector3(-0.4, 0.9, 1.4)); world.setFixedCamera(e.toArray(), l.toArray()); };
-  return { group: c, teacher: t, kids, box, frontView };
+  return { group: c, teacher: t, kids, box };
 }
 
 // 다음 놀이 앞에서 기다리기(C-05): 부분 intro 맨 앞의 { meet } 표시에서 그 사람 머리 위에 느낌표를 띄우고, 학생이 말을 걸 때까지 기다린다

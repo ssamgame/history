@@ -264,7 +264,7 @@ test('body: 장면이 직접 움직이던 사람(manual)이 멈춰 서면 걷기
   } finally { off(); w.dispose(); }
 });
 
-test('body: 신분에 맞는 걸음(D-67 ⑤) — 임금은 뒷짐을 지고 걷고, 옛 시대 농민·백성은 고개를 조금 숙이고 걷는다. 현대 시민·군인은 그대로', async () => {
+test('body: 신분에 맞는 걸음(D-67 ⑤) — 임금은 뒷짐을 지고 걷고, 농민·백성은 땅을 보지 않고 앞을 보며 걷는다(2026-11-04 선생님: 고개 숙임 뺌)', async () => {
   const { setHairEra } = await import('../core/hairstyle.js');
   await loadBody(); on();
   const w = testWorld();
@@ -277,7 +277,7 @@ test('body: 신분에 맞는 걸음(D-67 ⑤) — 임금은 뒷짐을 지고 걷
     const all = [king, farmer, soldier, citizen];
     all.forEach((p, i) => { p.position.z = i * 3; p.rotation.y = Math.PI / 2; w.level.add(p); });
     off();
-    eq(king.userData.gait, 'king'); eq(farmer.userData.gait, 'humble'); eq(soldier.userData.gait, undefined); eq(citizen.userData.gait, undefined);
+    eq(king.userData.gait, 'king'); eq(farmer.userData.gait, undefined); eq(soldier.userData.gait, undefined); eq(citizen.userData.gait, undefined);
     for (let i = 0; i < 30; i++) { for (const p of all) p.position.x += 0.06; w.step(1 / 20, { x: 0, z: 0 }); }
     ok(/walk/.test(king.userData.skel.target), `임금이 걷는다 ${king.userData.skel.target}`);
     // 사람 자신의 앞(+z)을 기준으로 잰다
@@ -285,7 +285,7 @@ test('body: 신분에 맞는 걸음(D-67 ⑤) — 임금은 뒷짐을 지고 걷
     const chest = local(king, 'chest');
     for (const s of ['L', 'R']) { const h = local(king, `hand_${s}`); ok(h.z < chest.z - 0.08, `임금 ${s}손이 등 뒤 ${h.z.toFixed(2)} < ${chest.z.toFixed(2)}`); }
     const tilt = p => { const q = p.userData.skel.bones('head').getWorldQuaternion(Q()).premultiply(p.getWorldQuaternion(Q()).invert()); return new THREE.Vector3(0, 1, 0).applyQuaternion(q).z; };
-    ok(tilt(farmer) > tilt(soldier) + 0.15, `농민 고개 ${tilt(farmer).toFixed(2)} > 군인 ${tilt(soldier).toFixed(2)}`);
+    ok(Math.abs(tilt(farmer) - tilt(soldier)) < 0.12, `농민도 군인처럼 앞을 본다 ${tilt(farmer).toFixed(2)} / ${tilt(soldier).toFixed(2)}`);
     ok(Math.abs(tilt(citizen) - tilt(soldier)) < 0.12, `현대 시민은 숙이지 않는다 ${tilt(citizen).toFixed(2)}`);
   } finally { setHairEra(null); off(); w.dispose(); }
 });

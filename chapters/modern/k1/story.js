@@ -2,7 +2,7 @@
 // 조선 관리와 일본 대표가 마주 서서 조약문에 도장을 찍는다.
 import * as THREE from 'three';
 import { BUILD } from '../../kit/town.js';
-import { storyScene, person, wait, face, blk, facingShare } from '../../kit/story.js';
+import { storyScene, person, wait, face, blk } from '../../kit/story.js';
 import script from './script.js';
 
 export const SIGNING = { origin: [400, 0], ground: 'earth', groundColor: 0x9a8a68, hill: 0.7, bounds: { x0: -14, x1: 14, z0: -8, z1: 12 },
@@ -24,8 +24,7 @@ export function treatyScene(ctx) {
     await fadeIn();
     await say(L[0], joseon[0]);
     ctx.dialogue.close();
-    await glide([0, 4.4, 15], [0, 1, -20], [0.4, 2.3, 7.4], [0, 1.4, 2], 1.6); // 정자 앞쪽 낮게: 기둥 사이로 두 나라 대표의 얼굴(2026-11-04 플레이 점검)
-    hook.repFacing = facingShare(world, [...joseon, ...japan]);
+    await glide([0, 4.4, 15], [0, 1, -20], [1.7, 3.4, 9.5], [0, 1.6, 2], 1.6);
     await wait(world, 0.6, k => { stamp.position.y = 1.4 - 0.62 * k; });
     ctx.audio?.play?.('tap');
     paper.material = paper.material.clone(); hook.signed = true;
