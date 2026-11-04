@@ -185,7 +185,7 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
 
   const level = new THREE.Group();
   scene.add(level);
-  const player = makePerson(LOOKS.player, { track: false, stable: true });
+  const player = makePerson(LOOKS.player, { track: false, stable: true }); player.userData.straightArms = true; // 학생은 걸을 때 팔을 곧게(D-68)
   scene.add(player);
 
   const goalArrow = new THREE.Mesh(
@@ -279,7 +279,7 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
       const fresh = makePerson(opts, { track: false, stable: true });
       for (const c of [...player.children]) { player.remove(c); c.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
       for (const c of [...fresh.children]) player.add(c);
-      player.userData = fresh.userData;
+      player.userData = fresh.userData; player.userData.straightArms = true; // 학생은 걸을 때 팔을 곧게(D-68)
       player.userData.skel?.rehome(fresh, player); // 뼈대 몸(core/body.js)은 학생 물체에서 돈다
     },
     addCollider(c) { world.colliders.push(c); return c; },
@@ -379,7 +379,7 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
       if (goal) {
         const dx = goal.x - p.x, dz = goal.z - p.z;
         goalArrow.visible = Math.hypot(dx, dz) > 3;
-        goalArrow.position.set(p.x, 0.15, p.z);
+        goalArrow.position.set(p.x, world.goalArrowLift ?? 0.15, p.z); goalArrow.scale.setScalar(world.goalArrowScale ?? 1); // 배를 탔을 때는 갑판 위로 크게(D-68)
         goalArrow.rotation.y = Math.atan2(dx, dz);
       } else goalArrow.visible = false;
       for (const fn of [...updaters]) fn(dt, elapsed); // 도중에 해제해도 안전하도록 복사본을 돈다

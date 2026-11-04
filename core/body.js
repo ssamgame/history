@@ -95,6 +95,7 @@ export function attachBody(g, look = {}) {
   const mixer = new THREE.AnimationMixer(root), acts = {};
   for (const clip of base.animations) { const a = mixer.clipAction(clip); acts[clip.name] = a; if (clip.name === 'give' || clip.name === 'put_down') { a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = true; } }
   const S = { root, mixer, acts, links, cur: null, target: null, w: {}, fade: FADE, manual: null, bones: B, look, mixed: new Map(), skinOn: true };
+  S.foreRest = ['R', 'L'].map(s => [B(`forearm_${s}`), B(`forearm_${s}`).quaternion.clone()]); // 곧게 편 아래팔(묶인 자세)
   S.rehome = (from, to) => { people.delete(from); people.add(to); };
   S.freeze = () => { root.traverse(o => { if (o.isSkinnedMesh) o.visible = false; }); people.delete(g); S.frozen = true; }; // 움직이지 않는 군중으로 굳힐 때(core/bake.js)
   Object.defineProperty(u, 'skel', { value: S, writable: true, configurable: true }); // 숨긴 칸: three의 clone·toJSON이 userData를 JSON으로 복사할 때 동작기(mixer)의 순환 참조로 죽지 않게
@@ -204,6 +205,10 @@ function update(g, dt) {
     L.bone.quaternion.slerp(par.invert().multiply(tmp), L.w);
     for (const e of L.extra) e.bone.quaternion.slerp(e.rest, L.w);
     L.bone.updateMatrixWorld(true);
+  }
+  // 학생 인물(straightArms)은 걸을 때 팔꿈치를 굽히지 않고 팔을 곧게 편다(D-68 선생님). 덧씌운 팔(집기·건네기)이 없을 때만
+  if (g.userData.straightArms && /^(walk|run)/.test(S.target || '') && !g.userData.carry && S.links.every(L => L.extra.length === 0 || L.w < 0.02)) {
+    for (const [bone, rest] of S.foreRest) { if (!S.mixed.has(bone)) S.mixed.set(bone, bone.quaternion.clone()); bone.quaternion.copy(rest); }
   }
   // 두 팔로 안은 짐: 짐 안기 동작이 다 섞이면 두 손 가운데로 옮겨 손에 붙인다(그 뒤로는 손과 함께 움직인다)
   const c = S.carry;

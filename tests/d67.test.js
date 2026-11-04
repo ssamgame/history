@@ -380,3 +380,27 @@ test('d67 조선4(4차): 승리 뒤 배가 포구로 돌아오는 장면은 없�
   const src = await (await fetch('../chapters/joseon/j4/story.js')).text();
   ok(!/돌아오는 배들/.test(src) && !/rowShip\(s, k \* 30/.test(src), '돌아오는 배 장면을 뺐다');
 });
+
+// D-68 조선 4장
+test('d68 조선4-1·3: 바다에 배를 몰 때 내 배와 적선 말고 다른 배는 숨고, 노란 화살표는 배 위(갑판 높이)에 크게 보인다', async () => {
+  const { mod, s, sc } = await j4Setup();
+  try {
+    sc.setStage('sail'); mod.boardForTest(s.ctx, mod.LURE.start);
+    ok(sc.myShip.visible && !sc.lure.visible && !sc.fleet.visible && !sc.flagship.visible && sc.portShips.every(p => !p.visible), '내 배만');
+    s.w.setGoal({ x: 0, z: -70 }); s.w.step(0.05, { x: 0, z: 0 });
+    ok(s.w.goalArrow.visible && s.w.goalArrow.position.y > 2.5 && s.w.goalArrow.scale.x >= 2, `화살표 높이 ${s.w.goalArrow.position.y.toFixed(1)} 크기 ${s.w.goalArrow.scale.x}`);
+    mod.unboardForTest(s.ctx); s.w.step(0.05, { x: 0, z: 0 });
+    ok(s.w.goalArrow.position.y < 0.5 && s.w.goalArrow.scale.x === 1, '내리면 땅 높이');
+  } finally { s.done(); }
+});
+test('d68 조선4-2: 꾀어낸 뒤 도착 지점은 견내량 입구에서 35m 넘게 남쪽(대장선 가까이)', async () => {
+  const { mod, s, sc } = await j4Setup();
+  try {
+    ok(mod.LURE.open.z - mod.LURE.mouth.z > 35, `몰고 내려오는 거리 ${(mod.LURE.open.z - mod.LURE.mouth.z).toFixed(0)}m`);
+    const f = sc.flagship.position; ok(Math.hypot(f.x - mod.LURE.open.x, f.z - mod.LURE.open.z) < 12, '대장선 가까이');
+  } finally { s.done(); }
+});
+test('d68 조선4: 학익진에서 배에 탈 때 다른 판옥선은 그대로 보인다', async () => {
+  const { mod, s, sc } = await j4Setup();
+  try { sc.setStage('wing'); mod.boardForTest(s.ctx, [0, -13]); ok(sc.fleet.visible && sc.leadTurtle.visible, '학익진 배'); } finally { s.done(); }
+});

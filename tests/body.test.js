@@ -233,3 +233,20 @@ test('body: 뼈대 몸끼리 악수·물건 건네기가 끝까지 되고 손이
     ok(b.userData.carry?.obj === box, '받은 사람이 든다');
   } finally { off(); w.dispose(); }
 }, { timeout: 40000 });
+
+test('body: 학생 인물은 걸을 때 팔꿈치를 굽히지 않고 팔을 곧게 편다(D-68), 다른 사람은 그대로', async () => {
+  await loadBody(); on();
+  const w = testWorld();
+  try {
+    w.setPlayerLook(LOOKS.villager); const q = makePerson(LOOKS.villager); w.level.add(q); off();
+    let worst = 0, other = 0;
+    for (let i = 0; i < 40; i++) {
+      q.position.x += 0.08; w.step(1 / 20, { x: 1, z: 0 });
+      if (i < 15) continue;
+      for (const [p, k] of [[w.player, 'me'], [q, 'q']]) { const B = p.userData.skel.bones, ang = B('upperarm_R').getWorldQuaternion(Q()).angleTo(B('forearm_R').getWorldQuaternion(Q())); if (k === 'me') worst = Math.max(worst, ang); else other = Math.max(other, ang); }
+    }
+    ok(/walk|run/.test(w.player.userData.skel.target), `학생이 걷는다 ${w.player.userData.skel.target}`);
+    ok(worst < 0.12, `학생 팔꿈치 ${worst.toFixed(2)}`);
+    ok(other > worst, `다른 사람은 예전처럼 ${other.toFixed(2)}`);
+  } finally { off(); w.dispose(); }
+});
