@@ -1,4 +1,5 @@
 import { test, eq, ok, skip } from './harness.js';
+import * as THREE from 'three';
 import { createWorld, MOODS } from '../core/world.js';
 import { makePerson } from '../core/people.js';
 
@@ -230,5 +231,19 @@ test('world: 따라가는 카메라와 학생 사이에 집·나무(막는 자�
     for (let i = 0; i < 60; i++) w.step(1 / 20, { x: 0, z: 0 });
     ok(w.camera.position.y > free.y + 1.5, `문 지붕이 가리면 올라간다 ${w.camera.position.y.toFixed(1)}`);
     rm(); eq(w.camBlocks.length, 0, '치우면 없어진다');
+  } finally { w.dispose(); }
+});
+
+test('world: 사람 머리 위 느낌표는 카메라 바로 앞(2.5m 안)이면 숨는다(2026-11-04 플레이 점검: 커다란 ! 가 화면을 덮음)', async () => {
+  const { testWorld } = await import('./bot.js');
+  const w = testWorld();
+  try {
+    w.bounds = { x0: -30, x1: 30, z0: -30, z1: 30 };
+    w.addNpc('a', {}, 0, -3, 0); const n = w.npcs.get('a'); n.mark.visible = true;
+    w.setFixedCamera([0, 3.5, -1.2], [0, 1, -10]); w.step(1 / 20, { x: 0, z: 0 });
+    const near = n.mark.getWorldScale(new THREE.Vector3()).x;
+    w.setFixedCamera([0, 6, 12], [0, 1, -3]); w.step(1 / 20, { x: 0, z: 0 });
+    const far = n.mark.getWorldScale(new THREE.Vector3()).x;
+    ok(near < far * 0.1 && far > 0.3, `가까이 ${near.toFixed(3)} 멀리 ${far.toFixed(3)}`);
   } finally { w.dispose(); }
 });

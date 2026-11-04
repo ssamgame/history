@@ -163,6 +163,7 @@ function skyMaterial() {
 }
 
 export function createWorld(container, { quality = 'medium', renderer: injected = null } = {}) {
+  const markV = new THREE.Vector3();
   let camLift = 0; // 0~1: 학생과 카메라 사이를 막는 것이 있어 카메라를 올린 정도
   let renderer;
   try { renderer = injected || new THREE.WebGLRenderer({ antialias: quality !== 'low' }); }
@@ -378,6 +379,10 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
       }
       const mv = lastPP ? Math.hypot(p.x - lastPP.x, p.z - lastPP.z) / dt : 0; lastPP = { x: p.x, z: p.z };
       animateWalk(player, moving || (mv > 0.12 && mv < 8), dt); // 장이 학생을 몇 걸음 옮길 때(walkTo)도 다리를 움직인다(미끄러지듯 떠가지 않게)
+      for (const n of world.npcs.values()) if (n.mark.visible) { // 카메라 바로 앞(2.5m 안)의 표시는 화면을 덮으니 줄여 숨긴다(2026-11-04 플레이 점검)
+        n.mark.userData.s0 ??= n.mark.scale.x; n.mark.getWorldPosition(markV);
+        n.mark.scale.setScalar(markV.distanceTo(camera.position) < 2.5 ? 0.001 : n.mark.userData.s0);
+      }
       for (const n of world.npcs.values()) if (n.mark.visible) n.mark.position.y = (n.spot ? (n.mesh.userData.markY ?? 3.1) : 3.5 + (n.mesh.userData.seatLift || 0)) + Math.sin(elapsed * 3) * 0.12; // 높이 앉은 사람(단상 위 세종)은 머리 위로(D-67: 관 속에 묻혀 안 보였다)
       if (goal) {
         const dx = goal.x - p.x, dz = goal.z - p.z;
