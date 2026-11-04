@@ -409,7 +409,7 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
         const len = Math.hypot(off.x, off.z), blocked = len > 0.1 && [...world.colliders, ...world.camBlocks].some(c => {
           if (c.r < 0.8 && !world.camBlocks.includes(c)) return false; // 항아리 같은 작은 소품은 가리지 않는다
           const t = Math.max(0, Math.min(1, ((c.x - p.x) * off.x + (c.z - p.z) * off.z) / (len * len)));
-          return t * len > 0.8 && Math.hypot(p.x + off.x * t - c.x, p.z + off.z * t - c.z) < c.r;
+          return t * len > 0.8 && Math.hypot(p.x + off.x * t - c.x, p.z + off.z * t - c.z) < c.r + (world.camBlocks.includes(c) ? 0 : 1.2); // 처마가 막는 자리보다 1m쯤 더 나온다
         });
         camLift += ((blocked ? 1 : 0) - camLift) * Math.min(1, dt * 2.5);
         if (camLift > 0.001) off.set(off.x * (1 - 0.45 * camLift), off.y * (1 + 0.35 * camLift), off.z * (1 - 0.45 * camLift));
