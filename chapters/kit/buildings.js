@@ -617,14 +617,25 @@ export function cityGate(g, p = {}) {
 // ── 시대·장소별 건물 (2026-10-24 전면 개선) ──
 // 간판·현판 글: 나무판(또는 천)에 쓴 글자. 같은 글은 한 번만 그린다.
 const signTex = new Map();
-export function signMaterial(text, { bg = '#2b241c', fg = '#f2e6b0', vertical = false } = {}) {
-  const key = `${text}|${bg}|${fg}|${vertical}`;
+// 세로 글자판의 글자 크기: 짧은 글은 예전처럼 40px, 긴 글은 판(높이 h)에 다 들어가게 줄인다(띄어쓰기는 반 칸). D-67: 「여몽 연합군」이 잘렸다
+export function verticalFont(text, w = 64, h = 256) {
+  const n = [...text].reduce((a, ch) => a + (ch === ' ' ? 0.5 : 1), 0);
+  return { size: Math.floor(Math.min(w * 0.625, (h - 20) / (n * 1.15))), w, h };
+}
+export function signMaterial(text, { bg = '#2b241c', fg = '#f2e6b0', vertical = false, width = 64 } = {}) {
+  const key = `${text}|${bg}|${fg}|${vertical}|${width}`;
   if (signTex.has(key)) return signTex.get(key);
-  const cv = document.createElement('canvas'); cv.width = vertical ? 64 : 256; cv.height = vertical ? 256 : 64;
+  const cv = document.createElement('canvas'); cv.width = vertical ? width : 256; cv.height = vertical ? 256 : 64;
   const c = cv.getContext('2d'); c.fillStyle = bg; c.fillRect(0, 0, cv.width, cv.height);
   c.strokeStyle = fg; c.globalAlpha = 0.5; c.lineWidth = 4; c.strokeRect(4, 4, cv.width - 8, cv.height - 8); c.globalAlpha = 1;
   c.fillStyle = fg; c.textAlign = 'center'; c.textBaseline = 'middle';
-  if (vertical) { c.font = 'bold 40px "Nanum Gothic", sans-serif'; [...text].forEach((ch, i, a) => c.fillText(ch, 32, 128 + (i - (a.length - 1) / 2) * 46)); }
+  if (vertical) {
+    const { size } = verticalFont(text, cv.width, cv.height), step = size * 1.15, chars = [...text];
+    const total = chars.reduce((a, ch) => a + (ch === ' ' ? 0.5 : 1), 0) * step;
+    c.font = `bold ${size}px "Nanum Gothic", sans-serif`;
+    let y = 128 - total / 2;
+    for (const ch of chars) { const k = ch === ' ' ? 0.5 : 1; if (ch !== ' ') c.fillText(ch, cv.width / 2, y + step * k / 2); y += step * k; }
+  }
   else { c.font = 'bold 38px "Nanum Gothic", sans-serif'; c.fillText(text, 128, 34, 236); }
   const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace;
   const m = new THREE.MeshLambertMaterial({ map: t }); signTex.set(key, m);
@@ -838,7 +849,7 @@ export function banner(g, p = {}) {
   P.cyl(0.05, 0.06, h, 6, 0x6b4a32, 'wood', [0, h / 2, 0]);
   P.box(1.1, 0.05, 0.05, 0x6b4a32, 'wood', [0.5, h - 0.15, 0]);
   P.into(g);
-  const cloth = p.text ? signMaterial(p.text, { vertical: true, bg: p.bg || '#e8dcc0', fg: p.fg || '#2b241c' })
+  const cloth = p.text ? signMaterial(p.text, { vertical: true, bg: p.bg || '#e8dcc0', fg: p.fg || '#2b241c', width: 110 }) // 깃폭(0.95×2.2)과 같은 비율이라 글자가 옆으로 늘지 않는다
     : new THREE.MeshLambertMaterial({ color: p.color ?? 0xe8dcc0, side: THREE.DoubleSide });
   const m = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 2.2), cloth); m.position.set(0.5, h - 1.3, 0.03); m.castShadow = true; g.add(m);
   const back = m.clone(); back.rotation.y = Math.PI; back.position.z = -0.03; g.add(back);

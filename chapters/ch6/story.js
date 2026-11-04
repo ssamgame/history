@@ -7,6 +7,7 @@ import { storyScene, person, wait, march, face, troop, blk } from '../kit/story.
 import { host, advance, command, patrol, sunk } from '../kit/army.js';
 import { addSculler, autoRow } from '../kit/row.js';
 import { strike, block } from '../../core/interact.js';
+import { fallDown } from '../kit/clash.js';
 import { setStyle } from '../../core/people.js';
 import script from './script.js';
 
@@ -104,45 +105,80 @@ export function hangpaduriScene(ctx) {
   const L = script.jeju.talk;
   return storyScene(ctx, { key: 'hangpaduri', arena: HANGPADURI, mood: 'haze', async run({ g, hook, cam, glide, say, fadeIn }) {
     const { world } = ctx;
-    const WZ = 1.5; // 삼별초가 서는 자리의 기준(z)
-    const groundAt = () => 0;
+    // D-67(2026-11-04 선생님): 삼별초는 흙으로 쌓은 성벽 위에서 연합군을 내려다보고, 연합군이 진격해 흙성을 무너뜨려 삼별초가 진다(맞붙는 싸움·피는 없다)
+    const WALL = 1.6, WZ = 3, CH = 0.8, ROWS = 2; // 흙성 높이·자리(z)·흙덩이 크기·층
+    const chunks = [], earth = [0x7a5f40, 0x6e5538, 0x846848].map(c => new THREE.MeshLambertMaterial({ color: c }));
+    for (let col = 0; col < 34; col++) for (let row = 0; row < ROWS; row++) {
+      const x = -13.2 + col * CH + (row % 2) * CH / 2, y = WALL / ROWS * (row + 0.5);
+      const m = new THREE.Mesh(new THREE.BoxGeometry(CH * 0.98, WALL / ROWS * 0.98, 1.8), earth[(col * 5 + row) % 3]); m.position.set(x, y, WZ); m.castShadow = m.receiveShadow = true; g.add(m);
+      chunks.push({ m, x, row, v: new THREE.Vector3(), w: new THREE.Vector3(), t0: 0 });
+    }
+    hook.wall = true; hook.wallTop = WALL;
     hook.phases = [];
-    // 대치(D-66, 2026-11-03 선생님): 첫 장면부터 몇 안 되는 삼별초와, 조금 떨어져 마주 선 고려·몽골 연합군. 서로 바라보다가 진압되었다는 해설로 맺는다
-    // D-67(2026-11-04 선생님): 뒤 흙성은 없애고 거리를 조금 더 두고 대치, 연합군 깃발에 「여몽 연합군」
-    hook.wall = false;
-    const men = [[-3.6, 0], [-1.2, 0.2], [1.2, 0], [3.6, 0.2], [-2.4, -1.2], [2.4, -1.2]].map(([x, dz], i) => person(g, i % 3 === 2 ? { ...LOOKS_SB_ARCHER } : 'sambyeolcho', x, WZ + 3.8 + dz, 0)); // 몇 안 되는 삼별초(바다 쪽을 본다)
-    men.forEach(p => setStyle(p, 'guard'));
-    const kim = person(g, 'kimtongjeong', 0, WZ + 2.4, 0);
+    const men = [[-4.8, 0], [-2.4, 0.2], [0, 0], [2.4, 0.2], [4.8, 0], [-1.2, -0.3]].map(([x, dz], i) => person(g, i % 3 === 2 ? { ...LOOKS_SB_ARCHER } : 'sambyeolcho', x, WZ + dz * 0.5, 0));
+    const kim = person(g, 'kimtongjeong', 1.2, WZ - 0.2, 0);
+    const sb = [kim, ...men];
+    sb.forEach(p => { p.position.y = WALL; setStyle(p, 'guard'); });
+    const sbFlags = [-9, 9].map(x => { const f = new THREE.Group(); f.position.set(x, WALL, WZ); BLD.banner(f, { color: 0x3a2f2a, h: 2.6 }); g.add(f); return f; });
     // 바닷가에 닿은 연합군 배와, 내려서 늘어선 연합군(앞에 고려 관군 보병, 양옆에 몽골 기마병)
     const fleet = [];
-    for (let i = 0; i < 6; i++) fleet.push(boatWith(g, -14 + i * 5.6, 24 + (i % 2) * 2.5, [], 1.4, i % 2 ? 'mongol' : 'villager'));
+    for (let i = 0; i < 6; i++) fleet.push(boatWith(g, -14 + i * 5.6, 26 + (i % 2) * 2.5, [], 1.4, i % 2 ? 'mongol' : 'villager'));
     fleet.forEach(({ b }) => { b.rotation.y = Math.PI; });
     const allies = host(g, { x: 0, z: 14, ry: Math.PI, general: 'goryeoCommander', generalOnFoot: true, banner: 0xb8452f, bannerText: '여몽 연합군', bearerLook: 'soldier', front: 'infantry',
       infantry: { n: 14, cols: 7, gap: 1.7, looks: ['soldier', 'archer', 'soldier'] }, cavalry: { n: 4, cols: 4, gap: 3.4, looks: ['mongolArcher', 'mongolLancer'] } });
-    const wingL = host(g, { x: -12, z: 12.5, ry: Math.PI + 0.2, general: 'mongolGeneral', banner: 0x2a2a2e, bannerText: '여몽 연합군', cavalry: { n: 4, cols: 2, gap: 3.0, looks: ['mongolArcher', 'mongol'] } });
-    const wingR = host(g, { x: 12, z: 12.5, ry: Math.PI - 0.2, cavalry: { n: 4, cols: 2, gap: 3.0, looks: ['mongolLancer', 'mongolArcher'] } });
+    const wingL = host(g, { x: -12, z: 13, ry: Math.PI + 0.2, general: 'mongolGeneral', banner: 0x2a2a2e, bannerText: '여몽 연합군', cavalry: { n: 4, cols: 2, gap: 3.0, looks: ['mongolArcher', 'mongol'] } });
+    const wingR = host(g, { x: 12, z: 13, ry: Math.PI - 0.2, cavalry: { n: 4, cols: 2, gap: 3.0, looks: ['mongolLancer', 'mongolArcher'] } });
     const allUnits = [...allies.units, ...wingL.units, ...wingR.units], riders = [...allies.riders, ...wingL.riders, ...wingR.riders];
-    const offPatrol = patrol(world, riders), offRow = () => {};
-    men.forEach(p => face(p, p.position.x, p.position.z + 10)); // 바다 쪽(연합군)을 본다
+    const offPatrol = patrol(world, riders);
+    sb.forEach(p => face(p, p.position.x, p.position.z + 10)); // 성 위에서 바다 쪽(연합군)을 본다
     allies.foot.forEach(p => face(p, p.position.x, p.position.z - 10)); // 연합군 보병은 흙성 쪽을 본다
-    face(kim, kim.position.x, kim.position.z + 10);
+    hook.allyFlags = 0; g.traverse(o => { if (o.userData.text === '여몽 연합군') hook.allyFlags += 1; });
     hook.phases.push('standoff');
     const zSB = Math.max(...men.map(p => p.position.z)), zAL = Math.min(...allies.foot.map(p => p.position.z));
     hook.gap = zAL - zSB; hook.few = men.length;
-    hook.allyFlags = 0; g.traverse(o => { if (o.userData.text === '여몽 연합군') hook.allyFlags += 1; });
+    hook.onWall = men.filter(p => Math.abs(p.position.y - WALL) < 0.01).length;
+    hook.facingAllies = men.filter(p => Math.cos(p.rotation.y) > 0.9).length / men.length;
     hook.facing = (men.filter(p => Math.cos(p.rotation.y) > 0.9).length + allies.foot.filter(p => Math.cos(p.rotation.y) < -0.9).length) / (men.length + allies.foot.length);
-    cam([-7, 5, -2.5], [1.5, 1.2, 9]); // 삼별초 뒤 조금 높은 곳에서: 삼별초와 마주 선 연합군을 함께
+    cam([-24, 7, 18], [0, 1.4, 6]); // 연합군 왼쪽 날개 바깥 높은 곳에서: 흙성 위의 삼별초와 그 앞에 늘어선 연합군을 함께(얼굴이 보이게)
     await fadeIn();
     await say(L[0], kim);
     ctx.dialogue.close();
-    command(allies.general); command(wingL.general); // 연합군 장수가 칼을 든다
-    await glide([-7, 5, -2.5], [1.5, 1.2, 9], [-5, 3.4, 0.2], [1, 1.4, 8.5], 3); // 서로 바라본다(카메라가 천천히 다가간다)
-    hook.mongols = riders.length + 2; hook.mongolRiders = riders.length + 1; // 연합군 가운데 몽골군은 기마병 중심(걸어가는 몽골 병사는 없다)
-    hook.sunk = sunk(allUnits, groundAt);
+    // 연합군이 흙성 앞까지 나아가고, 장수가 칼을 들어 공격을 명한다
+    hook.phases.push('advance');
+    command(allies.general); command(wingL.general);
+    const foot0 = allies.foot.map(p => p.position.z);
+    await Promise.all([advance(world, allies.foot, 0, -(zAL - WZ - 2.2), 3.2), glide([-24, 7, 18], [0, 1.4, 6], [-22, 5.5, 9], [0, 1.2, 3.5], 3.2)]); // 보병이 흙성 앞까지(기마병은 뒤에서 지켜본다)
+    hook.advanced = foot0[0] - allies.foot[0].position.z;
+    // 성벽을 치면 흙덩이가 흔들리다가 가운데부터 무너져 내리고, 성 위의 삼별초는 쓰러진다
+    for (let hit = 0; hit < 3; hit++) {
+      ctx.audio?.play?.(hit === 2 ? 'boom' : 'whoosh');
+      await wait(world, 0.6, k => { for (const c of chunks) c.m.position.z = WZ + Math.sin(k * Math.PI) * 0.05 * (Math.abs(c.x) < 7 ? 1 : 0.4); allies.foot.forEach((p, i) => { p.position.z += Math.sin(k * Math.PI * 2) * 0.01 * (i % 2 ? 1 : -1); }); });
+    }
+    hook.phases.push('collapse');
+    ctx.audio?.play?.('boom');
+    let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    for (const c of chunks) { c.t0 = Math.abs(c.x) * 0.06 + (ROWS - 1 - c.row) * 0.1 + rnd() * 0.2; c.v.set((rnd() - 0.5) * 1.2, 0.4 + rnd(), -0.6 - rnd() * 1.6); c.w.set((rnd() - 0.5) * 4, (rnd() - 0.5) * 2, (rnd() - 0.5) * 4); }
+    hook.collapsed = true; hook.crumbled = 0; hook.defeated = 0;
+    const falls = sb.map((p, i) => wait(world, 0.3 + (i % 3) * 0.2).then(() => { const y0 = p.position.y; return Promise.all([wait(world, 0.5, k => { p.position.y = y0 * (1 - k * k); }), fallDown(world, p, { side: i % 2 ? 1 : -1, sec: 2.4 })]); }).then(() => { if (p !== kim) hook.defeated += 1; }));
+    await wait(world, 3.0, (k, dt) => {
+      const t = k * 3.0;
+      for (const c of chunks) {
+        if (t < c.t0) continue;
+        if (!c.moving) { c.moving = true; hook.crumbled++; }
+        c.v.y -= 9.8 * dt; c.m.position.addScaledVector(c.v, dt);
+        const floor = 0.25 + 0.2 * ((c.row + Math.round(c.x * 3)) % 2);
+        if (c.m.position.y < floor) { c.m.position.y = floor; c.v.multiplyScalar(0.2); c.v.y = 0; c.w.multiplyScalar(0.3); }
+        c.m.rotation.x += c.w.x * dt; c.m.rotation.y += c.w.y * dt; c.m.rotation.z += c.w.z * dt;
+      }
+      sbFlags.forEach((f, i) => { f.position.y = Math.max(0, WALL - t * t * 2); f.rotation.z = (i ? 1 : -1) * Math.min(1.4, t * 0.9); });
+    });
+    await Promise.all(falls);
+    hook.sunk = sunk(allUnits, () => 0);
     { let m = 9; const vis = allUnits.filter(u => u.visible); for (let i = 0; i < vis.length; i++) for (let j = i + 1; j < vis.length; j++) m = Math.min(m, Math.hypot(vis[i].position.x - vis[j].position.x, vis[i].position.z - vis[j].position.z) / (vis[i].userData.horse || vis[j].userData.horse ? 1.7 : 1)); hook.minGap = m; }
+    hook.mongols = riders.length + 2; hook.mongolRiders = riders.length + 1;
     hook.fleet = fleet.length;
     await say(L[1]);
-    offPatrol(); offRow();
+    offPatrol();
   } });
 }
 

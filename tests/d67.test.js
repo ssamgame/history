@@ -68,3 +68,28 @@ test('d67 고려6-3: 용장성이 무너지면 삼별초는 처음부터 끝까�
   const m = /march\(world, \[kim, \.\.\.men\], 0, ([\d.]+), ([\d.]+), \{ linear: true \}\)/.exec(src);
   ok(m, '같은 빠르기(linear)'); ok(+m[1] / +m[2] > 2.7, `달리기 빠르기(걷기 동작은 2.7m/s까지) ${(+m[1] / +m[2]).toFixed(1)}m/s`);
 });
+
+test('d67 고려6-5(2차): 항파두리 — 삼별초는 흙성 위에서 연합군을 내려다보고, 연합군이 진격해 흙성을 무너뜨리면 삼별초가 쓰러진다', async () => {
+  const { touchSetup: ts, touchBot } = await import('./bot.js');
+  const ch6 = (await import('../chapters/ch6/chapter.js')).default, script = (await import('../chapters/ch6/script.js')).default;
+  const s = ts(script.speakers), bot = touchBot(s, { answers: new Set() });
+  try {
+    ch6.buildScene(s.w, s.ctx);
+    await ch6.stories.hangpaduri(s.ctx);
+    const h = s.ctx.testHooks.hangpaduri;
+    ok(h.onWall >= h.few && h.wallTop > 1, `흙성 위에 선 삼별초 ${h.onWall}/${h.few}, 높이 ${h.wallTop}`);
+    ok(h.facingAllies > 0.85, `연합군 쪽을 본다 ${h.facingAllies?.toFixed(2)}`);
+    ok(h.advanced > 4, `연합군이 흙성 앞까지 나아간다 ${h.advanced?.toFixed(1)}m`);
+    ok(h.collapsed && h.crumbled >= 10, `흙성이 무너진다 ${h.crumbled}`);
+    eq(h.defeated, h.few, '삼별초가 모두 쓰러진다(피 없이)');
+    ok(h.sunk < 0.05, `땅에 묻히지 않는다 ${h.sunk?.toFixed(3)}`);
+  } finally { bot.stop(); s.done(); }
+}, { timeout: 120000 });
+
+test('d67: 세로 깃폭 글자는 판 안에 모두 들어갈 만큼 크게(「여몽 연합군」 다섯 글자)', async () => {
+  const { verticalFont } = await import('../chapters/kit/buildings.js');
+  const { size, w, h } = verticalFont('여몽 연합군');
+  ok(5 * size * 1.15 + 20 <= h, `세로로 다 들어간다 ${size}px`);
+  ok(size >= 34 && size <= w * 0.8, `글자 크기 ${size}px (판 너비 ${w})`);
+  eq(verticalFont('상점').size, 40, '짧은 글은 예전 크기');
+});
