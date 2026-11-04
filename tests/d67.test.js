@@ -518,3 +518,16 @@ test('d67 넓히기: 길(roads)이 있는 마을에는 그 시대 사람 둘이 
     ok(t.walkers.every(p => /walk/.test(p.userData.skel?.target || 'walk')), '걷는 동작');
   } finally { w.dispose(); }
 });
+
+test('d67 넓히기: 고려 4장 처인성 안에 모인 백성·승려는 둘씩 이야기한다', async () => {
+  const { buildCh4Scene } = await import('../chapters/ch4/scene.js');
+  const w = testWorld();
+  try {
+    const s = buildCh4Scene(w);
+    ok(s.cheoinFolk.length === 8, `백성·승려 ${s.cheoinFolk.length}`);
+    ok(s.cheoinChats >= 3, `이야기하는 짝 ${s.cheoinChats}`);
+    const r0 = s.cheoinFolk.map(p => p.rotation.y);
+    for (let i = 0; i < 60; i++) w.step(1 / 20, { x: 0, z: 0 });
+    ok(s.cheoinFolk.some((p, i) => Math.abs(p.rotation.y - r0[i]) > 0.05), '짝 쪽으로 몸을 돌린다');
+  } finally { w.dispose(); }
+});

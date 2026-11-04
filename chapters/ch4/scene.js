@@ -10,6 +10,7 @@ import { scatter } from '../../core/props.js';
 import { LOOKS } from '../../content/characters.js';
 import { gateLeaves, nameBoard } from '../kit/gate.js';
 import { burning } from '../kit/fire.js';
+import { chatter } from '../kit/walk.js';
 
 const JEOGO_X = -78, PALACE_X = 0, GANGHWA_X = 160, CHEOIN_X = 320, CHUNGJU_X = 480;
 const CHEOIN_R = 12;     // 처인성 토성 반지름
@@ -39,6 +40,7 @@ export function cheoinHeight(x, z) { return cheoinPlace({ x, z }); }
 function seeded(s) { return () => (s = (s * 16807) % 2147483647) / 2147483647; }
 
 export function buildCh4Scene(world) {
+  const cheoinFolk = []; let cheoinChats = 0;
   const L = world.level, rand = seeded(23);
   const mk = (geo, color, x, y, z, parent = L, cast = true) => {
     const m = new THREE.Mesh(geo, mat(color));
@@ -261,8 +263,9 @@ export function buildCh4Scene(world) {
       const a = 0.3 + i * 0.35; // D-13: 성 안 남쪽(성벽 위 카메라 뒤)에 모여 있다
       const who = i % 2 ? LOOKS.monk : LOOKS.villager;
       const p = makePerson(who); p.position.set(CHEOIN_X + Math.cos(a) * (CHEOIN_R - 3.4), 0, Math.sin(a) * (CHEOIN_R - 3.4)); // 성벽 가까이는 궁수 자리
-      p.rotation.y = Math.atan2(Math.cos(a), Math.sin(a)); cheoin.add(p);
+      p.rotation.y = Math.atan2(Math.cos(a), Math.sin(a)); cheoin.add(p); cheoinFolk.push(p);
     }
+    cheoinChats = chatter(world, cheoinFolk, { seed: 4 }).pairs; // D-67 ②: 성 안에 모인 사람들이 둘씩 이야기한다
   }
   // 다가오는 몽골군 8명 (처음엔 숨김). 들판 북쪽 반원에서 나타나 성으로 다가온다.
   // 기마병 중심(2026-10-30 선생님): 여섯은 말 탄 기마병(활·창), 둘은 깃발을 든 걷는 병사. 말과 기수는 함께 움직이고 화살을 맞으면 기수가 말에서 떨어진다
@@ -449,6 +452,7 @@ export function buildCh4Scene(world) {
   });
 
   return {
+    cheoinFolk, cheoinChats, // 굳히지 않게 돌려준다
     areas: {
       palace: { start: [PALACE_X, 13], introFrom: [PALACE_X, 37], bounds: { x0: PALACE_X - 13, x1: PALACE_X + 13, z0: -6, z1: 16 } },
       jeogo: jeogo,
