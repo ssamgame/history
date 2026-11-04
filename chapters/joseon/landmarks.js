@@ -83,6 +83,18 @@ export function jagyeongnu() {
     pot.name = `파수호${i + 1}`;
     const w = new THREE.Mesh(new THREE.CircleGeometry(r * 0.93, 16).rotateX(-Math.PI / 2), wm()); w.position.set(-3 + i * 1.5, h + 0.05, 0); w.visible = false; w.userData.span = [h + 0.05, h + r * 1.1]; g.add(w); potWater.push(w); // 물그릇에 고이는 물(윗면)
   }
+  // 물길(D-67 선생님): 물그릇 옆구리 위쪽에서 다음 물그릇 위까지 비스듬한 청동 홈통. 물은 이 홈통을 따라 흘러 다음 그릇으로 떨어진다. 마지막은 수수호로 드는 아래 관으로
+  const pot = i => ({ x: -3 + i * 1.5, top: 2.4 - i * 0.7 + (0.62 - i * 0.12) * 1.2, r: 0.62 - i * 0.12 });
+  const ends = [0, 1].map(i => [new THREE.Vector3(pot(i).x + pot(i).r * 0.95, pot(i).top - 0.12, 0), new THREE.Vector3(pot(i + 1).x - pot(i + 1).r * 0.35, pot(i + 1).top + 0.12, 0)]);
+  // 마지막 그릇: 돌받침 위로 조금 나와(받침 끝 x 0.75) 수수호 옆으로 곧게 내려가 수수호로 드는 아래 관에 닿는다(수수호 윗부분이 그릇보다 높아 오르막이 되지 않게)
+  ends.push([new THREE.Vector3(pot(2).x + pot(2).r * 0.95, pot(2).top - 0.12, 0), new THREE.Vector3(0.95, 1.12, 0)], [new THREE.Vector3(0.95, 1.12, 0), new THREE.Vector3(0.95, 0.3, 0)]);
+  const spouts = ends.map(([from, to]) => {
+    const len = from.distanceTo(to), mid = from.clone().add(to).multiplyScalar(0.5);
+    const trough = add(g, box(len, 0.08, 0.16), bronze, mid.x, mid.y - 0.05, mid.z); // 바닥
+    trough.rotation.order = 'YZX'; trough.rotation.y = -Math.atan2(to.z - from.z, to.x - from.x); trough.rotation.z = Math.atan2(to.y - from.y, Math.hypot(to.x - from.x, to.z - from.z));
+    for (const sz of [-1, 1]) { const w = add(g, box(len, 0.08, 0.025), 0x9a7638, mid.x, mid.y, mid.z + sz * 0.08); w.rotation.copy(trough.rotation); } // 양옆 턱
+    return { from, to };
+  });
   const tanks = [], waters = [];
   for (const dz of [-0.4, 0.4]) {
     tanks.push(add(g, new THREE.CylinderGeometry(0.28, 0.28, 2.6, 14), bronze, 1.3, 1.3, dz));
@@ -119,7 +131,7 @@ export function jagyeongnu() {
   const plate = new THREE.Group(); plate.position.set(2.4, 2.3, 0.18); g.add(plate); // 동판: 구슬이 치면 한쪽이 눌려 기운다
   add(plate, box(0.04, 0.3, 0.26), 0x9a7638, 0, -0.12, 0);
   add(g, box(1.1, 0.12, 0.16), bronze, 0.75, 0.25, 0); // 아래 물그릇에서 물통으로 물이 드는 관
-  Object.assign(g.userData, { puppets, rods, ball, chute, tanks, waters, potWater, plate, mallets, instruments, swing });
+  Object.assign(g.userData, { puppets, rods, ball, chute, tanks, waters, potWater, plate, mallets, instruments, swing, spouts });
   return g;
 }
 

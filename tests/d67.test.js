@@ -341,3 +341,17 @@ test('d67 조선5-8·9: 삼전도 — 멈춰 선 뒤 걷는 동작이 남지 않
     ok(m.playerX > 6 && Math.abs(m.playerX - m.qingX) < 3, `학생은 청 군사 옆 x ${m.playerX?.toFixed(1)} (청 군사 ${m.qingX?.toFixed(1)})`);
   } finally { bot.stop(); s.done(); }
 }, { timeout: 120000 });
+test('d67 조선3-4(2차): 자격루 물그릇마다 다음 그릇(마지막은 수수호) 위까지 이어진 물길(홈통)이 있다', async () => {
+  const { sc, s } = await j3Setup();
+  try {
+    const u = sc.clock.userData; ok(u.spouts?.length >= 3, `물길 ${u.spouts?.length}마디`);
+    const pots = [0, 1, 2].map(i => sc.clock.getObjectByName(`파수호${i + 1}`).position);
+    u.spouts.forEach((sp, i) => {
+      ok(sp.from.y > sp.to.y, `물길 ${i}은 내리막`);
+      if (i > 2) return;
+      if (i < 2) ok(Math.abs(sp.to.x - pots[i + 1].x) < 0.5 && sp.to.y > pots[i + 1].y, `물길 ${i} 끝은 다음 그릇 위 ${sp.to.x.toFixed(2)} / ${pots[i + 1].x.toFixed(2)}`);
+      else { const last = u.spouts[u.spouts.length - 1].to; ok(last.x > 0.1 && last.x < u.tanks[0].position.x && last.y < 0.6, '마지막 물길은 수수호로 드는 아래 관으로'); }
+      ok(Math.abs(sp.from.x - pots[i].x) < 0.7, `물길 ${i}은 그 그릇에서 시작`);
+    });
+  } finally { s.done(); }
+});

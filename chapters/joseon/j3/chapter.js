@@ -172,11 +172,13 @@ async function clockScene(ctx) {
   // 0) 물 붓기: 물동이를 기울이면 물이 맨 위 물그릇으로, 다시 아래 물그릇으로 흘러내린다
   act(0); tag('물', -3, 4.1, 0.3); audio.play('water');
   const bucket = put(new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.2, 0.36, 12), lm(0x6b4a32))); bucket.position.set(-3.45, 3.75, 0.1);
-  const stream = (x, y0, y1) => { const m = put(new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 1, 6), lm(0x6fb0d8))); m.position.set(x, y0, 0.05); m.scale.y = 0.001; m.userData.span = [y0, y1]; return m; };
-  const falls = [stream(-3.05, 3.7, 3.0), stream(-2.4, 3.05, 2.2), stream(-0.95, 2.25, 1.4)];
+  // 물줄기: 물동이 → 맨 위 물그릇, 그다음은 물그릇마다 홈통(spouts)을 따라 흘러 다음 그릇·수수호로 떨어진다(D-67)
+  const flow = (from, to) => { const m = put(new THREE.Mesh(new THREE.BoxGeometry(1, 0.05, 0.1), lm(0x6fb0d8))); m.userData.span = [from.clone(), to.clone()]; m.visible = false; return m; };
+  const setFlow = (m, f) => { const [a, b] = m.userData.span, e = b.clone().sub(a).multiplyScalar(f), len = Math.max(0.001, e.length()); m.visible = f > 0; m.scale.x = len; m.position.copy(a).addScaledVector(e, 0.5); m.position.y += 0.02; m.rotation.set(0, -Math.atan2(e.z, e.x), Math.atan2(e.y, Math.hypot(e.x, e.z)), 'YZX'); };
+  const falls = [flow(new THREE.Vector3(-3.25, 3.6, 0.1), new THREE.Vector3(-3.0, 3.0, 0.05)), ...u.spouts.map(s => flow(s.from, s.to))];
   await shot([-2.0, 3.0, 2.9], [-2.2, 2.5, 0], 3.2, k => {
     bucket.rotation.z = -Math.min(1, k * 3) * 1.1;
-    falls.forEach((m, i) => { const f = Math.max(0, Math.min(1, k * 3 - i * 0.7)); const [y0, y1] = m.userData.span; m.scale.y = Math.max(0.001, (y0 - y1) * f); m.position.y = y0 - (y0 - y1) * f / 2; });
+    falls.forEach((m, i) => setFlow(m, Math.max(0, Math.min(1, k * 3.4 - i * 0.75))));
     u.potWater.forEach((w, i) => { const f = Math.max(0, Math.min(1, k * 3 - 0.3 - i * 0.7)); w.visible = f > 0; const [a, b] = w.userData.span; w.position.y = a + (b - a) * Math.min(1, f * 1.4); }); // 물그릇마다 물이 고였다가 넘쳐 아래로
   });
   // 1) 물이 수수호 안에 차오른다: 겉을 잠깐 비쳐 보이게 해서 안쪽 물이 아래에서부터 차는 모습을 보인다(D-67)
