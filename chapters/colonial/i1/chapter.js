@@ -164,9 +164,8 @@ const ACT = {
   },
   async class({ ctx, a, st, say, hook, set }) {
     const { world } = ctx;
-    const R = a.at(-9.5, -28);
     world.player.rotation.y = -Math.PI / 2;
-    world.setFixedCamera([R.x + 7, 4.4, R.z - 1.2], [R.x - 1, 1.4, R.z]);
+    set.room1930.frontView(world); // 학생들 얼굴이 보이게(2026-11-04 플레이 점검)
     hook.classroom = set.room1930.kids.length;
     for (const l of st.lines) await say(l);
   },

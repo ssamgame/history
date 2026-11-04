@@ -139,10 +139,10 @@ const ACT = {
     const board = labelSprite('아는 것이 힘', { size: 0.9 }); board.position.set(0, 2.1, -3.2); room.group.add(board); hook.board = true;
     hook.learners = room.kids.length;
     placePlayer(world, [O.x + 2.6, O.z + 4], Math.PI);
-    const view = () => world.setFixedCamera([O.x - 1.2, 5.2, O.z + 7.5], [O.x, 1.4, O.z - 2.2]);
+    const view = () => room.frontView(world); // 칠판 쪽 위에서 글을 배우는 사람들 얼굴(2026-11-04 플레이 점검: 뒤통수만 보이던 것)
     view();
     await ctx.fade?.(false);
-    await say(st.lines[0], room.teacher);
+    await say(st.lines[0]);
     view();
     await say(st.lines[1]);
     ctx.dialogue.close();
