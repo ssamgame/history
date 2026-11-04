@@ -405,3 +405,36 @@ test('d68 조선4: 학익진에서 배에 탈 때 다른 판옥선은 그대로 
   const { mod, s, sc } = await j4Setup();
   try { sc.setStage('wing'); mod.boardForTest(s.ctx, [0, -13]); ok(sc.fleet.visible && sc.leadTurtle.visible, '학익진 배'); } finally { s.done(); }
 });
+
+// D-68 조선 6장(수원 화성)
+async function j6Setup() {
+  const mod = await import('../chapters/joseon/j6/chapter.js'), script = (await import('../chapters/joseon/j6/script.js')).default;
+  const s = touchSetup(script.speakers); mod.default.buildScene(s.w, s.ctx); s.w.level.updateMatrixWorld(true);
+  return { mod, j6: mod.default, script, s, sc: mod.devScene() };
+}
+test('d68 조선6-3: 돌 나르는 백성의 길은 도르래 틀(가·나·다) 다리를 지나지 않는다', async () => {
+  const { sc, s } = await j6Setup();
+  try {
+    const R = sc.carrierRoute; ok(R?.length >= 2, '길');
+    for (let i = 1; i < R.length; i++) for (let t = 0; t <= 1; t += 0.02) {
+      const x = R[i - 1].x + (R[i].x - R[i - 1].x) * t, z = R[i - 1].z + (R[i].z - R[i - 1].z) * t;
+      for (const p of sc.pulleys) ok(!(Math.abs(x - p.x) < 1.6 && Math.abs(z - p.z) < 0.8), `틀 ${p.label} 다리를 지나지 않는다 (${x.toFixed(1)}, ${z.toFixed(1)})`);
+    }
+  } finally { s.done(); }
+});
+test('d68 조선6-4·5: 거중기 끝 줄은 마당을 가로지르지 않고 들보와 기둥을 따라 물레로 내려오며, 물레에 감긴 밧줄(무늬)이 물레와 함께 돈다', async () => {
+  const { sc, s } = await j6Setup();
+  try {
+    const w = sc.winch; ok(w.x > 10, `물레는 거중기 오른쪽 기둥 곁 x ${w.x}`);
+    for (const r of sc.pullRopes) { const b = new THREE.Box3().setFromObject(r); ok(b.max.x - b.min.x < 3 || b.max.y - b.min.y < 0.6, `줄 하나는 들보를 따라 가로로 또는 기둥을 따라 세로로 ${(b.max.x - b.min.x).toFixed(1)}×${(b.max.y - b.min.y).toFixed(1)}`); }
+    const coil = sc.drum.getObjectByName('ropeCoil'); ok(coil?.material.map, '감긴 밧줄 무늬');
+    ok(coil.parent === sc.drum || sc.drum.children.includes(coil.parent), '물레와 함께 돈다');
+  } finally { s.done(); }
+});
+test('d68 조선6-6: 화성 둘러보기에서 학생과 정조는 성벽 위에서 같은 방향(성 밖)을 본다', async () => {
+  const { mod, s } = await j6Setup();
+  try {
+    const src = await (await fetch('../chapters/joseon/j6/chapter.js')).text();
+    ok(!/world\.player\.clone\(/.test(src), '학생 복사본(뼈대가 원래 학생에 묶인다)을 쓰지 않는다');
+  } finally { s.done(); }
+});

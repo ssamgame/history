@@ -113,10 +113,15 @@ export function buildJ6Scene(world) {
   mk(new THREE.TorusGeometry(0.22, 0.05, 6, 12), 0x3a3a3a, 0, -0.3, 0, lower);
   for (const sx of [-0.7, 0.7]) mk(new THREE.CylinderGeometry(0.025, 0.025, 0.8, 4), 0xd8c9a0, sx * 0.6, -0.55, 0, lower, false).rotation.z = sx * 0.9;
   // 끝 줄: 위 도르래 마지막 바퀴에서 물레 통으로(수레가 움직이면 따라 기운다)
+  // D-68(선생님: 줄이 튀어나오지 않게): 끝 줄은 마당을 가로지르지 않고 들보 밑을 따라 오른쪽 기둥 위 도르래까지 가서, 기둥을 따라 물레로 내려온다
   const pull = mk(new THREE.CylinderGeometry(0.035, 0.035, 1, 5), 0xd8c9a0, 0, 0, 0, trolley, false);
-  const WINCH_AT = new THREE.Vector3(3, 1.1, WALL_Z + 2.8);
+  const WINCH_AT = new THREE.Vector3(TRACK[1] + 1.6, 1.1, WALL_Z + 2.2);
+  const BEAM_END = new THREE.Vector3(TRACK[1] + 1.6, 8.6, WALL_Z);
+  const down = mk(new THREE.CylinderGeometry(0.035, 0.035, 1, 5), 0xd8c9a0, 0, 0, 0, L, false);
+  ropeBetween(down, BEAM_END, new THREE.Vector3(WINCH_AT.x, WINCH_AT.y + 0.3, WALL_Z + 2.2 - 0.05));
+  mk(new THREE.CylinderGeometry(0.22, 0.22, 0.12, 12), 0x5a3f2a, BEAM_END.x, BEAM_END.y + 0.1, WALL_Z, L).rotation.x = Math.PI / 2; // 기둥 위 도르래
   const pullFrom = new THREE.Vector3(tackle.pullX, 8.6, 0), pullTo = new THREE.Vector3();
-  const updatePull = () => { pullTo.set(WINCH_AT.x - trolley.position.x, WINCH_AT.y, WINCH_AT.z - WALL_Z); ropeBetween(pull, pullFrom, pullTo); };
+  const updatePull = () => { pullTo.set(BEAM_END.x - trolley.position.x, BEAM_END.y, 0); ropeBetween(pull, pullFrom, pullTo); };
   updatePull();
   // 거중기 아래 땅의 돌 더미(여기서 돌을 집어 올린다)
   for (const [dx, dz] of [[-0.6, 1.8], [0.9, 2.2], [0.1, 3.3]]) mk(new THREE.BoxGeometry(2, 1.2, 2.4), 0xb3ada2, TRACK[0] + dx, 0.6, WALL_Z + dz).rotation.y = dx;
@@ -182,12 +187,18 @@ export function buildJ6Scene(world) {
   });
 
   // 거중기 물레(D-27): 거중기 왼쪽 기둥 곁. 손잡이를 돌리면 매단 돌이 올라간다
-  const winch = new THREE.Group(); winch.position.set(3, 0, WALL_Z + 2.8); L.add(winch); // 빈자리 둘 사이, 앞을 가리는 건물이 없는 곳
+  const winch = new THREE.Group(); winch.position.set(WINCH_AT.x, 0, WINCH_AT.z); L.add(winch); // 오른쪽 기둥 곁(D-68: 줄이 기둥을 따라 내려온다)
   for (const sx of [-0.7, 0.7]) mk(new THREE.BoxGeometry(0.16, 1.2, 0.16), 0x7a5a3c, sx, 0.6, 0, winch);
   const drum = new THREE.Group(); drum.position.y = 1.1; winch.add(drum);
   { const d = mk(new THREE.CylinderGeometry(0.28, 0.28, 1.3, 10), 0x8a6a45, 0, 0, 0, drum); d.rotation.z = Math.PI / 2;
+    // 물레 통에 감긴 밧줄(D-68): 꼰 밧줄 무늬. 물레와 함께 돌아 줄이 감기는 것이 보인다
+    const cv = document.createElement('canvas'); cv.width = 64; cv.height = 256; const c = cv.getContext('2d');
+    c.fillStyle = '#c9b48a'; c.fillRect(0, 0, 64, 256);
+    for (let y = -64; y < 320; y += 16) { c.strokeStyle = '#8a7350'; c.lineWidth = 5; c.beginPath(); c.moveTo(0, y); c.lineTo(64, y + 24); c.stroke(); c.strokeStyle = '#e3d2a6'; c.lineWidth = 2; c.beginPath(); c.moveTo(0, y + 6); c.lineTo(64, y + 30); c.stroke(); }
+    const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(6, 1);
+    const coil = new THREE.Mesh(new THREE.CylinderGeometry(0.33, 0.33, 0.9, 16), new THREE.MeshLambertMaterial({ map: tex })); coil.rotation.z = Math.PI / 2; coil.name = 'ropeCoil'; drum.add(coil);
     for (let k = 0; k < 4; k++) { const sp = mk(new THREE.BoxGeometry(0.08, 1.3, 0.08), 0x5a3f2a, 0.72, 0, 0, drum); sp.rotation.x = k * Math.PI / 4; } } // 손잡이 살(돌리는 막대)
-  world.addCollider({ x: 3, z: WALL_Z + 2.8, r: 0.8 });
+  world.addCollider({ x: WINCH_AT.x, z: WINCH_AT.z, r: 0.8 });
 
   world.addNpc('official', LOOKS.joseonOfficial, -6, 7, Math.PI);
   world.addNpc('worker', LOOKS.worker, 7, 4.5, -Math.PI / 2);
@@ -208,7 +219,7 @@ export function buildJ6Scene(world) {
     add() { if (pileN >= SLOTS.length) pileN -= 1; pileN += 1; showPile(); pileClock = 0; },
     take() { if (pileN > 2) { pileN -= 1; showPile(); } },
   };
-  const ROUTE = [[7.3, 0.2], [6.3, -5.5], [-4.6, -5.9], [-6.8, -6.5]].map(([x, z]) => new THREE.Vector3(x, 0, z));
+  const ROUTE = [[7.8, 0.2], [7.8, -5.4], [-4.6, -5.9], [-6.8, -6.5]].map(([x, z]) => new THREE.Vector3(x, 0, z)); // D-68: '다' 도르래 틀(x 4.4~6.6) 다리를 지나지 않게 동쪽으로 돌아간다
   const carriers = [0, 0.37, 0.71].map((k, i) => {
     const p = makePerson(LOOKS.worker);
     const u = p.userData;
@@ -268,9 +279,9 @@ export function buildJ6Scene(world) {
 
   surroundings(world, { bounds: world.bounds, houses: 'thatch', trees: ['pine', 'tree'], count: 10, gap: 8, seed: 19 }); // 걷는 곳 바깥에 그 장소다운 집·나무(깊이감)
   return {
-    carriers, yardPile, tackle, drum, stoneH: () => lower.userData.h,
+    carriers, carrierRoute: ROUTE, yardPile, tackle, drum, stoneH: () => lower.userData.h,
     setCarriers(on) { carriersOn = on; carriers.forEach(p => { p.visible = on; }); },
-    start: [0, 8.5], introFrom: [0, 15], yardGate, pulleys: PULLEYS, winch: { x: 3, z: WALL_Z + 4.2 }, fillers, gapGlow, trolley, stone, setLift, gate, slideTo: x => slideTo(x), liftTo: h => liftTo(h), PICK_H, GAP_H,
+    start: [0, 8.5], introFrom: [0, 15], yardGate, pulleys: PULLEYS, winch: { x: WINCH_AT.x, z: WINCH_AT.z + 1.4 }, pullRopes: [pull, down], fillers, gapGlow, trolley, stone, setLift, gate, slideTo: x => slideTo(x), liftTo: h => liftTo(h), PICK_H, GAP_H,
     // 물레를 한 번 돌린다(손잡이가 돌고 돌이 조금 올라간다)
     turnWinch(h) { const a0 = drum.rotation.x; return Promise.all([anim(0.6, t => { drum.rotation.x = a0 + ease(t) * Math.PI / 2; }), liftTo(h)]); },
     // 돌을 옆으로 옮김: 0 = 왼쪽 끝, 1 = 오른쪽 끝
@@ -293,6 +304,6 @@ export function buildJ6Scene(world) {
     },
     // 거중기 장면 카메라: 화면 비율이 달라도 돌이 지나는 길 양 끝, 빈자리 셋, 들보가 모두 보이게 맞춘다(아래쪽 큰 버튼을 피해 위쪽에)
     wallFit: { target: [0, 3.2, WALL_Z], dir: [0, 0.42, 1], margin: 0.72,
-      points: [[TRACK[0], WALL_H + 2.5, WALL_Z], [TRACK[1], WALL_H + 2.5, WALL_Z], ...GAPS.map(g => [g, WALL_H - 1.2, WALL_Z]), [0, 9.4, WALL_Z]] },
+      points: [[TRACK[0], WALL_H + 2.5, WALL_Z], [TRACK[1], WALL_H + 2.5, WALL_Z], ...GAPS.map(g => [g, WALL_H - 1.2, WALL_Z]), [0, 9.4, WALL_Z], [WINCH_AT.x + 0.8, 0.6, WINCH_AT.z]] }, // 물레까지 보이게(D-68)
   };
 }
