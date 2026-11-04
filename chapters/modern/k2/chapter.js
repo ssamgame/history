@@ -361,10 +361,12 @@ function introScene(ctx) {
   return {
     shots: [
       { cam: [0.3, 2.4, 5], look: [0, 2.4, -5], to: { cam: [0.2, 2.3, 2.6], look: [0, 2.4, -5] },
-        act: () => run(u => { officials.forEach((p, i) => { p.position.z = -2.6 + Math.min(1, u / 2) * 1.6; p.rotation.y = i ? -0.3 : 0.3; }); }) },
+        act: () => { // 화면 양끝에 뒤통수·반쪽 몸으로 걸리던 길손과 우정총국 관리는 첫 장면 동안 숨긴다(2026-11-04 플레이 점검)
+          folk.forEach(p => { p.visible = false; }); const ck = world.npcs.get('clerk'); if (ck) ck.mesh.visible = false;
+          run(u => { officials.forEach((p, i) => { p.position.z = -2.6 + Math.min(1, u / 2) * 1.6; p.rotation.y = i ? -0.3 : 0.3; }); }); } },
       { cam: [-7, 2.3, 6.2], look: [5, 1.5, 1.5], to: { cam: [-7.5, 2.2, 5.6], look: [2, 1.5, 1.5] },
         act: () => {
-          qing.forEach(p => { p.visible = true; }); officials.forEach(p => { p.visible = false; });
+          qing.forEach(p => { p.visible = true; }); officials.forEach(p => { p.visible = false; }); folk.forEach(p => { p.visible = true; }); const ck = world.npcs.get('clerk'); if (ck) ck.mesh.visible = true;
           const kim = world.npcs.get('kimokgyun'); if (kim) kim.mesh.visible = false; // 큰길가의 김옥균이 행렬을 가리지 않게(끝나면 다시)
           run(u => {
             qing.forEach((p, i) => { p.position.x = 16 + Math.floor(i / 2) * 1.6 - u * 3.4; });
@@ -372,7 +374,7 @@ function introScene(ctx) {
           });
         } },
     ],
-    done: () => { off?.(); off = null; const kim = world.npcs.get('kimokgyun'); if (kim) kim.mesh.visible = true; for (const o of [...officials, ...folk, ...qing, cart]) o.removeFromParent(); },
+    done: () => { off?.(); off = null; for (const id of ['kimokgyun', 'clerk']) { const n = world.npcs.get(id); if (n) n.mesh.visible = true; } for (const o of [...officials, ...folk, ...qing, cart]) o.removeFromParent(); },
   };
 }
 

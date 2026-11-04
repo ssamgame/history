@@ -202,3 +202,9 @@ test('k1 플레이 점검: 연무당 조약 장면은 두 나라 대표의 얼�
     ok(h.repFacing >= 0.75, `대표 얼굴 ${h.repFacing}`);
   } finally { bot.stop(); s.done(); }
 }, { timeout: 120000 });
+
+test('k1 플레이 점검: 해안 순찰에서 말하는 선비(망루)·관리(포대)가 그 자리에 서 있다(목소리만 들리던 것)', () => {
+  const r = k1.parts[1].route;
+  eq(r[1].look, 'scholar'); eq(r[2].look, 'joseonOfficial');
+  eq(r[1].talk[0].who, 'scholar'); eq(r[2].talk[0].who, 'official');
+});
