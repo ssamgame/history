@@ -488,19 +488,39 @@ export function steamship(g, p = {}) {
   const P = parts();
   const hull = (scale, h) => { const sh = new THREE.Shape([new THREE.Vector2(-2.5 * scale, -8), new THREE.Vector2(2.5 * scale, -8), new THREE.Vector2(2.5 * scale, 4.5), new THREE.Vector2(0, 8.2), new THREE.Vector2(-2.5 * scale, 4.5)]); const geo = new THREE.ExtrudeGeometry(sh, { depth: h, bevelEnabled: false }); geo.rotateX(Math.PI / 2); return geo; };
   if (p.old) {
-    P.add(hull(1, 2.4), 0x3a2c20, 'wood', [0, 2.0, 0]);
-    P.add(hull(1.02, 0.45), 0x1e1c1a, 'grain', [0, 0.3, 0]);
-    P.add(hull(1.03, 0.3), 0xc9b48a, 'wood', [0, 2.15, 0]); // 뱃전의 밝은 띠
+    // D-68(2026-11-04 선생님 그림 '서구의 배(이양선)'): 1860~70년대에 동아시아에 온 증기 외륜선. 쇠로 덧댄 검은 선체에 붉은 물띠,
+    // 양옆 가운데의 커다란 물레바퀴 덮개, 높은 굴뚝과 연기, 돛대 둘에 네모 돛. flag: 'japan'이면 고물에 일장기(일본 군함)
+    P.add(hull(1, 2.4), 0x26282c, 'grain', [0, 2.0, 0]);
+    P.add(hull(1.02, 0.45), 0x7a2a22, 'grain', [0, 0.3, 0]);
+    P.add(hull(1.03, 0.22), 0xc9b48a, 'wood', [0, 2.2, 0]); // 뱃전의 밝은 띠
     P.box(4.7, 0.14, 12, 0x8a6a48, 'wood', [0, 2.05, -1.4]);
-    P.box(2.4, 1.0, 3, 0x5a4232, 'wood', [0, 2.6, -4.6]); // 뒤쪽 선실
-    P.cyl(0.5, 0.55, 3.0, 12, 0x1e1c1a, 'grain', [0, 3.6, -0.4]); // 굴뚝 하나
-    for (const [dz, hm] of [[4.2, 8.5], [0.9, 9.5], [-3.2, 8.2]]) {
-      P.cyl(0.1, 0.13, hm, 6, 0x4a3424, 'wood', [0, 2 + hm / 2, dz]);
-      for (const [k, yw] of [[0.55, 3.6], [0.82, 2.7]]) { P.box(yw, 0.08, 0.08, 0x4a3424, 'wood', [0, 2 + hm * k, dz]); P.box(yw * 0.9, 0.22, 0.2, 0xe2dccb, 'cloth', [0, 2 + hm * k - 0.16, dz + 0.05]); } // 활대와 감아 둔 돛
+    P.box(2.6, 1.1, 3.2, 0x3a3a3c, 'grain', [0, 2.65, -4.8]); // 뒤쪽 선실
+    P.box(5.6, 0.25, 1.6, 0x3a3a3c, 'grain', [0, 2.9, 0.4]); // 물레바퀴 덮개를 잇는 다리(함교)
+    P.cyl(0.55, 0.6, 4.6, 14, 0x1e1c1a, 'grain', [0, 4.3, -0.8]); // 높은 굴뚝
+    P.cyl(0.62, 0.62, 0.3, 14, 0x7a2a22, 'grain', [0, 6.5, -0.8]); // 굴뚝 테
+    for (const [dz, hm] of [[4.0, 9.5], [-3.0, 9.0]]) { // 돛대 둘과 네모 돛
+      P.cyl(0.1, 0.14, hm, 6, 0x4a3424, 'wood', [0, 2 + hm / 2, dz]);
+      for (const [k, yw, sh] of [[0.5, 4.2, 1.5], [0.78, 3.2, 1.1]]) { P.box(yw, 0.08, 0.08, 0x4a3424, 'wood', [0, 2 + hm * k + sh / 2, dz]); P.box(yw * 0.92, sh, 0.06, 0xe2dccb, 'cloth', [0, 2 + hm * k, dz + 0.08]); }
     }
-    P.cyl(0.06, 0.08, 4, 5, 0x4a3424, 'wood', [0, 3.4, 9.2], [1.1, 0, 0]); // 뱃머리 기움 돛대
+    P.cyl(0.06, 0.08, 4.4, 5, 0x4a3424, 'wood', [0, 3.4, 9.2], [1.1, 0, 0]); // 뱃머리 기움 돛대
     P.cyl(0.015, 0.015, 9.4, 3, 0x2b241c, 'grain', [0, 9.6, 0.5], [Math.PI / 2 - 0.02, 0, 0]);
-    return P.into(g);
+    P.into(g);
+    const wheelM = mat(0x2b2b2e, 'grain');
+    for (const s of [-1, 1]) { // 물레바퀴 덮개(반원 상자)와 바퀴살 무늬
+      const box = new THREE.Mesh(new THREE.CylinderGeometry(1.7, 1.7, 0.7, 16, 1, false, 0, Math.PI).rotateZ(Math.PI / 2).rotateY(Math.PI / 2), wheelM);
+      box.position.set(s * 2.75, 2.2, 0.4); box.rotation.y = s > 0 ? 0 : Math.PI; box.name = 'paddleBox'; box.castShadow = true; g.add(box);
+      for (let k = 0; k < 6; k++) { const sp = new THREE.Mesh(new THREE.BoxGeometry(0.05, 3.2, 0.12), mat(0xc9b48a, 'wood')); sp.position.set(s * 3.11, 2.2, 0.4); sp.rotation.x = k * Math.PI / 6; g.add(sp); }
+    }
+    const smoke = new THREE.Group(); smoke.name = 'funnelSmoke'; g.add(smoke); // 굴뚝에서 피어오르는 검은 연기
+    for (let k = 0; k < 4; k++) { const m = new THREE.Mesh(new THREE.SphereGeometry(0.7 + k * 0.35, 8, 6), new THREE.MeshLambertMaterial({ color: 0x3a3836, transparent: true, opacity: 0.55 - k * 0.1, depthWrite: false })); m.position.set(0, 7.2 + k * 1.1, -0.8 - k * 1.2); smoke.add(m); }
+    if (p.flag === 'japan') {
+      const cv = document.createElement('canvas'); cv.width = 96; cv.height = 64; const c = cv.getContext('2d');
+      c.fillStyle = '#f4f1ea'; c.fillRect(0, 0, 96, 64); c.fillStyle = '#c0282d'; c.beginPath(); c.arc(48, 32, 19, 0, Math.PI * 2); c.fill();
+      const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 3, 5), mat(0x4a3424, 'wood')); pole.position.set(0, 3.8, -7.4); g.add(pole);
+      const f = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.0).translate(0, 0, 0), new THREE.MeshLambertMaterial({ map: tex, side: THREE.DoubleSide })); f.position.set(0, 4.8, -8.15); f.rotation.y = Math.PI / 2; f.name = 'shipFlag'; g.add(f);
+    }
+    return g;
   }
   P.add(hull(1, 2.4), 0x2b2f36, 'grain', [0, 2.0, 0]);
   P.add(hull(1.02, 0.45), 0x8a2f24, 'grain', [0, 0.3, 0]);

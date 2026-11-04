@@ -41,7 +41,7 @@ const YEONMU = { edge: { style: 'tile', seed: 47 }, center: [{ type: 'papers', x
   props: [
     { type: 'pavilion', x: 0, z: -11 }, { type: 'desk', x: 0, z: -6 },
     { type: 'crowd', x: -4, z: -5, n: 2, cols: 2, looks: ['joseonOfficial'], face: Math.PI / 2 }, { type: 'crowd', x: 4, z: -5, n: 2, cols: 2, looks: ['gentleman'], face: -Math.PI / 2 },
-    { type: 'water', x: 0, z: -80, w: 240, d: 120 }, { type: 'steamship', x: -16, z: -30, ry: Math.PI / 2, solid: false, old: true }, // 앞쪽은 모두 바다(D-03)
+    { type: 'water', x: 0, z: -80, w: 240, d: 120 }, { type: 'steamship', x: -16, z: -30, ry: Math.PI / 2, solid: false, old: true, flag: 'japan' }, // 앞쪽은 모두 바다(D-03). 연무당 앞바다의 일본 군함
   ],
 };
 
@@ -49,7 +49,7 @@ const YEONMU = { edge: { style: 'tile', seed: 47 }, center: [{ type: 'papers', x
 // 카메라는 망루 뒤에서 바다를 내려다본다. 약 7.5초 뒤 따라가기 카메라로 돌아오고, 군함은 그 자리에 머문다
 export function warshipArrives(ctx, s, g) {
   const { world, audio } = ctx;
-  const ship = new THREE.Group(); BUILD.steamship(ship, { old: true }); ship.position.set(-6, 0.3, -80); g.add(ship);
+  const ship = new THREE.Group(); BUILD.steamship(ship, { old: true, flag: 'japan' }); ship.position.set(-6, 0.3, -80); g.add(ship);
   const eye = s.at(-5, 8), look = s.at(-7, -40); // 망루(-15, -2.4)·정자를 피한 망루 뒤쪽 높은 곳
   world.setFixedCamera([eye.x, 8, eye.z], [look.x, 2, look.z]);
   const puffs = [];
@@ -203,15 +203,15 @@ function introScene(ctx) {
   const { world } = ctx, L = world.level, T = 0.9; // T: 돌 축대 높이
   const young = { ...LOOKS.gojongKing, face: { ...LOOKS.gojongKing.face, beard: null } };
   const king = makePerson(young); king.scale.setScalar(0.8); king.position.set(-2.2, T, -5.0); L.add(king);
-  const regent = makePerson(LOOKS.daewongun); regent.position.set(-3.9, T, -7.4); L.add(regent);
+  const regent = makePerson(LOOKS.daewongun); regent.position.set(-6.6, T, -4.9); regent.rotation.y = Math.PI / 2; L.add(regent);
   const ship = new THREE.Group(); BUILD.steamship(ship, { old: true }); ship.position.set(-16, 0.3, -40); L.add(ship);
   let off = null, t = 0;
   const run = fn => { off?.(); t = 0; off = world.onUpdate(dt => { t += dt; fn(t); }); };
   return {
     shots: [
       { cam: [-3.4, 2.4, 0.4], look: [-3, 2.5, -6], to: { cam: [-3.1, 2.3, -0.8], look: [-3, 2.5, -6] },
-        act: () => run(u => { // 대원군이 관아 안에서 왕 곁으로 걸어 나와 마을 쪽을 본다
-          regent.position.set(-3.9, T, -7.4 + 2.6 * Math.min(1, u / 2.2));
+        act: () => run(u => { // 대원군이 축대 위를 옆에서 걸어와 왕 곁에 서서 마을 쪽을 본다(D-68: 관아 문·벽을 지나 나타나던 것 고침)
+          const k = Math.min(1, u / 2.4); regent.position.set(-6.6 + 2.7 * k, T, -4.9); regent.rotation.y = k < 1 ? Math.PI / 2 : 0;
         }) },
       { cam: [1.8, 2.6, -8.4], look: [-1.5, 1.5, -30], to: { cam: [1.6, 2.4, -9.4], look: [-2.5, 1.5, -32] }, // 관아 뒤 담 사이 바닷가
         act: () => {

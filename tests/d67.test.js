@@ -438,3 +438,19 @@ test('d68 조선6-6: 화성 둘러보기에서 학생과 정조는 성벽 위에
     ok(!/world\.player\.clone\(/.test(src), '학생 복사본(뼈대가 원래 학생에 묶인다)을 쓰지 않는다');
   } finally { s.done(); }
 });
+
+// D-68 근대 1장(강화도 조약)
+test('d68 근대1-2: 이양선·일본 군함은 당시 발전한 증기 외륜선(양옆 물레바퀴 덮개·높은 굴뚝과 연기·돛대 둘), 일본 군함은 일장기', async () => {
+  const { BUILD } = await import('../chapters/kit/town.js');
+  const g = new THREE.Group(); BUILD.steamship(g, { old: true });
+  ok(g.getObjectByName('paddleBox'), '물레바퀴 덮개'); ok(g.getObjectByName('funnelSmoke'), '굴뚝 연기');
+  ok(!g.getObjectByName('shipFlag'), '서양 배는 나라를 정하지 않는다');
+  const j = new THREE.Group(); BUILD.steamship(j, { old: true, flag: 'japan' }); ok(j.getObjectByName('shipFlag'), '일본 군함은 일장기');
+  const src = (await (await fetch('../chapters/modern/k1/chapter.js')).text()) + (await (await fetch('../chapters/modern/k1/story.js')).text());
+  ok((src.match(/flag: 'japan'/g) || []).length >= 3, '일본 군함 세 곳(망루·연무당·조약 장면)');
+});
+test('d68 근대1-1: 흥선 대원군은 관아 건물(문·벽)을 지나 나타나지 않고 축대 위를 옆에서 걸어온다', async () => {
+  const src = await (await fetch('../chapters/modern/k1/chapter.js')).text();
+  ok(!/regent\.position\.set\(-3\.9, T, -7\.4 \+ 2\.6/.test(src), '건물 안에서 앞으로 걸어 나오지 않는다');
+  ok(/regent\.position\.set\(-6\.6 \+ 2\.7/.test(src), '축대 위를 옆에서');
+});
