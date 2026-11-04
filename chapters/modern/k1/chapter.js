@@ -176,7 +176,7 @@ const base = makeKitChapter({
   parts: [
     // 물건 셋을 저마다 그 일의 자리로(D-30 D-01): 경복궁 공사장 · 세금 거두는 관아 · 흥선 대원군(바다 너머 서양 배)
     { ...script.parts.regent, goal: script.goals[2], arena: PALACE, from: [0, 10],
-      route: xy(script.parts.regent.route, [{ x: -15, z: 1, ry: Math.PI / 2 }, { x: -11, z: -6 }, { x: 0, z: -6, ry: 0 }, { x: 11, z: -6, ry: 0 }, { x: 0, z: -6 }]) }, // 공사장 → 경복궁 터 → 세금 관리 → 양반 댁 → 세금 관리
+      route: xy(script.parts.regent.route, [{ x: -12.5, z: 3, ry: Math.PI / 2 }, { x: -11, z: -6 }, { x: 0, z: -6, ry: 0 }, { x: 11, z: -6, ry: 0 }, { x: 0, z: -6 }]) }, // 공사장 → 경복궁 터 → 세금 관리 → 양반 댁 → 세금 관리
     // 둘째 놀이부터는 마을의 그 사람에게 가서 말을 걸어야 시작한다(D-30 C-05, intro 앞의 meet)
     { ...script.parts.coast, goal: script.goals[3], arena: COAST, from: [0, 21], intro: meet('elder', '마을 어르신과 이야기하기', script.parts.coast.intro),
       route: xy(script.parts.coast.route, [{ x: -4, z: 12 }, { x: -12, z: 0 }, { x: 6, z: -2 }, { x: 6, z: 14 }]).map((r, i) => i === 1 ? { ...r, scene: warshipArrives, holdCenter: true, look: 'scholar', ry: -Math.PI / 2 } : i === 2 ? { ...r, look: 'joseonOfficial', ry: -Math.PI / 2 } : i === 3 ? { ...r, scene: ctx => treatyScene(ctx) } : r) }, // 망루의 선비·포대의 관리가 그 자리에 선다(2026-11-04 플레이 점검: 목소리만 들리던 것) // 망루: 남은 시간을 화면 가운데 크게(D-02)

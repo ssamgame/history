@@ -179,6 +179,7 @@ function keepApart() {
     let a = groups.get(g.parent); if (!a) groups.set(g.parent, a = []);
     a.push(g);
   }
+  for (const g of walkers) { const u = g.userData; if (u.pushT && !u.pushedNow) u.pushT = Math.max(0, u.pushT - 1 / 60); u.pushedNow = false; } // 막히지 않으면 천천히 풀린다
   for (const list of groups.values()) {
     if (list.length < 2 || !list.some(g => g.userData.moving)) continue;
     for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) {
@@ -186,7 +187,9 @@ function keepApart() {
       if (!ma && !mb) continue;
       const dx = B.position.x - A.position.x, dz = B.position.z - A.position.z, d = Math.hypot(dx, dz);
       if (d >= PERSON_GAP || d < 1e-4 || Math.abs(B.position.y - A.position.y) > 1) continue;
-      const push = PERSON_GAP - d, ka = ma && mb ? 0.5 : ma ? 1 : 0, nx = dx / d, nz = dz / d;
+      const ka = ma && mb ? 0.5 : ma ? 1 : 0, mover = ka === 1 ? A : ka === 0 ? B : null;
+      if (mover) { const u = mover.userData; u.pushT = (u.pushT || 0) + 1 / 30; u.pushedNow = true; if (u.pushT > 1.5) continue; } // 서 있는 사람에게 1.5초 넘게 막히면(그 사람 자리가 가는 곳 등) 더는 밀지 않는다: 걸음이 멈춰 버리지 않게
+      const push = PERSON_GAP - d, nx = dx / d, nz = dz / d;
       A.position.x -= nx * push * ka; A.position.z -= nz * push * ka;
       B.position.x += nx * push * (1 - ka); B.position.z += nz * push * (1 - ka);
     }
