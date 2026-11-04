@@ -38,7 +38,7 @@ export const ERAS = { edge: { style: 'modern', seed: 113 },
   arches: [27, 3, -21],
   // 걸어가 서는 자리(script.parts.eras.eras[*].stations 차례)
   stations: [{ x: -4.5, z: 19 }, { x: 4.5, z: 11 }, { x: -4.5, z: -4 }, { x: 4.5, z: -12.5 }, { x: -4.5, z: -28 }, { x: 4.5, z: -33 }],
-  train: [10, -14], truck: [6.4, -36], // 트럭은 선로 옆에(2026-11-04 선생님: 떠나는 기차가 트럭을 뚫고 지나가던 것)
+  train: [10, -14], truck: [6.6, -36.5], // 트럭은 선로 옆에(2026-11-04 선생님: 떠나는 기차가 트럭을 뚫고 지나가던 것)
 };
 const ALLEY = { edge: { style: 'street', seed: 139 }, center: [{ type: 'jars', x: -15, z: 3 }, { type: 'straw', x: 14, z: 10 }, { type: 'papers', x: -14, z: -10, kind: 'book', n: 2 }], // 마을 골목: 헌병이 순찰하고, 쌀가마·짐 더미 뒤에 숨을 수 있다. 끝에 서당
   origin: [400, 0], ground: 'earth', groundColor: 0x8a7a62, bounds: { x0: -18, x1: 18, z0: -24, z1: 20 },
@@ -198,13 +198,14 @@ export async function eraWalk(ctx) {
   const room1910 = classroom(g, 9.5, 11, { teacher: TEACHER_SWORD }); room1910.group.rotation.y = -Math.PI / 2; // 열린 쪽이 길(서쪽)
   world.addCollider({ ...a.at(9.5, 11), r: 3.6 });
   const police = [0, 1, 2, 3].map(() => { const p = person(g, 'gendarme', -10.5, -4, Math.PI / 2); p.visible = false; return p; });
-  const train = new THREE.Group(); train.position.set(A.train[0], 0, A.train[1]); BUILD.train(train, { cars: 2, track: 26 }); g.add(train);
+  const rails = new THREE.Group(); rails.position.set(A.train[0], 0, A.train[1] - 12); BUILD.rails(rails, { track: 50 }); g.add(rails); // 선로는 땅에 그대로(2026-11-04 선생님: 선로가 기차와 함께 움직이던 것)
+  const train = new THREE.Group(); train.position.set(A.train[0], 0, A.train[1]); BUILD.train(train, { cars: 2, rails: false }); g.add(train);
   world.addCollider({ ...a.at(A.train[0], A.train[1]), r: 2.2 });
   const worker = person(g, 'worker', 6.8, -11, -Math.PI / 2);
   const room1930 = classroom(g, -9.5, -28, { teacher: 'teacherUniform', japan: true }); room1930.group.rotation.y = Math.PI / 2; // 열린 쪽이 길(동쪽)
   world.addCollider({ ...a.at(-9.5, -28), r: 3.6 });
-  const truck = new THREE.Group(); truck.position.set(A.truck[0], 0, A.truck[1]); BUILD.truck(truck, {}); g.add(truck);
-  world.addCollider({ ...a.at(A.truck[0], A.truck[1]), r: 2 });
+  const truck = new THREE.Group(); truck.position.set(A.truck[0], 0, A.truck[1]); BUILD.truck(truck, {}); truck.scale.setScalar(1.45); g.add(truck); // 사람을 싣고 가는 군용 트럭을 크게(2026-11-04 선생님)
+  world.addCollider({ ...a.at(A.truck[0], A.truck[1]), r: 2.9 });
   const forced = [GENDARME_SWORD, 'peasant', 'commoner', 'worker', 'student', GENDARME_SWORD].map((look, i) => { const p = person(g, look, 1.5 + (i % 2) * 0.3, -31 - i * 0.9, Math.PI / 2); p.visible = false; return p; });
   const marks = stationMarks(a, g, stations, A.stations);
   const p0 = a.at(...A.from); placePlayer(world, [p0.x, p0.z]);

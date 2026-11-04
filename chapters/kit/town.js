@@ -230,10 +230,14 @@ export const BUILD = {
   // 군용 트럭
   truck(g, p) { BLD.truck(g, p); return { rect: [2.4, 5.2] }; },
   // 증기 기관차와 화물칸(쌀가마를 싣고), 선로
-  train(g, p) {
+  rails(g, p) { // 선로(침목과 레일)
     const len = p.track || 50;
     for (const dx of [-0.7, 0.7]) add(g, box(0.1, 0.08, len), 0x6b6862, dx, 0.04, 0, null, false);
     for (let z = -len / 2; z < len / 2; z += 1.4) add(g, box(2, 0.08, 0.3), 0x5a3f2a, 0, 0.02, z, 'wood', false);
+    return 0;
+  },
+  train(g, p) { // rails: false면 기관차·화물칸만(움직이는 기차는 선로를 따로 깔아 선로가 함께 움직이지 않게)
+    if (p.rails !== false) BUILD.rails(g, p);
     add(g, box(2.2, 2.2, 5), 0x2b2b2b, 0, 1.5, -6);
     add(g, new THREE.CylinderGeometry(1, 1, 3.4, 14), 0x2b2b2b, 0, 1.8, -7.6).rotation.x = Math.PI / 2;
     add(g, new THREE.CylinderGeometry(0.35, 0.45, 1.4, 10), 0x1e1c1a, 0, 3.3, -8.6);

@@ -3,7 +3,7 @@
 `CLAUDE.md`(꼭 지킬 것·내용 원칙) → 이 파일 순서로 읽는다. 결정은 `docs/team/decisions.md`, 테스트 기록은 `docs/team/tested.md`.
 
 ## 1. 지금 상태
-- 작업 브랜치 `claude/goryeo-game-handoff-vus00f`. 학생 사이트 **goryeo-v76**(D-71 선생님 수정 목록 3).
+- 작업 브랜치 `claude/goryeo-game-handoff-vus00f`. 학생 사이트 **goryeo-v77**(D-71 선생님 수정 목록 3 + 일제 1장 선로·트럭).
 - 미리보기 https://claude.ai/artifact/QSh1YhvtwooxoyDRsBZsCT 에 v76 코드를 올림(4절).
 - 전체 테스트(C) 결과는 `docs/team/tested.md` 마지막 줄. 예전부터 알려진 실패 2개: `arena … k1 doc papers(0,-8.5)`, `stage3 G2 … 해가 카메라 뒤쪽`.
 
@@ -24,7 +24,7 @@
   - `python3 tools/qa/sheet.py qa-out/play/k1-intro 1 64 4 4`: 화면 16장을 한 판으로.
   - `introshot.cjs k4 0 2 out.jpg`(도입 n번째 화면), `partshot.cjs k5-minigame "대사 글" out.jpg 260`(그 대사가 뜰 때 화면).
   - `run.cjs game:k2-explore+bot --sec 150`(감지기: 묻힘·겹침·순간이동, 자리와 사진). 매복 놀이의 '묻힘'은 엎드린 사람이라 오류 아님.
-- 배포: 전체 테스트 → `core/precache.js` CACHE(다음 **goryeo-v77**)와 `tests/sw.test.js` → 커밋 → main 병합·push(GitHub 500 오류가 잦다: 4·8·16초 간격으로 다시) → GitHub MCP `actions_list`로 'pages build and deployment' success 확인(github.io는 이 환경에서 막힘) → 미리보기 다시 올림.
+- 배포: 전체 테스트 → `core/precache.js` CACHE(다음 **goryeo-v78**)와 `tests/sw.test.js` → 커밋 → main 병합·push(GitHub 500 오류가 잦다: 4·8·16초 간격으로 다시) → GitHub MCP `actions_list`로 'pages build and deployment' success 확인(github.io는 이 환경에서 막힘) → 미리보기 다시 올림.
 - 미리보기 올리는 법: 페이지 `index.html`, url 위 주소, 바뀐 파일만 `files`로(나머지는 남는다). 미리보기 전용 사본 셋은 스크래치패드에 만들어 보낸다(저장소에 넣지 않음):
   - `core/body.js`: `loadBody`의 `base = await new GLTFLoader().loadAsync(url);`를 `url === BODY_URL`이면 `(await import('../assets/models/body.js')).default`(base64)를 `parseAsync`로 읽게 바꾼 사본.
   - `chapters/index.js`: `isUnlocked`에서 `if (!chapter.load) return false;` 다음 줄에 `return true;`(모든 장 열림). 이 파일을 안 바꿨으면 다시 보낼 필요 없다.
