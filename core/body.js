@@ -28,7 +28,14 @@ export async function loadBody(url = BODY_URL) {
   return base;
 }
 export const bodyReady = () => !!base;
-export function bodyOn() { try { return new URLSearchParams(location.search).get('body') === '1' || localStorage.getItem('goryeo-body') === '1'; } catch { return false; } }
+// 2026-11-03 선생님: 학생 사이트에서도 기본으로 켠다. ?body=0이나 localStorage goryeo-body=0이면 예전 인물(못 불러와도 예전 인물로 한다)
+export function bodyOn() {
+  try {
+    const q = new URLSearchParams(location.search).get('body');
+    if (q === '0' || q === '1') return q === '1';
+    return localStorage.getItem('goryeo-body') !== '0';
+  } catch { return true; }
+}
 
 const wq = new THREE.Quaternion(), wq2 = new THREE.Quaternion(), wv = new THREE.Vector3(), wv2 = new THREE.Vector3();
 const inside = (o, root) => { for (let q = o; q; q = q.parent) if (q === root) return true; return false; };
@@ -90,7 +97,7 @@ export function attachBody(g, look = {}) {
   const S = { root, mixer, acts, links, cur: null, target: null, w: {}, fade: FADE, manual: null, bones: B, look, mixed: new Map(), skinOn: true };
   S.rehome = (from, to) => { people.delete(from); people.add(to); };
   S.freeze = () => { root.traverse(o => { if (o.isSkinnedMesh) o.visible = false; }); people.delete(g); S.frozen = true; }; // 움직이지 않는 군중으로 굳힐 때(core/bake.js)
-  u.skel = S;
+  Object.defineProperty(u, 'skel', { value: S, writable: true, configurable: true }); // 숨긴 칸: three의 clone·toJSON이 userData를 JSON으로 복사할 때 동작기(mixer)의 순환 참조로 죽지 않게
   play(g, 'idle', 0);
   { const k = Math.sin((u.ph ?? 0) * 91.7) * 43758.5453, f = k - Math.floor(k), k2 = Math.sin((u.ph ?? 0) * 37.3) * 24634.6345; acts.idle.time = f * acts.idle.getClip().duration; S.idleRate = 0.7 + 0.6 * (k2 - Math.floor(k2)); acts.idle.timeScale = S.idleRate; } // 숨쉬기 박자도 사람마다 다른 자리·빠르기로
   people.add(g);

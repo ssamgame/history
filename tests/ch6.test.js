@@ -8,6 +8,7 @@ import ch6Script from '../chapters/ch6/script.js';
 import ch6 from '../chapters/ch6/chapter.js';
 import { buildCh6Scene } from '../chapters/ch6/scene.js';
 import { sailLeg } from '../chapters/ch6/chapter.js';
+import { handOf } from '../core/interact.js';
 import { testWorld, touchSetup, touchBot, memSave } from './bot.js';
 import * as THREE from 'three';
 
@@ -145,7 +146,7 @@ test('ch6: 뱃사공의 두 손이 노 손잡이에 붙어 있고, 배가 서면
     const sc = ch6.buildScene(s.w, s.ctx);
     ch6.enterStage(s.ctx, 'minigame');
     sailLeg(s.ctx, sc.legs[0], false);
-    const rig = sc.boat.userData.rower, hands = rig.person.userData.arms.map(a => a.getObjectByName('hand')), h = new THREE.Vector3(), g = new THREE.Vector3();
+    const rig = sc.boat.userData.rower, hands = [0, 1].map(i => handOf(rig.person, i)), h = new THREE.Vector3(), g = new THREE.Vector3();
     let worst = 0, ph0 = rig.ph;
     for (let i = 0; i < 60; i++) {
       s.w.step(0.05, { x: 0, z: -1 });
