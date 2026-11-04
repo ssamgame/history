@@ -11,7 +11,11 @@ import { wait, person, ease, face, stationMarks, walkStations, classroom, meet, 
 import { BUILD } from '../../kit/town.js';
 import { gateLeaves, nameBoard } from '../../kit/gate.js';
 import { walkInAndTalk, anyOrderTalk } from '../../kit/talk.js';
-import { setCarry, mat } from '../../../core/people.js';
+import { setCarry, mat, setLook } from '../../../core/people.js';
+import { playAction } from '../../../core/motion.js';
+import { storyScene } from '../../kit/story.js';
+import { addSculler, autoRow } from '../../kit/row.js';
+import { LOOKS } from '../../../content/characters.js';
 import { placePlayer } from '../../joseon/common.js';
 import script from './script.js';
 
@@ -44,7 +48,7 @@ export const ROADS = { edge: TWO_ROADS_EDGE,
   from: [0, 13], fork: [0, 5.4], ahn: [2.6, 9.6],
   // 걸어가 서는 자리(script.parts.roads.edu.stations, army.stations 차례)
   stations: [{ x: 13, z: 4 }, { x: 13, z: -4 }, { x: 13, z: -8.4 }, { x: -12, z: 3 }, { x: -12, z: -3 }],
-  teacherAt: [15.2, 2], press: [15.4, -1.2], printer: [15.4, 0.4], stack: [15.4, -6.6], merchant: [11.4, -10.4], table: [14.8, -9.6],
+  teacherAt: [15.2, 2], press: [15.4, -1.2], printer: [15.4, 0.4], stack: [15.4, -6.6], merchant: [11.4, -9.2], table: [14.8, -9.6], // 가게 주인은 처마 밖에 선다(2026-11-04 선생님: 머리가 지붕을 뚫던 것)
 };
 // 만주·연해주로: 남쪽 마을에서 들어와 할머니와 인사하고, 북쪽 강가 나룻배까지 의병들과 함께 걷는다(물은 걷는 곳 밖)
 export const EXILE = { edge: { style: 'forest', seed: 733, back: false },
@@ -74,8 +78,42 @@ const HAGUE = { edge: { style: 'brick', seed: 207 }, center: [{ type: 'lamp', x:
   origin: [400, 0], ground: 'stone', groundColor: 0xb0a890, bounds: { x0: -20, x1: 20, z0: -12, z1: 14 },
   props: [
     { type: 'western', x: 0, z: -14, w: 18, d: 5, h: 8, dome: true, color: 0xc8b8a0 },
+    { type: 'crowd', x: -1.4, z: -10.6, n: 1, looks: ['gendarme'], face: 0 }, { type: 'crowd', x: 1.4, z: -10.6, n: 1, looks: ['gendarme'], face: 0 }, // 회의장 문 앞을 막아선 일본군 둘(2026-11-04 선생님: 일제의 방해로 들어가지 못한 것)
   ],
 };
+// 하얼빈 역(2026-11-04 선생님: 안중근이 이토 히로부미를 처단하는 장면, 겨누는 순간까지): 역 건물 앞 승강장, 늘어선 군인, 구경하는 사람들
+export const HARBIN = { edge: { style: 'brick', seed: 919 }, origin: [400, 0], ground: 'stone', groundColor: 0x8f8a80, hill: 0.4, bounds: { x0: -14, x1: 14, z0: -8, z1: 10 },
+  roads: [{ x: 0, z: -5.2, w: 30, d: 0.12, color: 0x55524c }, { x: 0, z: -6.6, w: 30, d: 0.12, color: 0x55524c }], // 선로
+  props: [{ type: 'western', x: 0, z: -11, w: 16, d: 5, h: 6, color: 0x9a7a5a }, { type: 'lamp', x: -7, z: 2.6 }, { type: 'lamp', x: 7, z: 2.6 }] };
+export function harbinScene(ctx, line) {
+  return storyScene(ctx, { key: 'harbin', arena: HARBIN, mood: 'overcast', async run({ g, hook, cam, say, people, fadeIn }) {
+    const { world } = ctx;
+    const guards = [-6, -4, -2, 0, 2, 4].map(x => person(g, 'gendarme', x, -2.6, 0)); // 맞이하러 늘어선 군인
+    const crowd = [[-3.2, 3.4], [-1.8, 3.8], [2.6, 3.6], [3.8, 3.2], [-0.4, 4.4]].map(([x, z], i) => person(g, ['gentleman', 'citizen', 'gentleman', 'citizen', 'gentleman'][i], x, z, Math.PI));
+    const ito = person(g, { ...LOOKS.gentleman, robe: 0x2a2a2e, face: { ...(LOOKS.gentleman.face || {}), beard: 'full', beardColor: '#d8d4cc' } }, -11, 0.4, Math.PI / 2);
+    const aides = [[-12.6, -0.4], [-12.8, 1.2]].map(([x, z]) => person(g, 'gendarme', x, z, Math.PI / 2));
+    const ahn = person(g, 'ahnjunggeun', 1.1, 3.1, Math.PI);
+    const gun = new THREE.Group(); { const b = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.1, 0.22), mat(0x1e1c1a)); b.position.set(0, 0.02, 0.08); gun.add(b); const h = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.14, 0.06), mat(0x3a2a20, 'wood')); h.position.set(0, -0.06, -0.02); h.rotation.x = 0.3; gun.add(h); }
+    people.push(...crowd);
+    crowd.forEach(p => setLook(p, { x: g.position.x - 2, y: 1.7, z: g.position.z + 0.4 }));
+    cam([7.5, 2.8, 9.5], [-1.5, 1.4, 0.6]);
+    await fadeIn();
+    const walk = (list, dx, sec) => { const p0 = list.map(p => p.position.clone()); return wait(world, sec, k => list.forEach((p, i) => { p.position.x = p0[i].x + dx * ease(k); })); };
+    await say({ who: 'guide', text: '여기는 하얼빈 역이야. 기차에서 내린 이토 히로부미가 군인들 앞을 걸어가고 있어.' });
+    ctx.dialogue.close();
+    await walk([ito, ...aides], 9, 5);
+    // 안중근이 사람들 사이에서 앞으로 나서 총을 겨눈다(쏘는 모습은 보여 주지 않는다)
+    setCarry(ahn, gun, 'side');
+    await wait(world, 0.6, k => { ahn.position.z = 3.1 - 1.2 * ease(k); });
+    ahn.rotation.y = Math.atan2(ito.position.x - ahn.position.x, ito.position.z - ahn.position.z);
+    playAction(ahn, { dur: 60, fadeIn: 0.35, pose: () => ({ arms: [null, [-1.55, 0, 0]] }), name: 'aim' });
+    cam([-2.6, 3.6, -6.4], [0.2, 1.3, 1.8]); // 늘어선 군인 너머 높은 곳에서: 앞으로 나서 겨누는 안중근과 이토 히로부미가 함께 보이게
+    await wait(world, 1.4);
+    hook.aimed = true;
+    await ctx.fade?.(true); // 겨누는 순간 화면이 어두워지고 해설로 알린다
+    await say(line);
+  } });
+}
 
 let scene = null;
 
@@ -232,10 +270,14 @@ const ACT = {
     ctx.dialogue.close();
     await wait(world, 3.2, k => set.soldiers.forEach((p, i) => p.position.lerpVectors(from[i], to[i], ease(k))));
     set.soldiers.forEach(p => face(p, set.camp[0].position.x, set.camp[0].position.z));
-    set.camp.forEach(p => face(p, -14.5, -3));
+    set.camp.forEach(p => face(p, -14.8, -2.9));
     hook.soldiers = set.soldiers.length;
+    const all = [...set.soldiers, ...set.camp], gaze = who => { const w = who.getWorldPosition(new THREE.Vector3()); all.forEach(p => setLook(p, p === who ? null : { x: w.x, y: 1.7, z: w.z })); }; // 모두 말하는 사람을 본다(2026-11-04 선생님: 저마다 다른 쪽을 보던 것)
+    gaze(set.soldiers[0]);
     await say(st.lines[1], set.soldiers[0]);
+    gaze(set.camp[0]);
     await say(st.lines[2], set.camp[0]);
+    all.forEach(p => setLook(p, null));
   },
   async march({ ctx, a, g, st, say, hook, set }) {
     const { world } = ctx;
@@ -243,7 +285,7 @@ const ACT = {
     const army = [...set.camp, ...set.soldiers]; // 의병과 해산된 군인이 줄을 맞춰 선다(연합 부대)
     const extra = ['uibyeong', 'peasant', 'uibyeong', SOLDIER].map(l => person(g, l, 0, 0));
     const all = [...army, ...extra];
-    all.forEach((p, i) => { p.position.set(-8.5 + (i % 5) * 1.3, 0, -6 - Math.floor(i / 5) * 1.4); p.rotation.y = Math.PI / 2; });
+    all.forEach((p, i) => { p.position.set(-8.5 + (i % 5) * 1.3, 0, -6 - Math.floor(i / 5) * 1.4); p.rotation.y = Math.PI / 2; const w = p.getWorldPosition(new THREE.Vector3()); setLook(p, { x: w.x + 30, y: 1.7, z: w.z }); }); // 줄을 맞춰 모두 앞(한성 쪽)을 본다
     for (const z of [-4.6, -9.6]) { const b = new THREE.Group(); b.position.set(-2.4, 0, z); BUILD.banner(b, { text: '倡義' }); g.add(b); }
     hook.army = all.length;
     const M = a.at(-6, -7);
@@ -327,7 +369,8 @@ export async function exileWalk(ctx) {
   await ctx.fade?.(true);
   const a = buildArena(world, A), g = a.group;
   const villager = person(g, 'grandma', ...A.villager, Math.PI / 2);
-  const boat = new THREE.Group(); boat.position.set(A.boat[0], 0.1, A.boat[1]); BUILD.boat(boat, { len: 4.6, color: 0x7a5a3c }); g.add(boat);
+  const boat = new THREE.Group(); boat.position.set(A.boat[0], 0.1, A.boat[1]); boat.rotation.y = Math.PI; BUILD.boat(boat, { len: 4.6, color: 0x7a5a3c }); g.add(boat); // 뱃머리(+z)가 강 건너(북쪽)를 본다
+  let rower = null;
   const followers = [0, 1, 2].map(i => person(g, 'uibyeong', A.from[0] - 1 + i, A.from[1] + 1.8));
   const hook = ctx.testHooks.exile = { used: [], followers: followers.length, sailed: false };
   const marks = stationMarks(a, g, P.stations, A.stations);
@@ -352,17 +395,19 @@ export async function exileWalk(ctx) {
         if (st.id === 'farewell') { await say(st.lines[0], villager); await say(st.lines[1], followers[0]); }
         else {
           await ctx.fade?.(true); // 의병들이 나룻배에 올라 앉는다
-          followers.forEach((f, i) => { f.visible = false; const s = person(boat, 'uibyeong', 0, -1.2 + i * 1.1, Math.PI); s.position.y = 0.25; });
+          followers.forEach((f, i) => { f.visible = false; if (i < 2) { const s = person(boat, 'uibyeong', 0, 1.0 - i * 1.0, 0); s.position.y = 0.3; s.userData.noWalk = true; } }); // 둘은 배에 타고(걷지 않는다), 하나는 고물에서 노를 젓는다(2026-11-04 선생님)
+          rower ||= addSculler(boat, { look: 'uibyeong', deckY: 0.33, sternZ: -2.0, side: 0.3, scale: 0.85 });
           const B = a.at(A.boat[0], A.boat[1]);
           world.player.rotation.y = Math.PI;
           world.setFixedCamera([B.x + 5.5, 3.6, B.z + 13], [B.x, 0.8, B.z - 6]);
           await ctx.fade?.(false);
           await say(st.lines[0]);
           dialogue.close();
-          const z0 = A.boat[1];
-          await wait(world, 3.6, k => { boat.position.z = z0 - 22 * ease(k); boat.rotation.z = Math.sin(k * 18) * 0.03; });
+          const z0 = A.boat[1], offRow = autoRow(world, [rower]);
+          await wait(world, 5, k => { boat.position.z = z0 - 22 * ease(k); boat.rotation.z = Math.sin(k * 18) * 0.03; });
+          offRow();
           hook.sailed = true;
-          await say(st.lines[1]);
+          await harbinScene(ctx, st.lines[1]); // 안중근의 하얼빈 의거(겨누는 순간까지)
           await say(P.sum);
         }
         hook.used.push(st.id);

@@ -8,6 +8,7 @@ import { buildArena } from '../../kit/play.js';
 import { gateLeaves, nameBoard } from '../../kit/gate.js';
 import { walkInAndTalk, anyOrderTalk } from '../../kit/talk.js';
 import { makePerson, mat } from '../../../core/people.js';
+import { playAction } from '../../../core/motion.js';
 import { waitInteract } from '../../../core/portal.js';
 import { LOOKS } from '../../../content/characters.js';
 import { placePlayer } from '../../joseon/common.js';
@@ -101,22 +102,23 @@ export async function coronation(ctx) {
   try {
     cam([6, 6.8, -3.5], [0, 0.6, 7]); // 제단 옆에서 돌길을 내려다본다: 걸어오는 왕과 지켜보는 사람들
     await ctx.fade?.(false);
-    await wait(world, 4.5, k => { king.position.z = 13 - ease(k) * 12.4; }); // 돌길을 걸어온다(다리는 공용 걷기가 움직인다)
+    king.position.z = 9;
+    await wait(world, 5.5, k => { king.position.z = 9 - ease(k) * 8.4; }); // 돌길을 걸어온다(다리는 공용 걷기가 움직인다). 천천히: 빨라지면 뛰는 걸음으로 바뀌어 뒷짐이 풀렸다(2026-11-04 선생님)
     king.rotation.y = 0; // 돌아서서 사람들(남쪽)을 보고 말한다. 얼굴은 돌길 가운데에서 정면으로 크게(신하 줄 사이)
     cam([0, 2.35, 0.6 + 3.4], [0, 2.05, 0.6 + 0.3]);
     await dialogue.say(L[0]); dialogue.close();
     // 제단에 오른다
     king.rotation.y = Math.PI;
     cam([-8.5, 3.8, 3], [0, 1.6, -3.5]);
-    await wait(world, 3.4, k => { const z = 0.6 - ease(k) * 6.6; king.position.z = z; king.position.y = stepY(z); });
+    await wait(world, 4.6, k => { const z = 0.6 - ease(k) * 6.6; king.position.z = z; king.position.y = stepY(z); });
     // 맨 위에서 황제 옷으로: 붉은 곤룡포의 왕이 노란 옷의 황제가 된다
     const emperor = person(g, 'gojong', ax, az, 0); emperor.position.y = TOP;
     king.visible = false;
     hook.robe = LOOKS.gojong.robe; hook.top = emperor.position.y;
     cam([0, 2.2, 6.5], [0, 2.6, -6]);
     ctx.audio?.play?.('correct');
-    officials.forEach(o => { o.rotation.order = 'YXZ'; o.rotation.y = Math.PI; });
-    await wait(world, 1.2, k => officials.forEach(o => { o.rotation.x = 0.5 * ease(k); }));
+    officials.forEach(o => { o.rotation.y = Math.PI; playAction(o, { dur: 600, fadeIn: 0.6, pose: () => ({ upper: [0.28, 0, 0], head: [0.5, 0], arms: [[-0.55, 0, 0.32], [-0.55, 0, -0.32]] }), name: 'bow' }); }); // 몸은 살짝 숙이고 고개를 조아린다, 두 손은 앞에 모은다(2026-11-04 선생님)
+    await wait(world, 1.2);
     hook.bowed = true;
     await dialogue.say(L[1]); dialogue.close();
     cam([12, 7.5, 13], [0, 1.2, -5]);
@@ -249,8 +251,8 @@ function introScene(ctx) {
         }); } },
       { cam: [2.6, 3.2, 3.4], look: [11, 1.2, 1.5], to: { cam: [3.4, 3, 2.6], look: [11.5, 1.2, 2.5] },
         act: () => run(u => { // 일본군은 궁궐로 몰려 들어가고, 왕은 큰길을 지나 공사관으로 몸을 피한다
-          soldiers.forEach((p, i) => { const k = Math.min(1, Math.max(0, (u - 0.3 - i * 0.15) / 1.6)); p.position.set(s0[i].x + 1.2 + k * 2.4, 0, s0[i].z + (-4.4 - s0[i].z) * k); p.rotation.y = Math.atan2(2.4, -4.4 - s0[i].z); p.visible = k < 1; });
-          const k = ease(Math.min(1, u / 3.8)); king.rotation.y = 0.2; king.position.set(11 + k * 1.6, 0, -2.6 + k * 9.2);
+          soldiers.forEach((p, i) => { const k = Math.min(1, Math.max(0, (u - 0.3 - i * 0.15) / 2.2)), tz = -2.2 - (i % 2) * 0.5; p.position.set(s0[i].x + 1.2 + k * (1.4 + i * 0.6), 0, s0[i].z + (tz - s0[i].z) * k); p.rotation.y = Math.PI; }); // 궁궐 문 앞까지 몰려가 선다(2026-11-04 선생님: 건물을 뚫고 들어가던 것)
+          const k = ease(Math.min(1, u / 6)); king.rotation.y = 0.2; king.position.set(11 + k * 1.6, 0, -2.6 + k * 9.2);
         }) },
     ],
     done: () => { off?.(); off = null; hide(true); for (const o of [king, ...soldiers, flag]) o.removeFromParent(); },

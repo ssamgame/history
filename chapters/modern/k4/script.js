@@ -40,7 +40,6 @@ export default {
     scholar: {
       first: [
         { who: 'scholar', text: '저 큰 돌문을 보시오. 이름이 독립문이라오.' },
-        { who: 'narr', text: '독립 협회는 독립문을 세워 자주독립의 의지를 보여 주었어요.', src: ['S51'] }, // 예전 「독립문」 안내판 내용(D-30 C-03)
         { who: 'scholar', text: '나라가 스스로 서야 한다는 뜻이 담겨 있지요.' },
       ],
       bridge: { who: 'scholar', text: '시민들 사정은 들으셨구려. 내 이야기도 들어 보시오.' },
@@ -69,14 +68,14 @@ export default {
   parts: {
     paper: {
       type: 'drive', src: ['S53'], title: '독립신문을 받아 한성 거리에 배달해요', counter: '배달한 곳', seconds: 150,
-      howto: '신문사에서 신문 뭉치를 두 손에 받아 들고, 빛나는 곳을 차례로 지나며 신문을 건네요. 건네는 동안 잠깐 기다려요.',
+      howto: '신문을 받아 빛나는 곳에 차례로 건네요.',
       intro: [{ who: 'narr', text: '독립신문은 1896년에 창간한 우리나라 최초의 민간 신문이에요.', src: ['S53'] }, { who: 'seojaepil', text: '오늘 신문이 나왔습니다. 한성 사람들에게 나라 안팎의 소식을 전해 주세요!' }],
       route: [
-        { label: '독립신문사', hold: 3, holdLabel: '신문 뭉치 받는 중', holdSay: '신문사 사람이 갓 찍은 신문 뭉치를 건네줘요.', look: 'seojaepil', give: true },
+        { label: '독립신문사', hold: 3, holdLabel: '신문을 받는 중', holdCenter: true, holdSay: '신문사에서 갓 찍은 신문을 받는 중이에요.', look: 'seojaepil', give: true },
         { label: '종로 가게', hold: 2, holdLabel: '신문 건네는 중', hand: true, talk: [{ who: 'citizen', text: '한글로 쓰여 있어서 누구나 읽을 수 있네요!' }] },
         { label: '궁궐 앞 거리', hold: 2, holdLabel: '신문 건네는 중', hand: true, talk: [{ who: 'citizen', text: '신문 덕분에 나라 사정을 알 수 있어 좋아요.' }] },
         { label: '시장', hold: 2, holdLabel: '신문 건네는 중', hand: true, say: '시장 사람들도 신문을 돌려 읽어요.' },
-        { label: '서재필 선생', talk: [{ who: 'seojaepil', text: '수고했어요. 신문으로 자주독립의 뜻을 널리 알릴 수 있습니다.' }] },
+        { label: '서재필 선생', talk: [{ who: 'seojaepil', text: '수고했어요. 한성 곳곳에 신문이 잘 전해졌어요.' }] },
       ],
       fail: '화살표를 따라 빛나는 곳으로 가요. 시간 안에 모두 배달해요.',
     },
@@ -84,36 +83,32 @@ export default {
     speech: {
       type: 'scene', title: '종로 만민 공동회',
       intro: [ // 시민에게 말을 걸면(C-05)
-        { who: 'citizen', text: '종로에서 만민 공동회가 열린대요! 누구나 나라 일에 대한 생각을 말할 수 있대요.', src: ['S52'] },
+        { who: 'citizen', text: '종로에서 만민 공동회가 열린대요!', src: ['S52'] },
         { who: 'citizen', text: '함께 가서 연설을 들어 봐요.' },
       ],
       lines: [
         { who: 'narr', text: '첫 만민 공동회는 1898년 종로에서 열렸어요.', src: ['S52'] }, // 예전 「만민 공동회」 안내판 내용(D-30 C-03)
-        { who: 'speaker', text: '여러분! 이 자리에서는 신분과 상관없이 누구나 나라 일에 대한 생각을 말할 수 있소!' },
         { who: 'narr', text: '독립 협회는 만민 공동회를 열어 누구나 사회 문제에 대해 자기 생각을 말할 수 있게 했어요.', src: ['S51'] },
         { who: 'speaker', text: '우리 모두 나라의 자주독립을 지켜 나갑시다!' },
-        { who: 'speaker', text: '이제 둘레 사람들의 이야기를 들어 보시오. 맞는 말인지 잘 가려 보시오.' },
+        { who: 'speaker', text: '이제 여기 모인 시민들의 이야기를 들어 보고, 맞는 말인지 가려 보시오.' },
       ],
     },
     // 시민들의 말 가려내기(judge): 맞는 말은 출처 있는 사실 그대로, 틀린 말은 교과서 사실을 살짝 바꾼 것
     forum: {
       type: 'judge', src: ['S51'], title: '시민들의 말이 맞는지 가려내요', counter: '들은 이야기',
-      howto: '종로에 모인 시민에게 다가가 대화 버튼을 눌러 이야기를 듣고, 그 말이 맞는지 골라요.',
+      howto: '시민들 말을 듣고 맞는지 골라요.',
       question: '이 사람의 말이 맞나요?', options: ['맞아요', '아니에요'],
       items: [
         { look: 'woman', talk: [{ who: 'woman', text: '독립신문은 한문으로만 쓰여 있어서 양반만 읽을 수 있다던데요?' }], correct: false,
           why: '독립신문은 한글로 써서 누구나 읽을 수 있었어요.' },
-        { look: 'scholar', talk: [{ who: 'elder', text: '독립 협회가 서대문 밖에 독립문을 세웠지요.' }], correct: true,
-          after: [{ who: 'speaker', text: '그렇소. 독립 협회는 관리, 지식인과 함께 만들어 독립문을 세웠소.', src: ['S51', 'S52'] }] },
+        { look: 'scholar', talk: [{ who: 'elder', text: '독립 협회가 서대문 밖에 독립문을 세웠지요.', src: ['S51'] }], correct: true }, // 맞는 말은 그 말에 출처(뒤 해설은 앞 대사와 겹쳐 뺐다, 2026-11-04 선생님)
         { look: 'commoner', talk: [{ who: 'merchant', text: '을미사변 뒤에 임금께서 청나라 공사관으로 몸을 피하셨다지요?' }], correct: false,
           why: '을미사변 뒤 고종은 러시아 공사관으로 몸을 피했어요.' },
-        { look: 'citizen', talk: [{ who: 'youth', text: '임금께서 환구단에서 황제가 되시고, 나라 이름을 대한 제국으로 바꾸셨어요.' }], correct: true,
-          after: [{ who: 'narr', text: '1897년, 고종은 환구단에서 황제로 즉위하고 대한 제국을 세웠어요.', src: ['S51', 'S54'] }] },
+        { look: 'citizen', talk: [{ who: 'youth', text: '임금께서 환구단에서 황제가 되시고, 나라 이름을 대한 제국으로 바꾸셨어요.', src: ['S51', 'S54'] }], correct: true },
         { look: 'commoner', talk: [{ who: 'citizen', text: '만민 공동회에서는 양반만 연단에 올라 말할 수 있다오.' }], correct: false,
           why: '만민 공동회에서는 신분과 상관없이 누구나 자기 생각을 말할 수 있었어요.' },
       ],
       fail: '연설과 지금까지 본 일을 떠올려 봐요. 독립신문은 한글, 고종이 몸을 피한 곳은 러시아 공사관이었어요.',
-      done: [{ who: 'narr', text: '을미사변 뒤 고종은 몸을 피해 러시아 공사관으로 옮겼어요. 그 뒤 경운궁으로 돌아와 대한 제국을 세웠어요.', src: ['S54'] }],
     },
   },
   result: [{ who: 'narr', text: '대한 제국은 여러 개혁을 추진해 근대 국가로 나아가고자 했어요.', src: ['S51'] }],

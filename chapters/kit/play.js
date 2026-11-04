@@ -364,13 +364,13 @@ export function drive(ctx, part, easy) {
     else { b = new THREE.Group(); for (let k = 0; k < 5; k++) add(b, box(0.7, 0.07, 0.5), k % 2 ? 0xf2ede0 : 0xe6dfcc, 0, k * 0.075, 0); add(b, box(0.08, 0.42, 0.52), 0x8a6a48, 0, 0.18, 0); }
     const keep = () => { carried = b; setCarry(world.player, b, thingMode()); };
     if (r.person) { // 그 자리 사람이 학생 쪽으로 돌아서 두 손으로 내밀고, 학생 손에 닿을 때 넘겨준다(꾸러미가 날아오지 않게, 2026-10-30 움직임 개선)
-      const giver = r.person; if (!named) b.scale.setScalar(1.3); setCarry(giver, b, 'arms');
+      const giver = r.person; if (!named) b.scale.setScalar(1.0); setCarry(giver, b, 'arms');
       (async () => {
         await turnTo(world, giver, world.player.getWorldPosition(new THREE.Vector3()), { speed: 6 });
         await playAction(giver, { dur: 0.45, pose: t => { const k = Math.min(1, t / 0.45); return { arms: [[-1.0 - 0.45 * k, 0, 0.33], [-1.0 - 0.45 * k, 0, -0.33]], carryAt: [0, 1.3, 0.6 + 0.4 * k], upper: [0.1 * k, 0, 0] }; }, fadeIn: 0.1, fadeOut: 0.01, name: 'give' });
         if (s.done) return;
         giver.userData.carry = null; giver.userData.armRest = true;
-        if (!named) b.scale.setScalar(1.3);
+        if (!named) b.scale.setScalar(1.0);
         keep(); // 두 팔로 안고 다닌다(D-18). 내민 자리에서 학생 손으로 이어 옮겨 온다(기둥은 어깨에 멘다)
       })();
       return;
@@ -382,7 +382,7 @@ export function drive(ctx, part, easy) {
       k = Math.min(1, k + dt / 0.6);
       world.player.localToWorld(to.set(0, 1.22, 0.6)); g.worldToLocal(to);
       b.position.lerpVectors(from, to, k); b.position.y += Math.sin(k * Math.PI) * 0.6;
-      if (k >= 1) { off(); g.remove(b); if (!named) b.scale.setScalar(1.3); keep(); } // 두 팔로 안고 다닌다(D-18, 꾸러미가 몸보다 넓어 뒤에서도 보인다)
+      if (k >= 1) { off(); g.remove(b); if (!named) b.scale.setScalar(1.0); keep(); } // 두 팔로 안고 다닌다(D-18, 꾸러미가 몸보다 넓어 뒤에서도 보인다)
     });
     s.cleanup(off);
   };
