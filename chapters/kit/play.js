@@ -135,7 +135,7 @@ export function buildArena(world, arena) {
       if (!arena.map && arena.nature !== false) addNature(world, { bounds: arena.bounds, props: [...(arena.props || []), ...(arena.center || [])], roads: arena.roads || [], start: arena.from, hillColor: arena.hillColor }, field, kind, color, g);
     }
     if (arena.map) g.add(mapFloor(arena.map));
-    for (const r of arena.roads || []) { const m = new THREE.Mesh(box(r.w, 0.05, r.d), mat(r.color || 0x8f7556, r.kind || 'earth')); m.position.set(r.x, r.y ?? 0.04, r.z); m.rotation.y = r.ry || 0; m.receiveShadow = true; g.add(m); }
+    for (const r of arena.roads || []) { const m = new THREE.Mesh(box(r.w, 0.05, r.d), mat(r.color || 0x8f7556, r.kind || 'earth')); m.position.set(r.x, r.y ?? 0.025, r.z); m.rotation.y = r.ry || 0; m.receiveShadow = true; g.add(m); } // 마을 길과 같은 높이(윗면 0.05): 0.04였을 때 신이 길에 묻혀 보였다(2026-11-04 플레이 점검)
     const cg = new THREE.Group(); // 가운데 소품은 움직이지 않으니 다 놓은 뒤 재질별로 한 덩어리로 합친다
     for (const p of [...(arena.props || []), ...(arena.center || []).map(c => ({ scale: CENTER_SCALE, ...c, center: true }))]) { // center: 무대 가운데 역사 소품(배치표에서 따로 적어 길·목표를 피했는지 검사한다)
       const pg = new THREE.Group(); pg.position.set(p.x, p.y || 0, p.z); pg.rotation.y = p.ry || 0; if (p.scale) pg.scale.setScalar(p.scale); (p.center ? cg : g).add(pg);

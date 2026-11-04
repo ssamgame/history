@@ -130,3 +130,13 @@ test('k2 D-30 G-04: 청 군대가 오면 김옥균이 몸을 숙이고 빠른 �
     eq(a.rotation.x, 0, '끝나면 자세를 되돌린다');
   } finally { w.dispose(); }
 });
+
+test('k2 플레이 점검: 창덕궁 문을 지날 때 따라가는 카메라가 문 지붕(인방)에 가려 학생이 안 보이지 않는다', async () => {
+  const { nightCamOffset } = await import('../chapters/modern/k2/chapter.js');
+  const LOW = { x: 0, y: 6, z: 9 }, head = 1.5, BAND = [3.05, 3.75]; // 가까운 시점 카메라, 문 위 인방(3.15~3.65)+여유
+  for (let z = -30.2; z >= -40; z -= 0.1) {
+    const o = nightCamOffset(z) || LOW;
+    if (z + o.z >= -30) { const y = head + (o.y - head) * ((-30 - z) / o.z); ok(y < BAND[0] || y > BAND[1], `학생 z ${z.toFixed(1)}: 문 위를 지나는 시선 높이 ${y.toFixed(2)}`); }
+  }
+  eq(nightCamOffset(-10), null, '큰길에서는 보통 카메라');
+});

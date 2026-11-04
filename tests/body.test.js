@@ -289,3 +289,22 @@ test('body: 신분에 맞는 걸음(D-67 ⑤) — 임금은 뒷짐을 지고 걷
     ok(Math.abs(tilt(citizen) - tilt(soldier)) < 0.12, `현대 시민은 숙이지 않는다 ${tilt(citizen).toFixed(2)}`);
   } finally { setHairEra(null); off(); w.dispose(); }
 });
+
+test('body: 걸을 때 신이 땅 밑으로 꺼지지 않는다(2026-11-04 플레이 점검: 걷기 동작에서 신 바닥이 0.08m 땅에 묻힘)', async () => {
+  await loadBody(); on();
+  const w = testWorld();
+  try {
+    const p = makePerson(LOOKS.villager); w.level.add(p); off();
+    const bb = new THREE.Box3(); let low = Infinity, still = Infinity;
+    for (let i = 0; i < 30; i++) w.step(1 / 20, { x: 0, z: 0 });
+    p.traverse(o => { if (o.isMesh && o.name === 'shoe') still = Math.min(still, bb.setFromObject(o).min.y); });
+    for (let i = 0; i < 60; i++) {
+      p.position.x += 0.07; w.step(1 / 20, { x: 0, z: 0 });
+      if (i < 15) continue;
+      p.updateMatrixWorld(true);
+      p.traverse(o => { if (o.isMesh && o.name === 'shoe') low = Math.min(low, bb.setFromObject(o).min.y); });
+    }
+    ok(/walk/.test(p.userData.skel.target), p.userData.skel.target);
+    ok(low > -0.035, `걷는 동안 가장 낮은 신 바닥 ${low.toFixed(3)} (서 있을 때 ${still.toFixed(3)})`);
+  } finally { off(); w.dispose(); }
+});

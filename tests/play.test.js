@@ -1,4 +1,5 @@
 // 상황 놀이 부품(chapters/kit/play.js): 터치만으로 끝까지 할 수 있고, 틀리게 고르면 해설을 듣고 이어서 한다.
+import * as THREE from 'three';
 import { test, eq, ok } from './harness.js';
 import { makeKitChapter } from '../chapters/kit/chapter.js';
 import { PLAY, buildArena } from '../chapters/kit/play.js';
@@ -174,4 +175,15 @@ test('play: 성문(gate)은 가운데 문길로 전차가 지나가고 양쪽 �
     for (const x of [-1.6, -0.8, 0, 0.8, 1.6]) ok(!hit(300 + x, 0), `문길 ${x}은 열려 있다`);
     ok(hit(300 - 4, 0) && hit(300 + 4, 0), '양쪽 몸채는 막힌다');
   } finally { a.dispose(); w.dispose?.(); }
+});
+
+test('play: 무대의 길(roads)은 마을 길과 같은 높이(윗면 0.05m 이하)라 사람 발이 길에 묻혀 보이지 않는다(2026-11-04 플레이 점검: 근대 2장 무대에서 신이 0.13m 묻힘)', () => {
+  const w = testWorld();
+  try {
+    const a = buildArena(w, { origin: [400, 0], ground: 'stone', bounds: { x0: -10, x1: 10, z0: -10, z1: 10 }, roads: [{ x: 0, z: 0, w: 4, d: 20 }], props: [], nature: false });
+    let top = 0; a.group.updateMatrixWorld(true);
+    a.group.traverse(o => { if (o.isMesh && o.geometry.type === 'BoxGeometry' && o.geometry.parameters.depth === 20) top = Math.max(top, new THREE.Box3().setFromObject(o).max.y); });
+    ok(top > 0.04 && top <= 0.05 + 1e-6, `길 윗면 ${top.toFixed(3)}`);
+    a.dispose();
+  } finally { w.dispose(); }
 });
