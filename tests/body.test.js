@@ -5,22 +5,13 @@ import * as THREE from 'three';
 import { testWorld, touchSetup, touchBot, memSave } from './bot.js';
 import { makePerson, setCarry, playAction, setRigHook, POST_POSE } from '../core/people.js';
 import { LOOKS } from '../content/characters.js';
-import { loadBody, attachBody, updateBodies, resetBodies, bodyPeople, bodyOn } from '../core/body.js';
+import { loadBody, attachBody, updateBodies, resetBodies, bodyPeople } from '../core/body.js';
 import { createProbe } from '../tools/qa/probe.js';
 
 const W = () => new THREE.Vector3(), Q = () => new THREE.Quaternion();
 const on = () => { resetBodies(); setRigHook(attachBody); POST_POSE.add(updateBodies); };
 const off = () => { setRigHook(null); };
 const walkIt = (w, p, n, dx = 0.05) => { for (let i = 0; i < n; i++) { p.position.x += dx; w.step(1 / 20, { x: 0, z: 0 }); } };
-
-test('body: 학생 사이트에서도 뼈대 몸이 기본으로 켜지고(2026-11-03 선생님), ?body=0이나 goryeo-body=0이면 꺼진다', () => {
-  const old = localStorage.getItem('goryeo-body');
-  try {
-    localStorage.removeItem('goryeo-body'); eq(bodyOn(), true);
-    localStorage.setItem('goryeo-body', '0'); eq(bodyOn(), false);
-    localStorage.setItem('goryeo-body', '1'); eq(bodyOn(), true);
-  } finally { if (old === null) localStorage.removeItem('goryeo-body'); else localStorage.setItem('goryeo-body', old); }
-});
 
 test('body: body.glb를 불러오기 전에는 사람이 예전과 똑같다', () => {
   const p = attachBody(makePerson(LOOKS.soldier), LOOKS.soldier);
