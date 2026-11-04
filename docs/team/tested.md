@@ -70,3 +70,4 @@
 | D-67 고려 6장·조선 1장 | 2026-11-04 | 796e375 | d62·d63·d66·ch6·story·j4·kit·arena·ground·sea·town 147개, j1 15개, d67 5개 | 146+15+5 통과, 알려진 실패 1(arena k1 doc papers) |
 | D-67 항파두리 2차·깃발 글자 | 2026-11-04 | 4f2feda | d67·d66·d62·story·ch6·kit 93개 | 통과 |
 | D-67 조선 2·3장, 항파두리 3차 | 2026-11-04 | beff9ec | d67(조선2·3·고려6-5)·j2·j3·joseon·faces·world·story | 모두 통과 |
+| D-67 조선 4장 | 2026-11-04 | 76b7cbc | j4·d67 조선4 22개 + 자동 플레이 j4-minigame 170초 | 통과, 화면 점검 오류 0 |
