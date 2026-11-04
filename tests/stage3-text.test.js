@@ -152,7 +152,8 @@ test('stage3-text: 사실 판정 — 옛 문장이 사라지고 새 출처(S66~S
   // h1 김구는 8월 15일 서울에 없었다: 마을 광장 놀이 끝 대사는 김구가 아니다
   const h1 = await load('h1');
   ok(!lines(h1.parts).some(l => l.who === 'kimgu'), 'h1 놀이에 김구 대사');
-  // i5 학생: 6·10 만세 운동(1926) → 광주 학생 항일 운동(1929) 차례
-  const st = (await load('i5')).npc.student.first.map(l => l.text);
-  ok(st.findIndex(t => t.includes('6·10')) >= 0 && st.findIndex(t => t.includes('6·10')) < st.findIndex(t => t.includes('1929년')), st.join(' / '));
+  // i5: 6·10 만세 운동(1926) → 광주 학생 항일 운동(1929) 차례
+  // D-67 대사 정리 2(선생님): 6·10 만세 운동은 학생 말에서 첫 해설로 옮겼다. 첫 해설은 학생 말보다 먼저 나오므로 차례는 그대로
+  const i5s = await load('i5'), st = i5s.npc.student.first.map(l => l.text);
+  ok(i5s.intro.some(l => l.text.includes('6·10')) && st.some(t => t.includes('1929년')) && !st.some(t => t.includes('6·10')), st.join(' / '));
 });
