@@ -140,3 +140,36 @@ test('d67 조선3-4: 자격루 — 물은 수수호 안에서 차오르고 살�
     ok(u.chute.to.distanceTo(u.plate.position) < 0.3, '비탈 끝에 동판');
   } finally { s.done(); }
 });
+
+// 조선 2장(세종과 훈민정음)
+test('d67 조선2-6: 첫 장면에서 글을 모르는 백성은 운다(눈물 표정·고개 숙여 눈가를 훔침), 탐험 때는 걱정하는 얼굴', async () => {
+  const { resolve, buildFace } = await import('../core/facebuild.js');
+  ok(resolve(buildFace({}), 'cry').tears, '울음 표정에 눈물');
+  const j2 = (await import('../chapters/joseon/j2/chapter.js')).default, script = (await import('../chapters/joseon/j2/script.js')).default;
+  const s = touchSetup(script.speakers);
+  try {
+    j2.buildScene(s.w, s.ctx);
+    const cm = s.w.npcs.get('commoner').mesh, film = j2.introScene(s.ctx);
+    film.shots[0].act();
+    for (let i = 0; i < 20; i++) s.w.step(1 / 20, { x: 0, z: 0 });
+    eq(cm.userData.expr, 'cry', '운다'); ok(cm.userData.act, '눈가를 훔친다');
+    film.done(); for (let i = 0; i < 10; i++) s.w.step(1 / 20, { x: 0, z: 0 });
+    eq(cm.userData.expr, 'worry'); ok(!cm.userData.act, '동작은 끝난다');
+  } finally { s.done(); }
+});
+test('d67 조선2-9: 단상 위에 앉은 세종의 느낌표는 머리 위에 보인다(관 속에 묻히지 않는다)', async () => {
+  const j2 = (await import('../chapters/joseon/j2/chapter.js')).default, script = (await import('../chapters/joseon/j2/script.js')).default;
+  const s = touchSetup(script.speakers);
+  try {
+    j2.buildScene(s.w, s.ctx);
+    const sj = s.w.npcs.get('sejong'); sj.mark.visible = true;
+    s.w.step(1 / 20, { x: 0, z: 0 }); s.w.level.updateMatrixWorld(true);
+    const head = new THREE.Box3().setFromObject(sj.mesh.getObjectByName('face') || sj.mesh).max.y, y = sj.mark.getWorldPosition(new THREE.Vector3()).y;
+    ok(y > head + 0.4, `느낌표 ${y.toFixed(2)} > 얼굴 위 ${head.toFixed(2)}`);
+  } finally { s.done(); }
+});
+test('d67 조선2-10: 나무·한글 낱자를 흩어 놓은 자리 사이가 좁다', async () => {
+  const { LETTER_SPOTS } = await import('../chapters/joseon/j2/chapter.js');
+  let far = 0; for (const a of LETTER_SPOTS) for (const b of LETTER_SPOTS) far = Math.max(far, Math.hypot(a.x - b.x, a.z - b.z));
+  ok(far < 15, `가장 먼 두 낱자 ${far.toFixed(1)}m`);
+});

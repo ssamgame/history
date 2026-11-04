@@ -68,6 +68,7 @@ export const EXPRESSIONS = {
   worry:    { browIn: -0.09, browOut: 0.05, eye: 1.05, squint: 0.05, corner: 0.035, mw: 0.9 }, // 걱정: 눈썹 안쪽이 올라가고 입꼬리가 처진다
   anger:    { browIn: 0.12, browOut: -0.06, eye: 0.8, squint: 0.35, corner: 0.03, mw: 0.92, tight: true }, // 분노: 미간을 찌푸리고 눈을 가늘게, 입을 앙다문다
   joy:      { browIn: -0.02, browOut: 0.02, eye: 0.7, squint: 0.55, corner: -0.05, mw: 1.12, open: 0.2 }, // 기쁨: 눈웃음, 입꼬리가 올라간다
+  cry:      { browIn: -0.12, browOut: 0.07, eye: 0.8, squint: 0.3, corner: 0.05, mw: 0.88, tears: true }, // 울음(D-67): 걱정보다 눈썹 안쪽이 더 올라가고 눈을 찡그리고 눈물이 흐른다
   tension:  { browIn: 0.03, browOut: -0.03, eye: 1.18, squint: -0.1, corner: 0.02, mw: 0.85, tight: true }, // 긴장: 눈을 크게 뜨고 입을 꾹 다문다
 };
 
@@ -152,7 +153,7 @@ export function resolve(b, expr = 'neutral') {
     squint: (D.squint || 0) + (X.squint || 0), gap: S.gap * (F.gap || 1), eyeY: S.eyeY,
     browIn: B.pts[0] + (D.browIn || 0) + (X.browIn || 0), browMid: B.pts[1], browOut: B.pts[2] + (D.browOut || 0) + (X.browOut || 0), browT: B.t, browL: B.len, browTaper: B.taper, browY: F.browY || 0,
     noseW: N.w * (F.noseW || 1), noseL: N.len, nosePro: N.pro, noseBridge: N.bridge, noseTip: N.tip,
-    mouthW: M.w * (F.mouthW || 1) * (X.mw || 1), lipUp: M.up, lipLow: M.low, corner: M.corner + (D.corner || 0) + (X.corner || 0), open: X.open || 0, tight: !!X.tight, mouthY: S.mouthY,
+    mouthW: M.w * (F.mouthW || 1) * (X.mw || 1), lipUp: M.up, lipLow: M.low, corner: M.corner + (D.corner || 0) + (X.corner || 0), open: X.open || 0, tight: !!X.tight, tears: !!X.tears, mouthY: S.mouthY,
     iris: b.iris, stubble: b.stubble, scar: b.scar, lines: b.lines, cheekbone: b.cheekbone, mole: b.mole, asym: b.asym, cheek: S.cheek,
   };
 }

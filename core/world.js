@@ -375,7 +375,7 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
       }
       const mv = lastPP ? Math.hypot(p.x - lastPP.x, p.z - lastPP.z) / dt : 0; lastPP = { x: p.x, z: p.z };
       animateWalk(player, moving || (mv > 0.12 && mv < 8), dt); // 장이 학생을 몇 걸음 옮길 때(walkTo)도 다리를 움직인다(미끄러지듯 떠가지 않게)
-      for (const n of world.npcs.values()) if (n.mark.visible) n.mark.position.y = (n.spot ? (n.mesh.userData.markY ?? 3.1) : 3.5) + Math.sin(elapsed * 3) * 0.12;
+      for (const n of world.npcs.values()) if (n.mark.visible) n.mark.position.y = (n.spot ? (n.mesh.userData.markY ?? 3.1) : 3.5 + (n.mesh.userData.seatLift || 0)) + Math.sin(elapsed * 3) * 0.12; // 높이 앉은 사람(단상 위 세종)은 머리 위로(D-67: 관 속에 묻혀 안 보였다)
       if (goal) {
         const dx = goal.x - p.x, dz = goal.z - p.z;
         goalArrow.visible = Math.hypot(dx, dz) > 3;

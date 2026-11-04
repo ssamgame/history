@@ -8,7 +8,7 @@ import { showHowTo } from '../../../core/minigame.js';
 import { SHAPES } from './pictures.js';
 import { PLAY, buildArena, labelSprite } from '../../kit/play.js';
 import { enterThroughGate, closeGate } from '../../kit/gate.js';
-import { makePerson, mat } from '../../../core/people.js';
+import { makePerson, mat, setExpression, playAction, markerSprite } from '../../../core/people.js';
 import { LOOKS } from '../../../content/characters.js';
 import { sayAll, placePlayer, tryPart, sumParts, standPick, visitAny } from '../common.js';
 import { waitInteract } from '../../../core/portal.js';
@@ -27,7 +27,7 @@ export const BOARDS = [
 // 하늘·땅·사람 모형 자리
 export const MODELS = { sky: { x: -9, z: 2 }, earth: { x: 0, z: -1 }, person: { x: 9, z: 2 } };
 // 낱자를 흩어 놓는 자리(차례와 다르게)
-export const LETTER_SPOTS = [{ x: -10, z: -7 }, { x: 9, z: -5 }, { x: -3, z: 3 }, { x: 11, z: 6 }, { x: 2, z: -8 }, { x: -11, z: 6 }];
+export const LETTER_SPOTS = [{ x: -6, z: -4 }, { x: 5.5, z: -3 }, { x: -2, z: 2.5 }, { x: 6.5, z: 4 }, { x: 1.5, z: -5 }, { x: -6.5, z: 4 }]; // D-67: 낱자 사이를 좁게(예전 자리의 0.6배 안팎)
 const LETTER_ORDER = [[2, 4, 0, 3], [1, 5, 2, 0, 4, 3]]; // 낱말마다 낱자가 놓이는 자리 번호
 
 const PEOPLE = ['commoner', 'scholar'];
@@ -64,7 +64,7 @@ function gatherToSejong(world) {
       for (const id of PEOPLE) {
         const n = world.npcs.get(id), m = n.mesh.position, [tx, tz] = to[id], dx = tx - m.x, dz = tz - m.z, d = Math.hypot(dx, dz);
         n.collider.r = 0;
-        if (d > 0.1) { moving = true; const st = Math.min(d, 4 * dt); world.moveNpc(id, m.x + dx / d * st, m.z + dz / d * st, Math.atan2(dx, dz)); }
+        if (d > 0.1) { moving = true; const st = Math.min(d, 6 * dt); world.moveNpc(id, m.x + dx / d * st, m.z + dz / d * st, Math.atan2(dx, dz)); }
         else n.mesh.rotation.y = Math.atan2(sx - m.x, sz - m.z);
       }
       if (!moving) { off(); resolve(); }
@@ -151,7 +151,11 @@ async function makeConsonants(ctx, easy, arena) {
   };
   const carve = (board, text) => { const old = board.getObjectByName('carved'); if (old) board.remove(old); const s = labelSprite(text, { size: 1.3 }); s.name = 'carved'; s.position.set(0, 3.5, 0.1); board.add(s); };
   ctx.testHooks.carved = [];
-  await visitAny(ctx, spots, async sp => {
+  // D-67: 첫째 그림판부터 차례로, 다음에 갈 그림판 위에 노란 느낌표를 띄운다(아무 차례로 가도 된다)
+  const bang = markerSprite('!'); bang.scale.setScalar(0.8); arena.group.add(bang);
+  const offBob = ctx.world.onUpdate((dt, t) => { bang.position.y = 3.25 + Math.sin(t * 3) * 0.1; });
+  const onNext = sp => { bang.visible = !!sp; if (sp) { bang.position.x = sp.board.position.x; bang.position.z = sp.board.position.z; ctx.testHooks.bangAt = sp.pic.shape; } };
+  try { await visitAny(ctx, spots, async sp => {
     await ask(C.ask(sp.pic.caption), C.options, sp.pic.answer);
     carve(sp.board, sp.pic.answer); ctx.testHooks.carved.push(sp.pic.answer);
     if (sp.pic.answer === 'ㄴ') { // 소리가 세지면 획을 더한다: ㄴ → ㄷ → ㅌ
@@ -160,7 +164,7 @@ async function makeConsonants(ctx, easy, arena) {
       await sayAll(dialogue, S.done);
     }
     dialogue.close();
-  });
+  }, { onNext }); } finally { offBob(); bang.removeFromParent(); }
   return missed ? 'missed' : true;
 }
 
@@ -255,13 +259,21 @@ export default {
   },
 
   // 장 도입(C-03): ① 한자로 쓴 방 앞에서 글을 읽지 못하는 백성 ② 근정전 앞 단상 위에 앉아 백성을 생각하는 세종
-  introScene() {
+  introScene(ctx) {
     const [sx, sz] = scene.sejongAt;
+    const cm = ctx?.world?.npcs.get('commoner')?.mesh;
+    let sob = null;
     return {
       shots: [
-        { cam: [-0.8, 2.4, 10.6], look: [-5, 1.6, 7.4], to: { cam: [-1.8, 2.2, 9.7], look: [-5, 1.6, 7.4] } },
+        { cam: [-0.8, 2.4, 10.6], look: [-5, 1.6, 7.4], to: { cam: [-1.8, 2.2, 9.7], look: [-5, 1.6, 7.4] },
+          act: () => { // D-67: 글을 읽지 못하는 백성이 고개를 떨구고 손으로 눈가를 훔치며 운다
+            if (!cm) return;
+            setExpression(cm, 'cry');
+            sob = playAction(cm, { dur: 60, fadeIn: 0.5, pose: t => ({ arms: [[-2.35 + Math.sin(t * 5) * 0.08, 0, 0.55], [-0.5, 0, -0.2]], upper: [0.22 + Math.sin(t * 7) * 0.03, 0, 0], head: [0.32, 0] }) });
+          } },
         { cam: [sx + 1.2, 2.4, sz + 6], look: [sx, 3.2, sz], to: { cam: [sx + 0.3, 3.4, sz + 3.4], look: [sx, 3.4, sz] } },
       ],
+      done: () => { if (cm) { setExpression(cm, 'worry'); if (cm.userData.act) cm.userData.act.t = cm.userData.act.dur; } sob = null; }, // 탐험 동안은 걱정하는 얼굴
     };
   },
   // 미니게임 뒤 빛나는 문(C-02): 마당 서쪽 빈 땅, 남쪽(학생이 서는 곳)을 본다
@@ -299,8 +311,9 @@ export default {
           if (heard.size < PEOPLE.length) { await talkSejong(ctx, n.wait); return; } // 모두 들어야 진행(C-01)
           [...PEOPLE, 'sejong'].forEach(k => { world.npcs.get(k).mark.visible = false; });
           world.setGoal(null); hud.setCounter(null);
-          await gatherToSejong(world); // 결심 장면: 백성과 학자가 곁으로 모인다
+          const gather = gatherToSejong(world); // 결심 장면: 백성과 학자가 곁으로 모인다(D-67: 다 모일 때까지 기다리지 않고 바로 말을 시작한다)
           await talkSejong(ctx, n.first);
+          await gather;
           stop(); setTimeout(resolve, 0);
         },
       });
