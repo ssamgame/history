@@ -3,7 +3,7 @@
 `CLAUDE.md`(꼭 지킬 것·내용 원칙) → 이 파일 순서로 읽는다. 결정은 `docs/team/decisions.md`, 테스트 기록은 `docs/team/tested.md`.
 
 ## 1. 지금 상태
-- 작업 브랜치 `claude/goryeo-game-handoff-vus00f`. 학생 사이트 **goryeo-v84**(D-71과 덧붙임: 일제 1장 선로·트럭, 2장 문서 쥐기, 3장 편지 길 건물, 4장 매복 바로 이어짐, 5장 경찰 흩어져 순찰, 6장 태극기 이름·거리별 과녁, 5장 저항시 읽기, 현대 1장 문패 만세).
+- 작업 브랜치 `claude/goryeo-game-handoff-vus00f`. 학생 사이트 **goryeo-v85**(D-71과 덧붙임: 시 읽기 끌어 내리기, 일제 1장 선로·트럭, 2장 문서 쥐기, 3장 편지 길 건물, 4장 매복 바로 이어짐, 5장 경찰 흩어져 순찰, 6장 태극기 이름·거리별 과녁, 5장 저항시 읽기, 현대 1장 문패 만세).
 - 미리보기 https://claude.ai/artifact/QSh1YhvtwooxoyDRsBZsCT 에 v76 코드를 올림(4절).
 - 전체 테스트(C) 결과는 `docs/team/tested.md` 마지막 줄. 예전부터 알려진 실패 2개: `arena … k1 doc papers(0,-8.5)`, `stage3 G2 … 해가 카메라 뒤쪽`.
 

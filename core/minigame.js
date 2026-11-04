@@ -564,15 +564,10 @@ export function showDocument(ctx, { title, heading, intro = '', items, src = nul
     const card = el('div', 'card wide');
     const ol = el('ol');
     for (const it of items) ol.append(el('li', null, it.text)); // 작은 글씨 해설(note)·안내 글(intro)은 싣지 않는다: 문서만 또렷하게(2026-11-04 선생님)
-    if (poem) { // 시: 번호 없이 줄만. 짧은 줄이 많으면 두 단, 긴 시는 글씨를 조금 작게(한 화면에 다 들게)
-      const chars = items.reduce((n, it) => n + it.text.length, 0);
-      ol.classList.add('poem');
-      if (items.length > 10 && chars / items.length < 20) ol.classList.add('cols');
-      if (chars > 300) ol.classList.add('long');
-    }
+    if (poem) ol.classList.add('poem'); // 시: 번호 없이 줄만, 글씨는 크게 두고 종이를 손가락으로 끌어 내리며 읽는다(2026-11-04 선생님)
     let paper;
     if (scroll) {
-      const sheet = el('div', 'scroll-sheet');
+      const sheet = el('div', poem ? 'scroll-sheet poem-sheet' : 'scroll-sheet');
       for (const k of [1, 2, 3]) sheet.append(el('span', `scroll-stain s${k}`)); // 얼룩(꾸밈, 글 뒤에 깔린다)
       sheet.append(el('h3', null, heading), ol);
       paper = el('div', 'doc-scroll');
@@ -583,7 +578,9 @@ export function showDocument(ctx, { title, heading, intro = '', items, src = nul
     }
     const ok = el('button', 'btn primary doc-ok', button); ok.type = 'button';
     if (poem) card.classList.add('poem-card');
-    card.append(el('div', 'eyebrow', poem ? '시 읽기' : '문서 읽기'), el('h2', null, title), paper, ok);
+    card.append(el('div', 'eyebrow', poem ? '시 읽기' : '문서 읽기'), el('h2', null, title), paper);
+    if (poem) card.append(el('p', 'poem-hint', '종이를 손가락으로 끌어 올리며 끝까지 읽어요'));
+    card.append(ok);
     screen.append(card); ctx.ui.append(screen);
     ok.addEventListener('click', () => { screen.remove(); resolve(true); });
   });
