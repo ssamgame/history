@@ -531,3 +531,19 @@ test('d67 넓히기: 고려 4장 처인성 안에 모인 백성·승려는 둘�
     ok(s.cheoinFolk.some((p, i) => Math.abs(p.rotation.y - r0[i]) > 0.05), '짝 쪽으로 몸을 돌린다');
   } finally { w.dispose(); }
 });
+
+test('d67 대사 정리 2(선생님 답): 사람이 사실을 읊던 말은 해설로 옮기고, 말 속 괄호 연도는 뺀다', async () => {
+  const all = s => JSON.stringify(s);
+  const j6 = (await import('../chapters/joseon/j6/script.js')).default, k1 = (await import('../chapters/modern/k1/script.js')).default;
+  const k5 = (await import('../chapters/modern/k5/script.js')).default, i5 = (await import('../chapters/colonial/i5/script.js')).default;
+  const i6 = (await import('../chapters/colonial/i6/script.js')).default, h6 = (await import('../chapters/present/h6/script.js')).default;
+  ok(!j6.npc.worker.first.some(l => /1794/.test(l.text)), '조선 6장 일꾼은 연도를 말하지 않는다');
+  ok(/1794년 정월.*1796년/.test(all(j6.result || j6)), '조선 6장 공사 시작은 끝 해설에');
+  ok(!/결국 1876/.test(all(k1)) && /"who":"narr","text":"1876년, 조선은 이곳 강화도에서/.test(all(k1)), '근대 1장 연무당 1876년은 해설로');
+  ok(!k5.npc.woman.first.some(l => /1899/.test(l.text)), '근대 5장 아주머니는 전차 연도를 되풀이하지 않는다');
+  ok(!i5.npc.student.first.some(l => /1926/.test(l.text)) && i5.intro?.some?.(l => /1926년.*6·10 만세 운동/.test(l.text) && l.src?.length), '일제 5장 6·10 만세 운동은 첫 해설에');
+  for (const [s, who] of [[i6, 'officer'], [i6, 'kimgu'], [h6, 'citizen']]) {
+    const said = []; JSON.parse(all(s), (k, v) => { if (v && v.who === who && typeof v.text === 'string') said.push(v.text); return v; });
+    ok(said.length && said.every(t => !/[가-힣]\((\d{4}년|6월 민주 항쟁)\)/.test(t)), `${who} 말 속 괄호 없음`);
+  }
+});

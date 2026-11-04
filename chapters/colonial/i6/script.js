@@ -35,7 +35,7 @@ export default {
     },
     officer: {
       first: [
-        { who: 'officer', text: '한국광복군은 충칭에서 만든 임시 정부의 군대다(1940년).', src: ['S51', 'S56'] },
+        { who: 'officer', text: '한국광복군은 충칭에서 만든 임시 정부의 군대다.', src: ['S51', 'S56'] },
         { who: 'officer', text: '나라 안으로 들어가 일제를 몰아낼 날을 위해 날마다 훈련한다.' },
       ],
       bridge: { who: 'officer', text: '여러 사람을 만나고 왔군. 내 이야기도 들어 보게.' },
@@ -98,7 +98,7 @@ export default {
       ],
       stations: [
         { id: 'aegukdan', label: '한인 애국단', act: '김구와 이야기하기', lines: [
-          { who: 'kimgu', text: '나는 임시 정부에 활기를 불어넣고자 상하이에서 한인 애국단을 만들었소(1931년).', src: ['S51', 'S55'] },
+          { who: 'kimgu', text: '나는 임시 정부에 활기를 불어넣고자 상하이에서 한인 애국단을 만들었소.', src: ['S51', 'S55'] },
           { who: 'kimgu', text: '나라를 위해 목숨을 걸겠다는 젊은이들이 모였소.' },
         ] },
         { id: 'tokyo', label: '도쿄', act: '도쿄 거리 보기', lines: [
