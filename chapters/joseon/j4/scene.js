@@ -56,7 +56,8 @@ export function buildJ4Scene(world) {
   const put = (fn, x, y, z, ry = 0, p = {}) => { const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = ry; L.add(g); fn(g, p); return g; };
   put(pier, 6, -0.5, 1.5, Math.PI / 2, { w: 9, d: 3 }); // 기둥 위 나무 부두
   const turtle = geobukseon(); turtle.position.set(10.5, -0.2, 0); turtle.scale.setScalar(TURTLE_S); L.add(turtle);
-  for (const [x, z] of [[-4, -1], [-12, 0], [1, -3]]) { const s = panokseon(); s.position.set(x, -0.2, z); s.rotation.y = x * 0.02; L.add(s); }
+  const portShips = [turtle];
+  for (const [x, z] of [[-4, -1], [-12, 0], [1, -3]]) { const s = panokseon(); s.position.set(x, -0.2, z); s.rotation.y = x * 0.02; L.add(s); portShips.push(s); } // 포구에 정박한 배(D-67: 바다 싸움 동안은 모두 나가 있어 숨긴다)
   // 포구 마을: 지휘소, 초가, 그물 말리기
   put(hanok, -10, 0, 11, Math.PI, { tile: true }).scale.setScalar(1.15); // 지휘소(기와집)
   world.addCollider({ x: -10, z: 11, r: 2.8 });
@@ -112,6 +113,7 @@ export function buildJ4Scene(world) {
     goalRing.visible = false;
     enemy.children.forEach(e => { e.userData.smoke.visible = s === 'won'; });
     setFormation(s === 'lure' ? 0 : 1);
+    portShips.forEach(p => { p.visible = s === 'harbor'; });
     if (s === 'lure') { lure.position.set(0, 0, -30); enemy.position.set(0, 0, ENEMY_WAIT); enemy.rotation.y = Math.PI; } // 뱃머리를 남쪽으로 두고 줄은 견내량 안쪽(북쪽)으로 길게(D-67: 30척)
     if (s === 'wing') { enemy.position.set(0, 0, -78); }
     if (s === 'won') { enemy.position.set(0, 0, -50); }
@@ -131,7 +133,8 @@ export function buildJ4Scene(world) {
   // 공격(D-30 I-03): 우리 배들이 차례로 포를 쏘고(포구 연기와 날아가는 포탄), 맞은 일본 배에 불이 붙어 타오르다가
   // 기울며 물 아래로 가라앉는다. 가라앉는 동안 검은 연기가 피어오르고, 다 잠기면 물보라만 남는다(전투 불꽃 허용, 2026-10-27 선생님).
   const fx = new THREE.Group(); L.add(fx);
-  const ballGeo = new THREE.SphereGeometry(0.28, 8, 6), ballMat = new THREE.MeshLambertMaterial({ color: 0x1e1c1a });
+  const ballGeo = new THREE.SphereGeometry(0.45, 10, 8), ballMat = new THREE.MeshBasicMaterial({ color: 0x2a2018 }); // D-67: 멀리서도 보이게 크게
+  const trailMat = new THREE.MeshBasicMaterial({ color: 0xffc060, transparent: true, opacity: 0.85, depthWrite: false });
   const puffGeo = new THREE.SphereGeometry(1, 10, 8);
   const puff = (p, r, color = 0xe8e6e0) => { const m = new THREE.Mesh(puffGeo, new THREE.MeshLambertMaterial({ color, transparent: true, opacity: 0.85, depthWrite: false })); m.scale.setScalar(r); m.position.copy(p); fx.add(m); return m; };
   const BURN = 1.0, SINK = 3.4, DEPTH = 6.8; // 불이 붙은 뒤 가라앉기 시작할 때까지, 가라앉는 시간, 잠기는 깊이(돛대 끝까지 물 아래)
@@ -163,21 +166,23 @@ export function buildJ4Scene(world) {
           if (sh.miss) { const d = wp.copy(tp).sub(sh.from.getWorldPosition(sideA)).setY(0).normalize(); tp.addScaledVector(d, -5).setY(-0.2); } // 적 앞 물에 떨어진다
           wp.copy(muzzle(sh.from, tp));
           const fl = new THREE.Mesh(puffGeo, flashMat.clone()); fl.position.copy(wp); fl.scale.setScalar(0.7); fx.add(fl); effects.push({ m: fl, k: 0, life: 0.22, grow: 1.5, op: 1 }); // 포구 불꽃
-          effects.push({ m: puff(wp, 0.9), k: 0, life: 1.6, grow: 2.6 }); // 포구 연기
-          sh.from.userData.kick = 1; // 반동
-          api.battleLog?.push({ from: sh.from, at: wp.clone(), flash: true, miss: !!sh.miss });
-          const ball = new THREE.Mesh(ballGeo, ballMat); ball.position.copy(wp); fx.add(ball);
+          const SMOKE = 3.2; effects.push({ m: puff(wp, 1.1), k: 0, life: SMOKE, grow: 3.0, rise: 0.4, op: 0.8 }); // 포구 연기(오래 남아 피어오른다)
+          api.battleLog?.push({ from: sh.from, at: wp.clone(), flash: true, miss: !!sh.miss, smokeLife: SMOKE });
+          const ball = new THREE.Mesh(ballGeo, ballMat); ball.name = 'cannonball'; ball.position.copy(wp); fx.add(ball);
+          const trail = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.3, 2.4, 6).rotateX(Math.PI / 2), trailMat); trail.name = 'trail'; fx.add(trail); sh.trail = trail; // 날아가는 포탄 뒤의 빛나는 꼬리
           sh.ball = ball; sh.a = wp.clone(); sh.b = tp.clone(); sh.k = 0; sh.state = 'fly';
           audio?.play('whoosh');
         }
         if (sh.state === 'fly') {
           sh.k = Math.min(1, sh.k + dt / 0.9);
+          const prev = sh.ball.position.clone();
           sh.ball.position.lerpVectors(sh.a, sh.b, sh.k); sh.ball.position.y += Math.sin(sh.k * Math.PI) * 6;
+          sh.trail.position.copy(prev).lerp(sh.ball.position, 0.2); sh.trail.lookAt(sh.ball.position);
           if (sh.k >= 1 && sh.miss) { // 빗나간 포탄: 높은 물기둥만
-            fx.remove(sh.ball); sh.state = 'sunk';
+            fx.remove(sh.ball); fx.remove(sh.trail); sh.state = 'sunk';
             const s = puff(sh.b, 1.3, 0xf2f6f8); s.scale.set(1, 4.5, 1); effects.push({ m: s, k: 0, life: 1.1, grow: 1.3 });
           } else if (sh.k >= 1) {
-            fx.remove(sh.ball); sh.state = 'hit'; sh.hitT = 0; sh.smokeT = 0;
+            fx.remove(sh.ball); fx.remove(sh.trail); sh.state = 'hit'; sh.hitT = 0; sh.smokeT = 0;
             for (let q = 0; q < 6; q++) { const piece = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.12, 0.25), new THREE.MeshLambertMaterial({ color: 0x5a3f2a, transparent: true })); piece.position.copy(sh.b); fx.add(piece); effects.push({ m: piece, k: 0, life: 1.3, grow: 0, op: 1, fly: new THREE.Vector3((Math.random() - 0.5) * 6, 4 + Math.random() * 3, (Math.random() - 0.5) * 6) }); } // 부서진 나뭇조각이 튄다
             const s = puff(sh.b, 1.6, 0xf2f6f8); s.scale.set(1.3, 3.8, 1.3); effects.push({ m: s, k: 0, life: 1, grow: 1.4 }); // 물보라
             sh.to.userData.smoke.visible = true;
@@ -212,8 +217,7 @@ export function buildJ4Scene(world) {
         if (e.fly) { e.fly.y -= 9.8 * dt; e.m.position.addScaledVector(e.fly, dt); e.m.rotation.x += dt * 8; }
         if (e.k >= 1 && e.m.parent) { fx.remove(e.m); e.m.material.dispose(); }
       }
-      for (const sh2 of shooters) if (sh2.userData.kick > 0) { sh2.userData.kick = Math.max(0, sh2.userData.kick - dt * 3); sh2.rotation.z = Math.sin(sh2.userData.kick * Math.PI) * 0.04; } // 쏠 때 배가 살짝 흔들린다
-      if (shots.every(s => s.state === 'sunk') && effects.every(e => e.k >= 1)) { off(); shooters.forEach(s2 => { s2.rotation.z = 0; }); resolve(targets.length); }
+      if (shots.every(s => s.state === 'sunk') && effects.every(e => e.k >= 1)) { off(); resolve(targets.length); }
     });
   });
 
@@ -257,7 +261,7 @@ export function buildJ4Scene(world) {
   });
 
   const api = {
-    start: [0, 6.5], introFrom: [0, 19], gate, turtle, leadTurtle, FIRE_AT, setFormation, flagship, lure, enemy, fleet, goalRing, myShip, setStage, setLure, setChase, setAdvance, playBattle,
+    start: [0, 6.5], introFrom: [0, 19], gate, turtle, leadTurtle, FIRE_AT, setFormation, portShips, fx, flagship, lure, enemy, fleet, goalRing, myShip, setStage, setLure, setChase, setAdvance, playBattle,
     slot: { x: wingSpots[SLOT][0], z: wingSpots[SLOT][1], ry: wingSpots[SLOT][2] * 0.35 - Math.sign(wingSpots[SLOT][0]) * Math.PI / 2 }, decoys: [], // 학익진 빈자리(D-30 I-02: 뒷줄의 틀린 자리 둘은 뺐다)
     seaBounds: { x0: -30, x1: 30, z0: STRAIT_Z - 4, z1: -10 }, // D-67: 넓힌 학익진 양 끝까지
     // 우리 배들이 한 줄로 오다가 학이 날개를 편 모양으로 펼쳐진다(seconds 동안)

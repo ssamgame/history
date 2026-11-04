@@ -355,3 +355,28 @@ test('d67 조선3-4(2차): 자격루 물그릇마다 다음 그릇(마지막은 
     });
   } finally { s.done(); }
 });
+test('d67 조선4(4차): 전투 동안 포구에 정박한 배는 없고, 포탄은 크게 빛나며 날아가 적선을 불태우고, 쏠 때 배를 흔들지 않으며 포구 연기가 오래 남는다', async () => {
+  const { s, sc } = await j4Setup();
+  try {
+    ok(sc.portShips?.length >= 4, '포구 정박 배');
+    sc.setStage('wing'); ok(sc.portShips.every(p => !p.visible), '학익진·전투 때 포구 배는 없다');
+    sc.setStage('harbor'); ok(sc.portShips.every(p => p.visible), '포구에서는 있다');
+    sc.setStage('wing'); { const sp = sc.spreadFleet(0.05); for (let i = 0; i < 3; i++) s.w.step(0.05, { x: 0, z: 0 }); await sp; }
+    sc.leadTurtle.position.set(0, -0.2, -35); sc.setAdvance(sc.FIRE_AT);
+    const log = sc.battleLog = []; let tilt = 0, balls = 0, trails = 0;
+    let done = false; const run = sc.playBattle(null).then(() => { done = true; });
+    for (let i = 0; i < 1200 && !done; i++) {
+      s.w.step(0.05, { x: 0, z: 0 }); if (i % 10 === 0) await null;
+      for (const sh of sc.fleet.children) tilt = Math.max(tilt, Math.abs(sh.rotation.z));
+      sc.fx.children.forEach(o => { if (o.name === 'cannonball') balls = Math.max(balls, o.geometry.parameters.radius); if (o.name === 'trail') trails += 1; });
+    }
+    await run;
+    ok(tilt < 0.001, `배를 흔들지 않는다 ${tilt.toFixed(3)}`);
+    ok(balls >= 0.4, `포탄이 크게 보인다 ${balls}`); ok(trails > 0, '빛나는 꼬리');
+    ok(log.every(e => e.smokeLife >= 2.5), '포구 연기가 오래 남는다');
+  } finally { s.done(); }
+}, { timeout: 90000 });
+test('d67 조선4(4차): 승리 뒤 배가 포구로 돌아오는 장면은 없다', async () => {
+  const src = await (await fetch('../chapters/joseon/j4/story.js')).text();
+  ok(!/돌아오는 배들/.test(src) && !/rowShip\(s, k \* 30/.test(src), '돌아오는 배 장면을 뺐다');
+});
