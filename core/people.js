@@ -187,8 +187,9 @@ function keepApart() {
       if (!ma && !mb) continue;
       const dx = B.position.x - A.position.x, dz = B.position.z - A.position.z, d = Math.hypot(dx, dz);
       if (d >= PERSON_GAP || d < 1e-4 || Math.abs(B.position.y - A.position.y) > 1) continue;
-      const ka = ma && mb ? 0.5 : ma ? 1 : 0, mover = ka === 1 ? A : ka === 0 ? B : null;
-      if (mover) { const u = mover.userData; u.pushT = (u.pushT || 0) + 1 / 30; u.pushedNow = true; if (u.pushT > 1.5) continue; } // 서 있는 사람에게 1.5초 넘게 막히면(그 사람 자리가 가는 곳 등) 더는 밀지 않는다: 걸음이 멈춰 버리지 않게
+      const ka = ma && mb ? 0.5 : ma ? 1 : 0;
+      let stuck = false; for (const m of ka === 0.5 ? [A, B] : [ka ? A : B]) { const u = m.userData; u.pushT = (u.pushT || 0) + 1 / 30; u.pushedNow = true; if (u.pushT > 1.5) stuck = true; }
+      if (stuck) continue; // 1.5초 넘게 밀려 막히면(가는 곳에 사람이 있거나 서로 마주 걸어오면) 더는 밀지 않는다: 걸음이 멈춰 버리지 않게 // 서 있는 사람에게 1.5초 넘게 막히면(그 사람 자리가 가는 곳 등) 더는 밀지 않는다: 걸음이 멈춰 버리지 않게
       const push = PERSON_GAP - d, nx = dx / d, nz = dz / d;
       A.position.x -= nx * push * ka; A.position.z -= nz * push * ka;
       B.position.x += nx * push * (1 - ka); B.position.z += nz * push * (1 - ka);

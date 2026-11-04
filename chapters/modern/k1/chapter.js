@@ -183,7 +183,8 @@ const base = makeKitChapter({
     { ...script.parts.paper, goal: script.goals[4], arena: YEONMU, from: [0, -3.6], view: { eye: [2.5, 3.2, -1.2], at: [0, 1, -6.5] }, scroll: true, // 연무당 탁자 앞에서 낡은 두루마리 조약문을 읽는다(D-05)
       intro: meet('official', '조선 관리와 이야기하기', script.parts.paper.intro) },
     { ...script.parts.rumor, goal: script.goals[5], mark: '!', intro: meet('scholar', '젊은 선비와 이야기하기', script.parts.rumor.intro), // 마을에서 백성들 이야기를 듣는다(2026-11-04 선생님: 연무당 앞 → 마을). 머리 위는 느낌표(D-06)
-      items: xy(script.parts.rumor.items, [{ x: -5, z: 9.5, ry: 0.6 }, { x: 5, z: 9.5, ry: -0.6 }, { x: -7.5, z: 0.5, ry: 1.2 }, { x: 6.5, z: -1.5, ry: -1.2 }]) },
+      items: xy(script.parts.rumor.items, [{ x: -5, z: 9.5, ry: 0.6 }, { x: 5, z: 9.5, ry: -0.6 }, { x: -7.5, z: 0.5, ry: 1.2 }, { x: 6.5, z: -1.5, ry: -1.2 }]),
+      before: ctx => { ctx.world.camMode = 'follow'; } }, // 마을에서 하니(무대가 없다) 선비와 이야기한 카메라를 따라가기로 돌린다
   ],
   decorate(world) { // 마을 어귀 나무 문과 「강화도」 이름판(S51). 문짝은 굳히기에 합쳐지지 않게 돌려준다
     const gate = gateLeaves(world.level, { x: 0, z: GATE_Z, width: 4, height: 2.6, inward: -1 });
