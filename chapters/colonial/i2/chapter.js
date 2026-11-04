@@ -75,8 +75,8 @@ export async function declarationScene(ctx) {
   await ctx.fade?.(true);
   const g = new THREE.Group(); g.name = 'i2Declare'; world.level.add(g);
   const hook = ctx.testHooks.declare = { reader: false, flags: 0, cheers: 0, held: false, camZ: 0, raisedY: 0, facing: 0 };
-  const reader = person(g, 'student', 0, -4.9, 0); reader.position.y = 0.6; // 팔각정 위
-  const paper = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.44, 0.02), new THREE.MeshLambertMaterial({ color: 0xf2ecd8 })); paper.rotation.x = -0.25; setCarry(reader, paper, 'arms'); hook.reader = true; // 선언서를 두 손으로 펼쳐 들고 읽는다(2026-11-04 선생님: 몸에 붙어 있던 것)
+  const reader = person(g, 'student', 0, -5.7, 0); reader.position.y = 0.6; // 팔각정 위(앞 기둥 둘 사이 안쪽: 기둥에 겹치지 않게)
+  const paper = new THREE.Mesh(new THREE.BoxGeometry(0.64, 0.42, 0.015), new THREE.MeshLambertMaterial({ color: 0xf2ecd8 })); paper.rotation.x = -0.3; setCarry(reader, paper, 'read'); hook.reader = true; // 선언서를 두 손으로 펼쳐 들고 읽는다(2026-11-04 선생님: 몸에 붙어 있던 것)
   const looks = ['student', 'schoolgirl', 'commoner', 'woman', 'gentleman', 'peasant', 'student', 'citizen', 'schoolgirl', 'worker', 'commoner', 'student'];
   const crowd = looks.map((look, i) => { const r = i < 6 ? 0 : 1, c = i % 6; const p = person(g, look, -4.2 + c * 1.7 + r * 0.8, 0.4 + r * 1.5); face(p, 0, -5); return p; }); // 팔각정 앞을 조금 띄워 마주 보는 카메라 자리를 둔다(D-43)
   const flags = []; // 낭독이 끝나면 품속 태극기를 꺼내 든다
@@ -85,7 +85,7 @@ export async function declarationScene(ctx) {
     world.setFixedCamera([6.6, 3.4, -4.6], [-1, 1.4, -1.2]); // 팔각정 옆 앞쪽에서 읽는 학생과 모인 사람들의 얼굴을 함께(D-43)
     await ctx.fade?.(false);
     await dialogue.say(L[0]);
-    world.setTalkCamera({ position: new THREE.Vector3(0, 0.6, -4.9) }); face(reader, world.player.position.x, world.player.position.z);
+    world.setTalkCamera({ position: new THREE.Vector3(0, 0.6, -5.7) }); face(reader, world.player.position.x, world.player.position.z);
     await dialogue.say(L[1]);
     world.setFixedCamera([6.6, 3.4, -4.6], [-1, 1.4, -1.2]);
     await dialogue.say(L[2]);
@@ -119,8 +119,8 @@ const ACT = {
   async hope({ ctx, a, st, say, hook, set }) {
     const { world } = ctx;
     await say(st.lines[0], set.reader);
-    const news = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.62, 0.02), new THREE.MeshLambertMaterial({ color: 0xf2ecd8 })); // 펼쳐 든 신문
-    news.position.set(0, 1.4, 0.45); news.rotation.x = -0.35; set.reader.add(news); hook.newspaper = true;
+    const news = new THREE.Mesh(new THREE.BoxGeometry(0.64, 0.44, 0.015), new THREE.MeshLambertMaterial({ color: 0xf2ecd8 })); // 두 손으로 양끝을 잡고 펼쳐 든 신문
+    news.rotation.x = -0.3; setCarry(set.reader, news, 'read'); hook.newspaper = true;
     const R = set.reader.getWorldPosition(new THREE.Vector3());
     world.setFixedCamera([R.x + 3.4, 2.4, R.z + 3.4], [R.x, 1.4, R.z]);
     await say(st.lines[1]); await say(st.lines[2]);
@@ -221,7 +221,7 @@ const base = makeKitChapter({
     skyline: { style: 'hanok', color: 0x4a4e4c, arc: [Math.PI * 0.55, Math.PI * 1.45] },
     roads: [{ x: 0, z: 9.5, w: 4, d: 11 }],
     props: [
-      { type: 'pavilion', x: 0, z: -7 },
+      { type: 'pavilion', x: 0, z: -7, ry: Math.PI / 8 }, // 기둥 사이가 앞을 보게: 낭독하는 학생이 기둥에 겹치지 않게(2026-11-04 선생님)
       { type: 'crowd', x: -10, z: -2, n: 12, cols: 4, flags: 0.6, looks: ['student', 'commoner', 'schoolgirl', 'woman', 'gentleman'], face: 0.3 },
       { type: 'crowd', x: 9, z: -2, n: 12, cols: 4, flags: 0.6, looks: ['commoner', 'student', 'peasant', 'schoolgirl'], face: -0.3 },
       { type: 'hanok', x: HALL.x, z: HALL.z, tile: true, scale: HALL.scale, ry: Math.PI },
