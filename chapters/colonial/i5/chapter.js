@@ -250,7 +250,9 @@ const base = makeKitChapter({
     { ...script.parts.pages, goal: script.goals[3], arena: STREETS, from: [0, 17],
       route: xy(script.parts.pages.route, [{ x: -6, z: 6 }, { x: 6, z: -4 }, { x: 0, z: -16 }]),
       pickups: xy(script.parts.pages.pickups, [{ x: -16, z: 16 }, { x: 16, z: 6 }, { x: -16, z: 0 }, { x: 16, z: -12 }, { x: -14, z: -16 }]),
-      hazards: [{ x: -16, z: 8, to: [16, 8], kind: 'crowd', r: 1.6, speed: 0.4 }, { x: 16, z: -8, to: [-16, -8], kind: 'crowd', r: 1.6, speed: 0.45 }] },
+      // 경찰은 흩어져 저마다 다른 길을 오가며 감시한다(2026-11-04 선생님)
+      hazards: [{ x: -16, z: 6, to: [-5, 6], kind: 'police', r: 0.9, speed: 0.5 }, { x: 4, z: 12, to: [15, 2], kind: 'police', r: 0.9, speed: 0.45 },
+        { x: -10, z: -3, to: [-10, 4], kind: 'police', r: 0.9, speed: 0.6 }, { x: 15, z: -6, to: [3, -9], kind: 'police', r: 0.9, speed: 0.4 }, { x: -15, z: -10, to: [-5, -12], kind: 'police', r: 0.9, speed: 0.5 }] },
     { ...script.parts.culture, goal: script.goals[4], intro: meet('historian', '역사학자와 이야기하기', script.parts.culture.intro), play: ctx => cultureWalk(ctx) },
   ],
   // 골목 문과 「경성」 이름판은 굳히기에 합쳐지지 않게 돌려준다

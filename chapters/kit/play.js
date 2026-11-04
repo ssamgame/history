@@ -321,6 +321,7 @@ export function drive(ctx, part, easy) {
     else if (hz.kind === 'ship') { add(hg, box(2.6, 1.4, 6), 0x3a3f46, 0, 0.5, 0); add(hg, box(1.6, 1.4, 2), 0x2b2f36, 0, 1.8, -0.5); }
     else if (hz.kind === 'mine') { add(hg, new THREE.SphereGeometry(0.6, 10, 8), 0x2b2b2b, 0, 0.3, 0); }
     else if (hz.kind === 'crowd') { for (let i = 0; i < 3; i++) { const p = makePerson(LOOKS.gendarme); p.position.set(i - 1, 0, 0); hg.add(p); } }
+    else if (hz.kind === 'police') hg.add(makePerson(LOOKS.gendarme)); // 혼자 순찰하는 경찰
     else if (hz.kind === 'car') { BUILD.truck(hg, { color: 0x8a2f24 }); }
     else if (hz.kind === 'cart') { const c = new THREE.Group(); c.rotation.y = Math.PI / 2; hg.add(c); BUILD.cart(c, { load: true }); } // 소달구지·손수레(1890년대 길)
     else if (hz.kind === 'truck') { BUILD.truck(hg, { color: 0x55603f }); } // 군용 트럭(전쟁 장면)
@@ -438,9 +439,9 @@ export function drive(ctx, part, easy) {
     safe = Math.max(0, safe - dt);
     for (const h of hazards) {
       if (h.to) { // 두 점 사이를 오간다
-        const k = (Math.sin((el + h.ph) * (h.speed || 0.6) * (easy ? 0.5 : 1)) + 1) / 2;
+        const w = (el + h.ph) * (h.speed || 0.6) * (easy ? 0.5 : 1), k = (Math.sin(w) + 1) / 2;
         h.hg.position.set(h.x + (h.to[0] - h.x) * k, 0, h.z + (h.to[1] - h.z) * k);
-        h.hg.rotation.y = Math.atan2(h.to[0] - h.x, h.to[1] - h.z);
+        h.hg.rotation.y = Math.atan2(h.to[0] - h.x, h.to[1] - h.z) + (Math.cos(w) < 0 ? Math.PI : 0); // 돌아올 때는 돌아서서 걷는다(2026-11-04 선생님: 뒷걸음질하던 것)
       }
       const hp = s.at(h.hg.position.x, h.hg.position.z);
       if (!safe && Math.hypot(p.x - hp.x, p.z - hp.z) < (h.r || 1.4) + 0.9) {
