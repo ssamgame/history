@@ -318,7 +318,7 @@ export function addNature(world, layout, field, kind, color, parent = world.leve
   ];
   const onRoad = (x, z) => (layout.roads || []).some(r => Math.abs(x - r.x) < r.w / 2 + 0.6 && Math.abs(z - r.z) < r.d / 2 + 0.6);
   const f = field.flat;
-  scatter(world, { parent, kind: 'grass', count: 90, area: { x0: f.x0, x1: f.x1, z0: f.z0, z1: f.z1 }, avoid: busy, keep: (x, z) => !onRoad(x, z), seed: seed + 3, scale: [0.7, 1.2], color: new THREE.Color(hill ? new THREE.Color(color).lerp(new THREE.Color(hill), 0.7) : color).multiplyScalar(1.25).getHex() }); // 흙 마당의 풀포기는 언덕 풀빛 쪽으로(마른 흙빛 풀이 아니게)
+  scatter(world, { parent, kind: 'grass', count: 90, area: { x0: f.x0, x1: f.x1, z0: f.z0, z1: f.z1 }, avoid: busy, keep: (x, z) => !onRoad(x, z) && field.heightAt(x, z) >= 0, seed: seed + 3, scale: [0.7, 1.2], color: new THREE.Color(hill ? new THREE.Color(color).lerp(new THREE.Color(hill), 0.7) : color).multiplyScalar(1.25).getHex() }); // 흙 마당의 풀포기는 언덕 풀빛 쪽으로(마른 흙빛 풀이 아니게)
   if (hsl.h > 0.17 && hsl.h < 0.45 && hsl.s > 0.2) scatter(world, { parent, kind: 'flower', count: 25, area: { x0: f.x0, x1: f.x1, z0: f.z0, z1: f.z1 }, avoid: busy, keep: (x, z) => !onRoad(x, z), seed: seed + 4 });
 }
 

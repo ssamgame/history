@@ -7,7 +7,7 @@ import { storyScene, person, wait, face, troop, facingShare, raiseArms } from '.
 import script from './script.js';
 
 export const HARBOR = { origin: [400, 0], ground: 'earth', groundColor: 0x9a8a68, hill: 0.8, bounds: { x0: -16, x1: 16, z0: -4, z1: 10 },
-  props: [{ type: 'water', x: 0, z: -34, w: 160, d: 56, solid: false }, { type: 'pier', x: 2, z: -6, solid: false }], edge: { style: 'thatch', back: false } };
+  props: [{ type: 'water', x: 0, z: -34, w: 160, d: 56, solid: false, shore: true }, { type: 'pier', x: 2, z: -6, solid: false }], edge: { style: 'thatch', back: false } };
 
 export function victoryScene(ctx) {
   const R = script.result;

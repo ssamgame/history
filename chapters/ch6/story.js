@@ -11,9 +11,9 @@ import { setStyle } from '../../core/people.js';
 import script from './script.js';
 
 const shore = (extra = {}) => ({ origin: [400, 0], ground: 'earth', groundColor: 0x7d6e52, hill: 1, bounds: { x0: -18, x1: 18, z0: -12, z1: 6 },
-  props: [{ type: 'water', x: 0, z: 30, w: 160, d: 48, solid: false }], edge: { style: 'forest', sides: false }, ...extra });
+  props: [{ type: 'water', x: 0, z: 30, w: 160, d: 48, solid: false, shore: true }], edge: { style: 'forest', sides: false }, ...extra });
 export const YONGJANG = shore();
-export const HANGPADURI = shore({ groundColor: 0x6e5a40, bounds: { x0: -20, x1: 20, z0: -12, z1: 20 }, props: [{ type: 'water', x: 0, z: 46, w: 160, d: 48, solid: false }] }); // 바닷가가 넓어야 연합군이 내려 늘어선다
+export const HANGPADURI = shore({ groundColor: 0x6e5a40, bounds: { x0: -20, x1: 20, z0: -12, z1: 20 }, props: [{ type: 'water', x: 0, z: 46, w: 160, d: 48, solid: false, shore: true }] }); // 바닷가가 넓어야 연합군이 내려 늘어선다
 
 // 배 한 척: 탄 사람들과 고물에서 노를 젓는 사공(kit/row.js). 배가 움직이는 만큼 사공이 젓는다
 const boatWith = (g, x, z, looks, scale = 1, rowerLook = 'villager') => { const b = new THREE.Group(); b.position.set(x, 0, z); g.add(b); BLD.boat(b, { len: 4.6 }); b.scale.setScalar(scale);
@@ -82,7 +82,7 @@ export function yongjangScene(ctx) {
     const surge = wait(world, 2.6, k => foes.forEach((p, i) => { p.position.z = foe1[i].z + 4 * k; }));
     [kim, ...men].forEach(p => { p.rotation.y = 0; });
     hook.fledAfter = 0; // 무너진 뒤 달아나기까지 걸린 때(곧바로)
-    const run = march(world, [kim, ...men], 0, 10, 2.4);
+    const run = march(world, [kim, ...men], 0, 9, 1.8, { linear: true }); // D-67: 걷지 않고 뛰어서(5m/s, 달리기 동작)
     await say(L[1]);
     ctx.dialogue.close();
     await glide([1.5, 3.6, 7.5], [0, 2.4, -9], [-6, 3, 1], [0, 1.4, 8], 1.4);
@@ -104,23 +104,23 @@ export function hangpaduriScene(ctx) {
   const L = script.jeju.talk;
   return storyScene(ctx, { key: 'hangpaduri', arena: HANGPADURI, mood: 'haze', async run({ g, hook, cam, glide, say, fadeIn }) {
     const { world } = ctx;
-    const WALL = 1.3, WZ = 1.5; // 흙성 높이와 자리(z). 몸통이 보이게 낮게 쌓은 흙성
-    const groundAt = (x, z) => (Math.abs(z - WZ) < 1.2 && Math.abs(x) < 15 ? WALL : 0);
+    const WZ = 1.5; // 삼별초가 서는 자리의 기준(z)
+    const groundAt = () => 0;
     hook.phases = [];
-    // 대치(D-66, 2026-11-03 선생님): 첫 장면부터 흙성을 등진 몇 안 되는 삼별초와, 조금 떨어져 마주 선 고려·몽골 연합군. 서로 바라보다가 진압되었다는 해설로 맺는다
-    for (const x of [-10, 0, 10]) blk(g, 10, WALL, 2.4, 0x7a5f40, x, WALL / 2, WZ, 'earth');
-    const flags = [-10, 10].map(x => { const f = new THREE.Group(); f.position.set(x, WALL, WZ - 0.6); BLD.banner(f, { color: 0x3a2f2a, h: 2.6 }); g.add(f); return f; });
-    const men = [[-3.6, 0], [-1.2, 0.2], [1.2, 0], [3.6, 0.2], [-2.4, -1.2], [2.4, -1.2]].map(([x, dz], i) => person(g, i % 3 === 2 ? { ...LOOKS_SB_ARCHER } : 'sambyeolcho', x, WZ + 3.8 + dz, 0)); // 몇 안 되는 삼별초(흙성 앞, 바다 쪽을 본다)
+    // 대치(D-66, 2026-11-03 선생님): 첫 장면부터 몇 안 되는 삼별초와, 조금 떨어져 마주 선 고려·몽골 연합군. 서로 바라보다가 진압되었다는 해설로 맺는다
+    // D-67(2026-11-04 선생님): 뒤 흙성은 없애고 거리를 조금 더 두고 대치, 연합군 깃발에 「여몽 연합군」
+    hook.wall = false;
+    const men = [[-3.6, 0], [-1.2, 0.2], [1.2, 0], [3.6, 0.2], [-2.4, -1.2], [2.4, -1.2]].map(([x, dz], i) => person(g, i % 3 === 2 ? { ...LOOKS_SB_ARCHER } : 'sambyeolcho', x, WZ + 3.8 + dz, 0)); // 몇 안 되는 삼별초(바다 쪽을 본다)
     men.forEach(p => setStyle(p, 'guard'));
     const kim = person(g, 'kimtongjeong', 0, WZ + 2.4, 0);
     // 바닷가에 닿은 연합군 배와, 내려서 늘어선 연합군(앞에 고려 관군 보병, 양옆에 몽골 기마병)
     const fleet = [];
     for (let i = 0; i < 6; i++) fleet.push(boatWith(g, -14 + i * 5.6, 24 + (i % 2) * 2.5, [], 1.4, i % 2 ? 'mongol' : 'villager'));
     fleet.forEach(({ b }) => { b.rotation.y = Math.PI; });
-    const allies = host(g, { x: 0, z: 12.5, ry: Math.PI, general: 'goryeoCommander', generalOnFoot: true, banner: 0xb8452f, bearerLook: 'soldier', front: 'infantry',
+    const allies = host(g, { x: 0, z: 14, ry: Math.PI, general: 'goryeoCommander', generalOnFoot: true, banner: 0xb8452f, bannerText: '여몽 연합군', bearerLook: 'soldier', front: 'infantry',
       infantry: { n: 14, cols: 7, gap: 1.7, looks: ['soldier', 'archer', 'soldier'] }, cavalry: { n: 4, cols: 4, gap: 3.4, looks: ['mongolArcher', 'mongolLancer'] } });
-    const wingL = host(g, { x: -12, z: 11, ry: Math.PI + 0.2, general: 'mongolGeneral', banner: 0x2a2a2e, cavalry: { n: 4, cols: 2, gap: 3.0, looks: ['mongolArcher', 'mongol'] } });
-    const wingR = host(g, { x: 12, z: 11, ry: Math.PI - 0.2, cavalry: { n: 4, cols: 2, gap: 3.0, looks: ['mongolLancer', 'mongolArcher'] } });
+    const wingL = host(g, { x: -12, z: 12.5, ry: Math.PI + 0.2, general: 'mongolGeneral', banner: 0x2a2a2e, bannerText: '여몽 연합군', cavalry: { n: 4, cols: 2, gap: 3.0, looks: ['mongolArcher', 'mongol'] } });
+    const wingR = host(g, { x: 12, z: 12.5, ry: Math.PI - 0.2, cavalry: { n: 4, cols: 2, gap: 3.0, looks: ['mongolLancer', 'mongolArcher'] } });
     const allUnits = [...allies.units, ...wingL.units, ...wingR.units], riders = [...allies.riders, ...wingL.riders, ...wingR.riders];
     const offPatrol = patrol(world, riders), offRow = () => {};
     men.forEach(p => face(p, p.position.x, p.position.z + 10)); // 바다 쪽(연합군)을 본다
@@ -128,9 +128,10 @@ export function hangpaduriScene(ctx) {
     face(kim, kim.position.x, kim.position.z + 10);
     hook.phases.push('standoff');
     const zSB = Math.max(...men.map(p => p.position.z)), zAL = Math.min(...allies.foot.map(p => p.position.z));
-    hook.gap = zAL - zSB; hook.wallBehind = men.every(p => p.position.z > WZ + 1.2); hook.few = men.length;
+    hook.gap = zAL - zSB; hook.few = men.length;
+    hook.allyFlags = 0; g.traverse(o => { if (o.userData.text === '여몽 연합군') hook.allyFlags += 1; });
     hook.facing = (men.filter(p => Math.cos(p.rotation.y) > 0.9).length + allies.foot.filter(p => Math.cos(p.rotation.y) < -0.9).length) / (men.length + allies.foot.length);
-    cam([-7, 5, -2.5], [1.5, 1.2, 9]); // 흙성 뒤 조금 높은 곳에서: 흙성을 등진 삼별초와 마주 선 연합군을 함께
+    cam([-7, 5, -2.5], [1.5, 1.2, 9]); // 삼별초 뒤 조금 높은 곳에서: 삼별초와 마주 선 연합군을 함께
     await fadeIn();
     await say(L[0], kim);
     ctx.dialogue.close();

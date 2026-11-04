@@ -131,13 +131,11 @@ export default {
     return scene;
   },
 
-  // 장 도입(C-03): ① 포구에서 관리가 조정의 결정을 전하는 모습 ② 삼별초 군사들이 배중손 곁에서 주먹을 들어 반대하는 모습
+  // 장 도입(C-03): ① 포구에서 관리가 조정의 결정을 전하는 모습 ② 삼별초 군사들이 배중손 곁에서 반대하는 모습(D-67: 팔을 치켜든 채 서 있는 것이 어색해 팔은 내린다)
   introScene(ctx) {
     const { world } = ctx;
-    const raise = ['sambyeolcho', 'baejungson'].map(id => world.npcs.get(id).mesh);
     const all = ['minister', 'sambyeolcho', 'baejungson', 'villager'].map(id => world.npcs.get(id).mesh), ry0 = all.map(m => m.rotation.y);
     const face = (m, [cx, , cz]) => { m.rotation.y = Math.atan2(cx - m.position.x, cz - m.position.z); }; // 카메라 쪽을 본다(얼굴이 보이게)
-    let off = null;
     return {
       shots: [
         { cam: [-3.5, 2.3, 71], look: [-8, 1.8, 76], to: { cam: [-6, 2.3, 71.5], look: [-8, 1.8, 76] },
@@ -145,14 +143,9 @@ export default {
         { cam: [-1, 2.6, 66.5], look: [2, 1.8, 72], to: { cam: [3, 2.6, 67], look: [3, 1.8, 72] },
           act: () => {
             face(all[1], [-1, 0, 66.5]); face(all[2], [-1, 0, 66.5]);
-            raise.forEach(m => { m.userData.manual = true; });
-            off = world.onUpdate((dt, t) => raise.forEach((m, i) => {
-              const a = m.userData.arms, w = 0.5 + 0.5 * Math.sin(t * 5 + i * 1.7);
-              a[0].rotation.x = a[1].rotation.x = -2.2 - 0.5 * w; a[0].rotation.z = -0.15; a[1].rotation.z = 0.15;
-            }));
           } },
       ],
-      done: () => { off?.(); off = null; all.forEach((m, i) => { m.rotation.y = ry0[i]; }); raise.forEach(m => { for (const a of m.userData.arms) a.rotation.set(0, 0, 0); m.userData.manual = false; }); },
+      done: () => { all.forEach((m, i) => { m.rotation.y = ry0[i]; }); },
     };
   },
   // 미니게임 뒤 큰 문(C-02, 편의 마지막 장): 포구 가운데 빈 땅, 학생 쪽(남쪽)을 본다

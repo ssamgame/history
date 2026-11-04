@@ -7,6 +7,7 @@ import { PLAY, buildArena, mapSpot, labelSprite } from '../../kit/play.js';
 import { makePerson, animateWalk, setCarry, mat } from '../../../core/people.js';
 import { enterThroughGate, closeGate } from '../../kit/gate.js';
 import { leadWalk } from '../../kit/lead.js';
+import { chatter } from '../../kit/walk.js';
 import { LOOKS } from '../../../content/characters.js';
 import { geunjeongjeon, jongmyo, sajikdan } from '../landmarks.js';
 import * as THREE from 'three';
@@ -352,9 +353,13 @@ export default {
     return {
       shots: [
         { cam: [7, 7, 6], look: [7, 1, -14], to: { cam: [7, 4.5, -3], look: [7, 1.5, -22] },
-          act: () => { off = world.onUpdate(dt => { scene.army.position.z -= dt * 0.9; }); } }, // 요동(북쪽)을 보고 나아간다
+          act: () => { // D-67: 바다를 건너는 것처럼 물로 걸어 들어가지 않고, 압록강 앞에서 멈춰 서로 돌아보며 웅성거리고 반걸음 물러서며 머뭇거린다
+            const stopChat = chatter(world, scene.army.children, { turn: 1.1, seed: 3 });
+            let t = 0; const offBack = world.onUpdate(dt => { t += dt; scene.army.position.z = a0.z + 0.6 * Math.min(1, t / 3); });
+            off = () => { stopChat(); offBack(); };
+          } },
         { cam: [2.6, 2.3, 2.8], look: [0, 2.0, -2.4], to: { cam: [-1.4, 2.2, 2.2], look: [0, 2.05, -2.4] },
-          act: () => { off?.(); off = null; } },
+          act: () => {} }, // 뒤쪽 군사들은 계속 웅성거린다
       ],
       done: () => { off?.(); scene.setTurn(0); scene.army.position.copy(a0); },
     };
@@ -376,6 +381,7 @@ export default {
     closeGate(world, scene.gate);
     const heard = new Set();
     markCamp(ctx, heard);
+    const stopChat = chatter(world, scene.army.children, { seed: 5 }); // D-67: 강가에 모인 군사들이 서로 이야기를 나눈다
     await sayAll(dialogue, script.start);
     dialogue.close();
     ctx.input.enabled = true;
@@ -398,6 +404,7 @@ export default {
         },
       });
     });
+    stopChat();
   },
 
   async minigame(ctx) {

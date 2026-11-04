@@ -461,7 +461,7 @@ test('d62 고려6-4·5: 용장성은 성벽이 허물어져 무너지고, 항파
     await ch6.stories.hangpaduri(s.ctx);
     const h = s.ctx.testHooks.hangpaduri;
     ok(h.phases.includes('standoff') && !h.phases.includes('clash'), `대치(싸움 없음) ${h.phases}`);
-    ok(h.wallBehind, '삼별초는 흙성을 등지고 선다'); ok(h.gap > 4, `두 군대 사이 ${h.gap?.toFixed(1)}m`); ok(h.facing > 0.85, `서로 마주 본다 ${h.facing?.toFixed(2)}`);
+    ok(!h.wall, 'D-67: 뒤 흙성은 없앴다'); ok(h.allyFlags >= 1, `D-67: 연합군 깃발에 「여몽 연합군」 ${h.allyFlags}`); ok(h.gap > 6, `두 군대 사이 ${h.gap?.toFixed(1)}m`); ok(h.facing > 0.85, `서로 마주 본다 ${h.facing?.toFixed(2)}`);
   } finally { bot.stop(); s.done(); }
 }, { timeout: 120000 });
 test('d62 고려6-1(뼈대 몸): 장이 시작하면 든 팔을 내린다', async () => {

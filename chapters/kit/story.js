@@ -70,10 +70,10 @@ export function troop(g, looks, x, z, { cols = 4, rows = 2, gap = 1.2, ry = 0, j
 // 사람들을 sec초 동안 (dx, dz)만큼 걸어가게 한다(걸음은 인물이 스스로 흔든다). 바라보는 방향도 가는 쪽으로
 // 출발할 때 천천히 빨라지고 멈출 때 천천히 느려진다(가운데는 고른 빠르기). 방향은 그쪽으로 부드럽게 돌아서며 출발한다(2026-10-30 움직임 개선)
 const glideK = k => { const a = 0.18; return k < a ? k * k / (2 * a * (1 - a)) : k > 1 - a ? 1 - (1 - k) * (1 - k) / (2 * a * (1 - a)) : (k - a / 2) / (1 - a); };
-export function march(world, list, dx, dz, sec, { turn = true } = {}) {
+export function march(world, list, dx, dz, sec, { turn = true, linear = false } = {}) { // linear: 처음부터 끝까지 같은 빠르기(달아날 때 처음과 끝이 걸음이 되지 않게)
   const p0 = list.map(p => p.position.clone()), y0 = list.map(p => p.rotation.y), want = Math.atan2(dx, dz);
   return wait(world, sec, k => list.forEach((p, i) => {
-    const e = glideK(k);
+    const e = linear ? k : glideK(k);
     p.position.set(p0[i].x + dx * e, p0[i].y, p0[i].z + dz * e);
     if (turn) p.rotation.y = y0[i] + Math.atan2(Math.sin(want - y0[i]), Math.cos(want - y0[i])) * Math.min(1, k * sec / 0.35);
   }));

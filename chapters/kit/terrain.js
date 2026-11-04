@@ -29,7 +29,11 @@ export function terrainField({ bounds, props = [], margin = 5, hill = 1 }) {
   const inWater = (x, z) => waters.some(({ p, w, d, c, s }) => { const dx = x - p.x, dz = z - p.z, lx = dx * c - dz * s, lz = dx * s + dz * c; return Math.abs(lx) < w + 2 && Math.abs(lz) < d + 2; });
   // 가장 가까운 물 칸 가장자리까지 거리(물 밖). 바닷가·강둑이 절벽처럼 솟지 않고 완만하게 오르게 쓴다
   const waterDist = (x, z) => { let best = Infinity; for (const { p, w, d, c, s } of waters) { const dx = x - p.x, dz = z - p.z, lx = dx * c - dz * s, lz = dx * s + dz * c; best = Math.min(best, Math.hypot(Math.max(Math.abs(lx) - w - 2, 0), Math.max(Math.abs(lz) - d - 2, 0))); } return best; };
+  // shore: true인 물(바닷가 무대)은 걷는 곳 둘레의 평평한 여유 땅이 물 위로 뻗지 않게 걷는 곳 1m 밖부터 물로 둔다
+  // (D-67: 평평한 땅이 물 칸 안쪽까지 덮어 바닷가가 물 칸 가장자리와 어긋나고, 물결이 그 경계를 덮었다 드러냈다 했다)
+  const shoreWater = (x, z) => rectDist(x, z, bounds) > 1 && waters.some(({ p, w, d, c, s }) => { if (!p.shore) return false; const dx = x - p.x, dz = z - p.z, lx = dx * c - dz * s, lz = dx * s + dz * c; return Math.abs(lx) < w && Math.abs(lz) < d; });
   const heightAt = (x, z) => {
+    if (shoreWater(x, z)) return -1.4;
     const d = rectDist(x, z, flat);
     if (d <= 0) return 0;
     if (inWater(x, z)) return -1.4;
