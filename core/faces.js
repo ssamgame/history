@@ -167,6 +167,7 @@ export const faceTheta = py => { const L = FACE_LAYOUT, q = py <= L.cut ? py : L
 // 3D 머리 앞쪽에 입힐 얼굴 무늬 (배경 투명). 같은 얼굴은 한 번만 만든다.
 const faceCache = new Map();
 export function faceTexture(face = {}) {
+  if (face.glasses) face = { ...face, glasses: null }; // 3D 머리에는 안경 테(people.js)가 따로 있다: 얼굴 무늬에 또 그리면 두 겹(2026-11-04 선생님)
   const key = JSON.stringify(face);
   if (faceCache.has(key)) return faceCache.get(key);
   // 3D 얼굴 판은 눈 아래(코·입·턱)를 1.5배 길게 늘여 붙인다(D-54: 턱이 있는 달걀꼴 머리에서 입이 코에 붙지 않게)

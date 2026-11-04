@@ -53,7 +53,7 @@ test('d67 고려6-2: 바닷길 도착 지점 원 위에 멀리서도 보이는 �
 
 test('d67 바닷가: shore 물은 걷는 곳 1m 밖부터 물(평평한 여유 땅이 물 위로 뻗지 않는다), 바다 판 가장자리는 물결이 잔잔하다', () => {
   const f = terrainField({ bounds: { x0: -10, x1: 10, z0: -5, z1: 5 }, margin: 13, props: [{ type: 'water', x: 0, z: 30, w: 100, d: 48, shore: true }] });
-  eq(f.heightAt(0, 4), 0, '걷는 곳은 땅'); eq(f.heightAt(0, 8), -1.4, '걷는 곳 밖 물 칸은 물');
+  eq(f.heightAt(0, 4), 0, '걷는 곳은 땅'); ok(f.heightAt(0, 8) < -1, '걷는 곳 밖 물 칸은 물');
   const g = terrainField({ bounds: { x0: -10, x1: 10, z0: -5, z1: 5 }, margin: 13, props: [{ type: 'water', x: 0, z: 30, w: 100, d: 48 }] });
   eq(g.heightAt(0, 8), 0, 'shore가 없는 물은 예전처럼');
   const sea = makeSea({ w: 40, d: 40, seg: 10, amp: 0.3 });

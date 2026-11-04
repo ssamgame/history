@@ -30,7 +30,7 @@ export function makeTorch() {
   const wrap = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.06, 0.18, 8), mat(0x3a2a1e)); wrap.position.y = 0.76; g.add(wrap);
   const flame = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.42, 8), new THREE.MeshBasicMaterial({ color: 0xff8a2a })); flame.name = 'flame'; flame.position.y = 1.04; g.add(flame);
   const core = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.24, 6), new THREE.MeshBasicMaterial({ color: 0xffe08a })); core.position.y = 0.98; g.add(core);
-  const halo = new THREE.Mesh(new THREE.SphereGeometry(0.3, 10, 8), new THREE.MeshBasicMaterial({ color: 0xffa050, transparent: true, opacity: 0.14, depthWrite: false })); halo.position.y = 1.0; g.add(halo);
+  const halo = new THREE.Mesh(new THREE.SphereGeometry(0.3, 10, 8), new THREE.MeshBasicMaterial({ color: 0xffa050, transparent: true, opacity: 0.14, depthWrite: false })); halo.position.y = 1.0; halo.visible = false; g.add(halo); // 빛무리는 숨긴다: 걷는 사람 몸에 겹쳐 몸이 번쩍거려 보였다(2026-11-04 선생님)
   g.userData.flame = flame; g.userData.halo = halo;
   return g;
 }
@@ -60,7 +60,7 @@ export function flicker(world, torches) {
 // 횃불 둘레를 밝히는 점광 수: 화질 '보통·높음'에서만(무거운 효과), '낮음'은 불꽃 재질만
 export const torchLights = world => ((world.quality?.particles ?? 0.9) >= 0.9 ? 2 : 0);
 export function addTorchLight(torch) {
-  const l = new THREE.PointLight(0xffa050, 7, 11, 1.4); l.position.y = 1.1; torch.add(l); return l;
+  const l = new THREE.PointLight(0xffa050, 3.5, 11, 1.4); l.position.y = 1.1; torch.add(l); return l; // 너무 밝으면 곁을 걷는 사람의 흰 옷이 번쩍거렸다(2026-11-04)
 }
 
 // 뒤따르는 사람에게 물건 들리기(D-31): 공용 놀이(drive)가 world.level에 새로 세우는 따라오는 사람(사람 하나뿐인 묶음)을 찾아

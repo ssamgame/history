@@ -1,7 +1,7 @@
 // 근대편 5장 「근대 문물과 달라진 생활」(D-34): 전차가 다니는 1900년 무렵 한성 큰길, 전봇대, 성당과 학교, 양화점.
 // 마을 어귀 문으로 들어와 양복 신사·전차 탄 아주머니·학교 앞 학생 이야기를 아무 차례로 듣고(모두 들어야 전차 운전수),
 // 운전수에게 가면 학생의 결심 → 해가 지며 전등·가로등이 하나씩 켜지는 밤 장면 →
-// ① 근대 문물 가져다 놓기 ② 운전수에게 말을 걸면 전차 몰기 ③ 학생에게 말을 걸면 문물 체험 걷기
+// ① 운전수에게 말을 걸면 전차 몰기 ② 학생에게 말을 걸면 문물 체험 걷기(「하는 일에 맞게 가져가기」는 2026-11-04 선생님 지시로 뺐다)
 // (전신 보내기·전화 걸기·전깃불 켜기·학교 들어가기·양화점, 자리마다 대화 버튼으로 직접 써 본다).
 import * as THREE from 'three';
 import { makeKitChapter } from '../../kit/chapter.js';
@@ -68,13 +68,6 @@ const CHURCH = { x: -9, z: -9, w: 8, d: 6, h: 6 }, SCHOOL = { x: 10, z: -9, w: 9
 const LAMPS = [[-8, 3.4], [8, 3.4], [0, -3.4]];
 
 // ── 무대(마을에서 떨어진 x 400) ──
-const STALLS = { edge: { style: 'modern', seed: 529 }, center: [{ type: 'lamp', x: -10, z: 6 }, { type: 'lamp', x: 10, z: 6 }, { type: 'cargo', x: 17, z: 8, kind: 'crate', n: 4 }], // 가로등·선로·전신주·전화가 놓인 거리
-  origin: [400, 0], ground: 'stone', groundColor: 0x9a948a, bounds: { x0: -20, x1: 20, z0: -14, z1: 14 },
-  props: [
-    { type: 'flagpole', x: -15, z: -10, color: 0xf2e6b0 }, { type: 'tram', x: -5, z: -9, ry: Math.PI / 2, track: 10 },
-    { type: 'poles', x: 3, z: -12, n: 2, gap: 4 }, { type: 'desk', x: 15, z: -10 },
-  ],
-};
 const LINE = { edge: { style: 'modern', seed: 896 }, center: [{ type: 'lamp', x: -6, z: 20 }, { type: 'lamp', x: 6, z: -3 }, { type: 'cargo', x: -6, z: -24, kind: 'crate', n: 3 }], // 서대문(남쪽)에서 청량리(북쪽)로 뻗은 선로
   origin: [400, 0], ground: 'stone', groundColor: 0x9a948a, bounds: { x0: -8, x1: 8, z0: -40, z1: 40 },
   roads: [{ x: 0, z: 0, w: 1.6, d: 80, color: 0x6b6862, y: 0.05 }],
@@ -285,7 +278,7 @@ export async function munmulWalk(ctx) {
   const post = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.2, 0.12), mat(0x6b4a32, 'wood', 'object')); post.position.set(phx, 1.1, phz - 0.2); g.add(post);
   const phone = new THREE.Group(); phone.position.set(phx, 1.5, phz); BUILD.telephone(phone); g.add(phone);
   world.addCollider({ ...a.at(phx, phz), r: 0.5 }); // 무대를 치우면 함께 치운다
-  const shopkeeper = person(g, 'citizen', ...A.shopkeeper, Math.PI);
+  const shopkeeper = person(g, 'citizen', ...A.shopkeeper, Math.PI); shopkeeper.scale.setScalar(0.85); // 가게 처마 밑에 서도 머리가 지붕을 뚫지 않게(2026-11-04 선생님)
   goodsTable(g, ...A.table);
   const marks = P.stations.map((st, i) => {
     const S = A.stations[i];
@@ -376,11 +369,11 @@ const base = makeKitChapter({
       { id: 'signSchool', title: '학교', x: SCHOOL.x + 1.6, z: SCHOOL.z + SCHOOL.d / 2 + 0.5, ry: 0, plaque: { y: 5.25, back: 0.42 } }],
   },
   parts: [
-    { ...script.parts.match, goal: script.goals[3], arena: STALLS, from: [0, 11], bins: xy(script.parts.match.bins, [{ x: -14, z: -4 }, { x: -5, z: -3 }, { x: 4, z: -5 }, { x: 14, z: -4 }]) },
-    { ...script.parts.tram, goal: script.goals[4], intro: meet('driver', '전차 운전수와 이야기하기', script.parts.tram.intro), arena: LINE, from: [0, 37],
+    // 「하는 일에 맞게 가져가기」는 뺐다(2026-11-04 선생님: 문물 써 보기와 겹친다)
+    { ...script.parts.tram, goal: script.goals[3], arena: LINE, from: [0, 37],
       route: xy(script.parts.tram.route, [{ x: 0, z: 30 }, { x: 0, z: 8 }, { x: 0, z: -14 }, { x: 0, z: -35 }]),
       hazards: [{ x: -7, z: 19, to: [7, 19], kind: 'cart', r: 1.4, speed: 0.6 }, { x: 7, z: -3, to: [-7, -3], kind: 'cart', r: 1.4, speed: 0.7 }, { x: -7, z: -25, to: [7, -25], kind: 'cart', r: 1.4, speed: 0.65 }] },
-    { ...script.parts.munmul, goal: script.goals[5], intro: meet('student', '학생과 이야기하기', script.parts.munmul.intro), play: ctx => munmulWalk(ctx) },
+    { ...script.parts.munmul, goal: script.goals[4], intro: meet('student', '학생과 이야기하기', script.parts.munmul.intro), play: ctx => munmulWalk(ctx) },
   ],
   // 전차가 선로 위를 천천히 오간다. 마을 어귀 나무 문과 「한성」 이름판(S51)은 굳히기에 합쳐지지 않게 돌려준다
   decorate(world, built) {

@@ -376,7 +376,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .screen.doc .card { width: min(640px, 100%); }
 .doc-paper { background: #fbf5e6; border: 2px solid #8a6a48; border-radius: 3px; padding: 18px 22px; box-shadow: inset 0 0 0 5px #efe3c6; }
 .doc-paper h3 { margin: 0 0 10px; font-family: var(--font-display); text-align: center; font-size: 22px; }
-.doc-paper ol { margin: 0; padding-left: 24px; line-height: 1.7; font-size: 18px; }
+.doc-paper ol { margin: 0; padding-left: 24px; line-height: 1.7; font-size: 19px; color: #1d1712; font-weight: 600; }
 .doc-paper li small { display: block; color: var(--muted); font-size: 14px; }
 /* 낡은 두루마리(showDocument scroll: true): 누렇게 바랜 한지, 양끝에 말린 나무 축(끝 꼭지), 얼룩과 그을린 듯한 가장자리 */
 .doc-scroll { position: relative; display: flex; align-items: stretch; margin: 4px 0; filter: drop-shadow(0 6px 8px rgba(0,0,0,.45)); }

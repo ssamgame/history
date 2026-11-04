@@ -38,7 +38,7 @@ export const ERAS = { edge: { style: 'modern', seed: 113 },
   arches: [27, 3, -21],
   // 걸어가 서는 자리(script.parts.eras.eras[*].stations 차례)
   stations: [{ x: -4.5, z: 19 }, { x: 4.5, z: 11 }, { x: -4.5, z: -4 }, { x: 4.5, z: -12.5 }, { x: -4.5, z: -28 }, { x: 4.5, z: -33 }],
-  train: [10, -14], truck: [10, -36],
+  train: [10, -14], truck: [6.4, -36], // 트럭은 선로 옆에(2026-11-04 선생님: 떠나는 기차가 트럭을 뚫고 지나가던 것)
 };
 const ALLEY = { edge: { style: 'street', seed: 139 }, center: [{ type: 'jars', x: -15, z: 3 }, { type: 'straw', x: 14, z: 10 }, { type: 'papers', x: -14, z: -10, kind: 'book', n: 2 }], // 마을 골목: 헌병이 순찰하고, 쌀가마·짐 더미 뒤에 숨을 수 있다. 끝에 서당
   origin: [400, 0], ground: 'earth', groundColor: 0x8a7a62, bounds: { x0: -18, x1: 18, z0: -24, z1: 20 },
@@ -126,7 +126,8 @@ const ACT = {
     world.setFixedCamera([R.x - 7, 4.4, R.z + 1.2], [R.x + 1, 1.4, R.z]); // 열린 쪽으로 교실을 들여다본다
     hook.sword = !!set.swordTeacher;
     await say(st.lines[0]);
-    world.setFixedCamera([R.x - 7, 4.4, R.z + 1.2], [R.x + 1, 1.4, R.z]);
+    const room = set.swordTeacher.parent, e = room.localToWorld(new THREE.Vector3(-3.9, 1.9, -2.0)), l = room.localToWorld(new THREE.Vector3(0.9, 1.25, -2.7));
+    world.setFixedCamera(e.toArray(), l.toArray()); // 칼 찬 쪽 앞에서 교사를 크게(2026-11-04 선생님): 학생들 책상 앞줄과 칠판 사이
     await say(st.lines[1]);
   },
   async police({ ctx, a, st, say, hook, set }) {
@@ -178,7 +179,7 @@ const ACT = {
     set.forced.forEach(p => { p.visible = true; });
     const from = set.forced.map(p => p.position.clone());
     hook.forced = set.forced.length - 2; // 앞뒤의 헌병 둘은 빼고 센다
-    await wait(world, 3.4, k => set.forced.forEach((p, i) => { p.position.x = from[i].x + 5.5 * ease(k); p.rotation.y = Math.PI / 2; }));
+    await wait(world, 3.4, k => set.forced.forEach((p, i) => { p.position.x = from[i].x + 2.6 * ease(k); p.rotation.y = Math.PI / 2; })); // 트럭 앞까지
     for (const l of st.lines) await say(l);
   },
 };
@@ -200,7 +201,7 @@ export async function eraWalk(ctx) {
   const train = new THREE.Group(); train.position.set(A.train[0], 0, A.train[1]); BUILD.train(train, { cars: 2, track: 26 }); g.add(train);
   world.addCollider({ ...a.at(A.train[0], A.train[1]), r: 2.2 });
   const worker = person(g, 'worker', 6.8, -11, -Math.PI / 2);
-  const room1930 = classroom(g, -9.5, -28, { teacher: 'teacherUniform' }); room1930.group.rotation.y = Math.PI / 2; // 열린 쪽이 길(동쪽)
+  const room1930 = classroom(g, -9.5, -28, { teacher: 'teacherUniform', japan: true }); room1930.group.rotation.y = Math.PI / 2; // 열린 쪽이 길(동쪽)
   world.addCollider({ ...a.at(-9.5, -28), r: 3.6 });
   const truck = new THREE.Group(); truck.position.set(A.truck[0], 0, A.truck[1]); BUILD.truck(truck, {}); g.add(truck);
   world.addCollider({ ...a.at(A.truck[0], A.truck[1]), r: 2 });
@@ -295,7 +296,7 @@ function introScene(ctx) {
       { cam: [-5, 2.4, 8], look: [2, 1.4, 2], to: { cam: [-3.5, 2.4, 7.5], look: [-1, 1.4, 2] },
         act: () => { hide(false); troops.forEach(p => { p.visible = true; }); run((u, dt) => troops.forEach(p => { p.position.x -= dt * 1.5; })); } }, // 헌병들이 큰길로 들어온다
       { cam: [5.5, 2.4, 1.5], look: [GOV.x, 3.2, GOV.z], to: { cam: [6.5, 2.6, 0.8], look: [GOV.x, 3.6, GOV.z] },
-        act: () => { troops.forEach(p => { p.visible = false; }); [...guards, ...officials].forEach(p => { p.visible = true; }); run((u, dt) => officials.forEach(p => { p.position.z += dt * 0.8; })); } }, // 총독부로 들어가는 관리들
+        act: () => { troops.forEach(p => { p.visible = false; }); [...guards, ...officials].forEach(p => { p.visible = true; }); run((u, dt) => officials.forEach(p => { p.position.z = Math.min(GOV.z - GOV.d / 2 - 0.4, p.position.z + dt * 0.8); if (p.position.z >= GOV.z - GOV.d / 2 - 0.4) p.visible = false; })); } }, // 문 앞까지 걸어가 문 안으로 사라진다(2026-11-04 선생님: 벽을 뚫고 들어가던 것). 총독부로 들어가는 관리들
     ],
     done: () => { off?.(); off = null; hide(true); for (const o of [...troops, ...guards, ...officials]) o.removeFromParent(); },
   };

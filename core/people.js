@@ -164,6 +164,36 @@ export function animateWalkers(dt, root) {
     if (!u.last) u.last = new THREE.Vector3();
     u.last.copy(wp);
     animateWalk(g, !u.noWalk && g.visible && moved > 0.12, dt); // 천천히 움직여도 걷는다(미끄러지듯 떠가지 않게)
+    u.moving = moved > 0.12 && moved < 8;
+  }
+  keepApart();
+}
+
+// 걷는 사람이 다른 사람 몸을 뚫고 지나가지 않게(2026-11-04 선생님): 같은 무리(부모) 안에서 걷는 사람을 PERSON_GAP보다 가까운 사람에게서 밀어낸다.
+// 둘 다 걸으면 반씩, 서 있는 사람은 그대로 둔다. 장이 직접 움직이는 인물(manual)·noPush는 빼고, 떨어진 무리끼리는 재지 않는다.
+const PERSON_GAP = 0.55;
+function keepApart() {
+  const groups = new Map();
+  for (const g of walkers) {
+    if (!g.visible || !g.parent || g.userData.manual || g.userData.noPush) continue;
+    let a = groups.get(g.parent); if (!a) groups.set(g.parent, a = []);
+    a.push(g);
+  }
+  for (const g of walkers) { const u = g.userData; if (u.pushT && !u.pushedNow) u.pushT = Math.max(0, u.pushT - 1 / 60); u.pushedNow = false; } // 막히지 않으면 천천히 풀린다
+  for (const list of groups.values()) {
+    if (list.length < 2 || !list.some(g => g.userData.moving)) continue;
+    for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) {
+      const A = list[i], B = list[j], ma = A.userData.moving, mb = B.userData.moving;
+      if (!ma && !mb) continue;
+      const dx = B.position.x - A.position.x, dz = B.position.z - A.position.z, d = Math.hypot(dx, dz);
+      if (d >= PERSON_GAP || d < 1e-4 || Math.abs(B.position.y - A.position.y) > 1) continue;
+      const ka = ma && mb ? 0.5 : ma ? 1 : 0;
+      let stuck = false; for (const m of ka === 0.5 ? [A, B] : [ka ? A : B]) { const u = m.userData; u.pushT = (u.pushT || 0) + 1 / 30; u.pushedNow = true; if (u.pushT > 1.5) stuck = true; }
+      if (stuck) continue; // 1.5초 넘게 밀려 막히면(가는 곳에 사람이 있거나 서로 마주 걸어오면) 더는 밀지 않는다: 걸음이 멈춰 버리지 않게 // 서 있는 사람에게 1.5초 넘게 막히면(그 사람 자리가 가는 곳 등) 더는 밀지 않는다: 걸음이 멈춰 버리지 않게
+      const push = PERSON_GAP - d, nx = dx / d, nz = dz / d;
+      A.position.x -= nx * push * ka; A.position.z -= nz * push * ka;
+      B.position.x += nx * push * (1 - ka); B.position.z += nz * push * (1 - ka);
+    }
   }
 }
 

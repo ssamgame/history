@@ -372,17 +372,30 @@ export function lamp(g, p = {}) {
   return P.into(g);
 }
 // 벽걸이 전화기(1900년 무렵): 나무 상자, 위에 놋쇠 종 둘, 옆의 손잡이(발전기 핸들), 앞의 송화기 나팔, 줄에 매달린 수화기
+// 1900년 무렵 벽걸이 자석식 전화기(2026-11-04 선생님: 더 구체적으로): 위 나무 상자에 놋쇠 종 두 개, 앞으로 뻗은 송화기(나팔), 옆 손잡이(돌려서 교환원을 부른다),
+// 왼쪽 고리에 건 수화기와 꼰 줄, 아래 받침대와 전지 상자. 원점은 위 상자 가운데
 export function telephone(g) {
   const P = parts();
-  P.box(0.5, 0.75, 0.22, 0x6b4a32, 'wood', [0, 0, 0]);
-  P.box(0.56, 0.08, 0.26, 0x4e3524, 'wood', [0, 0.41, 0]);
-  for (const s of [-1, 1]) P.add(new THREE.SphereGeometry(0.09, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), 0xc9a040, 'grain', [s * 0.12, 0.28, 0.12], [Math.PI / 2, 0, 0]);
-  P.cyl(0.03, 0.03, 0.2, 6, 0x2b2b2b, 'grain', [0, 0.02, 0.2], [Math.PI / 2, 0, 0]);
-  P.add(new THREE.ConeGeometry(0.09, 0.14, 10, 1, true), 0x1e1c1a, 'grain', [0, 0.02, 0.35], [-Math.PI / 2, 0, 0]);
-  P.cyl(0.015, 0.015, 0.22, 5, 0x2b2b2b, 'grain', [0.3, 0.05, 0.05], [0, 0, Math.PI / 2]);
-  P.box(0.04, 0.12, 0.04, 0x2b2b2b, 'grain', [0.41, 0.0, 0.05]);
-  P.cyl(0.045, 0.06, 0.22, 8, 0x1e1c1a, 'grain', [-0.33, -0.05, 0.08]); // 수화기
-  P.cyl(0.01, 0.01, 0.3, 4, 0x1e1c1a, 'grain', [-0.3, -0.25, 0.08], [0, 0, 0.3]);
+  P.box(0.52, 0.62, 0.22, 0x6b4a32, 'wood', [0, 0, 0]);
+  P.box(0.58, 0.07, 0.26, 0x4e3524, 'wood', [0, 0.345, 0]); P.box(0.58, 0.05, 0.26, 0x4e3524, 'wood', [0, -0.335, 0]); // 위아래 몰딩
+  for (const s of [-1, 1]) { // 놋쇠 종 둘과 종 사이 망치
+    P.add(new THREE.SphereGeometry(0.095, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), 0xd2a83c, 'grain', [s * 0.12, 0.2, 0.13], [Math.PI / 2, 0, 0]);
+    P.cyl(0.012, 0.012, 0.05, 5, 0x8a6a2a, 'grain', [s * 0.12, 0.2, 0.12], [Math.PI / 2, 0, 0]);
+  }
+  P.cyl(0.008, 0.008, 0.16, 4, 0x2b2b2b, 'grain', [0, 0.27, 0.15], [0, 0, 0]); P.add(new THREE.SphereGeometry(0.022, 8, 6), 0x2b2b2b, 'grain', [0, 0.19, 0.15]);
+  P.box(0.2, 0.07, 0.012, 0xe8dcc0, 'grain', [0, 0.05, 0.116]); // 이름판
+  P.cyl(0.022, 0.022, 0.22, 6, 0x2b2b2b, 'grain', [0, -0.12, 0.2], [Math.PI / 2 - 0.35, 0, 0]); // 송화기 팔
+  P.add(new THREE.ConeGeometry(0.085, 0.14, 12, 1, true), 0x1e1c1a, 'grain', [0, -0.08, 0.33], [-Math.PI / 2 + 0.35, 0, 0]); // 송화기 나팔
+  P.cyl(0.03, 0.03, 0.04, 8, 0x2b2b2b, 'grain', [0.28, -0.02, 0.02], [0, 0, Math.PI / 2]); // 손잡이 굴대
+  P.box(0.025, 0.16, 0.025, 0x2b2b2b, 'grain', [0.31, -0.08, 0.02]); // 손잡이 팔
+  P.cyl(0.018, 0.018, 0.08, 6, 0x5a3f2a, 'wood', [0.35, -0.15, 0.02], [0, 0, Math.PI / 2]); // 손잡이 쥘 곳
+  P.box(0.04, 0.03, 0.08, 0x2b2b2b, 'grain', [-0.28, 0.08, 0.04]); // 수화기 고리
+  P.cyl(0.035, 0.045, 0.2, 8, 0x1e1c1a, 'grain', [-0.31, -0.03, 0.06]); // 수화기
+  P.cyl(0.055, 0.04, 0.035, 10, 0x1e1c1a, 'grain', [-0.31, -0.145, 0.06]); // 수화기 귀 대는 곳
+  for (let k = 0; k < 5; k++) P.cyl(0.008, 0.008, 0.09, 4, 0x3a3027, 'cloth', [-0.29 + Math.sin(k * 1.3) * 0.02, 0.1 - k * 0.07, 0.06 + 0.02 * k], [0.3, 0, 0.25 * (k % 2 ? 1 : -1)]); // 꼰 줄
+  P.box(0.64, 0.04, 0.3, 0x5e4330, 'wood', [0, -0.42, 0.05]); // 받침대(글 쓰는 판)
+  P.box(0.46, 0.5, 0.2, 0x6b4a32, 'wood', [0, -0.72, 0]); // 아래 전지 상자
+  P.box(0.5, 0.04, 0.24, 0x4e3524, 'wood', [0, -0.975, 0]);
   return P.into(g);
 }
 // 텔레비전(1980년대): 작은 상 위에 나무 테두리 브라운관 상자와 회색 화면
@@ -484,41 +497,66 @@ export function tent(g, p = {}) {
 }
 // 증기선: 뾰족한 뱃머리, 붉은 물선, 갑판, 흰 선실과 창, 굴뚝 둘, 돛대와 줄
 // old: 1860~70년대 서양 군함(돛대 셋에 보조 증기 기관을 단 목조선: 짙은 나무 선체, 굴뚝 하나, 활대에 감아 둔 돛) — 근대 1장
+// 굴뚝 연기(2026-11-04 선생님: 배에서 연기가 계속 나게): 덩이 다섯이 굴뚝에서 피어올라 커지며 뒤로 흘러 옅어지기를 되풀이한다.
+// 그려질 때(onBeforeRender) 시계로 움직이므로 장면 시계가 없어도 돈다. userData.dynamic: 장면 굳히기에 합치지 않는다
+export function funnelSmoke(g, y, z) {
+  const smoke = new THREE.Group(); smoke.name = 'funnelSmoke'; smoke.userData.dynamic = true; smoke.position.set(0, y, z); g.add(smoke);
+  const N = 5, T = 3.2;
+  for (let k = 0; k < N; k++) {
+    const m = new THREE.Mesh(new THREE.SphereGeometry(0.7, 8, 6), new THREE.MeshLambertMaterial({ color: 0x3a3836, transparent: true, opacity: 0.5, depthWrite: false }));
+    m.onBeforeRender = () => {
+      const u = ((performance.now() / 1000 / T + k / N) % 1);
+      m.position.set(Math.sin(k * 2.1) * 0.2, u * 4.2, -u * 3.2); m.scale.setScalar(0.8 + u * 1.8); m.material.opacity = 0.55 * (1 - u) * Math.min(1, u * 6);
+    };
+    m.onBeforeRender(); smoke.add(m);
+  }
+  return smoke;
+}
+
 export function steamship(g, p = {}) {
   const P = parts();
   const hull = (scale, h) => { const sh = new THREE.Shape([new THREE.Vector2(-2.5 * scale, -8), new THREE.Vector2(2.5 * scale, -8), new THREE.Vector2(2.5 * scale, 4.5), new THREE.Vector2(0, 8.2), new THREE.Vector2(-2.5 * scale, 4.5)]); const geo = new THREE.ExtrudeGeometry(sh, { depth: h, bevelEnabled: false }); geo.rotateX(Math.PI / 2); return geo; };
   if (p.old) {
     // D-68(2026-11-04 선생님 그림 '서구의 배(이양선)'): 1860~70년대에 동아시아에 온 증기 외륜선. 쇠로 덧댄 검은 선체에 붉은 물띠,
-    // 양옆 가운데의 커다란 물레바퀴 덮개, 높은 굴뚝과 연기, 돛대 둘에 네모 돛. flag: 'japan'이면 고물에 일장기(일본 군함)
-    P.add(hull(1, 2.4), 0x26282c, 'grain', [0, 2.0, 0]);
-    P.add(hull(1.02, 0.45), 0x7a2a22, 'grain', [0, 0.3, 0]);
-    P.add(hull(1.03, 0.22), 0xc9b48a, 'wood', [0, 2.2, 0]); // 뱃전의 밝은 띠
+    // 양옆 가운데의 커다란 물레바퀴 덮개, 높은 굴뚝과 연기, 돛대 둘에 네모 돛.
+    // flag: 'japan'(일본 군함, 2026-11-04 선생님: 서양 배와 다른 모습, 가운데에 큰 일장기): 잿빛 선체에 흰 띠, 굴뚝 둘, 돛 없는 가운데 돛대 하나에 큰 일장기, 물레바퀴 없음
+    const jp = p.flag === 'japan';
+    P.add(hull(1, 2.4), jp ? 0x59605f : 0x26282c, 'grain', [0, 2.0, 0]);
+    P.add(hull(1.02, 0.45), jp ? 0x2b2b2e : 0x7a2a22, 'grain', [0, 0.3, 0]);
+    P.add(hull(1.03, 0.22), jp ? 0xe8e4d8 : 0xc9b48a, 'wood', [0, 2.2, 0]); // 뱃전의 밝은 띠
     P.box(4.7, 0.14, 12, 0x8a6a48, 'wood', [0, 2.05, -1.4]);
-    P.box(2.6, 1.1, 3.2, 0x3a3a3c, 'grain', [0, 2.65, -4.8]); // 뒤쪽 선실
-    P.box(5.6, 0.25, 1.6, 0x3a3a3c, 'grain', [0, 2.9, 0.4]); // 물레바퀴 덮개를 잇는 다리(함교)
-    P.cyl(0.55, 0.6, 4.6, 14, 0x1e1c1a, 'grain', [0, 4.3, -0.8]); // 높은 굴뚝
-    P.cyl(0.62, 0.62, 0.3, 14, 0x7a2a22, 'grain', [0, 6.5, -0.8]); // 굴뚝 테
-    for (const [dz, hm] of [[4.0, 9.5], [-3.0, 9.0]]) { // 돛대 둘과 네모 돛
+    P.box(2.6, 1.1, 3.2, jp ? 0xd8d2c4 : 0x3a3a3c, 'grain', [0, 2.65, -4.8]); // 뒤쪽 선실
+    if (!jp) P.box(5.6, 0.25, 1.6, 0x3a3a3c, 'grain', [0, 2.9, 0.4]); // 물레바퀴 덮개를 잇는 다리(함교)
+    else P.box(3.0, 0.9, 2.0, 0xd8d2c4, 'grain', [0, 2.6, 3.6]); // 앞쪽 함교
+    const funnels = jp ? [-2.4, 1.6] : [-0.8];
+    for (const fz of funnels) {
+      P.cyl(0.55, 0.6, 4.6, 14, 0x1e1c1a, 'grain', [0, 4.3, fz]); // 높은 굴뚝
+      P.cyl(0.62, 0.62, 0.3, 14, jp ? 0xe8e4d8 : 0x7a2a22, 'grain', [0, 6.5, fz]); // 굴뚝 테
+    }
+    if (!jp) for (const [dz, hm] of [[4.0, 9.5], [-3.0, 9.0]]) { // 돛대 둘과 네모 돛
       P.cyl(0.1, 0.14, hm, 6, 0x4a3424, 'wood', [0, 2 + hm / 2, dz]);
       for (const [k, yw, sh] of [[0.5, 4.2, 1.5], [0.78, 3.2, 1.1]]) { P.box(yw, 0.08, 0.08, 0x4a3424, 'wood', [0, 2 + hm * k + sh / 2, dz]); P.box(yw * 0.92, sh, 0.06, 0xe2dccb, 'cloth', [0, 2 + hm * k, dz + 0.08]); }
     }
+    else P.cyl(0.12, 0.16, 10.5, 6, 0x4a3424, 'wood', [0, 7.25, -0.4]); // 가운데 돛대(일장기)
     P.cyl(0.06, 0.08, 4.4, 5, 0x4a3424, 'wood', [0, 3.4, 9.2], [1.1, 0, 0]); // 뱃머리 기움 돛대
-    P.cyl(0.015, 0.015, 9.4, 3, 0x2b241c, 'grain', [0, 9.6, 0.5], [Math.PI / 2 - 0.02, 0, 0]);
+    if (!jp) P.cyl(0.015, 0.015, 9.4, 3, 0x2b241c, 'grain', [0, 9.6, 0.5], [Math.PI / 2 - 0.02, 0, 0]);
     P.into(g);
-    const wheelM = mat(0x2b2b2e, 'grain');
-    for (const s of [-1, 1]) { // 물레바퀴 덮개(반원 상자)와 바퀴살 무늬
-      const box = new THREE.Mesh(new THREE.CylinderGeometry(1.7, 1.7, 0.7, 16, 1, false, 0, Math.PI).rotateZ(Math.PI / 2).rotateY(Math.PI / 2), wheelM);
-      box.position.set(s * 2.75, 2.2, 0.4); box.rotation.y = s > 0 ? 0 : Math.PI; box.name = 'paddleBox'; box.castShadow = true; g.add(box);
-      for (let k = 0; k < 6; k++) { const sp = new THREE.Mesh(new THREE.BoxGeometry(0.05, 3.2, 0.12), mat(0xc9b48a, 'wood')); sp.position.set(s * 3.11, 2.2, 0.4); sp.rotation.x = k * Math.PI / 6; g.add(sp); }
+    if (!jp) {
+      const wheelM = mat(0x2b2b2e, 'grain');
+      for (const s of [-1, 1]) { // 물레바퀴 덮개(반원 상자)와 바퀴살 무늬
+        const box = new THREE.Mesh(new THREE.CylinderGeometry(1.7, 1.7, 0.7, 16, 1, false, 0, Math.PI).rotateZ(Math.PI / 2).rotateY(Math.PI / 2), wheelM);
+        box.position.set(s * 2.75, 2.2, 0.4); box.rotation.y = s > 0 ? 0 : Math.PI; box.name = 'paddleBox'; box.castShadow = true; g.add(box);
+        for (let k = 0; k < 6; k++) { const sp = new THREE.Mesh(new THREE.BoxGeometry(0.05, 3.2, 0.12), mat(0xc9b48a, 'wood')); sp.position.set(s * 3.11, 2.2, 0.4); sp.rotation.x = k * Math.PI / 6; g.add(sp); }
+      }
     }
-    const smoke = new THREE.Group(); smoke.name = 'funnelSmoke'; g.add(smoke); // 굴뚝에서 피어오르는 검은 연기
-    for (let k = 0; k < 4; k++) { const m = new THREE.Mesh(new THREE.SphereGeometry(0.7 + k * 0.35, 8, 6), new THREE.MeshLambertMaterial({ color: 0x3a3836, transparent: true, opacity: 0.55 - k * 0.1, depthWrite: false })); m.position.set(0, 7.2 + k * 1.1, -0.8 - k * 1.2); smoke.add(m); }
-    if (p.flag === 'japan') {
+    for (const fz of funnels) funnelSmoke(g, 7.0, fz);
+    if (jp) {
       const cv = document.createElement('canvas'); cv.width = 96; cv.height = 64; const c = cv.getContext('2d');
       c.fillStyle = '#f4f1ea'; c.fillRect(0, 0, 96, 64); c.fillStyle = '#c0282d'; c.beginPath(); c.arc(48, 32, 19, 0, Math.PI * 2); c.fill();
       const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
+      const f = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 2.4).translate(1.8, 0, 0), new THREE.MeshLambertMaterial({ map: tex, side: THREE.DoubleSide })); f.position.set(0, 11.0, -0.4); f.rotation.y = Math.PI / 2; f.name = 'shipFlag'; g.add(f); // 가운데 돛대 꼭대기의 큰 일장기(고물 쪽으로 날린다)
       const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 3, 5), mat(0x4a3424, 'wood')); pole.position.set(0, 3.8, -7.4); g.add(pole);
-      const f = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.0).translate(0, 0, 0), new THREE.MeshLambertMaterial({ map: tex, side: THREE.DoubleSide })); f.position.set(0, 4.8, -8.15); f.rotation.y = Math.PI / 2; f.name = 'shipFlag'; g.add(f);
+      const f2 = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.0), new THREE.MeshLambertMaterial({ map: tex, side: THREE.DoubleSide })); f2.position.set(0, 4.8, -8.15); f2.rotation.y = Math.PI / 2; g.add(f2); // 고물의 작은 일장기
     }
     return g;
   }

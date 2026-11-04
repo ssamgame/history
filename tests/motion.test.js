@@ -287,6 +287,7 @@ test('interact: 짐을 든 사람은 걸어가기가 조금(약 15%) 느리다, 
       if (carry) setCarry(p, new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5)), 'arms');
       let t = 0, done = false; walkTo(w, p, [12, 0], { speed: 2 }).then(() => { done = true; });
       while (!done && t < 30) { w.step(1 / 30, { x: 0, z: 0 }); t += 1 / 30; await null; }
+      p.removeFromParent(); // 도착한 사람이 다음 사람의 길을 막지 않게(D-71 걷는 사람끼리 밀어내기)
       return t;
     };
     const a = await timeTo(false), b = await timeTo(true);

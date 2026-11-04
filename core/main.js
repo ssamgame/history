@@ -8,8 +8,7 @@ import { createDialogue } from './dialogue.js';
 import { createQualityController, guessInitialQuality } from './quality.js';
 import { runChapter } from './flow.js';
 import { createMusic } from './music.js';
-import { REVIEW } from '../content/review.js';
-import { showTitle, askName, showCourses, showMap, showIntroCard, showChapterResult, showSessionCard, showReviewQuiz, showMenu, showMessage, createHud } from './screens.js';
+import { showTitle, askName, showCourses, showMap, showIntroCard, showChapterResult, showSessionCard, showMenu, showMessage, createHud } from './screens.js';
 import { perfEnabled, createPerfStats, createPerfPanel } from './perf.js';
 import { ALL_CHAPTERS, COURSES, courseById, courseOfChapter, isSessionDone } from '../chapters/index.js';
 import { LOOKS } from '../content/characters.js';
@@ -149,9 +148,7 @@ function boot() {
     curMeta = null;
     await showChapterResult(ui, meta, result);
     if (isSessionDone(meta.session, save)) {
-      // 편 복습 퀴즈(D-21): 마지막 장(6장)을 마쳤을 때, 또는 아직 한 번도 안 풀었을 때 결과 카드 전에
-      const qs = REVIEW[meta.session];
-      if (qs && (meta.no === 6 || !save.review(meta.session))) save.setReview(meta.session, await showReviewQuiz(ui, meta.session, qs));
+      // 편 복습 퀴즈는 뺐다(2026-11-04 선생님)
       await showSessionCard(ui, meta.session, save, ALL_CHAPTERS);
     }
     // 빛나는 문(C-02)으로 마친 장은 문 너머 다음 장(또는 다음 편 1장)으로 바로 이어 간다

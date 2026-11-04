@@ -17,6 +17,8 @@ const smooth = t => { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t
 // 직사각형 밖으로 얼마나 떨어졌나(안이면 0)
 const rectDist = (x, z, r) => Math.hypot(Math.max(r.x0 - x, 0, x - r.x1), Math.max(r.z0 - z, 0, z - r.z1));
 
+// 물 밑 땅 높이: 깊게 둔다. 얕으면(-1.4) 물가 비탈이 완만해 물결이 오르내릴 때마다 바닷가 경계가 앞뒤로 크게 움직였다(2026-11-04 선생님: 육지와 바다 경계가 계속 변함)
+const WATER_FLOOR = -6;
 // spec: { bounds, props, roads, size, flatMargin, hill } → { heightAt(x, z), flatAt(x,z) }
 export function terrainField({ bounds, props = [], margin = 5, hill = 1 }) {
   const flat = { x0: bounds.x0 - margin, x1: bounds.x1 + margin, z0: bounds.z0 - margin, z1: bounds.z1 + margin };
@@ -33,10 +35,10 @@ export function terrainField({ bounds, props = [], margin = 5, hill = 1 }) {
   // (D-67: 평평한 땅이 물 칸 안쪽까지 덮어 바닷가가 물 칸 가장자리와 어긋나고, 물결이 그 경계를 덮었다 드러냈다 했다)
   const shoreWater = (x, z) => rectDist(x, z, bounds) > 1 && waters.some(({ p, w, d, c, s }) => { if (!p.shore) return false; const dx = x - p.x, dz = z - p.z, lx = dx * c - dz * s, lz = dx * s + dz * c; return Math.abs(lx) < w && Math.abs(lz) < d; });
   const heightAt = (x, z) => {
-    if (shoreWater(x, z)) return -1.4;
+    if (shoreWater(x, z)) return WATER_FLOOR;
     const d = rectDist(x, z, flat);
     if (d <= 0) return 0;
-    if (inWater(x, z)) return -1.4;
+    if (inWater(x, z)) return WATER_FLOOR;
     let h = smooth(d / 26) * (2.5 + 9 * fbm(x * 0.03 + 7, z * 0.03 + 3)) * hill + smooth(d / 6) * (fbm(x * 0.12, z * 0.12) - 0.3) * 0.9;
     for (const pd of pads) { const k = Math.hypot(x - pd.x, z - pd.z) / pd.r; if (k < 1.6) h *= smooth((k - 1) / 0.6); }
     if (waters.length) h *= smooth(waterDist(x, z) / 12);

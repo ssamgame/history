@@ -40,7 +40,8 @@ test('k4 D-30 C-01·C-03: 퀘스트는 진행 차례대로(퀴즈 목표 없음)
   ok(!script.npc.signGate && !script.npc.signForum && !script.npc.signAltar, '안내판 npc 항목은 지웠다');
   ok(k4.layout.signs.length >= 2 && k4.layout.signs.every(s => s.plaque), '건물 간판만');
   const lines = allLines(script);
-  for (const want of ['독립문을 세워 자주독립의 의지', '환구단은 황제가 하늘에 제사', '첫 만민 공동회는 1898년 종로']) ok(lines.some(l => l.text.includes(want) && l.src?.length), want);
+  // 독립문 안내판 글은 서재필 대사와 겹쳐 하나만 남겼다(2026-11-04)
+  for (const want of ['독립문을 세웠습니다', '환구단은 황제가 하늘에 제사', '첫 만민 공동회는 1898년 종로']) ok(lines.some(l => l.text.includes(want) && l.src?.length), want);
 });
 
 test('k4 D-30 C-02·C-03: 도입 장면은 문장마다, 끝나면 치우고, 빛나는 문은 빈 땅', () => {
@@ -80,10 +81,10 @@ test('k4 D-33: 만민 공동회 — 연설은 출처 있는 해설, 시민들 �
   ok(j.items.some(it => it.correct) && j.items.some(it => !it.correct), '맞는 말과 틀린 말');
   for (const it of j.items) {
     ok(it.talk?.length && it.look, '말하는 시민');
-    if (it.correct) ok(it.after?.some(l => l.src?.length), `맞는 말은 출처 있는 해설: ${it.talk[0].text}`);
+    if (it.correct) ok(it.after?.some(l => l.src?.length) || it.talk.some(l => l.src?.length), `맞는 말은 출처: ${it.talk[0].text}`);
     else ok(it.why, `틀린 말은 까닭: ${it.talk[0].text}`);
   }
-  const said = j.items.map(it => it.talk[0].text).join(' ');
+  const said = j.items.map(it => it.talk[0].text + (it.why || '')).join(' '); // 끝 해설(러시아 공사관)은 도입과 겹쳐 뺐다(2026-11-04): 틀린 말의 까닭에 있다
   for (const want of ['독립신문', '러시아', '대한 제국']) ok(said.includes(want) || allLines(j).some(l => l.text.includes(want)), want);
 });
 

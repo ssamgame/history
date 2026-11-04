@@ -64,13 +64,12 @@ test('k5 D-30 C-02·C-03: 도입 장면은 문장마다, 끝나면 치우고, �
   } finally { w.dispose(); }
 });
 
-test('k5 D-34 C-05: 놀이는 가져다 놓기 → 전차 몰기 → 문물 체험 걷기, 역사책·찾기 없음, 다음 놀이는 말을 걸어야 시작', () => {
-  eq(k5.parts.map(p => p.type), ['deliver', 'drive', 'scene']);
-  ok(!Object.values(script.parts).some(p => ['book', 'find', 'stops'].includes(p.type)), '역사책·찾기는 뺐다');
+test('k5 D-34 C-05: 놀이는 전차 몰기 → 문물 체험 걷기(가져가기는 2026-11-04 선생님 지시로 뺌), 역사책·찾기 없음', () => {
+  eq(k5.parts.map(p => p.type), ['drive', 'scene']);
+  ok(!Object.values(script.parts).some(p => ['book', 'find', 'stops', 'deliver'].includes(p.type)), '역사책·찾기·가져가기는 뺐다');
   ok(!k5.parts[0].intro?.[0]?.meet, '첫 놀이는 탐험 끝 뒤 바로');
-  eq(k5.parts[1].intro?.[0]?.meet?.who, 'driver');
-  eq(k5.parts[2].intro?.[0]?.meet?.who, 'student');
-  ok(k5.parts[2].intro.slice(1).every(l => l.who === 'student'), '말 건 학생이 알려 준다');
+  eq(k5.parts[1].intro?.[0]?.meet?.who, 'student');
+  ok(k5.parts[1].intro.slice(1).every(l => l.who === 'student'), '말 건 학생이 알려 준다');
   ok(script.parts.tram.route.some(r => r.alight && r.board), '정류장 손님 그대로');
 });
 

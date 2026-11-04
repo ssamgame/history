@@ -10,6 +10,7 @@ import { BUILD } from '../../kit/town.js';
 import { gateLeaves, nameBoard } from '../../kit/gate.js';
 import { walkInAndTalk, anyOrderTalk } from '../../kit/talk.js';
 import { leadWalk } from '../../kit/lead.js';
+import { march } from '../../kit/story.js';
 import { burning } from '../../kit/fire.js';
 import { showHowTo, showDocument } from '../../../core/minigame.js';
 import { makePerson, animateWalk, setCarry, mat } from '../../../core/people.js';
@@ -77,8 +78,8 @@ const PLACES = { gate: { x: -12, z: -6, drop: [0, 1.3, -2.57, 0] }, market: { x:
 // 김옥균을 따라 걷는 길(무대 기준): path는 김옥균이 걷는 길, stand는 학생이 서는 곳, show는 그곳의 일이 장면으로 나타나는 것
 export const WALK_A = [
   { path: [[2, 11], [3, 8.6], [1.6, 6.6]], stand: [0.5, 10], face: -Math.PI / 2, show: st => st.toast() },          // 1 잔치: 관리들이 잔을 들고, 관리가 앞에 나선다
-  { path: [[0.5, 5], [2.5, 1]], stand: [0, 3.5], face: Math.PI, show: st => st.uproar() },              // 2 정변: 이웃 집에 불길, 손님들이 놀라 흩어진다
-  { path: [[4, -4], [-4, -9], [-4, -15], [4, -19], [2, -24], [0, -26.5]], stand: [0.5, -24], face: Math.PI, show: st => st.openGate() }, // 3 궁으로 가는 길 → 창덕궁 문이 열린다
+  { path: [[0.5, 5], [-3, 1], [-7, -3.6]], stand: [-4.6, -1.4], face: -Math.PI / 2, show: st => st.uproar() }, // 2 정변: 우정총국 옆집 앞에 가면 김옥균이 그 집에 불을 지르고, 손님들이 놀라 흩어진다(2026-11-04 선생님)
+  { path: [[-3, -7], [-4, -11], [-4, -15], [4, -19], [2, -24], [0, -26.5]], stand: [0.5, -24], face: Math.PI, show: st => st.blockGate() }, // 3 궁으로 가는 길 → 문지기가 막지만 김옥균의 말을 듣고 비켜서고 창덕궁 문이 열린다
   { path: [[0, -33], [3.5, -35.5], [2.5, -39], [-2.5, -40]], stand: [0.5, -37.5], face: Math.PI * 0.8, show: st => st.council() }, // 4 전각 앞에 모인 개화 세력, 김옥균이 개혁안 두루마리를 든다
 ];
 export const WALK_B = [
@@ -208,6 +209,11 @@ function nightStage({ ctx, a, g, kim }) {
     say: lines => sayAll(dialogue, lines),
     toast() { guests.forEach(p => { const u = p.userData; if (u.arms) u.arms[1].rotation.x = -1.3; }); return clerk; },
     async uproar() {
+      // 김옥균이 옆집 쪽으로 돌아서서 횃불을 던지듯 팔을 앞으로 뻗는다
+      const km = kim.mesh, house = a.at(-10, -4), ka = km.userData.arms;
+      km.rotation.y = Math.atan2(house.x - km.position.x, house.z - km.position.z);
+      await wait(world, 0.7, k => { if (ka) ka[1].rotation.x = -1.6 * Math.sin(Math.PI * Math.min(1, k * 1.2)); });
+      if (ka) ka[1].rotation.x = 0;
       ctx.audio?.play?.('boom');
       fires.push(burning(world, { parent: g, x: -8.6, y: 0, z: -4, size: heavy ? 1.6 : 0.9, level: 1 }));
       if (heavy) fires.push(burning(world, { parent: g, x: -9.6, y: 2.6, z: -3, size: 1.1, level: 1 }));
@@ -221,7 +227,19 @@ function nightStage({ ctx, a, g, kim }) {
       world.setFixedCamera(eye, [look.x, 1.8, look.z]);
       await wait(world, 3);
     },
-    async openGate() { guards.forEach((p, i) => { p.rotation.y = i ? -Math.PI / 2 : Math.PI / 2; }); await wait(world, 1.2, k => gate.setOpen(k)); },
+    async blockGate() { // 문지기가 문 앞으로 나와 김옥균을 막아선다(2026-11-04 선생님)
+      const gp = guards[0], from = gp.position.clone();
+      await wait(world, 0.9, k => { gp.position.set(from.x + (-0.9 - from.x) * k, 0, from.z + (-28.3 - from.z) * k); gp.rotation.y = 0; });
+      guards[1].rotation.y = 0;
+      return gp;
+    },
+    async afterTalk(i) { // 말을 들은 문지기가 비켜서고 문이 열린다
+      if (i !== 2) return;
+      const gp = guards[0], from = gp.position.clone();
+      await wait(world, 0.9, k => { gp.position.set(from.x + (-3.4 - from.x) * k, 0, from.z + (-27.6 - from.z) * k); });
+      guards.forEach((p, j) => { p.rotation.y = j ? -Math.PI / 2 : Math.PI / 2; });
+      await wait(world, 1.2, k => gate.setOpen(k));
+    },
     async council() { council.forEach(p => { p.visible = true; }); setCarry(kim.mesh, scroll, 'side'); },
     dispose() { fires.forEach(f => f.setLevel(0)); setCarry(kim.mesh, null); },
     gate,
@@ -234,7 +252,7 @@ function palaceStage({ ctx, a, g, kim }) {
   for (const [x, z] of [[-4, -11], [4, -11], [-4, 11], [4, 11]]) lantern(g, x, z);
   const allies = [[-3, -9], [3, -9], [5, -7]].map(([x, z]) => person(g, 'joseonOfficial', x, z, Math.PI));
   const QING = 15, row = j => Math.floor(j / 5); // 다섯 줄 세 겹, 줄마다 조금씩 엇갈려 몰려온다
-  const qing = Array.from({ length: QING }, (_, i) => { const p = makePerson(LOOKS.qingSoldier); p.position.set(-19 - row(i) * 1.5, 0, (i % 5 - 2) * 1.0 + (row(i) % 2) * 0.3); p.rotation.y = Math.PI / 2; p.visible = false; p.userData.manual = true; g.add(p); return p; });
+  const qing = Array.from({ length: QING }, (_, i) => { const p = makePerson(LOOKS.qingSoldier); p.position.set(-19 - row(i) * 1.5, 0, (i % 5 - 2) * 1.1 + (row(i) % 2) * 0.3); p.rotation.y = Math.PI / 2; p.visible = false; g.add(p); return p; });
   let step = 0;
   return {
     say: lines => sayAll(dialogue, lines),
@@ -242,8 +260,7 @@ function palaceStage({ ctx, a, g, kim }) {
       qing.forEach(p => { p.visible = true; });
       const pp = world.player.position, look = a.at(-12, 0);
       world.setFixedCamera([pp.x + 3, 3.4, pp.z + 5], [look.x, 1.4, look.z]);
-      await wait(world, 3.2, (k, dt) => qing.forEach((p, j) => { p.position.x = -19 - row(j) * 1.5 + 8 * k; animateWalk(p, k < 1, dt); })); // D-68: 서쪽 담 바로 밖에서 담 틈(z −5~3)으로 들어온다(마당 둘레 집·담을 지나지 않게)
-      qing.forEach(p => { p.userData.manual = false; }); // 멈추면 저절로 서 있기(D-68: 계속 걷던 동작)
+      await march(world, qing, 8, 0, 5, { turn: false }); // D-68: 서쪽 담 바로 밖에서 담 틈(z −5~3)으로 들어온다. 2026-11-04 선생님: 걸음이 자연스럽게 — 천천히 출발해 멈추고, 다리는 실제 빠르기대로(공용 걸음)
       allies.forEach(p => { p.rotation.y = -Math.PI / 2; });
       step = 1;
       return false; // 해설(narr)은 청 군사들을 본 채로

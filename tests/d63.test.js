@@ -110,7 +110,7 @@ test('d65: 고려 2장 끝 장면에서 양규와 군사들이 뒤를 지키던 
   } finally { bot.stop(); s.done(); }
 }, { timeout: 90000 });
 
-test('d65: 근대 3장 황토현은 농민군과 관군이 짝지어 맞붙고, 우금치는 고개 위에서 줄지어 쏜다', async () => {
+test('d65: 근대 3장 황토현은 농민군이 달려가고 관군이 달아나며, 우금치는 고개 위에서 줄지어 쏜다', async () => {
   const { touchSetup } = await import('./bot.js');
   const { walkStage, WALK_ARENA } = await import('../chapters/modern/k3/chapter.js');
   const { buildArena } = await import('../chapters/kit/play.js');
@@ -120,7 +120,7 @@ test('d65: 근대 3장 황토현은 농민군과 관군이 짝지어 맞붙고, 
     const a = buildArena(s.w, WALK_ARENA), st = walkStage({ ctx: s.ctx, a, g: a.group, jeon: null });
     const run = p => { let done = false; p.then(() => { done = true; }); return (async () => { for (let i = 0; i < 400 && !done; i++) { s.w.step(1 / 30, { x: 0, z: 0 }); await new Promise(r => setTimeout(r, 0)); } return done; })(); };
     ok(await run(st.hwangto()), '황토현 끝남');
-    const h = st.hook; ok(h.pairs >= 6 && h.strikes >= 10 && h.blocks >= 6 && h.fell >= 1 && h.fled >= 1 && h.side < 0.05, `황토현 짝 ${h.pairs} 찌르기 ${h.strikes} 막기 ${h.blocks} 쓰러짐 ${h.fell} 달아남 ${h.fled}`);
+    const h = st.hook; ok(h.charged === 6 && h.fled === 6, `황토현: 농민군이 달려가고 관군이 달아난다(2026-11-04) 달려감 ${h.charged} 달아남 ${h.fled}`);
     ok(await run(st.ugeumchi()), '우금치 끝남');
     ok(st.hook.volleys === 3 && st.hook.fell >= 2, `우금치 쏘기 ${st.hook.volleys}, 쓰러짐 ${st.hook.fell}`);
     st.dispose(); a.dispose();

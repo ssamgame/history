@@ -19,7 +19,7 @@ export function showHowTo(ui, { title, steps }) {
     const card = el('div', 'card');
     card.append(el('div', 'eyebrow', '방법'), el('h2', null, title));
     const ol = el('ol', 'howto-steps');
-    for (const s of steps) ol.append(el('li', null, s));
+    for (const s of steps.slice(0, 3)) ol.append(el('li', null, String(s).split(/(?<=[.!?])\s/)[0])); // 짧게: 세 줄까지, 줄마다 첫 문장만(2026-11-04 선생님)
     const go = el('button', 'btn primary', '시작');
     go.type = 'button';
     go.addEventListener('click', () => { screen.remove(); resolve(); });
@@ -563,7 +563,7 @@ export function showDocument(ctx, { title, heading, intro = '', items, src = nul
     const screen = el('section', 'screen order doc');
     const card = el('div', 'card wide');
     const ol = el('ol');
-    for (const it of items) { const li = el('li', null, it.text); if (it.note && !scroll) li.append(el('small', null, it.note)); ol.append(li); }
+    for (const it of items) ol.append(el('li', null, it.text)); // 작은 글씨 해설(note)·안내 글(intro)은 싣지 않는다: 문서만 또렷하게(2026-11-04 선생님)
     let paper;
     if (scroll) {
       const sheet = el('div', 'scroll-sheet');
@@ -576,7 +576,7 @@ export function showDocument(ctx, { title, heading, intro = '', items, src = nul
       paper.append(el('h3', null, heading), ol);
     }
     const ok = el('button', 'btn primary doc-ok', button); ok.type = 'button';
-    card.append(el('div', 'eyebrow', '문서 읽기'), el('h2', null, title), ...(intro ? [el('p', null, intro)] : []), paper, ok);
+    card.append(el('div', 'eyebrow', '문서 읽기'), el('h2', null, title), paper, ok);
     screen.append(card); ctx.ui.append(screen);
     ok.addEventListener('click', () => { screen.remove(); resolve(true); });
   });

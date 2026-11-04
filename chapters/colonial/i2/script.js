@@ -77,7 +77,7 @@ export default {
   parts: {
     flags: {
       type: 'drive', src: ['S51'], title: '숨겨 둔 태극기를 모아 사람들에게 나눠 줘요', counter: '나눠 준 곳', pickupCounter: '모은 태극기', seconds: 120,
-      howto: '골목에 숨겨 둔 태극기를 모아, 빛나는 곳의 사람들에게 차례로 나눠 줘요.',
+      howto: '태극기를 모아 사람들에게 나눠 줘요.',
       intro: [ // 탐험 끝 뒤 바로(학생)
         { who: 'student', text: '선언서를 다 읽었어요! 이제 거리로 나갈 거예요.' },
         { who: 'student', text: '골목 여기저기에 태극기를 더 숨겨 두었어요. 모아서 거리로 나갈 사람들에게 나눠 주세요!' },
@@ -86,12 +86,12 @@ export default {
         { label: '학생들', needPickups: true, needSay: '먼저 숨겨 둔 태극기를 모두 모아요.', talk: [{ who: 'student', text: '고마워요! 이 태극기를 들고 거리로 나갈게요.' }] },
         { label: '시민들', talk: [{ who: 'leader', text: '모두 태극기를 들었구려. 학생들도 조심히 움직이시오.' }] },
       ],
-      pickups: [{ label: '태극기' }, { label: '태극기' }, { label: '태극기' }, { label: '태극기' }],
+      pickups: [{ label: '태극기', flag: true }, { label: '태극기', flag: true }, { label: '태극기', flag: true }, { label: '태극기', flag: true }], // 상자 대신 큰 태극기(2026-11-04 선생님)
       fail: '화살표를 따라 태극기를 모아 나눠 줘요.',
     },
     march: {
       type: 'drive', title: '공원 문을 나서 거리로! 만세 행진을 이끌어요', counter: '지난 거리', seconds: 150,
-      howto: '빛나는 곳을 차례로 지나가요. 공원 문에서는 사람들이 다 모일 때까지 기다려요. 길을 막는 헌병은 피해요.',
+      howto: '빛나는 곳을 차례로 지나가요. 헌병은 피해요.',
       intro: [ // 학생에게 말을 걸면(C-05)
         { who: 'student', text: '태극기를 다 나눠 줬어요. 이제 다 함께 거리로 나가요!' },
       ],
@@ -109,7 +109,7 @@ export default {
     // 만세의 흐름 걷기(D-39): 역사책 대신 빛나는 자리로 걸어가 대화 버튼으로 겪는다(장면이라 첫 시도 점수에는 넣지 않는다)
     flow: {
       type: 'scene', title: '만세 운동이 퍼져 나간 길',
-      howto: '빛나는 자리로 걸어가 대화 버튼을 눌러요. 만세 운동이 어떻게 퍼져 나갔는지 차례로 봐요.',
+      howto: '빛나는 자리에서 대화 버튼을 눌러요.',
       intro: [ // 유관순에게 말을 걸면(C-05)
         { who: 'yugwansun', text: '만세 소리가 어떻게 퍼져 나갔는지 함께 가 봐요.' },
         { who: 'yugwansun', text: '빛나는 자리에 가서 대화 버튼을 눌러 보세요.' },

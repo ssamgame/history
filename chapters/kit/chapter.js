@@ -17,23 +17,23 @@ import { sayAll, placePlayer, talkInOrder, setTalkStep, tryPart, sumParts } from
 import { buildTown } from './town.js';
 import { PLAY, buildArena } from './play.js';
 
-const HOWTO = {
-  choose: '맞는 카드를 모두 골라요. 틀린 카드를 누르면 해설을 보고 다시 골라요.',
-  sort: '카드가 한 장씩 나오면 알맞은 쪽을 눌러요.',
-  place: '놓을 것을 보고 알맞은 자리를 눌러요.',
-  order: '일어난 순서(또는 알맞은 차례)대로 카드를 눌러요.',
-  gauge: '움직이는 표시가 빛나는 칸 안에 들어왔을 때 큰 버튼을 눌러요.',
-  collect: '빛나는 곳으로 걸어가요. 화살표가 길을 알려 줘요.',
-  drive: '화살표를 따라 빛나는 곳을 차례로 지나가요. 부딪히면 앞 지점에서 다시 가요.',
-  stops: '이름표가 선 곳을 일어난 차례대로 찾아가 대화 버튼을 눌러요.',
-  deliver: '머리 위에 든 것을 들고 알맞은 원 안에 멈춰 잠깐 서 있으면 놓여요. 놓고 나면 처음 자리로 돌아와 다음 것을 들어요.',
-  find: '맞는 팻말만 찾아가 대화 버튼을 눌러요. 틀린 것을 고르면 해설을 듣고 이어서 찾아요.',
-  ambush: '적이 빛나는 자리에 들어오면 그 위의 버튼을 눌러요.',
-  sneak: '불빛(감시원이 보는 곳)을 피해 파란 고리를 차례로 지나가요. 들키면 앞 고리에서 다시 가요.',
-  judge: '사람들에게 다가가 대화 버튼을 눌러 이야기를 듣고, 그 말이 맞는지 골라요. 틀리면 해설을 듣고 다시 골라요.',
-  build: '지을 것을 보고 알맞은 터로 걸어가 대화 버튼을 눌러요. 맞으면 그 자리에 건물이 지어져요.',
-  book: '그림과 글을 읽고 \'다음 쪽\'을 눌러 책장을 넘겨요. 다 읽으면 \'다 읽었어요\'를 눌러요.',
-  doc: '문서에 적힌 것을 읽고 \'다 읽었어요\'를 눌러요.',
+const HOWTO = { // 짧게(2026-11-04 선생님: 게임 방법은 최대한 간략하게)
+  choose: '맞는 카드를 모두 골라요.',
+  sort: '알맞은 쪽을 눌러요.',
+  place: '알맞은 자리를 눌러요.',
+  order: '차례대로 카드를 눌러요.',
+  gauge: '빛나는 칸에서 버튼을 눌러요.',
+  collect: '빛나는 곳으로 걸어가요.',
+  drive: '빛나는 곳을 차례로 지나가요.',
+  stops: '이름표가 선 곳을 차례로 찾아가요.',
+  deliver: '든 것을 알맞은 원에 놓아요.',
+  find: '맞는 팻말을 찾아가요.',
+  ambush: '적이 빛나는 곳에 오면 버튼을 눌러요.',
+  sneak: '불빛을 피해 파란 고리를 지나가요.',
+  judge: '사람들 말을 듣고 맞는지 골라요.',
+  build: '알맞은 터로 가서 지어요.',
+  book: '책을 읽고 다음 쪽을 눌러요.',
+  doc: '문서를 읽어요.',
 };
 
 // 역사책 그림 이름(같은 이름은 한 번만 찍는다)
@@ -143,12 +143,9 @@ export function makeKitChapter(def) {
       input.enabled = false;
       setTalkStep(ctx, script, def.order, def.order.length);
       world.setGoal(null);
-      const kinds = [...new Set(def.parts.map(p => p.type))];
       await showHowTo(ctx.ui, {
         title: script.minigameTitle,
-        steps: def.parts.map(p => p.howto || p.title).concat(kinds.map(k => HOWTO[k])).filter(Boolean).slice(0, 5),
-        keyboard: '카드와 버튼은 마우스로, 걷기는 W A S D 또는 방향키, 큰 버튼은 E·스페이스도 돼요',
-        touch: '카드와 버튼은 손가락으로 누르고, 걷기는 화면 왼쪽을 끌어요',
+        steps: def.parts.filter(p => !['book', 'doc', 'scene'].includes(p.type)).map(p => p.howto || HOWTO[p.type]).filter(Boolean),
       });
       const results = [];
       const q = typeof location !== 'undefined' ? new URLSearchParams(location.search) : null;

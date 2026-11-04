@@ -12,6 +12,7 @@ import { walkInAndTalk, anyOrderTalk } from '../../kit/talk.js';
 import { burning } from '../../kit/fire.js';
 import { wait, person, ease, face, stationMarks, walkStations, sayer, meet, minigameWithMeet, facingShare } from '../../kit/walk.js';
 import { LOOKS } from '../../../content/characters.js';
+import { setCarry } from '../../../core/people.js';
 import { placePlayer } from '../../joseon/common.js';
 import script from './script.js';
 
@@ -75,7 +76,7 @@ export async function declarationScene(ctx) {
   const g = new THREE.Group(); g.name = 'i2Declare'; world.level.add(g);
   const hook = ctx.testHooks.declare = { reader: false, flags: 0, cheers: 0, held: false, camZ: 0, raisedY: 0, facing: 0 };
   const reader = person(g, 'student', 0, -4.9, 0); reader.position.y = 0.6; // 팔각정 위
-  const paper = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.55, 0.02), new THREE.MeshLambertMaterial({ color: 0xf2ecd8 })); paper.position.set(0, 1.4, 0.45); paper.rotation.x = -0.4; reader.add(paper); hook.reader = true;
+  const paper = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.44, 0.02), new THREE.MeshLambertMaterial({ color: 0xf2ecd8 })); paper.rotation.x = -0.25; setCarry(reader, paper, 'arms'); hook.reader = true; // 선언서를 두 손으로 펼쳐 들고 읽는다(2026-11-04 선생님: 몸에 붙어 있던 것)
   const looks = ['student', 'schoolgirl', 'commoner', 'woman', 'gentleman', 'peasant', 'student', 'citizen', 'schoolgirl', 'worker', 'commoner', 'student'];
   const crowd = looks.map((look, i) => { const r = i < 6 ? 0 : 1, c = i % 6; const p = person(g, look, -4.2 + c * 1.7 + r * 0.8, 0.4 + r * 1.5); face(p, 0, -5); return p; }); // 팔각정 앞을 조금 띄워 마주 보는 카메라 자리를 둔다(D-43)
   const flags = []; // 낭독이 끝나면 품속 태극기를 꺼내 든다
@@ -93,7 +94,7 @@ export async function declarationScene(ctx) {
     world.setFixedCamera([1.2, 2.8, -2.6], [-0.2, 1.4, 2.4]); // 팔각정 계단 앞에서 마주 보며 태극기를 든 사람들의 얼굴(D-43)
     for (let n = 0; n < 3; n++) { // 대한 독립 만세! 세 번
       ctx.audio?.play?.('correct');
-      await wait(world, 0.9, k => { crowd.forEach((p, i) => cheerPose(p, Math.min(1, Math.max(0, k * 1.15 - (i % 4) * 0.04)))); hook.raisedY = Math.max(hook.raisedY, ...flags.map(f => f.position.y + (f.parent?.name === 'upper' ? 1.05 : 0))); }); // 깃발 높이는 몸 기준
+      await wait(world, 0.9, k => { crowd.forEach((p, i) => cheerPose(p, Math.min(1, Math.max(0, k * 1.15 - (i % 4) * 0.04)))); hook.raisedY = Math.max(hook.raisedY, ...flags.map(f => f.getWorldPosition(new THREE.Vector3()).y)); }); // 깃발(손에 쥔 깃대) 높이
       hook.cheers += 1;
       if (n === 0) { hook.camZ = world.camera.position.z; hook.facing = facingShare(world, crowd); }
       if (n === 0) { await dialogue.say(L[3]); dialogue.close(); }
@@ -156,7 +157,7 @@ const ACT = {
     await wait(world, 2, k => set.guards.forEach((p, i) => { p.position.lerpVectors(from[i], new THREE.Vector3(Y.x + (i ? 0.8 : -0.8), 0, Y.z - 0.6), ease(k)); face(p, Y.x, Y.z); }));
     hook.arrested = true; // 헌병들이 유관순을 끌고 간다
     const y0 = set.yu.position.clone(), g0 = set.guards.map(p => p.position.clone());
-    await wait(world, 2.2, k => { const dz = -6 * ease(k); set.yu.position.set(y0.x - 4 * ease(k), 0, y0.z + dz * 0.2); set.yu.rotation.y = -Math.PI / 2; set.guards.forEach((p, i) => { p.position.set(g0[i].x - 4 * ease(k), 0, g0[i].z + dz * 0.2); p.rotation.y = -Math.PI / 2; }); });
+    await wait(world, 3, k => { const e = ease(k); set.yu.position.set(y0.x + 1.8 * e, 0, y0.z - 6 * e); set.yu.rotation.y = Math.PI; set.guards.forEach((p, i) => { p.position.set(g0[i].x + 1.8 * e, 0, g0[i].z - 6 * e); p.rotation.y = Math.PI; }); }); // 장터 길을 따라 남쪽으로 끌려간다(2026-11-04 선생님: 노점을 뚫고 지나가던 것)
     await say(st.lines[1]);
   },
   async jeamri({ ctx, a, g, st, say, hook, set }) {
@@ -242,7 +243,7 @@ const base = makeKitChapter({
   },
   parts: [
     { ...script.parts.flags, goal: script.goals[3], arena: JONGNO, from: [0, 21],
-      route: xy(script.parts.flags.route, [{ x: -4, z: 4 }, { x: 4, z: -10 }]),
+      route: xy(script.parts.flags.route, [{ x: -4, z: 4, crowd: ['student', 'schoolgirl', 'student'] }, { x: 4, z: -10, crowd: ['citizen', 'woman', 'commoner'] }]), // 이름표 곁에 실제 학생·시민이 서 있다(2026-11-04 선생님)
       pickups: xy(script.parts.flags.pickups, [{ x: -16, z: 18 }, { x: 15, z: 14 }, { x: -15, z: 0 }, { x: 16, z: -2 }]) },
     { ...script.parts.march, goal: script.goals[4], intro: meet('student', '학생과 이야기하기', script.parts.march.intro), arena: JONGNO, from: [0, 21], followers: { looks: ['student', 'schoolgirl', 'citizen', 'woman', 'peasant', 'yugwansun'], per: 2, flags: true },
       route: xy(script.parts.march.route, [{ x: 0, z: 18 }, { x: 2, z: 6, scene: marchCheer }, { x: -2, z: -6 }, { x: 0, z: -18, scene: marchCheer }]),
