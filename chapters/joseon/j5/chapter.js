@@ -240,6 +240,9 @@ async function samjeondo(ctx) {
   await ctx.wait(700);
   await anim(0.8, k => bowers.forEach(h => courtesyPose(h, 1 - ease(k))));
   meta.courtesy = true;
+  // D-68: 머리를 조아리는 동안은 행렬 뒤쪽 위에서 내려다본다(단 위의 청 황제가 정면에, 인조와 뒤따르는 세자·신하들이 한눈에)
+  world.setFixedCamera([O.x + 2.5, 8.5, O.z + 10.5], [O.x, 1.6, O.z - 3]);
+  meta.bowCam = 'behind-above';
   await dialogue.say(L[1]); dialogue.close();
   await dialogue.say(L[2]); dialogue.close();
   // 세 번 무릎 꿇고, 꿇을 때마다 세 번 머리를 조아린다. 인조가 먼저 하고 세자·신하들이 0.25초 뒤부터 0.08초씩 늦게 따라 한다(N-05 순서)

@@ -273,7 +273,7 @@ test('d67 조선5-1: 서문은 인조 일행(두 줄)이 벽을 지나지 않고
 test('d67 조선5-2: 남한산성 유네스코 해설은 처음이 아니라 장 끝 해설에', async () => {
   const script = (await import('../chapters/joseon/j5/script.js')).default;
   ok(!script.start.some(l => l.text.includes('유네스코')), '시작에 없다');
-  ok(script.result.some(l => l.text.includes('유네스코') && l.src?.includes('S47')), '끝 해설에');
+  ok(!JSON.stringify(script).includes('유네스코'), 'D-68: 이야기 흐름을 해쳐 아예 뺐다');
 });
 test('d67 조선5-3·6: 추위에 떠는 엄마와 아이는 좌우로 흔들리지 않고 손을 비비며, 곁의 화톳불을 켜면 「감사합니다!」 하고 손 비비기를 멈춘다', async () => {
   const { s, sc } = await j5Setup();
@@ -338,6 +338,7 @@ test('d67 조선5-8·9: 삼전도 — 멈춰 선 뒤 걷는 동작이 남지 않
     await j5.samjeondo(s.ctx);
     const m = s.ctx.testHooks.samjeondoMeta;
     ok(m.courtesy, '예를 갖추는 동작'); ok(m.idleAfterWalk, '멈추면 서 있는 동작으로');
+    eq(m.bowCam, 'behind-above', 'D-68: 절하는 동안 행렬 뒤 위에서(청 황제가 앞에 보이게)');
     ok(m.playerX > 6 && Math.abs(m.playerX - m.qingX) < 3, `학생은 청 군사 옆 x ${m.playerX?.toFixed(1)} (청 군사 ${m.qingX?.toFixed(1)})`);
   } finally { bot.stop(); s.done(); }
 }, { timeout: 120000 });

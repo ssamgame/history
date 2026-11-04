@@ -18,7 +18,7 @@ test('j5: quiz answers match the spec; 척화·주화 are balanced, no side is c
   eq([n('cheok'), n('ju')], [3, 3]);
   const all = JSON.stringify(j5Script);
   ok(!/(옳|틀렸|잘못)/.test(all), 'no judging words');
-  ok(j5Script.result.every(l => l.src.includes('S38') || (l.text.includes('유네스코') && l.src.includes('S47'))), 'D-67: 끝에 옮긴 유네스코 해설은 S47');
+  ok(j5Script.result.every(l => l.src.includes('S38')));
 });
 
 test('j5: scene has the fortress people and six braziers that light up', () => {
@@ -126,7 +126,7 @@ test('j5 C-01·C-02·C-03: intro film (청군 → 인조가 산성으로), porta
   ok(!j5Script.goals.some(g => g.includes('배운 내용')), 'no quiz goal');
   ok(!Object.keys(j5Script.npc).some(k => k.startsWith('sign')), 'no sign npc entries');
   const lines = JSON.stringify(j5Script);
-  ok(lines.includes('2014') && lines.includes('1625'), 'sign facts kept in someone\'s words');
+  ok(lines.includes('1625') && !lines.includes('2014'), 'sign facts kept in someone\'s words (D-68: 2014 유네스코는 선생님 뜻으로 뺐다)');
   const s = touchSetup(j5Script.speakers);
   try {
     const sc = j5.buildScene(s.w, s.ctx);
