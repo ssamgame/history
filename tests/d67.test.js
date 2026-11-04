@@ -240,3 +240,17 @@ test('d67 조선4-7·8: 적선은 멀리서 포격으로 가라앉고, 포를 �
     ok(turtleShots.length >= 1 && turtleShots.every(e => e.at.distanceTo(sc.leadTurtle.localToWorld(new THREE.Vector3(0, 2.25, -4.6))) < 1.2), '거북선은 용머리에서');
   } finally { s.done(); }
 }, { timeout: 60000 });
+test('d67 조선4(2차): 적선은 예전(8척)의 3~4배, 견내량 물길 안에 들어가고, 포격 장면에서 모두 가라앉는다', async () => {
+  const { s, sc } = await j4Setup();
+  try {
+    const n = sc.enemy.children.length;
+    ok(n >= 24 && n <= 32, `적선 ${n}척`);
+    ok(sc.enemy.children.every(e => Math.abs(e.position.x) <= 8.6), '좁은 물길(x −9~9) 안');
+    sc.setStage('wing'); { const sp = sc.spreadFleet(0.05); for (let i = 0; i < 3; i++) s.w.step(0.05, { x: 0, z: 0 }); await sp; }
+    sc.leadTurtle.position.set(0, -0.2, -35); sc.setAdvance(sc.FIRE_AT);
+    let done = false, sunk = 0; const run = sc.playBattle(null).then(v => { done = true; sunk = v; });
+    for (let i = 0; i < 1200 && !done; i++) { s.w.step(0.05, { x: 0, z: 0 }); if (i % 10 === 0) await null; }
+    ok(done, '포격이 끝난다'); await run;
+    eq(sunk, n, '모두 가라앉는다'); ok(sc.enemy.children.every(e => !e.visible), '남은 적선 없음');
+  } finally { s.done(); }
+}, { timeout: 90000 });

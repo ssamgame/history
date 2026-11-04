@@ -69,7 +69,7 @@ function sailTo(ctx, ring, chase = null) {
 export async function lureEnemy(ctx, easy) {
   const { world, dialogue, audio } = ctx;
   scene.setStage('sail');
-  scene.enemy.position.set(0, 0, STRAIT_Z - 28); scene.enemy.rotation.y = 0; // 견내량 안 깊이 모여 있는 적(D-67: 유인 지점에서 멀리)
+  scene.enemy.position.set(0, 0, STRAIT_Z - 28); scene.enemy.rotation.y = Math.PI; // 견내량 안 깊이 모여 있는 적(D-67: 유인 지점에서 멀리, 30척이 북쪽으로 줄지어)
   board(ctx, LURE.start);
   await sailTo(ctx, LURE.mouth);
   await dialogue.say(script.lure.seen); dialogue.close();

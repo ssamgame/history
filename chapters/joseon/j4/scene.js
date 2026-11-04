@@ -79,7 +79,7 @@ export function buildJ4Scene(world) {
   const lure = new THREE.Group(); L.add(lure);
   for (let i = 0; i < 3; i++) { const s = panokseon(); s.position.set((i - 1) * 3.6, -0.2, i % 2 * 3); lure.add(s); }
   const enemy = new THREE.Group(); L.add(enemy);
-  for (let i = 0; i < 8; i++) { const s = japaneseShip(); s.position.set(((i % 4) - 1.5) * 3.3, -0.2, Math.floor(i / 4) * 7); enemy.add(s); }
+  for (let i = 0; i < 30; i++) { const s = japaneseShip(); s.position.set(((i % 5) - 2) * 2.9, -0.2, Math.floor(i / 5) * 5.6); enemy.add(s); } // D-67: 적선 30척(예전 8척의 약 4배). 좁은 견내량 물길(암초 사이) 안에 5척씩 6줄
   const fleet = new THREE.Group(); L.add(fleet); // 학익진으로 펼치는 우리 배 6척(가운데는 거북선)
   const wingSpots = WING_X.map(x => { const a = Math.asin(x / WING_R); return [WING.x + x, WING.z + Math.cos(a) * WING_R * 0.55 + 6, a]; });
   wingSpots.forEach(([x, z, a], i) => { if (i === SLOT) return; const s = panokseon(); s.position.set(x, -0.2, z); s.rotation.y = a * 0.35 - Math.sign(x) * Math.PI / 2; s.userData.spot = [x, z]; s.userData.ry = s.rotation.y; fleet.add(s); }); // D-67: 학익진 때부터 옆구리(포혈)를 적(북쪽)에 돌리고 뱃머리는 가운데로. 한 자리(SLOT)는 학생 배가 들어갈 자리
@@ -105,7 +105,7 @@ export function buildJ4Scene(world) {
     flagship.visible = false;
     goalRing.visible = false;
     enemy.children.forEach(e => { e.userData.smoke.visible = s === 'won'; });
-    if (s === 'lure') { lure.position.set(0, 0, -30); enemy.position.set(0, 0, ENEMY_WAIT); enemy.rotation.y = 0; }
+    if (s === 'lure') { lure.position.set(0, 0, -30); enemy.position.set(0, 0, ENEMY_WAIT); enemy.rotation.y = Math.PI; } // 뱃머리를 남쪽으로 두고 줄은 견내량 안쪽(북쪽)으로 길게(D-67: 30척)
     if (s === 'wing') { enemy.position.set(0, 0, -78); }
     if (s === 'won') { enemy.position.set(0, 0, -50); }
     if (s !== 'won') enemy.children.forEach(e => { // 다시 하기·이어하기 때 배를 되살린다(붙은 불도 치운다)
@@ -135,8 +135,9 @@ export function buildJ4Scene(world) {
     const shots = [];
     targets.forEach((tg, i) => {
       const from = shooters[i % shooters.length];
-      if (i % 2 === 0) shots.push({ at: 0.3 + i * 0.55, from, to: tg, miss: true, state: 'wait' });
-      shots.push({ at: 0.55 + i * 0.55, from, to: tg, state: 'wait' });
+      const at = 0.3 + Math.floor(i / 3) * 0.6 + (i % 3) * 0.12; // 세 척씩 거의 함께 쏜다(30척이 너무 오래 걸리지 않게)
+      if (i % 3 === 0) shots.push({ at, from, to: tg, miss: true, state: 'wait' });
+      shots.push({ at: at + 0.25, from, to: tg, state: 'wait' });
     });
     const effects = [];
     const wp = new THREE.Vector3(), tp = new THREE.Vector3(), sideA = new THREE.Vector3(), sideB = new THREE.Vector3();

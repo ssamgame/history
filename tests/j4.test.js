@@ -59,7 +59,7 @@ test('j4 D-25: waiting at the strait mouth gets the ship caught; then sailing aw
     const r = await j4.minigame(s.ctx);
     ok(said.includes(j4Script.lure.fail), 'caught once');
     eq(r.firstTryCorrect, 1, 'lure missed, wing right');
-    ok(s.ctx.testHooks.sunk === 8, 'battle played');
+    ok(s.ctx.testHooks.sunk >= 24, `battle played ${s.ctx.testHooks.sunk}`); // D-67: 적선 30척
   } finally { off(); bot.stop(); s.done(); }
 }, { timeout: 150000 });
 
@@ -75,9 +75,11 @@ test('j4: when the lure ships turn, the enemy is still far away (gap ≥ 20)', a
   try {
     const s = buildJ4Scene(w);
     s.setStage('lure'); s.setLure(0.95);
-    const enemyNearest = Math.max(...s.enemy.children.map(c => s.enemy.position.z + c.position.z));
+    const wz = c => c.getWorldPosition(new THREE.Vector3()).z; // 적 무리를 돌려 세워도(D-67: 30척) 실제 자리로 잰다
+    s.enemy.updateMatrixWorld(true);
+    const enemyNearest = Math.max(...s.enemy.children.map(wz));
     ok(s.lure.position.z - enemyNearest >= 20, `gap ${s.lure.position.z - enemyNearest}`);
-    for (const k of [0, 0.5, 1]) { s.setChase(k); const near = Math.max(...s.enemy.children.map(c => s.enemy.position.z + c.position.z)); ok(s.lure.position.z - near >= 20, `chase gap at ${k}`); }
+    for (const k of [0, 0.5, 1]) { s.setChase(k); s.enemy.updateMatrixWorld(true); const near = Math.max(...s.enemy.children.map(wz)); ok(s.lure.position.z - near >= 20, `chase gap at ${k}`); }
   } finally { w.dispose(); }
 });
 
@@ -105,7 +107,7 @@ test('j4: the attack fires cannons and sinks the enemy ships', async () => {
     const p = s.playBattle();
     let n = null; p.then(v => { n = v; });
     for (let i = 0; i < 400 && n === null; i++) { w.step(0.05, { x: 0, z: 0 }); await new Promise(r => setTimeout(r, 0)); }
-    eq(n, 8, 'all eight hit');
+    eq(n, s.enemy.children.length, 'every enemy ship hit');
     ok(s.enemy.children.every(e => !e.visible), 'sunk');
     s.setStage('wing');
     ok(s.enemy.children.every(e => e.visible && !e.userData.sink), 'restored for a retry');
@@ -223,8 +225,8 @@ test('j4 D-30 I-03: a hit ship catches fire, tilts and sinks under the water wit
       }
       await new Promise(r => setTimeout(r, 0));
     }
-    eq(n, 8);
-    eq(fire.size, 8, 'every hit ship burned');
+    eq(n, s.enemy.children.length);
+    eq(fire.size, s.enemy.children.length, 'every hit ship burned');
     ok(s.enemy.children.every(e => low.get(e) < -4.5), `sank under the water ${[...low.values()].map(v => v.toFixed(1))}`);
     ok(s.enemy.children.every(e => tilt.get(e) > 0.4), 'tilted');
     ok(s.enemy.children.every(e => !e.visible), 'gone');
