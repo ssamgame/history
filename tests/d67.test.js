@@ -80,6 +80,7 @@ test('d67 고려6-5(2차): 항파두리 — 삼별초는 흙성 위에서 연합
     ok(h.onWall >= h.few && h.wallTop > 1, `흙성 위에 선 삼별초 ${h.onWall}/${h.few}, 높이 ${h.wallTop}`);
     ok(h.facingAllies > 0.85, `연합군 쪽을 본다 ${h.facingAllies?.toFixed(2)}`);
     ok(h.advanced > 4, `연합군이 흙성 앞까지 나아간다 ${h.advanced?.toFixed(1)}m`);
+    ok(h.strikes >= 9, `앞줄 군사가 창·칼로 흙성을 친다 ${h.strikes}번`); ok(h.swayed < 0.001, `몸을 앞뒤로 흔들지 않는다 ${h.swayed}`);
     ok(h.collapsed && h.crumbled >= 10, `흙성이 무너진다 ${h.crumbled}`);
     eq(h.defeated, h.few, '삼별초가 모두 쓰러진다(피 없이)');
     ok(h.sunk < 0.05, `땅에 묻히지 않는다 ${h.sunk?.toFixed(3)}`);

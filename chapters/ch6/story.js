@@ -150,10 +150,17 @@ export function hangpaduriScene(ctx) {
     await Promise.all([advance(world, allies.foot, 0, -(zAL - WZ - 2.2), 3.2), glide([-24, 7, 18], [0, 1.4, 6], [-22, 5.5, 9], [0, 1.2, 3.5], 3.2)]); // 보병이 흙성 앞까지(기마병은 뒤에서 지켜본다)
     hook.advanced = foot0[0] - allies.foot[0].position.z;
     // 성벽을 치면 흙덩이가 흔들리다가 가운데부터 무너져 내리고, 성 위의 삼별초는 쓰러진다
+    // D-67(3차): 몸을 앞뒤로 흔들지 않고, 흙성 앞줄 군사가 창으로 찌르고 칼(무기)로 내리쳐 흙성을 부순다
+    const zFront = Math.min(...allies.foot.map(p => p.position.z)), front = allies.foot.filter(p => p.position.z < zFront + 0.9);
+    const footZ = allies.foot.map(p => p.position.z);
+    hook.strikes = 0;
     for (let hit = 0; hit < 3; hit++) {
+      front.forEach((p, i) => wait(world, (i % 3) * 0.09).then(() => { strike(p, p.userData.arms[1].getObjectByName('spear') ? 'spear' : 'strike'); hook.strikes += 1; })); // 조금씩 엇갈려 친다
+      await wait(world, 0.35);
       ctx.audio?.play?.(hit === 2 ? 'boom' : 'whoosh');
-      await wait(world, 0.6, k => { for (const c of chunks) c.m.position.z = WZ + Math.sin(k * Math.PI) * 0.05 * (Math.abs(c.x) < 7 ? 1 : 0.4); allies.foot.forEach((p, i) => { p.position.z += Math.sin(k * Math.PI * 2) * 0.01 * (i % 2 ? 1 : -1); }); });
+      await wait(world, 0.5, k => { for (const c of chunks) c.m.position.z = WZ + Math.sin(k * Math.PI) * 0.05 * (Math.abs(c.x) < 7 ? 1 : 0.4); }); // 맞은 흙성이 흔들린다
     }
+    hook.swayed = Math.max(...allies.foot.map((p, i) => Math.abs(p.position.z - footZ[i])));
     hook.phases.push('collapse');
     ctx.audio?.play?.('boom');
     let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
