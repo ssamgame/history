@@ -72,7 +72,7 @@ export default {
   parts: {
     gather: {
       type: 'drive', title: '숲속 진지를 돌며 흩어진 독립군 부대를 모아요', counter: '지난 진지', pickupCounter: '찾은 대원', seconds: 150,
-      howto: '빛나는 진지를 차례로 지나가요. 숲에 흩어진 대원을 찾으면 뒤따라와요. 모두 모아야 골짜기 입구로 갈 수 있어요.',
+      howto: '빛나는 진지를 지나며 대원을 찾아요.',
       intro: [ // 봉오동 장면 뒤 바로(김좌진)
         { who: 'kimjwajin', text: '이번에는 홍범도 장군의 부대와 우리 부대가 힘을 합칠 것이다.', src: ['S51'] },
         { who: 'kimjwajin', text: '흩어진 부대를 모아 청산리 골짜기로 가자!' },
@@ -82,7 +82,10 @@ export default {
         { label: '둘째 진지', talk: [{ who: 'hongbeomdo', text: '잘 왔네. 우리 부대도 김좌진 장군의 부대와 함께 청산리로 가겠네.' }] },
         { label: '셋째 진지', say: '흩어졌던 부대가 다시 모였어요.' },
         { label: '청산리 골짜기 입구', needPickups: true, needSay: '아직 숲에 남은 대원이 있어요! 화살표를 따라가 봐요.',
-          talk: [{ who: 'kimjwajin', expr: 'tension', text: '모두 골짜기 양쪽 산에 숨어 기다려라. 적이 깊이 들어오면 공격한다!' }] },
+          talk: [
+            { who: 'kimjwajin', text: '청산리 골짜기의 지형을 이용해 일본군과 맞설 것이다.', src: ['S51'] },
+            { who: 'kimjwajin', expr: 'tension', text: '모두 골짜기 양쪽 산비탈 풀숲에 엎드려 기다려라. 적이 깊이 들어오면 공격한다!' },
+          ] }, // 골짜기 입구에서 바로 매복으로 이어진다(2026-11-04 선생님: 마을에 돌아가지 않게)
       ],
       pickups: [{ label: '대원', follow: 'independenceArmy' }, { label: '대원', follow: 'independenceArmy' }, { label: '대원', follow: 'independenceArmy' }],
       fail: '화살표가 가리키는 빛나는 곳으로 가요.',
@@ -90,11 +93,7 @@ export default {
     // 청산리 매복(D-42): 근대 6장 고갯길처럼 독립군이 골짜기 양쪽 산비탈 풀숲에 엎드려 총을 겨누고 있다가 쏜다
     ambush: {
       type: 'ambush', src: ['S51'], title: '청산리 골짜기: 산비탈 풀숲에 숨어 일본군을 막아요', label: '공격!', counter: '물리친 부대',
-      howto: '독립군이 골짜기 산비탈 풀숲에 엎드려 총을 겨누고 있어요. 일본군이 빛나는 곳에 들어오면 「공격!」을 눌러요. 세 차례 이어져요.',
-      intro: [ // 김좌진에게 말을 걸면(C-05)
-        { who: 'kimjwajin', text: '청산리 골짜기의 지형을 이용해 일본군과 맞설 것이다.', src: ['S51'] },
-        { who: 'kimjwajin', text: '산비탈 풀숲에 엎드려 총을 겨누어라. 적이 빛나는 곳까지 깊이 들어오면 공격이다!' },
-      ],
+      howto: '일본군이 빛나는 곳에 오면 「공격!」을 눌러요.',
       waves: [
         { enemies: 4, need: 3, interval: 2.1, speed: 2.8 },
         { enemies: 5, need: 4, interval: 1.7, speed: 3.1, talk: [{ who: 'hongbeomdo', text: '일본군이 다시 밀려온다! 물러서지 마라!' }] },

@@ -215,7 +215,8 @@ const base = makeKitChapter({
     { ...script.parts.gather, goal: script.goals[3], arena: FOREST, from: [0, 23], followers: { looks: ['independenceArmy'], per: 2 },
       route: xy(script.parts.gather.route, [{ x: -8, z: 12 }, { x: 9, z: 2 }, { x: -8, z: -9 }, { x: 0, z: -21 }]),
       pickups: xy(script.parts.gather.pickups, [{ x: 16, z: 14 }, { x: -17, z: -6 }, { x: 14, z: -16 }]) },
-    { ...script.parts.ambush, goal: script.goals[4], intro: meet('kimjwajin', '김좌진과 이야기하기', script.parts.ambush.intro), arena: VALLEY, camera: { pos: [0.5, 3.6, 19.5], target: [0, 0.4, -3] }, path: [[0, -34], [0, 7]], zone: { x: 0, z: -1, r: 5 }, look: 'gendarme', shooters: SHOOTERS, flag: true }, // 독립군 등 뒤 낮은 곳에서 골짜기 길 앞쪽을 본다(근대 6장 D-38과 같게)
+    // 청산리 매복은 대원을 모은 골짜기 입구에서 바로(마을을 거치지 않는다, 2026-11-04 선생님)
+    { ...script.parts.ambush, goal: script.goals[4], arena: VALLEY, camera: { pos: [0.5, 3.6, 19.5], target: [0, 0.4, -3] }, path: [[0, -34], [0, 7]], zone: { x: 0, z: -1, r: 5 }, look: 'gendarme', shooters: SHOOTERS, flag: true }, // 독립군 등 뒤 낮은 곳에서 골짜기 길 앞쪽을 본다(근대 6장 D-38과 같게)
     { ...script.parts.victory, goal: script.goals[5], intro: meet('hongbeomdo', '홍범도와 이야기하기', script.parts.victory.intro), play: ctx => victoryWalk(ctx) },
   ],
   // 진영 문과 「독립군 진영」 이름판은 굳히기에 합쳐지지 않게 돌려준다

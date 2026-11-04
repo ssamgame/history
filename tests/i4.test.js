@@ -63,7 +63,7 @@ test('i4 D-30 C-02·C-03: 도입 장면은 문장마다, 끝나면 치우고, �
 test('i4 D-42 C-05: 놀이는 부대 모으기 → 엎드려 매복 → 승리한 진영 걷기, 다음 놀이는 말을 걸어야 시작', () => {
   eq(i4.parts.map(p => p.type), ['drive', 'ambush', 'scene']);
   ok(!i4.parts[0].intro?.[0]?.meet, '첫 놀이는 탐험 끝 뒤 바로');
-  eq(i4.parts[1].intro?.[0]?.meet?.who, 'kimjwajin');
+  ok(!i4.parts[1].intro?.length, '청산리 매복은 대원 모으기에서 바로(2026-11-04)');
   eq(i4.parts[2].intro?.[0]?.meet?.who, 'hongbeomdo');
   ok(i4.parts[2].intro.slice(1).every(l => l.who === 'hongbeomdo'), '말 건 홍범도가 알려 준다');
   const amb = i4.parts[1];
