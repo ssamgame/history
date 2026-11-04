@@ -71,7 +71,8 @@ test('i5 D-44: 가져다 놓기 아홉 글과 안내판 글은 출처 그대로 
   const lines = allLines(script);
   const has = t => ok(lines.some(l => l.text.includes(t) && l.src?.includes('S51')), t);
   for (const t of ['우리나라에서 만든 물건을', '성금을 모아 대학을', '아는 것이 힘', '6·10 만세 운동', '광주 학생 항일 운동', '차별적인 교육', '신채호와 박은식', '스스로의 힘으로 발전', '이육사, 윤동주, 한용운', '한글 맞춤법 통일안', '「우리말 큰사전」']) has(t);
-  eq(script.parts.culture.stations.map(s => s.id), ['goods', 'night', 'history', 'poem', 'dict']);
+  eq(script.parts.culture.stations.map(s => s.id), ['yun', 'yuksa', 'manhae']); // 2026-11-04: 저항시 읽기
+  for (const st of script.parts.culture.stations) ok(st.src?.length && st.after?.src?.length && st.options[st.answer] && st.why, `${st.poet} 시·출처·뜻 고르기`);
 });
 
 test('i5 D-44: 광주 학생 항일 운동 장면 — 학생들이 걸어 나와 주먹을 들고, 카메라는 앞에서, 끝나면 치운다', async () => {
@@ -93,22 +94,20 @@ test('i5 D-44: 광주 학생 항일 운동 장면 — 학생들이 걸어 나와
   } finally { bot.stop(); s.done(); }
 }, { timeout: 90000 });
 
-test('i5 D-44: 민족 문화 걷기 — 다섯 자리를 대화 버튼으로 겪고, 끝나면 무대를 치운다', async () => {
+test('i5 D-44: 저항시 읽기 — 세 자리에서 시를 읽고 뜻을 고르고, 끝나면 무대를 치운다', async () => {
   ok(CULTURE.origin[0] >= 300, '마을과 떨어진 무대');
   const s = touchSetup(script.speakers);
   const bot = touchBot(s, { answers: new Set() });
   try {
     i5.buildScene(s.w);
     const n0 = s.w.level.children.length, b0 = s.w.bounds;
+    const watch = setInterval(() => s.ui.querySelector('.doc-ok')?.click(), 100); // 두루마리 '다 읽었어요'
     await cultureWalk(s.ctx);
+    clearInterval(watch);
     const h = s.ctx.testHooks.culture;
-    eq(h.used, ['goods', 'night', 'history', 'poem', 'dict']);
-    ok(h.pressed >= 5, `대화 버튼으로 시작 ${h.pressed}`);
-    ok(h.cloth && h.coins >= 3, `우리 옷감, 성금 ${h.coins}`);
-    ok(h.board && h.learners >= 6, `칠판 '아는 것이 힘', 배우는 사람 ${h.learners}`);
-    ok(h.book, '역사책을 받아 든다');
-    ok(h.poems >= 3, `시 원고 ${h.poems}`);
-    ok(h.stack >= 5, `사전 원고 ${h.stack}`);
+    eq(h.used, ['yun', 'yuksa', 'manhae']);
+    eq(h.read, ['yun', 'yuksa', 'manhae'], '시를 두루마리로 읽었다');
+    ok(h.pressed >= 3, `대화 버튼으로 시작 ${h.pressed}`);
     eq(s.w.level.children.length, n0, '무대를 치웠다');
     eq(s.w.bounds, b0, '걷는 곳도 마을로');
   } finally { bot.stop(); s.done(); }

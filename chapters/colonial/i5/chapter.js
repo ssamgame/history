@@ -10,6 +10,7 @@ import { gateLeaves, nameBoard } from '../../kit/gate.js';
 import { walkInAndTalk, anyOrderTalk } from '../../kit/talk.js';
 import { wait, person, ease, face, stationMarks, walkStations, sayer, classroom, meet, minigameWithMeet, facingShare } from '../../kit/walk.js';
 import { setCarry, mat } from '../../../core/people.js';
+import { showDocument } from '../../../core/minigame.js';
 import { placePlayer } from '../../joseon/common.js';
 import script from './script.js';
 
@@ -17,9 +18,7 @@ const PEOPLE = ['student', 'historian', 'merchant'];
 const GATE_Z = 14.5, INTRO_FROM = [0, 17.5], SPOT = [0, 7];
 const SCHOOL = { x: -9, z: -9, d: 5 }, HAK = { x: 9, z: -8.5 };
 const xy = (list, pts) => list.map((it, i) => ({ ...it, ...pts[i] }));
-const sheet = (w = 0.5, d = 0.36, color = 0xf2ecd8) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, 0.02, d), new THREE.MeshLambertMaterial({ color })); m.castShadow = true; return m; };
 const book = () => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.1, 0.3), mat(0x6b2a24, 'cloth', 'object')); return m; };
-const cloth = () => { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.7, 10), mat(0xe8dcc0, 'cloth')); m.rotation.z = Math.PI / 2; return m; };
 
 // ── 무대(마을에서 떨어진 x 400) ──
 const STREETS = { edge: { style: 'modern', seed: 801 }, center: [{ type: 'papers', x: -15, z: 1, kind: 'book', n: 3 }, { type: 'lamp', x: 8, z: 12 }, { type: 'lamp', x: -8, z: -14 }, { type: 'papers', x: -7, z: 12, kind: 'book', n: 3 }, { type: 'lamp', x: 7, z: 12 }, { type: 'papers', x: 9, z: 5, kind: 'book', n: 3 }], // 경성 골목: 서점, 학교 담장, 조선어 학회. 경찰이 순찰한다
@@ -44,16 +43,15 @@ export const GWANGJU = { edge: { style: 'modern', seed: 719 },
 };
 // 민족 문화 걷기: 남쪽에서 북쪽으로 곧은 길. 우리 물건 상점 → 밤 교실 → 역사학자의 서재 → 시인의 책상 → 조선어 학회
 export const CULTURE = { edge: { style: 'modern', seed: 905 },
-  origin: [400, 0], ground: 'stone', groundColor: 0x9a948a, bounds: { x0: -16, x1: 16, z0: -36, z1: 30 },
-  roads: [{ x: 0, z: -3, w: 4, d: 66, color: 0x8a8070 }],
+  origin: [400, 0], ground: 'stone', groundColor: 0x9a948a, bounds: { x0: -16, x1: 16, z0: -32, z1: 26 },
+  roads: [{ x: 0, z: -3, w: 4, d: 58, color: 0x8a8070 }],
   props: [
-    { type: 'shop', x: -10, z: 21, w: 5, ry: Math.PI / 2, style: 'modern', sign: '우리 옷감', awning: 0x2f6b5e, seed: 2 }, { type: 'lamp', x: -3.4, z: 25 },
-    { type: 'papers', x: -10, z: -1.5, kind: 'book', n: 3 }, { type: 'desk', x: -7.4, z: -4.6 }, { type: 'tree', x: -12, z: -9, kind: 'poplar' },
-    { type: 'desk', x: 7.2, z: -16 }, { type: 'lamp', x: 3.6, z: -11 },
-    { type: 'hanok', x: -1, z: -33, tile: true }, { type: 'desk', x: 0, z: -29.4 },
+    { type: 'hanok', x: -10.5, z: 14, ry: Math.PI / 2 }, { type: 'desk', x: -7, z: 14 }, { type: 'lamp', x: -3.6, z: 19 }, // 윤동주의 하숙방(문 앞 책상에 원고)
+    { type: 'paddy', x: 10.5, z: -4, w: 8, d: 10 }, { type: 'tree', x: 12, z: 4, kind: 'poplar' }, // 넓은 들판과 시비
+    { type: 'hanok', x: -10.5, z: -22, ry: Math.PI / 2, tile: true, scale: 1.2 }, { type: 'tree', x: -12, z: -14, kind: 'pine' }, // 한용운이 머문 절
   ],
-  from: [0, 28], box: [-6.6, 18.2], room: [10, 2], hist: [-7.4, -4.6], poem: [7.2, -16], dict: [0, -29.4],
-  stations: [{ x: -4, z: 20 }, { x: 10, z: 9.4 }, { x: -4, z: -4.6 }, { x: 4.4, z: -16 }, { x: 0, z: -26.6 }],
+  from: [0, 24], desk: [-7, 14], stone: [6.8, -4], scroll: [-6.8, -22],
+  stations: [{ x: -4.6, z: 14 }, { x: 4.4, z: -4 }, { x: -4.4, z: -22 }],
 };
 
 let scene = null;
@@ -110,101 +108,59 @@ export async function gwangjuScene(ctx) {
 }
 
 // ── 민족 문화 걷기 ──
-const ACT = {
-  async goods({ ctx, a, g, st, say, hook, set }) { // 우리 옷감을 받아 들고, 동포들이 대학을 세울 성금을 모금함에 넣는다
-    const { world } = ctx;
-    await say(st.lines[0], set.merchant);
-    setCarry(world.player, cloth(), 'arms'); hook.cloth = true;
-    ctx.audio?.play?.('correct');
-    const B = a.at(...CULTURE.box);
-    world.setFixedCamera([B.x + 5, 2.8, B.z + 4.5], [B.x - 0.5, 1, B.z - 0.5]);
-    ctx.dialogue.close();
-    for (const [i, p] of set.donors.entries()) {
-      p.visible = true;
-      const p0 = p.position.clone(), to = new THREE.Vector3(CULTURE.box[0] + 0.9, 0, CULTURE.box[1] + 0.2 + i * 0.1);
-      face(p, to.x, to.z);
-      await wait(world, 0.7, k => p.position.lerpVectors(p0, to, ease(k)));
-      const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.03, 10), mat(0xc9a441, 'stone')); coin.position.set(CULTURE.box[0] + 0.1 - i * 0.15, 0.95, CULTURE.box[1]); g.add(coin);
-      ctx.audio?.play?.('tap'); hook.coins += 1;
-      await wait(world, 0.6, k => p.position.lerpVectors(to, new THREE.Vector3(p0.x + 2, 0, p0.z - 2.5), ease(k)));
-    }
-    await say(st.lines[1]);
-    setCarry(world.player, null);
-  },
-  async night({ ctx, a, g, st, say, hook }) { // 밤 교실: 칠판에 '아는 것이 힘', 어른과 아이들이 글자를 배운다
-    const { world } = ctx;
-    await ctx.fade?.(true);
-    const [rx, rz] = CULTURE.room, room = classroom(g, rx, rz, { teacher: 'scholarModern', wall: 0xd8ccb0 }), O = a.at(rx, rz);
-    room.kids.forEach((k, i) => { if (i % 3 === 1) { k.removeFromParent(); room.kids[i] = person(room.group, i % 2 ? 'woman' : 'peasant', k.position.x, k.position.z, Math.PI); } }); // 어른도 함께 배운다
-    const board = labelSprite('아는 것이 힘', { size: 0.9 }); board.position.set(0, 2.1, -3.2); room.group.add(board); hook.board = true;
-    hook.learners = room.kids.length;
-    placePlayer(world, [O.x + 2.6, O.z + 4], Math.PI);
-    const view = () => world.setFixedCamera([O.x - 1.2, 5.2, O.z + 7.5], [O.x, 1.4, O.z - 2.2]);
-    view();
-    await ctx.fade?.(false);
-    await say(st.lines[0], room.teacher);
-    view();
-    await say(st.lines[1]);
-    ctx.dialogue.close();
-    await ctx.fade?.(true);
-    room.group.removeFromParent();
-    const back = a.at(CULTURE.stations[1].x, CULTURE.stations[1].z);
-    placePlayer(world, [back.x, back.z], Math.PI);
-    await ctx.fade?.(false);
-  },
-  async history({ ctx, st, say, hook, set }) { // 역사학자가 우리 역사책을 건넨다
-    const { world } = ctx;
-    await say(st.lines[0], set.historian);
-    setCarry(world.player, book(), 'arms'); hook.book = true;
-    ctx.audio?.play?.('correct');
-    const pp = world.player.position;
-    world.setFixedCamera([pp.x + 2.8, 2.2, pp.z + 2.8], [pp.x - 0.8, 1.2, pp.z - 0.4]);
-    await say(st.lines[1]);
-    setCarry(world.player, null);
-  },
-  async poem({ ctx, a, g, st, say, hook, set }) { // 시인이 책상 위 원고지에 시를 적는다
-    const { world } = ctx;
-    await say(st.lines[0], set.poet);
-    ctx.dialogue.close();
-    const D = a.at(...CULTURE.poem);
-    world.setFixedCamera([D.x - 3.6, 2.6, D.z + 2.8], [D.x, 1, D.z]);
-    for (let i = 0; i < 3; i++) { const s = sheet(0.4, 0.3); s.position.set(CULTURE.poem[0] - 0.4 + i * 0.3, 0.87 + i * 0.01, CULTURE.poem[1]); g.add(s); ctx.audio?.play?.('tap'); hook.poems += 1; await wait(world, 0.4); }
-    await say(st.lines[1]);
-  },
-  async dict({ ctx, a, g, st, say, hook, set }) { // 모아 온 사전 원고가 학회 책상에 쌓인다
-    const { world } = ctx;
-    await say(st.lines[0], set.linguist);
-    ctx.dialogue.close();
-    const D = a.at(...CULTURE.dict);
-    world.setFixedCamera([D.x + 3.4, 2.6, D.z + 3.6], [D.x, 1, D.z]);
-    for (let i = 0; i < 5; i++) { const s = sheet(); s.position.set(CULTURE.dict[0], 0.87 + i * 0.03, CULTURE.dict[1]); s.rotation.y = (i % 2 - 0.5) * 0.2; g.add(s); ctx.audio?.play?.('tap'); hook.stack += 1; await wait(world, 0.3); }
-    await say(st.lines[1]);
-  },
-};
+// 시를 읽는 물건: 책상 위 원고, 들판의 시비(돌), 절 앞에 건 두루마리
+function poemThings(g) {
+  const sheetM = new THREE.MeshLambertMaterial({ color: 0xf2ecd8 });
+  const ms = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.02, 0.36), sheetM); ms.position.set(CULTURE.desk[0], 0.88, CULTURE.desk[1]); ms.rotation.y = 0.2; g.add(ms); // 원고지
+  const [sx, sz] = CULTURE.stone, st = new THREE.Group(); st.position.set(sx, 0, sz); st.rotation.y = -Math.PI / 2; g.add(st); // 앞(+z)이 길 쪽(서쪽)
+  const base = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.4, 1.2), mat(0x8a857a, 'stone')); base.position.y = 0.2; st.add(base);
+  const slab = new THREE.Mesh(new THREE.BoxGeometry(1.6, 2.0, 0.35), mat(0x9a948a, 'stone')); slab.position.y = 1.4; st.add(slab);
+  const cap = labelSprite('광야', { size: 0.7 }); cap.position.set(0, 2.9, 0.3); st.add(cap);
+  const [cx, cz] = CULTURE.scroll, sc = new THREE.Group(); sc.position.set(cx, 0, cz); sc.rotation.y = -Math.PI / 2; g.add(sc); // 두 기둥에 건 두루마리
+  for (const x of [-0.7, 0.7]) { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 2.4, 6), mat(0x5a3f2a, 'wood', 'object')); p.position.set(x, 1.2, 0); sc.add(p); }
+  const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.6, 6), mat(0x4a3424, 'wood')); rod.rotation.z = Math.PI / 2; rod.position.y = 2.3; sc.add(rod);
+  const paper = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.5, 0.02), sheetM); paper.position.set(0, 1.5, 0.03); sc.add(paper);
+}
+
+// 한 자리: 안내 → 그 물건을 보며 두루마리로 시 읽기 → 이 시에 담긴 마음 고르기(틀리면 해설 듣고 다시) → 해설
+async function readPoem(ctx, a, st, hook) {
+  const { world, dialogue } = ctx;
+  const at = { yun: CULTURE.desk, yuksa: CULTURE.stone, manhae: CULTURE.scroll }[st.id], O = a.at(...at), pp = world.player.position;
+  world.setFixedCamera([pp.x + (pp.x - O.x) * 0.6, 2.3, pp.z + 2.4], [O.x, 1.3, O.z]);
+  for (const l of st.before || []) await dialogue.say(l);
+  dialogue.close();
+  await showDocument(ctx, { title: `${st.poet} 「${st.title}」`, heading: `「${st.title}」${st.year ? ` (${st.year})` : ''}`, items: st.lines.map(text => ({ text })), src: st.src, scroll: true, button: '다 읽었어요' });
+  hook.read.push(st.id);
+  for (;;) {
+    ctx.testHooks.choice = st.answer;
+    const i = await dialogue.choose({ who: 'guide', text: st.question }, st.options);
+    ctx.testHooks.choice = null;
+    if (i === st.answer) break;
+    hook.missed += 1; ctx.audio?.play?.('wrong');
+    await dialogue.say({ who: 'guide', text: `× 다시 생각해 봐요. ${st.why}` });
+  }
+  ctx.audio?.play?.('correct');
+  await dialogue.say(st.after);
+  dialogue.close();
+}
 
 export async function cultureWalk(ctx) {
-  const { world, hud } = ctx;
+  const { world, hud, dialogue } = ctx;
   const P = script.parts.culture, A = CULTURE;
   world.closeView = true;
   await ctx.fade?.(true);
   const a = buildArena(world, A), g = a.group;
-  const hook = ctx.testHooks.culture = { used: [], pressed: 0, cloth: false, coins: 0, board: false, learners: 0, book: false, poems: 0, stack: 0 };
-  const merchant = person(g, 'commoner', -7.6, 20.4, Math.PI / 2);
-  const box = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.9, 0.5), mat(0x7a5a3c, 'wood', 'object')); box.position.set(A.box[0], 0.45, A.box[1]); box.castShadow = true; g.add(box); // 대학을 세울 성금 모금함
-  const donors = [['citizen', -2.6, 14.5], ['woman', -1.8, 15.6], ['student', -3.4, 16.2]].map(([look, x, z]) => { const p = person(g, look, x, z); p.visible = false; return p; });
-  const historian = person(g, 'gentleman', -8.8, -4.6, Math.PI / 2);
-  const poet = person(g, 'scholarModern', 8.4, -16.6, -Math.PI / 2);
-  const linguist = person(g, 'scholarModern', 1.4, -30.4, -Math.PI / 4);
+  poemThings(g);
+  const hook = ctx.testHooks.culture = { used: [], pressed: 0, read: [], missed: 0 };
   const marks = stationMarks(a, g, P.stations, A.stations);
   const p0 = a.at(...A.from); placePlayer(world, [p0.x, p0.z], Math.PI);
-  const set = { merchant, donors, historian, poet, linguist };
-  const say = sayer(ctx);
   try {
     await ctx.fade?.(false);
     await walkStations(ctx, {
-      stations: P.stations, marks, counter: '찾아간 곳',
-      async act(st) { hook.pressed += 1; await ACT[st.id]({ ctx, a, g, st, say, hook, set }); hook.used.push(st.id); },
+      stations: P.stations, marks, counter: '읽은 시',
+      async act(st) { hook.pressed += 1; await readPoem(ctx, a, st, hook); hook.used.push(st.id); world.camMode = 'follow'; },
     });
+    await dialogue.say(P.sum); dialogue.close();
   } finally {
     await ctx.fade?.(true);
     hud.setCounter(null);

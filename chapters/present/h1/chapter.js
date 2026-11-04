@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { makeKitChapter } from '../../kit/chapter.js';
 import { buildArena, labelSprite, toast } from '../../kit/play.js';
 import { holdFlag, cheerFlag, BUILD } from '../../kit/town.js';
+import { playAction } from '../../../core/motion.js';
 import { signMaterial } from '../../kit/buildings.js';
 import { gateLeaves, nameBoard } from '../../kit/gate.js';
 import { walkInAndTalk, anyOrderTalk } from '../../kit/talk.js';
@@ -177,7 +178,7 @@ export async function nameplatePlay(ctx, scene, easy) {
       await wait(world, 0.4, k => np.scale.setScalar(0.01 + 0.99 * ease(k)));
       audio.play('correct'); hook.hung.push(h.data.name);
       toast(ctx, `○ ${h.data.name}`, 'good');
-      await wait(world, 0.7, k => { h.owner.rotation.x = 0.35 * Math.sin(k * Math.PI); }); // 고맙다고 고개 숙여 인사
+      await playAction(h.owner, { dur: 1.1, fadeIn: 0.15, fadeOut: 0.2, pose: t => { const u = Math.sin(Math.min(1, t / 1.1) * Math.PI); return { arms: [[-Math.PI * 0.9 * u, 0, 0], [-Math.PI * 0.9 * u, 0, 0]] }; }, name: 'cheer' }); // 만세 한 번(2026-11-04 선생님: 옆을 보고 선 사람을 x로 기울이면 몸이 좌우로 흔들렸다)
       world.camMode = 'follow';
     }
     hud.setCounter(`${P.counter} ${houses.length}/${houses.length}`);
