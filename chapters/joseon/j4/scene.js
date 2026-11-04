@@ -15,10 +15,12 @@ export const STRAIT_Z = -78;       // 견내량 입구
 // 적 배가 기다리는 곳: 견내량 안쪽 깊이(미끼 배가 돌아설 때 넉넉히 떨어져 있게)
 export const ENEMY_WAIT = STRAIT_Z - 32;
 export const WING = { x: 0, z: -44, r: 15 }; // 학익진 가운데와 반지름
-const SLOT = 4; // 학익진에서 학생 배가 들어갈 빈자리 번호(동쪽 날개 가운데)
+const SLOT = 3; // 학익진에서 학생 배가 들어갈 빈자리 번호(동쪽 날개 안쪽)
 // 학익진 배 자리(D-30 I-02): 배 사이를 넓게(이웃 배와 7 이상) 둥글게 휜 한 줄. 가운데 빈 곳은 거북선이 나서는 길
-const WING_X = [-18.5, -11.5, -4, 4, 11.5, 18.5], WING_R = 20;
+const WING_X = [-26, -17.5, -9, 9, 17.5, 26], WING_R = 29; // D-67: 옆구리를 돌린 배(길이 6.2)끼리, 가운데 거북선 길과 겹치지 않게 넓힌다
 
+const TURTLE_S = 1.45; // D-67: 거북선을 그 위상에 맞게 판옥선보다 크고 웅장하게
+export const FIRE_AT = 0.35; // 적이 이만큼(0~1)만 다가오면 멀리서 포를 쏜다(D-67: 가까이 붙이지 않는다)
 function seeded(s) { return () => (s = (s * 16807) % 2147483647) / 2147483647; }
 
 // 배 모형은 ../ships.js (판옥선·거북선·일본 배)
@@ -36,11 +38,11 @@ export function buildJ4Scene(world) {
   const sea = makeSea({ w: 500, d: 500, seg: 90, color: 0x3f7d9a, shininess: 60, opacity: 0.94 }); // 출렁이는 바다(D-62)
   sea.position.y = -0.4; L.add(sea);
   {
-    const g = new THREE.PlaneGeometry(120, 40, 40, 14); g.rotateX(-Math.PI / 2); g.translate(0, 0, 22);
+    const g = new THREE.PlaneGeometry(120, 40, 40, 40); g.rotateX(-Math.PI / 2); g.translate(0, 0, 22); // 앞뒤 1m 칸: 물가 비탈을 가파르게 그릴 수 있게
     const p = g.attributes.position, cols = [], c = new THREE.Color();
     for (let i = 0; i < p.count; i++) {
       const z = p.getZ(i);
-      const h = z < 6 ? -0.8 + (z - 2) * 0.2 : Math.max(0, z - 20) * 0.25; // 포구 땅은 높이 0(사람·건물이 서는 높이, 2026-10-31 자동 점검: 0.1m 높아 발이 묻혀 보였다)
+      const h = z < 6 ? (z < 4.5 ? -1.3 : -1.3 + (z - 4.5) * 0.87) : Math.max(0, z - 20) * 0.25; // D-67: 물가를 가파르게(완만하면 물결이 오르내릴 때마다 바다와 땅의 경계가 크게 오갔다) // 포구 땅은 높이 0(사람·건물이 서는 높이, 2026-10-31 자동 점검: 0.1m 높아 발이 묻혀 보였다)
       p.setY(i, Math.min(h, 4));
       const j = rand() * 0.04;
       if (z < 7.5) c.setRGB(0.66 + j, 0.6 + j, 0.46 + j); else c.setRGB(0.34 + j, 0.47 + j, 0.29 + j);
@@ -53,7 +55,7 @@ export function buildJ4Scene(world) {
   // 부두(나무 다리)와 배들
   const put = (fn, x, y, z, ry = 0, p = {}) => { const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = ry; L.add(g); fn(g, p); return g; };
   put(pier, 6, -0.5, 1.5, Math.PI / 2, { w: 9, d: 3 }); // 기둥 위 나무 부두
-  const turtle = geobukseon(); turtle.position.set(10.5, -0.2, 0); L.add(turtle);
+  const turtle = geobukseon(); turtle.position.set(10.5, -0.2, 0); turtle.scale.setScalar(TURTLE_S); L.add(turtle);
   for (const [x, z] of [[-4, -1], [-12, 0], [1, -3]]) { const s = panokseon(); s.position.set(x, -0.2, z); s.rotation.y = x * 0.02; L.add(s); }
   // 포구 마을: 지휘소, 초가, 그물 말리기
   put(hanok, -10, 0, 11, Math.PI, { tile: true }).scale.setScalar(1.15); // 지휘소(기와집)
@@ -80,7 +82,7 @@ export function buildJ4Scene(world) {
   for (let i = 0; i < 8; i++) { const s = japaneseShip(); s.position.set(((i % 4) - 1.5) * 3.3, -0.2, Math.floor(i / 4) * 7); enemy.add(s); }
   const fleet = new THREE.Group(); L.add(fleet); // 학익진으로 펼치는 우리 배 6척(가운데는 거북선)
   const wingSpots = WING_X.map(x => { const a = Math.asin(x / WING_R); return [WING.x + x, WING.z + Math.cos(a) * WING_R * 0.55 + 6, a]; });
-  wingSpots.forEach(([x, z, a], i) => { if (i === SLOT) return; const s = panokseon(); s.position.set(x, -0.2, z); s.rotation.y = a * 0.6; s.userData.spot = [x, z]; fleet.add(s); }); // 뱃머리가 북쪽(적)을 보며 안쪽으로 조금 돈다. 한 자리(SLOT)는 학생 배가 들어갈 자리
+  wingSpots.forEach(([x, z, a], i) => { if (i === SLOT) return; const s = panokseon(); s.position.set(x, -0.2, z); s.rotation.y = a * 0.35 - Math.sign(x) * Math.PI / 2; s.userData.spot = [x, z]; s.userData.ry = s.rotation.y; fleet.add(s); }); // D-67: 학익진 때부터 옆구리(포혈)를 적(북쪽)에 돌리고 뱃머리는 가운데로. 한 자리(SLOT)는 학생 배가 들어갈 자리
   // 학생이 모는 판옥선(D-25): 바다 놀이 동안만 보이고 학생 자리를 따라간다. 노를 젓는다
   const myShip = panokseon(); myShip.visible = false; L.add(myShip);
   // 대장선(D-30 C-05): 꾀어내기가 끝나면 바다에 나타나고, 학생이 배를 몰아 다가가 이순신과 이야기해야 학익진이 시작된다
@@ -89,9 +91,10 @@ export function buildJ4Scene(world) {
   const bigFlag = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 2).translate(0.8, 0, 0), new THREE.MeshLambertMaterial({ color: 0xd9a441, side: THREE.DoubleSide }));
   bigFlag.position.set(0, 6.2, 0.3); flagship.add(bigFlag);
   // 학익진 앞에 선 거북선 (S43): 날개 가운데, 우리 배보다 조금 앞(북쪽)
-  const leadTurtle = geobukseon(); leadTurtle.position.set(WING.x, -0.2, WING.z + WING.r * 0.6 + 5); L.add(leadTurtle);
+  const leadTurtle = geobukseon(); leadTurtle.scale.setScalar(TURTLE_S); leadTurtle.position.set(WING.x, -0.2, WING.z + WING.r * 0.6 + 5); L.add(leadTurtle);
   const goalRing = new THREE.Mesh(new THREE.RingGeometry(4, 5, 32), new THREE.MeshBasicMaterial({ color: 0xd9a441, transparent: true, opacity: 0.8, side: THREE.DoubleSide }));
   goalRing.rotation.x = -Math.PI / 2; goalRing.visible = false; L.add(goalRing);
+  { const beam = new THREE.Mesh(new THREE.CylinderGeometry(4.2, 4.2, 18, 24, 1, true), new THREE.MeshBasicMaterial({ color: 0xffd27a, transparent: true, opacity: 0.22, side: THREE.DoubleSide, depthWrite: false })); beam.rotation.x = Math.PI / 2; beam.position.z = 9; beam.name = 'goalBeam'; goalRing.add(beam); } // D-67: 멀리서도 찾게 빛기둥
 
   // 상태: 'harbor'(탐험), 'lure'(미끼 배 출발), 'wing'(학익진), 'won'(끝)
   const setStage = s => {
@@ -127,16 +130,34 @@ export function buildJ4Scene(world) {
   const BURN = 1.0, SINK = 3.4, DEPTH = 6.8; // 불이 붙은 뒤 가라앉기 시작할 때까지, 가라앉는 시간, 잠기는 깊이(돛대 끝까지 물 아래)
   const playBattle = (audio = null) => new Promise(resolve => {
     const shooters = [...fleet.children, leadTurtle], targets = [...enemy.children];
-    const shots = targets.map((tg, i) => ({ at: 0.4 + i * 0.5, from: shooters[i % shooters.length], to: tg, state: 'wait' }));
+    // D-67: 적을 멀리 둔 채 포격으로 친다. 첫 포탄 몇 발은 앞에 떨어져 물기둥만 솟고(빗나감), 다음 포탄이 맞힌다.
+    // 판옥선은 적 쪽 옆구리 포혈에서, 거북선은 용머리에서 쏜다. 쏠 때마다 포구에 불꽃이 번쩍이고 흰 연기가 퍼지며 배가 반동으로 흔들린다
+    const shots = [];
+    targets.forEach((tg, i) => {
+      const from = shooters[i % shooters.length];
+      if (i % 2 === 0) shots.push({ at: 0.3 + i * 0.55, from, to: tg, miss: true, state: 'wait' });
+      shots.push({ at: 0.55 + i * 0.55, from, to: tg, state: 'wait' });
+    });
     const effects = [];
-    const wp = new THREE.Vector3(), tp = new THREE.Vector3();
+    const wp = new THREE.Vector3(), tp = new THREE.Vector3(), sideA = new THREE.Vector3(), sideB = new THREE.Vector3();
+    const muzzle = (from, target) => {
+      if (from === leadTurtle) return from.localToWorld(new THREE.Vector3(0, 2.25, -4.6)); // 용머리 입
+      from.localToWorld(sideA.set(1.7, 1.65, 0)); from.localToWorld(sideB.set(-1.7, 1.65, 0));
+      return (sideA.distanceTo(target) < sideB.distanceTo(target) ? sideA : sideB).clone(); // 적 쪽 옆구리 포혈
+    };
+    const flashMat = new THREE.MeshBasicMaterial({ color: 0xffb040, transparent: true, opacity: 1, depthWrite: false });
     let t = 0;
     const off = world.onUpdate(dt => {
       t += dt;
       for (const sh of shots) {
         if (sh.state === 'wait' && t >= sh.at) {
-          sh.from.getWorldPosition(wp); wp.y += 2.2; sh.to.getWorldPosition(tp); tp.y += 1;
-          effects.push({ m: puff(wp, 0.9), k: 0, life: 1.2, grow: 2.2 }); // 포구 연기
+          sh.to.getWorldPosition(tp); tp.y += 1;
+          if (sh.miss) { const d = wp.copy(tp).sub(sh.from.getWorldPosition(sideA)).setY(0).normalize(); tp.addScaledVector(d, -5).setY(-0.2); } // 적 앞 물에 떨어진다
+          wp.copy(muzzle(sh.from, tp));
+          const fl = new THREE.Mesh(puffGeo, flashMat.clone()); fl.position.copy(wp); fl.scale.setScalar(0.7); fx.add(fl); effects.push({ m: fl, k: 0, life: 0.22, grow: 1.5, op: 1 }); // 포구 불꽃
+          effects.push({ m: puff(wp, 0.9), k: 0, life: 1.6, grow: 2.6 }); // 포구 연기
+          sh.from.userData.kick = 1; // 반동
+          api.battleLog?.push({ from: sh.from, at: wp.clone(), flash: true, miss: !!sh.miss });
           const ball = new THREE.Mesh(ballGeo, ballMat); ball.position.copy(wp); fx.add(ball);
           sh.ball = ball; sh.a = wp.clone(); sh.b = tp.clone(); sh.k = 0; sh.state = 'fly';
           audio?.play('whoosh');
@@ -144,8 +165,12 @@ export function buildJ4Scene(world) {
         if (sh.state === 'fly') {
           sh.k = Math.min(1, sh.k + dt / 0.9);
           sh.ball.position.lerpVectors(sh.a, sh.b, sh.k); sh.ball.position.y += Math.sin(sh.k * Math.PI) * 6;
-          if (sh.k >= 1) {
+          if (sh.k >= 1 && sh.miss) { // 빗나간 포탄: 높은 물기둥만
+            fx.remove(sh.ball); sh.state = 'sunk';
+            const s = puff(sh.b, 1.3, 0xf2f6f8); s.scale.set(1, 4.5, 1); effects.push({ m: s, k: 0, life: 1.1, grow: 1.3 });
+          } else if (sh.k >= 1) {
             fx.remove(sh.ball); sh.state = 'hit'; sh.hitT = 0; sh.smokeT = 0;
+            for (let q = 0; q < 6; q++) { const piece = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.12, 0.25), new THREE.MeshLambertMaterial({ color: 0x5a3f2a, transparent: true })); piece.position.copy(sh.b); fx.add(piece); effects.push({ m: piece, k: 0, life: 1.3, grow: 0, op: 1, fly: new THREE.Vector3((Math.random() - 0.5) * 6, 4 + Math.random() * 3, (Math.random() - 0.5) * 6) }); } // 부서진 나뭇조각이 튄다
             const s = puff(sh.b, 1.6, 0xf2f6f8); s.scale.set(1.3, 3.8, 1.3); effects.push({ m: s, k: 0, life: 1, grow: 1.4 }); // 물보라
             sh.to.userData.smoke.visible = true;
             if (world.quality?.particles !== 0) { // 맞은 배에 불이 붙는다: 누각 지붕 위와 앞 갑판 두 곳
@@ -176,9 +201,11 @@ export function buildJ4Scene(world) {
         if (!e.base) e.base = e.m.scale.clone();
         e.m.scale.copy(e.base).multiplyScalar(1 + Math.min(1, e.k) * e.grow * 0.5); e.m.material.opacity = Math.max(0, (e.op ?? 0.85) * (1 - e.k)); // 연기는 조금씩 커지며 옅어진다
         if (e.rise) e.m.position.y += dt * e.rise;
+        if (e.fly) { e.fly.y -= 9.8 * dt; e.m.position.addScaledVector(e.fly, dt); e.m.rotation.x += dt * 8; }
         if (e.k >= 1 && e.m.parent) { fx.remove(e.m); e.m.material.dispose(); }
       }
-      if (shots.every(s => s.state === 'sunk') && effects.every(e => e.k >= 1)) { off(); resolve(shots.length); }
+      for (const sh2 of shooters) if (sh2.userData.kick > 0) { sh2.userData.kick = Math.max(0, sh2.userData.kick - dt * 3); sh2.rotation.z = Math.sin(sh2.userData.kick * Math.PI) * 0.04; } // 쏠 때 배가 살짝 흔들린다
+      if (shots.every(s => s.state === 'sunk') && effects.every(e => e.k >= 1)) { off(); shooters.forEach(s2 => { s2.rotation.z = 0; }); resolve(targets.length); }
     });
   });
 
@@ -221,15 +248,15 @@ export function buildJ4Scene(world) {
     enemy.children.forEach(e => { if (e.userData.smoke.visible) e.userData.smoke.children.forEach((p, i) => { p.position.y = 2.4 + i * 0.8 + Math.sin(t * 2 + i) * 0.2; }); });
   });
 
-  return {
-    start: [0, 6.5], introFrom: [0, 19], gate, turtle, leadTurtle, flagship, lure, enemy, fleet, goalRing, myShip, setStage, setLure, setChase, setAdvance, playBattle,
-    slot: { x: wingSpots[SLOT][0], z: wingSpots[SLOT][1] }, decoys: [], // 학익진 빈자리(D-30 I-02: 뒷줄의 틀린 자리 둘은 뺐다)
-    seaBounds: { x0: -22, x1: 22, z0: STRAIT_Z - 4, z1: -10 },
+  const api = {
+    start: [0, 6.5], introFrom: [0, 19], gate, turtle, leadTurtle, FIRE_AT, flagship, lure, enemy, fleet, goalRing, myShip, setStage, setLure, setChase, setAdvance, playBattle,
+    slot: { x: wingSpots[SLOT][0], z: wingSpots[SLOT][1], ry: wingSpots[SLOT][2] * 0.35 - Math.sign(wingSpots[SLOT][0]) * Math.PI / 2 }, decoys: [], // 학익진 빈자리(D-30 I-02: 뒷줄의 틀린 자리 둘은 뺐다)
+    seaBounds: { x0: -30, x1: 30, z0: STRAIT_Z - 4, z1: -10 }, // D-67: 넓힌 학익진 양 끝까지
     // 우리 배들이 한 줄로 오다가 학이 날개를 편 모양으로 펼쳐진다(seconds 동안)
     spreadFleet(seconds = 3) {
       const ships = fleet.children;
-      ships.forEach((sh, i) => { sh.userData.from = [-16, -14 - i * 3.5]; }); // 서쪽에서 한 줄로 오다가
-      return new Promise(resolve => { let k = 0; const off = world.onUpdate(dt => { k = Math.min(1, k + dt / seconds); const e = k * k * (3 - 2 * k); ships.forEach(sh => { const [fx, fz] = sh.userData.from, [tx, tz] = sh.userData.spot; sh.position.x = fx + (tx - fx) * e; sh.position.z = fz + (tz - fz) * e; }); if (k >= 1) { off(); resolve(); } }); });
+      ships.forEach(sh => { const [tx, tz] = sh.userData.spot; sh.userData.from = [tx * 0.45, tz + 16]; sh.rotation.y = 0; }); // D-67: 뒤(남쪽)에서 뱃머리를 앞으로 두고 나아가며 날개처럼 넓게 퍼진다
+      return new Promise(resolve => { let k = 0; const off = world.onUpdate(dt => { k = Math.min(1, k + dt / seconds); const e = k * k * (3 - 2 * k); ships.forEach(sh => { const [fx, fz] = sh.userData.from, [tx, tz] = sh.userData.spot; sh.position.x = fx + (tx - fx) * e; sh.position.z = fz + (tz - fz) * e; const turn = Math.max(0, (k - 0.6) / 0.4); sh.rotation.y = Math.atan2(-(tx - fx), -(tz - fz)) * (1 - turn) + sh.userData.ry * turn; }); if (k >= 1) { off(); resolve(); } }); }); // 나아가다가 자리에 닿을 즈음 옆으로 돈다
     },
     // 거북선이 날개 뒤에서 맨 앞으로 힘차게 나선다(S43)
     turtleCharge(seconds = 3.5) {
@@ -238,6 +265,7 @@ export function buildJ4Scene(world) {
     },
     // 바다 장면 카메라: 미끼 배 출발점부터 견내량 안쪽 적까지, 학익진 양 끝이 모두 보이게 맞춘다
     seaFit: { target: [0, 0, -54], dir: [0, 1, 0.6], margin: 0.78,
-      points: [[0, 0, -30], [0, 0, STRAIT_Z + 2], [-8, 0, ENEMY_WAIT], [8, 0, ENEMY_WAIT + 7], [WING.x - WING.r, 0, WING.z + 6], [WING.x + WING.r, 0, WING.z + 6], [0, 0, -40]] },
+      points: [[0, 0, -30], [0, 0, STRAIT_Z + 2], [-8, 0, ENEMY_WAIT], [8, 0, ENEMY_WAIT + 7], [WING.x - 27, 0, WING.z + 10], [WING.x + 27, 0, WING.z + 10], [0, 0, -40]] },
   };
+  return api;
 }

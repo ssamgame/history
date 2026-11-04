@@ -174,3 +174,69 @@ test('d67 조선2-10: 나무·한글 낱자를 흩어 놓은 자리 사이가 �
   let far = 0; for (const a of LETTER_SPOTS) for (const b of LETTER_SPOTS) far = Math.max(far, Math.hypot(a.x - b.x, a.z - b.z));
   ok(far < 15, `가장 먼 두 낱자 ${far.toFixed(1)}m`);
 });
+
+// 조선 4장(임진왜란과 한산도 대첩)
+async function j4Setup() {
+  const mod = await import('../chapters/joseon/j4/chapter.js'), script = (await import('../chapters/joseon/j4/script.js')).default;
+  const s = touchSetup(script.speakers); mod.default.buildScene(s.w, s.ctx);
+  return { mod, j4: mod.default, script, s, sc: mod.devScene() };
+}
+test('d67 조선4-1: 선조의 의주 피란 해설에 한반도 지도와 한양→의주 길이 보이고, 장면이 끝나면 치운다', async () => {
+  const { j4, s } = await j4Setup();
+  try {
+    const film = j4.introScene(s.ctx); film.shots[1].act();
+    const map = document.querySelector('.route-map'); ok(map, '지도');
+    ok(map.textContent.includes('한양') && map.textContent.includes('의주') && map.querySelector('.route'), '한양·의주와 피란길');
+    film.done(); ok(!document.querySelector('.route-map'), '치운다');
+  } finally { s.done(); }
+});
+test('d67 조선4-2·3·6: 거북선은 판옥선보다 크고, 견내량 적선은 유인 지점에서 멀며, 거북선이 앞설 때 판옥선과 겹치지 않는다', async () => {
+  const { mod, s, sc } = await j4Setup();
+  try {
+    s.w.level.updateMatrixWorld(true);
+    const len = o => { const b = new THREE.Box3().setFromObject(o); return Math.max(b.max.x - b.min.x, b.max.z - b.min.z); };
+    ok(len(sc.leadTurtle) > len(sc.fleet.children[0]) * 1.15, `거북선 ${len(sc.leadTurtle).toFixed(1)} / 판옥선 ${len(sc.fleet.children[0]).toFixed(1)}`);
+    ok(mod.LURE.mouth.z - (mod.STRAIT_Z - 28) >= 30, '유인 지점과 적선 사이 30m 이상');
+    sc.setStage('wing'); { const sp = sc.spreadFleet(0.05); for (let i = 0; i < 5; i++) s.w.step(0.05, { x: 0, z: 0 }); await sp; }
+    sc.leadTurtle.position.set(0, -0.2, -35); s.w.level.updateMatrixWorld(true);
+    const tb = new THREE.Box3().setFromObject(sc.leadTurtle);
+    for (const sh of sc.fleet.children) ok(!new THREE.Box3().setFromObject(sh).intersectsBox(tb), '거북선과 겹치지 않는다');
+    const ships = sc.fleet.children.map(sh => new THREE.Box3().setFromObject(sh));
+    for (let i = 0; i < ships.length; i++) for (let j = i + 1; j < ships.length; j++) ok(!ships[i].intersectsBox(ships[j]), `판옥선끼리 겹치지 않는다 ${i},${j}`);
+  } finally { s.done(); }
+});
+test('d67 조선4-5·7: 학익진은 뒤에서 앞으로 퍼지며 나아가고, 판옥선은 옆구리(포혈)를 적 쪽으로 돌린다', async () => {
+  const { s, sc } = await j4Setup();
+  try {
+    sc.setStage('wing');
+    const p = sc.spreadFleet(1); s.w.step(0.001, { x: 0, z: 0 });
+    const start = sc.fleet.children.map(sh => sh.position.clone());
+    for (let i = 0; i < 30; i++) s.w.step(0.05, { x: 0, z: 0 }); await p;
+    sc.fleet.children.forEach((sh, i) => {
+      const [tx, tz] = sh.userData.spot;
+      ok(start[i].z > tz + 8, `뒤(남쪽)에서 온다 ${start[i].z.toFixed(1)} → ${tz.toFixed(1)}`);
+      ok(Math.abs(start[i].x - tx) < Math.abs(start[i].z - tz), '옆으로 길게 미끄러지지 않는다');
+      ok(Math.abs(Math.sin(sh.rotation.y)) > 0.8, `옆구리를 적 쪽으로 ${sh.rotation.y.toFixed(2)}`);
+    });
+  } finally { s.done(); }
+});
+test('d67 조선4-4: 꾀어낸 뒤 넓은 바다 도착 지점에 빛기둥', async () => {
+  const { sc } = await j4Setup().then(r => (r.s.done(), r));
+  ok(sc.goalRing.getObjectByName('goalBeam'), '빛기둥');
+});
+test('d67 조선4-7·8: 적선은 멀리서 포격으로 가라앉고, 포를 쏠 때 불꽃이 번쩍이며 거북선은 용머리에서 쏜다', async () => {
+  const { s, sc } = await j4Setup();
+  try {
+    sc.setStage('wing'); { const sp = sc.spreadFleet(0.05); for (let i = 0; i < 3; i++) s.w.step(0.05, { x: 0, z: 0 }); await sp; }
+    sc.leadTurtle.position.set(0, -0.2, -35); sc.setAdvance(sc.FIRE_AT);
+    s.w.level.updateMatrixWorld(true);
+    const ours = [...sc.fleet.children, sc.leadTurtle].map(o => o.getWorldPosition(new THREE.Vector3())), theirs = sc.enemy.children.map(o => o.getWorldPosition(new THREE.Vector3()));
+    let near = 1e9; for (const a of ours) for (const b of theirs) near = Math.min(near, a.distanceTo(b));
+    ok(near > 15, `적선과 거리 ${near.toFixed(1)}m`);
+    const log = sc.battleLog = [];
+    let done = false; const run = sc.playBattle(null).then(() => { done = true; }); for (let i = 0; i < 900 && !done; i++) { s.w.step(0.05, { x: 0, z: 0 }); if (i % 10 === 0) await null; } // 약속이 풀릴 틈을 준다 ok(done, `포격이 끝난다 ${log.length}발, 남은 배 ${sc.enemy.children.filter(e => e.visible).length}`); await run;
+    ok(log.filter(e => e.flash).length >= sc.enemy.children.length, `포 불꽃 ${log.filter(e => e.flash).length}`);
+    const turtleShots = log.filter(e => e.from === sc.leadTurtle);
+    ok(turtleShots.length >= 1 && turtleShots.every(e => e.at.distanceTo(sc.leadTurtle.localToWorld(new THREE.Vector3(0, 2.25, -4.6))) < 1.2), '거북선은 용머리에서');
+  } finally { s.done(); }
+}, { timeout: 60000 });
