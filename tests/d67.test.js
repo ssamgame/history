@@ -564,16 +564,3 @@ test('d67 넓히기(플레이 점검): 길 오가는 사람은 장 도입 장면
     ok(t.walkers.every(w => w.visible), '끝나면 다시');
   } finally { s.done(); }
 });
-
-test('d67 플레이 점검: 교실(classroom)의 frontView는 어느 쪽으로 돌려 놓아도 공부하는 학생들 얼굴이 보이는 자리다', async () => {
-  const { classroom, facingShare } = await import('../chapters/kit/walk.js');
-  for (const ry of [0, Math.PI / 2, -Math.PI / 2]) {
-    const w = testWorld();
-    try {
-      const room = classroom(w.level, 4, -3); room.group.rotation.y = ry;
-      room.frontView(w);
-      w.step(1 / 20, { x: 0, z: 0 });
-      ok(facingShare(w, room.kids) >= 0.8, `돌림 ${ry.toFixed(2)}: ${facingShare(w, room.kids)}`);
-    } finally { w.dispose(); }
-  }
-});

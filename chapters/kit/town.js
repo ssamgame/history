@@ -264,7 +264,7 @@ export const BUILD = {
 // 부딪힘 자리: 둥근 것은 원 하나, 네모난 건물은 긴 쪽을 따라 작은 원을 줄지어 놓는다(앞마당까지 막지 않게)
 export function addFootprint(world, p, r) {
   const s = p.scale || 1;
-  if (typeof r === 'number') { world.addCollider({ x: p.x, z: p.z, r: r * s, ...(p.type === 'tree' ? { canopy: 1.8 * s } : {}) }); return; } // canopy: 잎 너비(따라가는 카메라가 잎에 가리지 않게)
+  if (typeof r === 'number') { world.addCollider({ x: p.x, z: p.z, r: r * s }); return; }
   if (r.parts) { // 여러 조각(성문의 양쪽 몸채 등): 조각마다 제자리에서 따로 막는다
     const c = Math.cos(p.ry || 0), sn = Math.sin(p.ry || 0);
     for (const q of r.parts) addFootprint(world, { ...p, x: p.x + q.dx * s * c, z: p.z - q.dx * s * sn }, { rect: q.rect });
@@ -351,7 +351,6 @@ export function buildTown(world, layout) {
       live.forEach(c => { c.userData.dynamic = true; g.add(c); });
       if (live.length) chats += chatter(world, live, { seed: chats + 1 }).pairs;
     }
-    if (p.type === 'gate') world.addCamBlock({ x: p.x, z: p.z, r: (BLD.GATE.R + 0.4) * (p.scale || 1) }); // 성문 지붕이 따라가는 카메라를 가리지 않게
     if (r && p.solid !== false) addFootprint(world, p, r);
     if (p.name) named[p.name] = g;
     if (p.type === 'hanok' && layout.dress !== false) dressHouse(world, L, p, layout);

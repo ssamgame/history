@@ -266,11 +266,6 @@ function gaitPose(S, g) {
       aim(S, S.bones(`upperarm_${s}`), new THREE.Vector3(KING_ARM.up[0] * sx, KING_ARM.up[1], KING_ARM.up[2]), gq);
       aim(S, S.bones(`forearm_${s}`), new THREE.Vector3(KING_ARM.fore[0] * sx, KING_ARM.fore[1], KING_ARM.fore[2]), gq);
     }
-  } else { // humble: 목·머리를 앞으로 조금 숙인다
-    for (const [b, a] of [['neck', 0.2], ['head', 0.25]]) {
-      const bone = S.bones(b); if (!S.mixed.has(bone)) S.mixed.set(bone, bone.quaternion.clone());
-      bone.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), a)); bone.updateMatrixWorld(true);
-    }
   }
 }
 export function updateBodies(dt) { for (const g of people) update(g, dt); }

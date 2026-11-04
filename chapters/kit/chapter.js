@@ -165,8 +165,8 @@ export function makeKitChapter(def) {
         if (part.after) part.after(ctx, scene);
         if (part.done) { await sayAll(dialogue, part.done); dialogue.close(); }
       }
-      placePlayer(world, def.spot || def.layout.start); // 끝 해설 전에 마을 자리로: 놀이 끝의 대화 카메라가 낯선 사람 얼굴을 크게 비춘 채 해설하던 것(2026-11-04 플레이 점검)
       await sayAll(dialogue, script.result); dialogue.close();
+      placePlayer(world, def.spot || def.layout.start);
       ctx.setGoal(script.goals[script.goals.length - 1]);
       return sumParts(results);
     },

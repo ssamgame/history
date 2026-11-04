@@ -192,17 +192,6 @@ test('k1 플레이 점검: 도입 바닷가와 망루에서 보는 배는 뱃머
   } finally { cleanups.forEach(f => f()); w.dispose(); }
 });
 
-test('k1 플레이 점검: 연무당 조약 장면은 두 나라 대표의 얼굴이 카메라 쪽으로 보인다(기둥 뒤 옆얼굴만 보이던 것)', async () => {
-  const { touchBot } = await import('./bot.js');
-  const s = touchSetup(script.speakers), bot = touchBot(s, { answers: new Set() });
-  try {
-    k1.buildScene(s.w, s.ctx);
-    await k1.stories.treaty(s.ctx);
-    const h = s.ctx.testHooks.treaty;
-    ok(h.repFacing >= 0.75, `대표 얼굴 ${h.repFacing}`);
-  } finally { bot.stop(); s.done(); }
-}, { timeout: 120000 });
-
 test('k1 플레이 점검: 해안 순찰에서 말하는 선비(망루)·관리(포대)가 그 자리에 서 있다(목소리만 들리던 것)', () => {
   const r = k1.parts[1].route;
   eq(r[1].look, 'scholar'); eq(r[2].look, 'joseonOfficial');

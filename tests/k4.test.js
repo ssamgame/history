@@ -118,15 +118,3 @@ test('k4 D-33: 환구단 즉위식 — 사람들이 지켜보고, 고종이 제�
     ok(s.w.player.visible, '학생이 보인다');
   } finally { bot.stop(); s.done(); }
 }, { timeout: 60000 });
-
-test('k4 플레이 점검: 만민 공동회 연설을 듣고 손을 드는 사람들의 얼굴이 보인다(D-45, 뒷모습만 보이던 것)', async () => {
-  const { touchSetup, touchBot } = await import('./bot.js');
-  const s = touchSetup(script.speakers), bot = touchBot(s, { answers: new Set() });
-  try {
-    k4.buildScene(s.w, s.ctx);
-    await k4.parts[1].play(s.ctx);
-    const h = s.ctx.testHooks.speech;
-    ok(h.cheered, '손을 든다');
-    ok(h.facing >= 0.8, `얼굴이 보인다 ${h.facing}`);
-  } finally { bot.stop(); s.done(); }
-}, { timeout: 120000 });

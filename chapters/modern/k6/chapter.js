@@ -7,7 +7,7 @@
 import * as THREE from 'three';
 import { makeKitChapter } from '../../kit/chapter.js';
 import { buildArena, labelSprite } from '../../kit/play.js';
-import { wait, person, ease, face, stationMarks, walkStations, classroom, meet, minigameWithMeet, facingShare } from '../../kit/walk.js';
+import { wait, person, ease, face, stationMarks, walkStations, classroom, meet, minigameWithMeet } from '../../kit/walk.js';
 import { BUILD } from '../../kit/town.js';
 import { gateLeaves, nameBoard } from '../../kit/gate.js';
 import { walkInAndTalk, anyOrderTalk } from '../../kit/talk.js';
@@ -110,8 +110,7 @@ export async function newsScene(ctx) {
   const closers = SHOPS.map(([x, z]) => shutters(g, x, z - 2.05)); // 좌판 앞
   const merchant = person(g, 'commoner', SHOPS[1][0] - 3.3, SHOPS[1][1] - 2.6, Math.PI); // 덧문이 다 보이게 가게 옆에 선다
   try {
-    world.setFixedCamera([R.x + 1.2, 3.3, R.z - 1.5], [R.x - 0.4, 1.2, R.z + 2.6]); // 신문 읽는 선비 곁에서 모여든 사람들의 얼굴을(D-45, 2026-11-04 플레이 점검: 뒷모습만 보이던 것)
-    hook.facing = facingShare(world, crowd);
+    world.setFixedCamera([R.x + 3.2, 3.0, R.z + 6.2], [R.x - 0.3, 1.4, R.z - 0.6]); // 신문을 둘러싼 사람들 너머로 신문사
     await ctx.fade?.(false);
     await wait(world, 0.6);
     await dialogue.say(L[0]); await dialogue.say(L[1]);
@@ -175,10 +174,10 @@ const ACT = {
     const room = classroom(g, 3, -4), O = a.at(3, -4);
     placePlayer(world, [O.x + 2.6, O.z + 3.6], Math.PI);
     hook.classroom = room.kids.length;
-    const view = () => world.setFixedCamera([O.x + 3.2, 5.4, O.z - 4.2], [O.x - 0.4, 0.9, O.z + 1.6]); // 칠판 쪽 위에서 공부하는 학생들 얼굴(2026-11-04 플레이 점검: 뒤통수만 보이던 것)
+    const view = () => world.setFixedCamera([O.x - 1.2, 5.4, O.z + 7.5], [O.x, 1.3, O.z - 2.2]); // 학생들 머리 너머로 선생님과 칠판
     view();
     await ctx.fade?.(false);
-    await say(st.lines[0]); // 대화 카메라로 바꾸지 않는다(학생 자리에서는 앞줄 뒤통수가 선생님을 가림, 2026-11-04 플레이 점검)
+    await say(st.lines[0], room.teacher);
     view();
     await say(st.lines[1]);
     ctx.dialogue.close();

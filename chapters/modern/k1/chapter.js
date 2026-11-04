@@ -215,7 +215,7 @@ function introScene(ctx) {
         act: () => { if (near) near.visible = false; run(u => { // 대원군이 축대 위를 옆에서 걸어와 왕 곁에 서서 마을 쪽을 본다(D-68: 관아 문·벽을 지나 나타나던 것 고침)
           const k = Math.min(1, u / 2.4); regent.position.set(-6.6 + 2.7 * k, T, -4.9); regent.rotation.y = k < 1 ? Math.PI / 2 : 0;
         }); } },
-      { cam: [1.8, 2.6, -8.4], look: [-5, 1.5, -30], to: { cam: [1.6, 2.4, -9.4], look: [-6, 1.5, -32] }, // 관아 뒤 담 사이 바닷가(오른쪽 끝에 포구 배가 반쯤 걸리지 않게 조금 왼쪽을 본다)
+      { cam: [1.8, 2.6, -8.4], look: [-1.5, 1.5, -30], to: { cam: [1.6, 2.4, -9.4], look: [-2.5, 1.5, -32] }, // 관아 뒤 담 사이 바닷가
         act: () => {
           regent.position.set(1.2, 0, -12.6); regent.rotation.y = Math.PI; king.visible = false; if (near) near.visible = true; ship.position.set(-16, 0.3, -36); ship.rotation.y = Math.PI / 2;
           run(u => { // 배가 다가오다 뱃머리를 돌려 먼바다로 돌아가고, 대원군은 바다를 등지고 돌아선다

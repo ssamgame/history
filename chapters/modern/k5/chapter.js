@@ -247,10 +247,10 @@ const ACT = {
     const seat = a.at(room.seat[0], room.seat[1] + 1);
     placePlayer(world, [seat.x, seat.z], Math.PI);
     hook.classroom = room.kids.length;
-    world.setFixedCamera([O.x + 3.6, 5.6, O.z - 4.6], [O.x - 0.4, 0.9, O.z + 2.2]); // 칠판 쪽 위에서 내려다보며: 공부하는 학생들 얼굴과 선생님(2026-11-04 플레이 점검: 뒤통수만 보이던 것)
+    world.setFixedCamera([O.x - 1.2, 5.6, O.z + 8], [O.x, 1.3, O.z - 2.6]); // 학생들 머리 너머로 선생님과 칠판이 보이게
     await ctx.fade?.(false);
-    await say(st.lines[0]); // 대화 카메라로 바꾸지 않는다: 학생 자리에서 보면 앞줄 뒤통수가 선생님을 가렸다(2026-11-04 플레이 점검)
-    world.setFixedCamera([O.x + 3.6, 5.6, O.z - 4.6], [O.x - 0.4, 0.9, O.z + 2.2]); // 칠판 쪽 위에서 내려다보며: 공부하는 학생들 얼굴과 선생님(2026-11-04 플레이 점검: 뒤통수만 보이던 것)
+    await say(st.lines[0], room.teacher);
+    world.setFixedCamera([O.x - 1.2, 5.6, O.z + 8], [O.x, 1.3, O.z - 2.6]); // 학생들 머리 너머로 선생님과 칠판이 보이게
     await say(st.lines[1]);
     ctx.dialogue.close();
     await ctx.fade?.(true);
