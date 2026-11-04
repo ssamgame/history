@@ -67,9 +67,13 @@ export function angbuilgu() {
 }
 
 // 자격루: 돌 단 위에 크기가 다른 물그릇 셋(파수호)을 계단처럼, 긴 물통 둘(수수호), 그 옆 나무 상자 위에 시각을 알리는 인형 셋과 종·북·징.
+// D-67(2026-11-04 선생님 그림): 파수호에서 흘러내린 물이 수수호에 들어 차면 살대가 떠올라 쇠구슬을 밀고, 쇠구슬이 비탈을 굴러 동판을 치면
+// 그 힘으로 나무 인형 셋이 채를 휘둘러 종·북·징을 친다. 장면용 부품: tanks(수수호 겉), waters(수수호 속 물), potWater(물그릇 물), plate(동판), mallets·instruments, swing(i, k)
 export function jagyeongnu() {
   const g = new THREE.Group();
   const bronze = 0x6b5530;
+  const potWater = [];
+  const wm = () => new THREE.MeshLambertMaterial({ color: 0x5a9ac0, transparent: true, opacity: 0.9 });
   for (let i = 0; i < 3; i++) {
     const h = 2.4 - i * 0.7;
     add(g, box(1.5, h, 1.5), 0xb3ada2, -3 + i * 1.5, h / 2, 0, 'stone');
@@ -77,33 +81,45 @@ export function jagyeongnu() {
     const pot = add(g, new THREE.CylinderGeometry(r, r * 0.75, r * 1.2, 16), bronze, -3 + i * 1.5, h + r * 0.6, 0);
     add(g, new THREE.TorusGeometry(r, 0.04, 6, 20), 0x9a7638, -3 + i * 1.5, h + r * 1.2, 0).rotation.x = Math.PI / 2;
     pot.name = `파수호${i + 1}`;
+    const w = new THREE.Mesh(new THREE.CircleGeometry(r * 0.93, 16).rotateX(-Math.PI / 2), wm()); w.position.set(-3 + i * 1.5, h + 0.05, 0); w.visible = false; w.userData.span = [h + 0.05, h + r * 1.1]; g.add(w); potWater.push(w); // 물그릇에 고이는 물(윗면)
   }
+  const tanks = [], waters = [];
   for (const dz of [-0.4, 0.4]) {
-    add(g, new THREE.CylinderGeometry(0.28, 0.28, 2.6, 14), bronze, 1.3, 1.3, dz);
+    tanks.push(add(g, new THREE.CylinderGeometry(0.28, 0.28, 2.6, 14), bronze, 1.3, 1.3, dz));
     for (const y of [0.5, 1.3, 2.1]) add(g, new THREE.TorusGeometry(0.29, 0.03, 6, 16), 0x9a7638, 1.3, y, dz).rotation.x = Math.PI / 2;
+    const w = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 1, 14), wm()); w.position.set(1.3, 0.02, dz); w.scale.y = 0.001; w.visible = false; g.add(w); waters.push(w); // 수수호 속 물(안쪽에서 차오른다)
   }
-  // 시각을 알리는 장치: 3단 나무 상자, 위에 인형 셋
+  // 시각을 알리는 장치: 3단 나무 상자, 위에 인형 셋. 인형마다 채를 쥔 팔이 있고, 그 앞(뒤쪽 -z)에 종·북·징
   add(g, box(2, 2.8, 1.4), 0x8a5a3a, 3.4, 1.4, 0, 'wood');
   for (let k = 0; k < 3; k++) add(g, box(1.9, 0.06, 1.42), 0x3a2c20, 3.4, 0.9 + k * 0.9, 0.0, 'wood');
-  const puppets = [];
+  const puppets = [], mallets = [], instruments = [];
   for (let k = 0; k < 3; k++) {
     const p = new THREE.Group(); p.position.set(2.75 + k * 0.65, 2.8, 0.2); g.add(p);
     add(p, box(0.26, 0.5, 0.22), [0x2f6b5e, 0xa8392b, 0x2c4a7a][k], 0, 0.25, 0, 'cloth');
     add(p, new THREE.SphereGeometry(0.13, 8, 6), 0xf0c9a2, 0, 0.62, 0);
+    const arm = new THREE.Group(); arm.position.set(0.15, 0.45, 0); p.add(arm);
+    add(arm, new THREE.CylinderGeometry(0.02, 0.02, 0.45, 5), 0x5a3f2a, 0, -0.22, 0, 'wood'); // 채 자루
+    const tip = add(arm, new THREE.SphereGeometry(0.05, 6, 5), 0x3a2c20, 0, -0.45, 0, 'wood'); // 채 머리
+    arm.userData.tip = tip; mallets.push(arm);
     puppets.push(p);
   }
-  add(g, new THREE.CylinderGeometry(0.2, 0.28, 0.42, 12), 0x8a6a3a, 2.75, 3.6, -0.3);               // 종
-  add(g, new THREE.CylinderGeometry(0.3, 0.3, 0.3, 14), 0xa8392b, 3.4, 3.6, -0.3).rotation.x = Math.PI / 2; // 북
-  add(g, new THREE.CylinderGeometry(0.28, 0.28, 0.05, 16), 0x9a7638, 4.05, 3.6, -0.3).rotation.x = Math.PI / 2; // 징
-  // 물이 차면 떠오르는 잣대(물통마다 하나, 처음엔 물통 안에 잠겨 있다), 구슬이 굴러 내려가는 비탈 홈, 구슬(D-30 S-03 장면)
+  instruments.push(add(g, new THREE.CylinderGeometry(0.13, 0.2, 0.32, 12), 0x8a6a3a, 2.9, 3.25, -0.4));                      // 종
+  const drum = add(g, new THREE.CylinderGeometry(0.24, 0.24, 0.22, 14), 0xa8392b, 3.55, 3.25, -0.42); drum.rotation.x = Math.PI / 2; instruments.push(drum); // 북
+  const gong = add(g, new THREE.CylinderGeometry(0.22, 0.22, 0.04, 16), 0x9a7638, 4.2, 3.25, -0.32); gong.rotation.x = Math.PI / 2; instruments.push(gong); // 징
+  for (const [x, z] of [[2.9, -0.4], [3.55, -0.42], [4.2, -0.32]]) add(g, box(0.05, 0.5, 0.05), 0x3a2c20, x, 3.05, z - 0.12, 'wood'); // 악기를 건 나무 틀
+  const swing = (i, k) => { mallets[i].rotation.x = -0.3 + (Math.PI / 2 + 0.3) * k; }; // 0: 쳐들어 쉼, 1: 악기를 친다
+  mallets.forEach((_, i) => swing(i, 0));
+  // 물이 차면 떠오르는 살대(물통마다 하나, 처음엔 물통 안에 잠겨 있다), 구슬이 굴러 내려가는 비탈 홈, 구슬, 비탈 끝의 동판
   const rods = [-0.4, 0.4].map(dz => { const r = add(g, new THREE.CylinderGeometry(0.035, 0.035, 1.2, 6), 0xd8c9a0, 1.3, 2.0, dz); r.userData.y0 = 2.0; return r; });
-  add(g, box(0.55, 0.16, 0.3), 0x3a2c20, 1.3, 2.69, 0, 'wood'); // 두 물통 위를 잇는 나무 판(잣대가 밀어 올린다)
-  const chute = { from: new THREE.Vector3(1.6, 2.86, 0.18), to: new THREE.Vector3(2.45, 2.35, 0.18) };
+  add(g, box(0.55, 0.16, 0.3), 0x3a2c20, 1.3, 2.69, 0, 'wood'); // 두 물통 위를 잇는 나무 판(살대가 밀어 올린다)
+  const chute = { from: new THREE.Vector3(1.6, 2.86, 0.18), to: new THREE.Vector3(2.38, 2.3, 0.18) };
   const ch = add(g, box(chute.from.distanceTo(chute.to) + 0.2, 0.05, 0.22), 0x6b4a32, (chute.from.x + chute.to.x) / 2, (chute.from.y + chute.to.y) / 2 - 0.13, 0.18, 'wood');
   ch.rotation.z = Math.atan2(chute.to.y - chute.from.y, chute.to.x - chute.from.x);
   const ball = add(g, new THREE.SphereGeometry(0.11, 12, 8), 0x4a4a48, chute.from.x, chute.from.y, chute.from.z);
+  const plate = new THREE.Group(); plate.position.set(2.4, 2.3, 0.18); g.add(plate); // 동판: 구슬이 치면 한쪽이 눌려 기운다
+  add(plate, box(0.04, 0.3, 0.26), 0x9a7638, 0, -0.12, 0);
   add(g, box(1.1, 0.12, 0.16), bronze, 0.75, 0.25, 0); // 아래 물그릇에서 물통으로 물이 드는 관
-  g.userData.puppets = puppets; g.userData.rods = rods; g.userData.ball = ball; g.userData.chute = chute;
+  Object.assign(g.userData, { puppets, rods, ball, chute, tanks, waters, potWater, plate, mallets, instruments, swing });
   return g;
 }
 

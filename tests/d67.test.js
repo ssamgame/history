@@ -93,3 +93,50 @@ test('d67: 세로 깃폭 글자는 판 안에 모두 들어갈 만큼 크게(「
   ok(size >= 34 && size <= w * 0.8, `글자 크기 ${size}px (판 너비 ${w})`);
   eq(verticalFont('상점').size, 40, '짧은 글은 예전 크기');
 });
+
+// 조선 3장(시간과 비를 재다)
+async function j3Setup() {
+  const j3 = (await import('../chapters/joseon/j3/chapter.js')).default, script = (await import('../chapters/joseon/j3/script.js')).default;
+  const s = touchSetup(script.speakers); const sc = j3.buildScene(s.w, s.ctx); s.w.level.updateMatrixWorld(true);
+  return { j3, script, s, sc };
+}
+test('d67 조선3-1·5: 앙부일구는 백성 눈높이(그릇 테두리 1.2~1.8m)라 들여다볼 수 있고, 문 앞에서 화면을 덮지 않는다', async () => {
+  const { s, sc } = await j3Setup();
+  try {
+    const rim = sc.dial.localToWorld(new THREE.Vector3(0, 2.25, 0)).y;
+    ok(rim > 1.2 && rim < 1.8, `테두리 높이 ${rim.toFixed(2)}m`);
+    const box = new THREE.Box3().setFromObject(sc.dial);
+    ok(box.min.y > -0.05, `받침이 땅에 묻히지 않는다 ${box.min.y.toFixed(2)}`);
+  } finally { s.done(); }
+});
+test('d67 조선3-2: 앙부일구 동물 그림은 흰 바탕 없이 그릇에 새긴 빛깔로', async () => {
+  const { s, sc } = await j3Setup();
+  try {
+    const tags = []; sc.dial.traverse(o => { if (o.isSprite) tags.push(o); });
+    ok(tags.length >= 7, `그림 ${tags.length}`);
+    const cv = tags[0].material.map.image, px = cv.getContext('2d').getImageData(4, 4, 1, 1).data;
+    eq(px[3], 0, '모서리는 비친다(바탕 없음)');
+  } finally { s.done(); }
+});
+test('d67 조선3-3: 보루각 관리(장영실)는 보루각 돌 기단에 묻히지 않는다', async () => {
+  const { s } = await j3Setup();
+  try {
+    const p = s.w.npcs.get('jangyeongsil').mesh.position;
+    ok(!(p.x > 3.8 && p.x < 14.2 && p.z > -7.7 && p.z < -0.3), `기단(0.6m) 밖에 선다 ${p.x.toFixed(1)}, ${p.z.toFixed(1)}`);
+  } finally { s.done(); }
+});
+test('d67 조선3-4: 자격루 — 물은 수수호 안에서 차오르고 살대가 함께 떠올라, 쇠구슬이 비탈을 굴러 동판을 치면 나무 인형이 채로 종·북·징을 친다', async () => {
+  const { s, sc } = await j3Setup();
+  try {
+    const u = sc.clock.userData;
+    ok(u.tanks?.length >= 1 && u.plate && u.mallets?.length === 3 && u.instruments?.length === 3, '수수호·동판·채 셋·악기 셋');
+    // 채를 휘두르면(strike 1) 채 끝이 악기에 닿는다
+    const near = u.mallets.map((m, i) => { u.swing(i, 1); sc.clock.updateMatrixWorld(true); return m.userData.tip.getWorldPosition(new THREE.Vector3()).distanceTo(u.instruments[i].getWorldPosition(new THREE.Vector3())); });
+    ok(near.every(d => d < 0.35 * sc.clock.scale.x), `채 끝과 악기 ${near.map(d => d.toFixed(2))}`);
+    u.mallets.forEach((_, i) => u.swing(i, 0)); sc.clock.updateMatrixWorld(true);
+    const far = u.mallets.map((m, i) => m.userData.tip.getWorldPosition(new THREE.Vector3()).distanceTo(u.instruments[i].getWorldPosition(new THREE.Vector3())));
+    ok(far.every(d => d > 0.25), '쉬면 떨어져 있다');
+    // 구슬이 비탈 끝에 닿는 자리에 동판
+    ok(u.chute.to.distanceTo(u.plate.position) < 0.3, '비탈 끝에 동판');
+  } finally { s.done(); }
+});
