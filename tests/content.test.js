@@ -3,7 +3,7 @@ import { SOURCES } from '../content/sources.js';
 import { validateScript } from '../core/content.js';
 
 test('content: 65 sources with title and url', () => {
-  eq(Object.keys(SOURCES).length, 78); // S75~S78: 저항시(서시·광야·님의 침묵)와 이육사(2026-11-04)
+  eq(Object.keys(SOURCES).length, 81); // S75~S81: 저항시(서시·광야·님의 침묵, 백과사전과 위키문헌 전문)와 이육사(2026-11-04)
   for (const [id, s] of Object.entries(SOURCES)) ok(s.title && s.url.startsWith('https://'), id);
 });
 

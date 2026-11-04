@@ -558,12 +558,18 @@ export function readBook(ctx, { title, pages, render = null, onTiming = null }) 
 // 문서 보기: 한지에 적은 글(요구 사항 등)을 바로 읽는다. items: [{ text, note? }].
 // scroll: true면 낡은 종이 두루마리(누렇게 바랜 종이, 양끝에 말린 나무 축, 얼룩) 모양으로 보이고, 조항 아래 작은 글씨(note)는 뺀다(D-30 근대 1장 조약문).
 // 출처(src)는 화면에 쓰지 않고 데이터에만 둔다. scroll이 없으면 예전 문서 모양 그대로.
-export function showDocument(ctx, { title, heading, intro = '', items, src = null, button = '다 읽었어요', scroll = false }) {
+export function showDocument(ctx, { title, heading, intro = '', items, src = null, button = '다 읽었어요', scroll = false, poem = false }) {
   return new Promise(resolve => {
     const screen = el('section', 'screen order doc');
     const card = el('div', 'card wide');
     const ol = el('ol');
     for (const it of items) ol.append(el('li', null, it.text)); // 작은 글씨 해설(note)·안내 글(intro)은 싣지 않는다: 문서만 또렷하게(2026-11-04 선생님)
+    if (poem) { // 시: 번호 없이 줄만. 짧은 줄이 많으면 두 단, 긴 시는 글씨를 조금 작게(한 화면에 다 들게)
+      const chars = items.reduce((n, it) => n + it.text.length, 0);
+      ol.classList.add('poem');
+      if (items.length > 10 && chars / items.length < 20) ol.classList.add('cols');
+      if (chars > 300) ol.classList.add('long');
+    }
     let paper;
     if (scroll) {
       const sheet = el('div', 'scroll-sheet');
@@ -576,7 +582,8 @@ export function showDocument(ctx, { title, heading, intro = '', items, src = nul
       paper.append(el('h3', null, heading), ol);
     }
     const ok = el('button', 'btn primary doc-ok', button); ok.type = 'button';
-    card.append(el('div', 'eyebrow', '문서 읽기'), el('h2', null, title), paper, ok);
+    if (poem) card.classList.add('poem-card');
+    card.append(el('div', 'eyebrow', poem ? '시 읽기' : '문서 읽기'), el('h2', null, title), paper, ok);
     screen.append(card); ctx.ui.append(screen);
     ok.addEventListener('click', () => { screen.remove(); resolve(true); });
   });
