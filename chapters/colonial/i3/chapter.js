@@ -28,6 +28,10 @@ const ALLEY = { edge: { style: 'shanghai', seed: 546 }, center: [{ type: 'lamp',
   origin: [400, 0], ground: 'stone', groundColor: 0x8c8577, bounds: { x0: -18, x1: 18, z0: -22, z1: 20 },
   props: [
     { type: 'wall', x: -9, z: 8, w: 8 }, { type: 'wall', x: 9, z: -4, w: 8 }, { type: 'rice', x: -10, z: -8, n: 6 },
+    // 숨을 곳 이름표의 실제 건물(2026-11-04 선생님): 쌀가게(뒤로 숨는다)·창고·찻집
+    { type: 'shop', x: -12.5, z: -1.2, w: 5, style: 'modern', sign: '쌀가게', awning: 0x8a6a3a, seed: 5 },
+    { type: 'western', x: 13.6, z: -0.6, w: 4, d: 4, h: 3.6, ry: -Math.PI / 2, color: 0x7a5a48 }, { type: 'cargo', x: 11.2, z: 1.8, kind: 'crate', n: 3 },
+    { type: 'shop', x: 12, z: -17.6, w: 5, style: 'modern', sign: '찻집', awning: 0x2f6b5e, seed: 7 },
     { type: 'western', x: -15, z: -18, w: 6, d: 5, h: 5, color: 0x8a4a3a }, { type: 'western', x: 15, z: 16, w: 6, d: 5, h: 5, color: 0x9a948a },
   ],
 };
