@@ -60,7 +60,7 @@ export async function reliefScene(ctx) {
   blk(g, 3.4, 0.8, 1, 0x6b4a32, tx, 0.4, tz);
   const truck = new THREE.Group(); truck.position.set(tx - 5, 0, tz - 2); truck.rotation.y = Math.PI / 2; g.add(truck); BUILD.truck(truck, { color: 0x55603f });
   for (let i = 0; i < 4; i++) { const s = sack(); s.position.set(tx - 0.9 + i * 0.6, 0.8 + 0.31, tz - 0.3); g.add(s); }
-  const workers = [person(g, 'gentleman', tx - 2.2, tz - 0.4, 0), person(g, 'citizen', tx + 2.2, tz - 0.4, 0)]; // 카메라(탁자 뒤)를 가리지 않게 탁자 양 끝에
+  const workers = [person(g, 'gentleman', tx - 2.3, tz + 0.2, Math.PI / 2), person(g, 'citizen', tx + 2.3, tz + 0.2, -Math.PI / 2)]; // 탁자 양 끝 앞쪽에서 줄을 보며 나눠 준다(카메라 앞 아래에 모자가 걸리던 것, 2026-11-04 플레이 점검) // 카메라(탁자 뒤)를 가리지 않게 탁자 양 끝에
   const looks = ['woman', 'grandma', 'peasant', 'kidModern', 'citizen', 'woman', 'grandma', 'student', 'peasant', 'woman', 'citizen', 'schoolgirl'];
   const line = looks.map((look, i) => person(g, look, tx + Math.sin(i * 0.8) * 0.5, tz + 1.5 + i * 1.15, Math.PI));
   const hook = ctx.testHooks.relief = { people: line.length, given: 0, facing: 0 };
