@@ -28,6 +28,7 @@ export function hostageScene(ctx) {
     await say(R[2]);
     ctx.dialogue.close();
     await go;
+    await say(R[3]); ctx.dialogue.close(); // 남한산성 유네스코(D-67: 처음 대신 장 끝에)
     hook.left = princes.length;
   } });
 }

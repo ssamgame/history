@@ -69,7 +69,8 @@ function sailTo(ctx, ring, chase = null) {
 export async function lureEnemy(ctx, easy) {
   const { world, dialogue, audio } = ctx;
   scene.setStage('sail');
-  scene.enemy.position.set(0, 0, STRAIT_Z - 28); scene.enemy.rotation.y = Math.PI; // 견내량 안 깊이 모여 있는 적(D-67: 유인 지점에서 멀리, 30척이 북쪽으로 줄지어)
+  scene.enemy.position.set(0, 0, STRAIT_Z - 28); scene.enemy.rotation.y = Math.PI; // 견내량 안 깊이 있는 적(D-67: 유인 지점에서 멀리, 30척)
+  scene.setFormation(0); // 꾀어내기 전에는 넓게 흩어진 대열
   board(ctx, LURE.start);
   await sailTo(ctx, LURE.mouth);
   await dialogue.say(script.lure.seen); dialogue.close();
@@ -77,9 +78,9 @@ export async function lureEnemy(ctx, easy) {
   const speed = easy ? 3 : 4.2; // 학생 배(6.5)보다 느리다: 머뭇거리면 잡힌다
   const e = scene.enemy.position;
   e.set(0, 0, STRAIT_Z - 28); scene.enemy.rotation.y = Math.PI; // 견내량 안에 있던 적이 뱃머리를 돌려 남쪽(학생 쪽)으로
-  let t = 0, hinted = false;
+  let t = 0, hinted = false; // 쫓아오기 시작하면 3초 동안 촘촘한 대열로 모인다(D-67)
   const ok = await sailTo(ctx, LURE.open, dt => {
-    t += dt;
+    t += dt; scene.setFormation(Math.min(1, t / 3));
     if (!hinted && t > 4 && !dialogue.isOpen()) { hinted = true; dialogue.say(script.lure.hint).then(() => dialogue.close()); } // D-67: 쫓기는 동안 한 번 더 길을 알려 준다
     const p = world.player.position, lead = e.z; // 적 무리의 맨 앞 줄(남쪽을 보면 앞줄이 e.z)
     if (Math.hypot(p.x - e.x, p.z - lead) < CATCH) { audio.play('wrong'); return false; }

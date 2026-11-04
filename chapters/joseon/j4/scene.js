@@ -42,7 +42,7 @@ export function buildJ4Scene(world) {
     const p = g.attributes.position, cols = [], c = new THREE.Color();
     for (let i = 0; i < p.count; i++) {
       const z = p.getZ(i);
-      const h = z < 6 ? (z < 4.5 ? -1.3 : -1.3 + (z - 4.5) * 0.87) : Math.max(0, z - 20) * 0.25; // D-67: 물가를 가파르게(완만하면 물결이 오르내릴 때마다 바다와 땅의 경계가 크게 오갔다) // 포구 땅은 높이 0(사람·건물이 서는 높이, 2026-10-31 자동 점검: 0.1m 높아 발이 묻혀 보였다)
+      const h = z < 4.5 ? (z < 3.2 ? -1.3 : -1.3 + (z - 3.2)) : Math.max(0, z - 20) * 0.25; // D-67: 물가를 가파르게(완만하면 물결이 오르내릴 때마다 바다와 땅의 경계가 크게 오갔다). 걷는 곳(z 4.5~)은 높이 0(이순신이 물 위에 선 것처럼 보이던 것 고침) // 포구 땅은 높이 0(사람·건물이 서는 높이, 2026-10-31 자동 점검: 0.1m 높아 발이 묻혀 보였다)
       p.setY(i, Math.min(h, 4));
       const j = rand() * 0.04;
       if (z < 7.5) c.setRGB(0.66 + j, 0.6 + j, 0.46 + j); else c.setRGB(0.34 + j, 0.47 + j, 0.29 + j);
@@ -79,7 +79,13 @@ export function buildJ4Scene(world) {
   const lure = new THREE.Group(); L.add(lure);
   for (let i = 0; i < 3; i++) { const s = panokseon(); s.position.set((i - 1) * 3.6, -0.2, i % 2 * 3); lure.add(s); }
   const enemy = new THREE.Group(); L.add(enemy);
-  for (let i = 0; i < 30; i++) { const s = japaneseShip(); s.position.set(((i % 5) - 2) * 2.9, -0.2, Math.floor(i / 5) * 5.6); enemy.add(s); } // D-67: 적선 30척(예전 8척의 약 4배). 좁은 견내량 물길(암초 사이) 안에 5척씩 6줄
+  for (let i = 0; i < 30; i++) {
+    const s = japaneseShip(); s.position.set(((i % 5) - 2) * 2.9, -0.2, Math.floor(i / 5) * 5.6); enemy.add(s);
+    s.userData.dense = [s.position.x, s.position.z]; // 쫓아올 때: 좁은 견내량을 지나는 촘촘한 대열
+    s.userData.spread = [((i % 6) - 2.5) * 6.4, Math.floor(i / 6) * 9]; // 꾀어내기 전: 견내량 북쪽 넓은 바다에 6척씩 5줄로 넓게 벌려 선 대열(D-67)
+  }
+  // 대열: 0 = 넓게 흩어진 대열, 1 = 촘촘한 대열
+  const setFormation = k => enemy.children.forEach(s => { const [ax, az] = s.userData.spread, [bx, bz] = s.userData.dense; s.position.x = ax + (bx - ax) * k; s.position.z = az + (bz - az) * k; }); // D-67: 적선 30척(예전 8척의 약 4배). 좁은 견내량 물길(암초 사이) 안에 5척씩 6줄
   const fleet = new THREE.Group(); L.add(fleet); // 학익진으로 펼치는 우리 배 6척(가운데는 거북선)
   const wingSpots = WING_X.map(x => { const a = Math.asin(x / WING_R); return [WING.x + x, WING.z + Math.cos(a) * WING_R * 0.55 + 6, a]; });
   wingSpots.forEach(([x, z, a], i) => { if (i === SLOT) return; const s = panokseon(); s.position.set(x, -0.2, z); s.rotation.y = a * 0.35 - Math.sign(x) * Math.PI / 2; s.userData.spot = [x, z]; s.userData.ry = s.rotation.y; fleet.add(s); }); // D-67: 학익진 때부터 옆구리(포혈)를 적(북쪽)에 돌리고 뱃머리는 가운데로. 한 자리(SLOT)는 학생 배가 들어갈 자리
@@ -105,6 +111,7 @@ export function buildJ4Scene(world) {
     flagship.visible = false;
     goalRing.visible = false;
     enemy.children.forEach(e => { e.userData.smoke.visible = s === 'won'; });
+    setFormation(s === 'lure' ? 0 : 1);
     if (s === 'lure') { lure.position.set(0, 0, -30); enemy.position.set(0, 0, ENEMY_WAIT); enemy.rotation.y = Math.PI; } // 뱃머리를 남쪽으로 두고 줄은 견내량 안쪽(북쪽)으로 길게(D-67: 30척)
     if (s === 'wing') { enemy.position.set(0, 0, -78); }
     if (s === 'won') { enemy.position.set(0, 0, -50); }
@@ -250,7 +257,7 @@ export function buildJ4Scene(world) {
   });
 
   const api = {
-    start: [0, 6.5], introFrom: [0, 19], gate, turtle, leadTurtle, FIRE_AT, flagship, lure, enemy, fleet, goalRing, myShip, setStage, setLure, setChase, setAdvance, playBattle,
+    start: [0, 6.5], introFrom: [0, 19], gate, turtle, leadTurtle, FIRE_AT, setFormation, flagship, lure, enemy, fleet, goalRing, myShip, setStage, setLure, setChase, setAdvance, playBattle,
     slot: { x: wingSpots[SLOT][0], z: wingSpots[SLOT][1], ry: wingSpots[SLOT][2] * 0.35 - Math.sign(wingSpots[SLOT][0]) * Math.PI / 2 }, decoys: [], // 학익진 빈자리(D-30 I-02: 뒷줄의 틀린 자리 둘은 뺐다)
     seaBounds: { x0: -30, x1: 30, z0: STRAIT_Z - 4, z1: -10 }, // D-67: 넓힌 학익진 양 끝까지
     // 우리 배들이 한 줄로 오다가 학이 날개를 편 모양으로 펼쳐진다(seconds 동안)

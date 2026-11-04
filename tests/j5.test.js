@@ -18,7 +18,7 @@ test('j5: quiz answers match the spec; 척화·주화 are balanced, no side is c
   eq([n('cheok'), n('ju')], [3, 3]);
   const all = JSON.stringify(j5Script);
   ok(!/(옳|틀렸|잘못)/.test(all), 'no judging words');
-  ok(j5Script.result.every(l => l.src.includes('S38')));
+  ok(j5Script.result.every(l => l.src.includes('S38') || (l.text.includes('유네스코') && l.src.includes('S47'))), 'D-67: 끝에 옮긴 유네스코 해설은 S47');
 });
 
 test('j5: scene has the fortress people and six braziers that light up', () => {
@@ -189,13 +189,13 @@ test('j5 N-02·N-03·N-04: names over the two ministers, a shivering 백성 star
     j5.enterStage(s.ctx, 'minigame');
     s.w.onUpdate(() => {
       frame += 1;
-      const rz = folk.mesh.rotation.z; if (lastRz != null) shiver = Math.max(shiver, Math.abs(rz - lastRz)); lastRz = rz;
+      const rz = folk.mesh.userData.arms[0].rotation.z; if (lastRz != null) shiver = Math.max(shiver, Math.abs(rz - lastRz)); lastRz = rz; // D-67: 몸을 떠는 대신 손을 비빈다
       if (frame % 5) return;
       s.w.level.traverse(o => { if (o.isSprite && o.visible && o.name && o.name.startsWith('name:')) { const p = o.getWorldPosition(o.position.clone()); if (p.y > 2.5) seen.add(o.name); } });
     });
     await j5.minigame(s.ctx);
     ok(seen.has('name:김상헌') && seen.has('name:최명길'), `names shown ${[...seen]}`);
-    ok(shiver > 0.005, 'the 백성 shivers');
+    ok(shiver > 0.005, 'the 백성 rubs the hands (D-67)');
     const F = j5Script.fires, iCold = said.indexOf(j5Script.npc.coldfolk.first[0]), iHow = said.indexOf(F.howto[0]);
     ok(iCold >= 0 && iHow > iCold, `cold story (${iCold}) before the braziers (${iHow})`);
     const lament = j5Script.npc.injo.first, iL = said.indexOf(lament[0]), iW = said.indexOf(j5Script.walk.start[0]), iS = said.indexOf(j5Script.samjeondo[0]);

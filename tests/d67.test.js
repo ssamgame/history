@@ -254,3 +254,90 @@ test('d67 조선4(2차): 적선은 예전(8척)의 3~4배, 견내량 물길 안�
     eq(sunk, n, '모두 가라앉는다'); ok(sc.enemy.children.every(e => !e.visible), '남은 적선 없음');
   } finally { s.done(); }
 }, { timeout: 90000 });
+
+// 조선 5장(병자호란과 남한산성)
+async function j5Setup() {
+  const mod = await import('../chapters/joseon/j5/chapter.js'), script = (await import('../chapters/joseon/j5/script.js')).default;
+  const s = touchSetup(script.speakers); mod.default.buildScene(s.w, s.ctx); s.w.level.updateMatrixWorld(true);
+  return { mod, j5: mod.default, script, s, sc: mod.devScene() };
+}
+test('d67 조선5-1: 서문은 인조 일행(두 줄)이 벽을 지나지 않고 들어올 만큼 넓고 높다', async () => {
+  const { s, sc } = await j5Setup();
+  try {
+    const lane = new THREE.Box3(new THREE.Vector3(-21.5, 0.4, -1.5), new THREE.Vector3(-18.5, 3.0, 1.5)); // 일행 두 줄(z ±1.1)과 어깨 폭
+    const hits = [];
+    s.w.level.traverse(o => { if (!o.isMesh || !o.visible) return; for (let q = o; q; q = q.parent) if (q.name === 'gateLeaf' || q === sc.introKing) return; if (new THREE.Box3().setFromObject(o).intersectsBox(lane)) { const b = new THREE.Box3().setFromObject(o); if (b.max.x - b.min.x > 60) return; hits.push((o.parent?.name || o.parent?.type) + ' ' + o.geometry.type + ' x' + b.min.x.toFixed(1) + '~' + b.max.x.toFixed(1) + ' y' + b.min.y.toFixed(1) + '~' + b.max.y.toFixed(1) + ' z' + b.min.z.toFixed(1) + '~' + b.max.z.toFixed(1)); } });
+    eq(hits, [], '문 안 길을 막는 것이 없다');
+  } finally { s.done(); }
+});
+test('d67 조선5-2: 남한산성 유네스코 해설은 처음이 아니라 장 끝 해설에', async () => {
+  const script = (await import('../chapters/joseon/j5/script.js')).default;
+  ok(!script.start.some(l => l.text.includes('유네스코')), '시작에 없다');
+  ok(script.result.some(l => l.text.includes('유네스코') && l.src?.includes('S47')), '끝 해설에');
+});
+test('d67 조선5-3·6: 추위에 떠는 엄마와 아이는 좌우로 흔들리지 않고 손을 비비며, 곁의 화톳불을 켜면 「감사합니다!」 하고 손 비비기를 멈춘다', async () => {
+  const { s, sc } = await j5Setup();
+  try {
+    const folk = s.w.npcs.get('coldfolk').mesh, a = folk.userData.arms[0];
+    let maxZ = 0; const ax = [];
+    for (let i = 0; i < 40; i++) { s.w.step(0.05, { x: 0, z: 0 }); maxZ = Math.max(maxZ, Math.abs(folk.rotation.z), Math.abs(sc.coldKid.rotation.z)); ax.push(a.rotation.z); }
+    ok(maxZ < 0.002, `좌우로 떨지 않는다 ${maxZ.toFixed(3)}`);
+    ok(Math.max(...ax) - Math.min(...ax) > 0.08, '손을 비빈다');
+    const f = sc.folkFire; ok(f, '백성 곁 화톳불');
+    sc.light(f);
+    ok(s.w.level.getObjectByName('thanks')?.userData.text.includes('감사합니다'), '감사 인사(머리 위 말풍선, 놀이를 끊지 않는다)');
+    const bx = []; for (let i = 0; i < 40; i++) { s.w.step(0.05, { x: 0, z: 0 }); bx.push(a.rotation.z); }
+    ok(Math.max(...bx.slice(20)) - Math.min(...bx.slice(20)) < 0.01, '따뜻해지면 손 비비기를 멈춘다');
+  } finally { s.done(); }
+});
+test('d67 조선5-4·7: 창고지기는 통나무를 지나 서지 않고, 인조가 서문으로 걷는 길은 군막을 지나지 않는다', async () => {
+  const { mod, s } = await j5Setup();
+  try {
+    const k = s.w.npcs.get('keeper').mesh.position;
+    for (let i = 0; i < 5; i++) ok(Math.hypot(k.x - 9.2, k.z - (-5 + i)) > 0.9, `통나무 ${i}와 떨어져 선다`);
+    const tent = [-11, -0.5], path = [[0, -7.6], ...mod.INJO_PATH];
+    for (let i = 1; i < path.length; i++) { const [ax, az] = path[i - 1], [bx, bz] = path[i];
+      for (let t = 0; t <= 1; t += 0.05) ok(Math.hypot(ax + (bx - ax) * t - tent[0], az + (bz - az) * t - tent[1]) > 2.4, `길 ${i}가 군막을 지나지 않는다`); }
+  } finally { s.done(); }
+});
+test('d67 조선5-5: 마당의 신하들은 제자리에 서 있지 않고 길을 오가며 걷는다', async () => {
+  const { wanderAt } = await import('../chapters/joseon/j5/chapter.js');
+  const base = { x: 0, z: 0 }, ps = [0, 2, 4, 6].map(t => wanderAt(base, 1, t));
+  ok(Math.max(...ps.map(p => Math.hypot(p.x, p.z))) > 1.5 && Math.max(...ps.map(p => Math.hypot(p.x, p.z))) < 3.5, '자리 둘레 몇 걸음 안에서 오간다');
+  ok(new Set(ps.map(p => p.x.toFixed(1) + p.z.toFixed(1))).size === 4, '시간에 따라 자리가 바뀐다');
+});
+test('d67 조선4(3차): 포구의 이순신·수군·백성은 땅 위(높이 0)에 서고 물 위에 떠 보이지 않는다', async () => {
+  const { s } = await j4Setup();
+  try {
+    const ground = []; s.w.level.traverse(o => { if (o.isMesh && o.geometry.type === 'PlaneGeometry' && o.geometry.parameters?.height === 40) ground.push(o); });
+    ok(ground.length === 1, '포구 땅');
+    const ray = new THREE.Raycaster();
+    for (const id of ['yisunsin', 'navy', 'commoner']) {
+      const p = s.w.npcs.get(id).mesh.position; ray.set(new THREE.Vector3(p.x, 5, p.z), new THREE.Vector3(0, -1, 0));
+      const hit = ray.intersectObject(ground[0])[0]; ok(hit && Math.abs(hit.point.y) < 0.05, `${id} 발밑 땅 ${hit?.point.y.toFixed(2)}`);
+    }
+  } finally { s.done(); }
+});
+test('d67 조선4(3차): 꾀어내기 전 적선은 넓게 벌린 일정한 대열, 쫓아올 때는 촘촘한 대열로 좁은 물길을 지난다', async () => {
+  const { s, sc } = await j4Setup();
+  try {
+    sc.setStage('lure');
+    const xs = () => sc.enemy.children.map(e => Math.abs(e.position.x));
+    ok(Math.max(...xs()) > 12, `넓게 벌린 대열 ±${Math.max(...xs()).toFixed(1)}`);
+    const rows = new Set(sc.enemy.children.map(e => e.position.z.toFixed(1))); ok(rows.size === 5, `일정한 줄 ${rows.size}`);
+    sc.setFormation(1); ok(Math.max(...xs()) <= 8.6, '촘촘한 대열은 물길 안');
+    const src = await (await fetch('../chapters/joseon/j4/chapter.js')).text();
+    ok(/setFormation\(0\)[\s\S]*setFormation\(Math\.min\(1, t \/ 3\)\)/.test(src), '꾀어낼 때 넓은 대열 → 쫓으며 모인다');
+  } finally { s.done(); }
+});
+test('d67 조선5-8·9: 삼전도 — 멈춰 선 뒤 걷는 동작이 남지 않고, 절하기 전에 손을 모아 예를 갖추며, 학생은 절하는 자리가 아니라 청 군사 옆에 선다', async () => {
+  const { j5, script, s } = await j5Setup();
+  const { touchBot } = await import('./bot.js');
+  const bot = touchBot(s, { answers: new Set() });
+  try {
+    await j5.samjeondo(s.ctx);
+    const m = s.ctx.testHooks.samjeondoMeta;
+    ok(m.courtesy, '예를 갖추는 동작'); ok(m.idleAfterWalk, '멈추면 서 있는 동작으로');
+    ok(m.playerX > 6 && Math.abs(m.playerX - m.qingX) < 3, `학생은 청 군사 옆 x ${m.playerX?.toFixed(1)} (청 군사 ${m.qingX?.toFixed(1)})`);
+  } finally { bot.stop(); s.done(); }
+}, { timeout: 120000 });

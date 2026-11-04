@@ -13,6 +13,7 @@ import { LOOKS } from '../../../content/characters.js';
 import { sayAll, placePlayer, tryPart, sumParts } from '../common.js';
 import script from './script.js';
 import { hostageScene } from './story.js';
+import { play as playClip } from '../../../core/body.js';
 
 // 행궁 마당(마을에서 떨어진 x 400): 왼쪽에 김상헌(척화), 오른쪽에 최명길(주화). 말을 그 생각을 한 사람에게 가져간다.
 const HALL = {
@@ -28,6 +29,8 @@ const OFFICIAL_SPOTS = [{ x: -5, z: 5 }, { x: 6, z: 7 }, { x: -12, z: 8 }, { x: 
 
 export const PEOPLE = ['soldier', 'keeper'];
 const MINISTERS = ['kimsangheon', 'choemyeonggil'];
+// 인조가 행궁 앞에서 서문으로 걷는 길(D-67: 서쪽 군막(-11, -0.5)의 남쪽으로 돌아 지나지 않게)
+export const INJO_PATH = [[-4, -3], [-8, 2.4], [-14, 2.4], [-19, 0], [-24, 0]];
 const SPOT = [0, -3], END = [0, 5.5]; // END: 미니게임이 끝나 마을로 돌아온 자리(앞에 빛나는 문)
 let scene = null;
 
@@ -113,7 +116,7 @@ async function followInjo(ctx) {
   const b0 = world.bounds; world.bounds = { ...b0, x0: gx - 6 }; // 서문 밖까지 걸을 수 있게
   scene.gate.setOpen(1);
   ctx.testHooks.ledBy = 'injo';
-  await leadWalk(ctx, { id: 'injo', path: [[-4, -3], [-12, 0], [gx + 1, 0], [gx - 4, 0]], stand: [gx + 1.5, 0], face: -Math.PI / 2 });
+  await leadWalk(ctx, { id: 'injo', path: INJO_PATH, stand: [gx + 1.5, 0], face: -Math.PI / 2 });
   world.bounds = b0;
 }
 
@@ -144,6 +147,16 @@ export function kowtowPose(holder, k, b) {
 }
 
 // 삼전도의 옷 색(N-05): 인조는 짙은 남색 옷으로 세자(짙은 초록)·신하(회갈색)와 뚜렷이 다르게
+// 예를 갖추는 몸짓(공수 후 허리 굽혀 읍): e 0~1
+export function courtesyPose(holder, e) {
+  const p = holder.userData.body, u = p.userData;
+  addJoints(p);
+  p.rotation.x = 0.32 * e; p.position.set(0, HIP * (1 - Math.cos(0.32 * e)), -HIP * Math.sin(0.32 * e));
+  u.legs.forEach(l => { l.rotation.x = -0.32 * e; l.userData.knee.rotation.x = 0; });
+  u.arms.forEach((a, i) => { a.rotation.x = -0.95 * e; a.rotation.z = (i ? -1 : 1) * 0.42 * e; a.userData.elbow.rotation.x = -0.95 * e; }); // 두 손을 배 앞에서 모은다
+  u.head.rotation.x = 0.25 * e;
+}
+
 export const BOW_LOOKS = {
   king: { ...LOOKS.injo, robe: 0x1f2f86, trim: 0xd9a441 },
   prince: { ...LOOKS.injo, robe: 0x4a6a58, trim: 0x2b241c, hat: 'official' },
@@ -208,19 +221,25 @@ async function samjeondo(ctx) {
   const bowers = [injo, ...follow];
   const place = z => bowers.forEach(h => h.position.set(h.userData.off[0], 0, z + h.userData.off[1]));
   place(12);
-  // 학생은 행렬 맨 뒤에서 따라 걷는다(낮은 카메라로 뒤에서 본다)
-  const me = arena.at(0, 13.6); placePlayer(world, [me.x, me.z]); world.player.visible = true;
+  // D-67(2026-11-04 선생님): 학생은 절하는 행렬에 끼지 않고, 오른쪽 청 군사 줄 옆에 서서 지켜본다
+  const me = arena.at(7.4, 1.2); placePlayer(world, [me.x, me.z], -Math.PI / 2); world.player.visible = true;
   world.closeView = true;
+  const meta = ctx.testHooks.samjeondoMeta = { courtesy: false, idleAfterWalk: false, playerX: 7.4, qingX: 9 };
+  world.setFixedCamera([O.x - 7.2, 3.0, O.z - 3.2], [O.x + 0.5, 0.6, O.z + 3.4]); // 앞 왼쪽에서 비스듬히(행렬이 다가오는 것부터)
   await ctx.fade(false);
   await dialogue.say(L[0]); dialogue.close();
   const anim = (sec, fn) => new Promise(resolve => { let t = 0; const off = world.onUpdate(dt => { t = Math.min(1, t + dt / sec); fn(t); if (t >= 1) { off(); resolve(); } }); });
   // 행렬이 단 아래까지 걸어가고 학생도 함께 걷는다(걷는 몸짓)
   bowers.forEach(h => { h.userData.body.userData.manual = false; h.userData.body.userData.noWalk = false; });
-  world.autoMove = { x: 0, z: -1 }; world.speedScale = 0.3;
   await anim(3.2, k => place(12 - k * 10));
-  world.autoMove = null; world.speedScale = 1;
-  bowers.forEach(h => { const b = h.userData.body; b.userData.manual = true; b.userData.noWalk = true; });
-  world.setFixedCamera([O.x - 7.2, 3.0, O.z - 3.2], [O.x + 0.5, 0.6, O.z + 3.4]); // 카메라 예외: 앞 왼쪽에서 비스듬히 보아 맨 앞 인조와 뒤 세자·신하들의 몸짓이 함께 보이게(D-30 N-05)
+  // 멈춰 선다: 장이 몸짓을 맡기 전에 뼈대 몸의 걷기 동작을 '서 있기'로 바꾼다(D-67: 멈춘 뒤에도, 절하는 동안에도 제자리걸음을 했다)
+  bowers.forEach(h => { const b = h.userData.body; b.userData.manual = true; b.userData.noWalk = true; if (b.userData.skel) playClip(b, 'idle', 0.3); });
+  meta.idleAfterWalk = bowers.every(h => !h.userData.body.userData.skel || h.userData.body.userData.skel.target === 'idle');
+  // 예를 갖춘다: 두 손을 앞에 모아(공수) 허리를 굽혀 고개를 숙였다가 바로 선다(D-67)
+  await anim(1.0, k => bowers.forEach(h => courtesyPose(h, ease(k))));
+  await ctx.wait(700);
+  await anim(0.8, k => bowers.forEach(h => courtesyPose(h, 1 - ease(k))));
+  meta.courtesy = true;
   await dialogue.say(L[1]); dialogue.close();
   await dialogue.say(L[2]); dialogue.close();
   // 세 번 무릎 꿇고, 꿇을 때마다 세 번 머리를 조아린다. 인조가 먼저 하고 세자·신하들이 0.25초 뒤부터 0.08초씩 늦게 따라 한다(N-05 순서)
@@ -262,7 +281,7 @@ async function escortOfficials(ctx, easy) {
     const id = `official${i + 1}`, pos = at(OFFICIAL_SPOTS[i].x, OFFICIAL_SPOTS[i].z);
     if (!world.npcs.has(id)) world.addNpc(id, LOOKS.joseonOfficial, pos.x, pos.z, 0);
     const n = world.npcs.get(id); n.mesh.visible = true; n.collider.r = 0.5; n.mark.visible = true; world.moveNpc(id, pos.x, pos.z, 0);
-    return { id, n, card: S.cards[ci], done: false };
+    return { id, n, card: S.cards[ci], done: false, home: pos, i };
   });
   let cur = null, near = null, missed = false, told = null;
   ctx.input.enabled = true;
@@ -290,10 +309,20 @@ async function escortOfficials(ctx, easy) {
       ctx.input.enabled = true;
       cur = o; o.n.mark.visible = false; o.n.collider.r = 0; show();
     });
+    let wt = 0;
     const off = world.onUpdate(dt => {
       const p = world.player.position;
+      wt += dt;
+      for (const o of officials) { // 아직 안 데려간 신하는 자리 둘레를 걷는다. 학생이 가까이 오면 멈춰 학생을 본다
+        if (o.done || o === cur) continue;
+        const m = o.n.mesh.position;
+        if (Math.hypot(p.x - m.x, p.z - m.z) < 3) { o.n.mesh.rotation.y = Math.atan2(p.x - m.x, p.z - m.z); continue; }
+        o.t = (o.t || 0) + dt;
+        const w = wanderAt(o.home, o.i, o.t); world.moveNpc(o.id, w.x, w.z, w.ry);
+      }
+      if (!cur) { const o = officials.find(x => !x.done); if (o) { const m = o.n.mesh.position; ctx.testHooks.walkTo = { x: m.x, z: m.z }; world.setGoal({ x: m.x, z: m.z }); } } // 말 걸 신하를 찾는 동안 화살표가 걷는 신하를 따라간다
       if (!cur) { // 말을 걸 신하 찾기
-        near = null; let bd = 2.2;
+        near = null; let bd = 2.6; // 걷는 신하에게 말 걸기 쉽게(D-67: 2.2 → 2.6)
         for (const o of officials) { if (o.done) continue; const m = o.n.mesh.position, d = Math.hypot(p.x - m.x, p.z - m.z); if (d < bd) { bd = d; near = o; } }
         hud.setTalkEnabled?.(!!near && !dialogue.isOpen()); hud.setPrompt?.(near ? near.n.mesh.position : null);
         return;
@@ -319,6 +348,12 @@ async function escortOfficials(ctx, easy) {
       }
     });
   });
+}
+
+// 마당의 신하가 자리 둘레를 천천히 오가는 자리(D-67 선생님: 서 있지 말고 길을 걸어 다니다가 학생이 다가가 말을 건다). i마다 박자가 다르다
+export function wanderAt(base, i, t) {
+  const a = t * 0.32 + i * 1.9;
+  return { x: base.x + Math.cos(a) * 2.6, z: base.z + Math.sin(a * 2) * 1.2, ry: Math.atan2(-Math.sin(a) * 2.6, Math.cos(a * 2) * 2.4) };
 }
 
 export const devScene = () => scene; // 개발용(사진 찍기)
