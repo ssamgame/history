@@ -45,7 +45,7 @@ test('j1: completes with touch-only actions', async () => {
   try {
     const r = await runChapter(JOSEON[0], j1, s.ctx, memSave());
     eq(r.quizCorrect, 2);
-    eq(r.firstTryCorrect, 2);
+    eq(r.firstTryCorrect, 3); // 2026-11-05: 회군 이끌기 놀이가 더해졌다
     eq(r.stars, 3);
   } finally { bot.stop(); s.done(); }
 }, { timeout: 150000 });
@@ -68,7 +68,7 @@ test('j1: soldiers relay what 이성계 said; a wrong judgement gets the explana
     // 2026-10-30 선생님: 가릴 때 군사가 한 말이 대화창에 보여야 한다(글이 비어 있었다)
     const judged = prompts.filter(p => p && typeof p.text === 'string' && p.text.includes(j1Script.reasons.question));
     ok(judged.length >= 6 && j1Script.reasons.people.every(P => judged.some(p => p.text.includes(P.talk[0].text))), `가릴 말이 보인다 ${prompts.map(p => typeof p).join(',')}`);
-    eq(r.firstTryCorrect, 1, 'judging missed once, Hanyang right the first time');
+    eq(r.firstTryCorrect, 2, 'judging missed once, crossing and Hanyang right the first time'); // 2026-11-05: 회군 이끌기가 더해졌다
     eq(r.easyModeUsed, false);
     ok(s.ctx.testHooks.march && s.ctx.testHooks.march.done, 'march on the map played');
     eq(s.ctx.testHooks.march.joseon, true, '고려 gives way to 조선 on the map');
@@ -232,3 +232,22 @@ test('j1: 진영 곳곳의 여섯 군사를 찾아 듣고 이성계에게 돌아
     ok(Math.abs(t.w.player.position.x - COURT.x) < 15, '퀴즈부터 이어 해도 궁궐 마당');
   } finally { t.done(); }
 }, { timeout: 150000 });
+
+// 2026-11-05 선생님: 조선 1장 더 재밌게 — 위화도 회군을 학생이 직접 이끈다. 뒤처진 군사를 모두 모아, 떠내려오는 통나무를 피해 강을 건넌다(고려편과 같게: 시간 제한, 두 번 지면 쉬운 모드)
+import { CROSSING, crossRiver } from '../chapters/joseon/j1/chapter.js';
+test('j1 fun: the turn-back crossing — gather all stragglers, then wade across past drifting logs, inside the time limit', async () => {
+  const river = CROSSING.arena.props.find(p => p.type === 'water');
+  const [z0, z1] = [river.z - river.d / 2, river.z + river.d / 2];
+  ok(CROSSING.pickups.filter(p => p.follow).length >= 5, 'stragglers to gather');
+  ok(CROSSING.pickups.every(p => p.z > z1), 'all on the near bank');
+  ok(CROSSING.route[0].needPickups && CROSSING.route[0].z > z1, 'must gather before entering the river');
+  ok(CROSSING.route.at(-1).z < z0, 'ends on the far bank');
+  ok(CROSSING.hazards.length >= 2 && CROSSING.hazards.every(h => h.kind === 'log' && h.z > z0 && h.z < z1 && h.to), 'logs drift across the river');
+  ok(CROSSING.seconds > 0);
+  const s = touchSetup(j1Script.speakers), bot = touchBot(s, { answers: new Set() });
+  try {
+    j1.buildScene(s.w, s.ctx);
+    const r = await crossRiver(s.ctx);
+    eq(r.first, true);
+  } finally { bot.stop(); s.done(); }
+}, { timeout: 120000 });

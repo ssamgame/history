@@ -4,6 +4,7 @@ import { buildJ1Scene, buildCourt, COURT, groundH } from './scene.js';
 import { roam } from '../../../core/flow.js';
 import { showHowTo, runWithRetries } from '../../../core/minigame.js';
 import { PLAY, buildArena, mapSpot, labelSprite } from '../../kit/play.js';
+import { tryPart } from '../common.js';
 import { makePerson, animateWalk, setCarry, mat } from '../../../core/people.js';
 import { enterThroughGate, closeGate } from '../../kit/gate.js';
 import { leadWalk } from '../../kit/lead.js';
@@ -26,6 +27,33 @@ export const CAMP = {
     { type: 'crowd', x: -3, z: -7, n: 4, cols: 4, looks: ['soldier'], face: Math.PI },
   ],
 };
+// 2) 회군 이끌기(2026-11-05 선생님): 비 오는 강가에 흩어진 군사를 모두 모아, 떠내려오는 통나무를 피해 여울을 건넌다
+export const CROSSING = {
+  arena: {
+    origin: [460, 0], ground: 'grass', groundColor: 0x6a8656,
+    bounds: { x0: -16, x1: 16, z0: -26, z1: 14 },
+    props: [
+      { type: 'water', x: 0, z: -10, w: 140, d: 10, color: 0x5a7a86, river: true },
+      { type: 'tent', x: -13, z: 11, color: 0xb8a888 }, { type: 'tent', x: 13, z: 11, color: 0xb8a888 },
+    ],
+    edge: { style: 'forest', back: false },
+  },
+  from: [0, 9], seconds: 55, counter: '지난 곳', pickupCounter: '모은 군사',
+  pickups: [[-11, 5], [-6, 1], [7, 8], [11, 2], [-2, 6], [4, 0]].map(([x, z]) => ({ x, z, follow: 'soldier', label: '뒤처진 군사', say: '군사가 함께해요!' })),
+  route: [
+    { x: 0, z: -3, label: '강가', needPickups: true, needSay: '아직 뒤처진 군사가 있어요. 모두 모아 함께 건너요!' },
+    { x: 0, z: -21, label: '건너편 둑', say: '모두 강을 건넜어요!' },
+  ],
+  hazards: [{ kind: 'log', x: -14, z: -8, to: [14, -8], speed: 0.9, r: 1.2 }, { kind: 'log', x: 14, z: -12, to: [-14, -12], speed: 0.7, r: 1.2 }],
+  bump: '떠내려오는 통나무에 부딪혔어요! 강가에서 다시 건너요.',
+};
+export async function crossRiver(ctx) {
+  ctx.setGoal(script.goals[4]);
+  await sayAll(ctx.dialogue, script.crossing.start);
+  ctx.dialogue.close();
+  await showHowTo(ctx.ui, script.crossing.howto);
+  return tryPart(ctx, easy => PLAY.drive(ctx, CROSSING, easy), script.crossing.fail, 2);
+}
 // 진영 곳곳에서 이성계의 말을 전해 주는 병사들(자리)
 export const REASON_SPOTS = [{ x: -11, z: -2 }, { x: -6, z: 7 }, { x: 0, z: -1 }, { x: 11, z: -2 }, { x: 6, z: 7 }, { x: -12, z: 8 }];
 // 2) 큰 지도 위의 위화도 회군: 위화도 → 개경(고려의 도읍) → 조선 건국 → 한양
@@ -73,7 +101,7 @@ export async function tourHanyang(ctx, s) {
   if (!world.npcs.has('minister')) world.addNpc('minister', LOOKS.minister, p0.x, p0.z, Math.PI);
   const m = world.npcs.get('minister');
   m.mesh.visible = true; world.moveNpc('minister', p0.x, p0.z + 0, Math.PI);
-  ctx.setGoal(script.goals[5]);
+  ctx.setGoal(script.goals[6]);
   await sayAll(dialogue, T.start); dialogue.close();
   for (const st of TOUR.stops) {
     const a = at(...st.at), b = at(...st.stand);
@@ -81,7 +109,7 @@ export async function tourHanyang(ctx, s) {
     await sayAll(dialogue, T[st.key]); dialogue.close();
   }
   m.mesh.visible = false; m.collider.r = 0; m.mark.visible = false;
-  ctx.setGoal(script.goals[6]);
+  ctx.setGoal(script.goals[7]);
 }
 
 function placePlayer(world, [x, z], ry = Math.PI) {
@@ -435,6 +463,8 @@ export default {
     dialogue.close();
     await campTurnBack(ctx); // 진영의 군대가 돌아서서 남쪽으로 걸어 나간다
     world.camMode = 'follow';
+    const c = await crossRiver(ctx); // 학생이 군사를 모아 강을 건너 이끈다
+    if (c.first) firstTryCorrect += 1;
 
     // 2) 위화도 회군: 큰 지도 위에서 이성계의 군대가 위화도에서 개경으로 돌아오고, 고려가 물러나 조선이 선다
     await marchOnMap(ctx);
@@ -442,7 +472,7 @@ export default {
     // 3) 새 도읍 한양 짓기: 진영에 남은 관리에게 말을 걸어야 시작한다(C-05). 알맞은 터에서 버튼을 누르면 그 자리에 지어진다
     const mi = world.npcs.get('minister') || world.addNpc('minister', LOOKS.minister, -5, 4.5, Math.PI * 0.8);
     mi.mesh.visible = true; mi.mark.visible = true;
-    await waitInteract(ctx, { pos: mi.mesh.position, quest: script.goals[4], label: '관리와 이야기하기', mark: false });
+    await waitInteract(ctx, { pos: mi.mesh.position, quest: script.goals[5], label: '관리와 이야기하기', mark: false });
     mi.mark.visible = false;
     world.setTalkCamera(mi.mesh);
     await sayAll(dialogue, script.npc.minister.first);
@@ -476,6 +506,6 @@ export default {
     world.setTalkCamera(co.mesh);
     await sayAll(dialogue, script.court.official);
     dialogue.close(); world.camMode = 'follow';
-    return { firstTryCorrect, firstTryTotal: 2, easyModeUsed: !!b.easyModeUsed };
+    return { firstTryCorrect, firstTryTotal: 3, easyModeUsed: !!b.easyModeUsed || c.easy };
   },
 };
