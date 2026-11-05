@@ -161,3 +161,28 @@ test('ch6: 뱃사공의 두 손이 노 손잡이에 붙어 있고, 배가 서면
     ok(rig.k < 0.25, `배가 서면 노를 쉰다 ${rig.k.toFixed(2)}`);
   } finally { s.done(); }
 });
+
+// 2026-11-05 선생님: 6장 배 몰기를 쫓기는 항해로(조금 더 어렵게) — 몽골 배가 갈수록 빨라지고, 빛나는 물살을 타면 잠깐 빨라진다
+import { sailPace } from '../chapters/ch6/chapter.js';
+test('ch6 fun: pursuers speed up over time (easy stays slow); riding a glowing current boosts the boat for a moment', async () => {
+  ok(sailPace(20, false) > sailPace(3, false), 'faster later');
+  eq(sailPace(3, true), sailPace(20, true));
+  const s = touchSetup(ch6Script.speakers);
+  try {
+    const sc = ch6.buildScene(s.w, s.ctx);
+    ch6.enterStage(s.ctx, 'minigame');
+    sailLeg(s.ctx, sc.legs[0], false);
+    const cur = s.ctx.testHooks.currents;
+    ok(cur && cur.length >= 3, 'currents on the way');
+    const b = s.w.player.position, from = sc.legs[0].from, to = sc.legs[0].to;
+    ok(cur.every(c => (c.z - from[1]) * (to.z - from[1]) > 0), 'between start and goal');
+    eq(s.w.speedScale || 1, 1);
+    b.x = cur[0].x; b.z = cur[0].z; s.w.step(0.05, { x: 0, z: 0 });
+    ok(s.w.speedScale > 1.3, `boost ${s.w.speedScale}`);
+    ok(/물살/.test(s.ui.textContent), 'toast');
+    b.x = from[0]; b.z = from[1];
+    for (let i = 0; i < 80; i++) s.w.step(0.05, { x: 0, z: 0 });
+    eq(s.w.speedScale || 1, 1, 'boost wears off');
+    ok(/몽골 배/.test(s.ui.querySelector('.hud-counter')?.textContent || ''), 'distance to the nearest Mongol boat shown');
+  } finally { s.done(); }
+});

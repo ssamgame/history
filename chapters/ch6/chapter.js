@@ -9,6 +9,7 @@ import { waitInteract } from '../../core/portal.js';
 import * as THREE from 'three';
 import script from './script.js';
 import { yongjangScene, hangpaduriScene } from './story.js';
+import { toast } from '../kit/play.js';
 
 const PEOPLE = ['minister', 'sambyeolcho', 'villager'];
 const SAIL_CAM = { offset: [0, 2.9, 5.4], lookY: 1.3 }; // 배 바로 뒤 낮은 눈높이(1인칭 같은 3인칭, D-20)
@@ -26,9 +27,20 @@ function placePlayer(world, [x, z], ry = Math.PI) {
 }
 
 // 바닷길 한 구간: 도착 원에 닿으면 성공, 몽골 배에 잡히면 실패. 배 바로 뒤 낮은 카메라, 몽골 배는 앞쪽 양옆에서 다가온다(D-20)
+// 쫓기는 항해(2026-11-05 선생님: 조금 더 어렵게): 몽골 배는 갈수록 빨라진다. 쉬운 모드는 처음부터 끝까지 느리다
+export function sailPace(t, easy) { return easy ? 2.2 : 3.6 + 1.4 * Math.min(1, Math.max(0, t - CHASE_DELAY) / 18); }
+// 빛나는 물살: 뱃길 중간중간 옆으로 비켜 난 물살을 타면 BOOST_SEC 동안 빨라진다(몽골 배를 따돌릴 수 있다)
+const CURRENT_R = 2.6, BOOST = 1.6, BOOST_SEC = 2.5;
+let currentMeshes = null;
+function placeCurrents(world, leg) {
+  if (!currentMeshes) currentMeshes = [0, 1, 2].map(() => { const m = new THREE.Mesh(new THREE.CircleGeometry(CURRENT_R, 24), new THREE.MeshBasicMaterial({ color: 0x7fe0ff, transparent: true, opacity: 0.45, depthWrite: false })); m.rotation.x = -Math.PI / 2; return m; });
+  const [fx, fz] = leg.from, dx = leg.to.x - fx, dz = leg.to.z - fz, len = Math.hypot(dx, dz), sx = -dz / len, sz = dx / len;
+  return currentMeshes.map((m, i) => { const k = [0.3, 0.55, 0.78][i], side = (i % 2 ? -1 : 1) * 3.5; m.position.set(fx + dx * k + sx * side, 0.12, fz + dz * k + sz * side); m.visible = true; world.level.add(m); return { x: m.position.x, z: m.position.z, mesh: m, used: false }; });
+}
 export function sailLeg(ctx, leg, easy) {
   const { world, hud, audio, input } = ctx;
-  const speed = easy ? 2.2 : 3.6;
+  const currents = ctx.testHooks.currents = placeCurrents(world, leg);
+  let boostT = 0, warnT = 0;
   let t = 0; // 출발 뒤 CHASE_DELAY초 동안은 추격선이 기다린다
   toSea(ctx, leg);
   scene.ring.position.set(leg.to.x, 0.1, leg.to.z); scene.ring.visible = true;
@@ -42,17 +54,23 @@ export function sailLeg(ctx, leg, easy) {
       off(); input.enabled = false; input.releaseJoystick?.();
       world.followOffset = null; world.followLookY = null;
       scene.ring.visible = false; scene.pursuers.forEach(p => { p.visible = false; });
-      world.setGoal(null); hud.setCounter(null);
+      world.setGoal(null); hud.setCounter(null); world.speedScale = 1;
+      for (const c of currents) c.mesh.visible = false;
       resolve(ok);
     };
     const off = world.onUpdate(dt => {
       if (done) return;
       const b = world.player.position;
       const left = Math.hypot(b.x - leg.to.x, b.z - leg.to.z);
-      hud.setCounter(`${leg.name}까지 남은 뱃길: 노 젓기 ${Math.ceil(left / 2)}번`); // 바다에서는 걸음 대신 노 젓기로 센다
+      const near = Math.min(...scene.pursuers.map(p => Math.hypot(b.x - p.position.x, b.z - p.position.z)));
+      hud.setCounter(`${leg.name}까지 노 젓기 ${Math.ceil(left / 2)}번 · 가장 가까운 몽골 배 ${Math.round(near)}m`); // 바다에서는 걸음 대신 노 젓기로 센다
       if (left < leg.to.r) { audio.play('correct'); return finish(true); }
+      for (const c of currents) if (!c.used && Math.hypot(b.x - c.x, b.z - c.z) < CURRENT_R) { c.used = true; c.mesh.visible = false; boostT = BOOST_SEC; audio.play('whoosh'); toast(ctx, '물살을 탔다! 배가 빨라졌다!', 'good'); }
+      boostT -= dt; world.speedScale = boostT > 0 ? BOOST : 1;
+      warnT -= dt; if (near < 7 && warnT <= 0 && t > CHASE_DELAY) { warnT = 6; toast(ctx, '몽골 배가 바짝 쫓아온다! 빛나는 물살을 타 보자!', 'bad'); }
       t += dt;
       if (t < CHASE_DELAY) return;
+      const speed = sailPace(t, easy);
       for (const p of scene.pursuers) {
         const dx = b.x - p.position.x, dz = b.z - p.position.z, d = Math.hypot(dx, dz);
         if (d < CATCH_R) { audio.play('wrong'); return finish(false); }
@@ -219,7 +237,7 @@ export default {
     ctx.setGoal(G[3]);
     await ctx.fade(false);
     await showHowTo(ctx.ui, script.sail.howto);
-    const a = await runWithRetries(ctx, easy => sailLeg(ctx, scene.legs[0], easy), { failHint: script.sail.failHint });
+    const a = await runWithRetries(ctx, easy => sailLeg(ctx, scene.legs[0], easy), { failHint: script.sail.failHint, easyAfter: 2 });
     // 3. 진도에 내려 용장성의 김통정에게
     await ctx.fade(true);
     landAt(ctx, 'jindo');
@@ -236,7 +254,7 @@ export default {
     toSea(ctx, scene.legs[1]);
     ctx.setGoal(G[5]);
     await ctx.fade(false);
-    const b = await runWithRetries(ctx, easy => sailLeg(ctx, scene.legs[1], easy), { failHint: script.sail.failHint });
+    const b = await runWithRetries(ctx, easy => sailLeg(ctx, scene.legs[1], easy), { failHint: script.sail.failHint, easyAfter: 2 });
     // 5. 제주에 내려 항파두리의 김통정에게
     await ctx.fade(true);
     landAt(ctx, 'jeju');

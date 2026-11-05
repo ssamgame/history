@@ -134,7 +134,7 @@ export function cheoinPace(t, easy) {
 // 끝 무렵 나타나는 말 탄 살리타(2026-11-05 선생님). 한 번 만들어 두고 다시 하기마다 숨겼다 쓴다
 let salitai = null;
 function makeSalitai(world) {
-  if (salitai) return salitai;
+  if (salitai) { if (salitai.group.parent !== world.level) world.level.add(salitai.group); return salitai; } // 장을 다시 들어오면 새 장면에 다시 둔다
   const g = new THREE.Group(); g.visible = false; g.rotation.order = 'YXZ'; g.scale.setScalar(1.35); world.level.add(g);
   const horse = makeHorse({ coat: 0x3a2e26, armor: 0x6a5a40, saddle: 0x8a6a22 }), rider = makePerson(LOOKS.mongolGeneral); mount(horse, rider); g.add(horse);
   const name = labelSprite('살리타', { size: 0.8 }); name.position.set(0, 4.6, 0); g.add(name);
