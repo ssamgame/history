@@ -20,15 +20,12 @@ test('d73: 1장 천막·수레·모닥불·지휘소·거란 천막은 실제 �
   ok(p.z > 3 + 2.3, `천막 앞에서 멈춘다 ${p.z.toFixed(2)}`);
 });
 
-test('d73: 목표가 화면 밖이면 가장자리 화살표, 안이면 없음. 대화하는 사람의 느낌표는 숨긴다', () => {
+test('d73: 대화하는 사람의 느낌표는 숨긴다. 화면 가장자리 노란 화살표는 없다(2026-11-05 선생님: 제거)', () => {
   const w = testWorld();
   w.player.position.set(0, 0, 0); w.camMode = 'follow'; w.snapCamera(); w.step(1 / 60, { x: 0, z: 0 });
-  const ahead = w.camera.getWorldDirection(new w.camera.position.constructor());
-  w.setGoal({ x: w.player.position.x + ahead.x * 6, z: w.player.position.z + ahead.z * 6 }); ok(w.offscreenTarget() === null, '앞에 있으면 없음');
-  w.setGoal({ x: w.camera.position.x - ahead.x * 6, z: w.camera.position.z - ahead.z * 6 }); const t = w.offscreenTarget();
-  ok(t && t.x >= 0 && t.x <= 1 && t.y >= 0 && t.y <= 1, `뒤에 있으면 가장자리 ${JSON.stringify(t)}`);
+  eq(w.offscreenTarget, undefined);
   const ui = document.createElement('div'); document.body.appendChild(ui);
-  try { const hud = createHud(ui, { touch: false }); hud.setEdge(t); ok(!ui.querySelector('.hud-edge').hidden, '화살표 보임'); hud.setEdge(null); ok(ui.querySelector('.hud-edge').hidden); } finally { ui.remove(); }
+  try { const hud = createHud(ui, { touch: false }); eq(hud.setEdge, undefined); eq(ui.querySelector('.hud-edge'), null); } finally { ui.remove(); }
   const npc = w.addNpc('a', undefined, 0, -3, 0); npc.mark.visible = true; w.setTalkCamera(npc.mesh); w.step(1 / 60, { x: 0, z: 0 });
   ok(npc.mark.scale.x < 0.01, '대화 중 느낌표 숨김');
 });

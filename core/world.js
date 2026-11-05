@@ -196,7 +196,7 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
   goalArrow.visible = false;
   scene.add(goalArrow);
 
-  const camTarget = new THREE.Vector3(), edgeV = new THREE.Vector3();
+  const camTarget = new THREE.Vector3();
   const tmp = new THREE.Vector3();
   const updaters = [];
   let goal = null, elapsed = 0, fit = null, lastPP = null;
@@ -317,18 +317,6 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
     },
     setGoal(target) { goal = target; },
     getGoal() { return goal; },
-    // 가리킬 곳(목표, 없으면 가장 가까운 느낌표 인물)이 화면 밖이면 화면 가장자리 화살표 자리 { x, y, angle }(0~1 화면 비율), 화면 안이면 null
-    offscreenTarget() {
-      let t = goal ? { x: goal.x, z: goal.z } : null;
-      if (!t) { let best = Infinity; for (const n of world.npcs.values()) if (n.mark.visible && !n.spot) { const d = n.mesh.position.distanceTo(player.position); if (d < best) { best = d; t = { x: n.mesh.position.x, z: n.mesh.position.z }; } } }
-      if (!t) return null;
-      edgeV.set(t.x, 1.6, t.z).project(camera);
-      const behind = edgeV.z > 1, inside = !behind && Math.abs(edgeV.x) < 0.92 && Math.abs(edgeV.y) < 0.86;
-      if (inside) return null;
-      let x = edgeV.x, y = edgeV.y; if (behind) { x = -x; y = -Math.abs(y) - 1; }
-      const a = Math.atan2(y, x), k = Math.min(0.88 / Math.abs(Math.cos(a)) || 9, 0.8 / Math.abs(Math.sin(a)) || 9);
-      return { x: 0.5 + Math.cos(a) * k / 2, y: 0.5 - Math.sin(a) * k / 2, angle: -a };
-    },
     // 대화 카메라: 플레이어 어깨 너머로 말하는 인물의 얼굴이 보이도록 다가간다. 끝나면 camMode를 'follow'로.
     setTalkCamera(npcMesh) {
       talkAt.copy(npcMesh.position);

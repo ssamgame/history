@@ -102,7 +102,6 @@ function boot() {
     wasTalking = talking;
     hud.setTouchVisible(inChapter && !talking);
     world.step(dt, talking ? { x: 0, z: 0 } : input.move());
-    hud.setEdge(inChapter && !talking && world.camMode === 'follow' && input.enabled ? world.offscreenTarget() : null); // 목표·느낌표 인물이 화면 밖이면 가장자리 화살표
     if (perf) { const r0 = performance.now(); world.render(); perf.frame(raw * 1000, performance.now() - r0, world.renderer.info.render); perfPanel.tick(now); }
     else world.render();
     requestAnimationFrame(frame);

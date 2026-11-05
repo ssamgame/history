@@ -455,11 +455,6 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .intro-skip { position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); top: calc(9vh + 12px); min-height: 48px; background: rgba(27,31,29,.85); color: var(--hanji); border: 1px solid var(--gold); }
 
 /* 화면 밖 목표를 가리키는 가장자리 화살표(2026-11-05): 가리키는 쪽으로 돌아가며 살짝 맥박친다 */
-.hud-edge { position: fixed; z-index: 11; width: 54px; height: 54px; border-radius: 50%; background: rgba(27,31,29,.7); border: 3px solid #ffd23a; display: grid; place-items: center; pointer-events: none; animation: edgePulse 1s ease-in-out infinite alternate; }
-.hud-edge-tip { color: #ffd23a; font-size: 28px; line-height: 1; transform: translateX(2px); }
-.hud-edge[hidden] { display: none; }
-@keyframes edgePulse { from { box-shadow: 0 0 0 0 rgba(255,210,58,.5); } to { box-shadow: 0 0 0 8px rgba(255,210,58,0); } }
-@media (prefers-reduced-motion: reduce) { .hud-edge { animation: none; } }
 
 /* 고려 1장 담판 기세 막대(2026-11-05) */
 .nego-bar { position: fixed; z-index: 12; top: calc(10px + env(safe-area-inset-top, 0px)); right: calc(92px + env(safe-area-inset-right, 0px)); width: clamp(260px, calc(100vw - 470px), 520px); /* 왼쪽 퀘스트 상자와 오른쪽 메뉴 사이 */ display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; padding: 6px 12px 4px; border-radius: 8px; background: rgba(27,31,29,.82); border: 2px solid var(--gold); color: var(--hanji); pointer-events: none; box-sizing: border-box; }
