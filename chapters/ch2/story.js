@@ -129,7 +129,44 @@ export function lastStandScene(ctx) {
     const toK = new THREE.Vector3(0, 0, -6).sub(yg0).setY(0).normalize();
     hook.away = mv.dot(toK); // 1이면 고려군에서 멀어지는 쪽으로 곧게
     hook.retreated = goers.filter(u => u.userData.person || u.userData.legs).length;
+    await lastStand(ctx, { g, hook, cam, glide, fadeIn, yg, few, hide: [...K.units, gflag] });
     await say(L[1]);
     hook.flag = true;
   } });
+}
+
+// 양규의 마지막 싸움(2026-11-05 선생님): 물러가는 거란군을 쫓다 거란 대군에 둘러싸인다. 화면을 바꿔(어두워졌다 밝아짐)
+// 눈밭 한가운데 양규와 군사 둘을 거란군이 둥글게 에워싸고, 양규는 앞의 적을 쓰러뜨리며 버티다 무릎을 꿇고 쓰러진다(피 없음, 쓰러진 채 남는다).
+const STAND = [0, -16]; // 무대 안 평평한 곳
+async function lastStand(ctx, { g, hook, cam, glide, fadeIn, yg, few, hide }) {
+  const { world } = ctx, [cx, cz] = STAND;
+  await ctx.fade?.(true);
+  for (const u of [...hide, ...few]) u.visible = false;
+  const reset = p => { p.visible = true; p.rotation.set(0, 0, 0); p.rotation.order = 'YXZ'; };
+  reset(yg); yg.position.set(cx, 0, cz); yg.rotation.y = 0; // 카메라(남쪽, +z)를 본다
+  const mates = few.slice(0, 2); mates.forEach((p, i) => { reset(p); p.position.set(cx + (i ? 1.6 : -1.6), 0, cz - 0.6); p.rotation.y = i ? 0.9 : -0.9; });
+  // 둘레의 거란군: 카메라 쪽(남쪽) 틈만 남기고 둥글게
+  const ring = [];
+  for (let i = 0; i < 16; i++) {
+    const a = Math.PI * (0.36 + 1.28 * i / 15) + Math.PI / 2, r = 5.2 + (i % 3) * 0.7; // 남쪽(카메라 쪽, +z)을 가운데로 0.36π씩 비우고 북쪽을 두른다
+    const x = cx + Math.cos(a) * r, z = cz + Math.sin(a) * r;
+    ring.push(person(g, i % 4 === 1 ? 'khitanBright' : 'khitan', x, z, Math.atan2(cx - x, cz - z)));
+  }
+  hook.surround = ring.length;
+  // 앞의 적 둘이 양규에게, 하나씩 군사에게 달려든다
+  const near = (x, z) => ring.slice().sort((p, q) => Math.hypot(p.position.x - x, p.position.z - z) - Math.hypot(q.position.x - x, q.position.z - z))[0];
+  const foeY = near(cx - 1.2, cz - 4), foeA = near(cx - 4, cz - 1), foeB = near(cx + 4, cz - 1);
+  cam([cx + 3.2, 2.6, cz + 8], [cx, 1.3, cz - 1]);
+  await fadeIn();
+  const fight = melee(world, [{ a: yg, b: foeY }, { a: mates[0], b: foeA }, { a: mates[1], b: foeB }], { approach: 1.4, lose: 1, flee: false, chase: 0, counter: 1, seed: 7 });
+  const tighten = wait(world, 3.2, k => { for (const p of ring) if (p !== foeY && p !== foeA && p !== foeB) { const d = Math.hypot(p.position.x - cx, p.position.z - cz); if (d > 3.6) { p.position.x += (cx - p.position.x) / d * 0.012; p.position.z += (cz - p.position.z) / d * 0.012; } } });
+  await glide([cx + 3.2, 2.6, cz + 8], [cx, 1.3, cz - 1], [cx + 1.6, 2, cz + 5.5], [cx, 1.2, cz - 1], 3.4);
+  await Promise.all([fight.done, tighten]);
+  hook.last = fight.hook;
+  // 무릎을 꿇었다가 옆으로 쓰러진다(사라지지 않는다)
+  yg.userData.manual = true; yg.rotation.y = 0.3;
+  await wait(world, 1.4, k => { yg.position.y = -0.35 * Math.min(1, k * 2); yg.rotation.x = 0.35 * Math.min(1, k * 2); });
+  await wait(world, 1, k => { const e = k * k * (3 - 2 * k); yg.rotation.z = -Math.PI / 2 * e; yg.position.y = -0.35 * (1 - e); yg.rotation.x = 0.35 * (1 - e); });
+  await wait(world, 1.2);
+  hook.fallen = Math.abs(yg.rotation.z) > 1.4; hook.fallenVisible = yg.visible;
 }

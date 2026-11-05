@@ -281,3 +281,39 @@ test('ch3 D-16: Khitan camp tents behind their line catch fire during the Guju c
     await p;
   } finally { s.done(); }
 });
+
+// 2026-11-05 선생님: 3장 둑 터뜨리기를 더 재밌게(조금 더 어렵게) — '냇물 속 거란군' 막대, 많이 들어왔을 때 터뜨릴수록 많이 휩쓸린다, 모두 들어왔을 때 대성공
+import { riverCount, DAM_WINDOW as DW3 } from '../chapters/ch3/chapter.js';
+test('ch3 fun: river count rises then falls; the signal comes when most are in; full count is reachable inside the window', () => {
+  const s = touchSetup(ch3Script.speakers);
+  try {
+    const sc = ch3.buildScene(s.w, s.ctx);
+    const n = sc.river.army.children.length, at = k => { sc.river.setCross(k); return riverCount(); };
+    eq(at(0), 0); eq(at(1), 0);
+    const [lo, hi] = DW3.normal;
+    ok(at(lo) >= n * 0.6, `신호 때 이미 많이 들어와 있다 ${at(lo)}/${n}`);
+    let full = 0; for (let k = lo; k <= hi; k += 0.01) if (at(k) === n) full += 0.01;
+    ok(full * 9 >= 0.8, `모두 들어와 있는 때가 0.8초 이상 ${(full * 9).toFixed(2)}`);
+  } finally { s.done(); }
+});
+
+test('ch3 fun: the dam reports how many were in the river, the meter shows, and the flood sweeps only those', async () => {
+  const s = touchSetup(ch3Script.speakers);
+  try {
+    const sc = ch3.buildScene(s.w, s.ctx);
+    setupDam(s.ctx);
+    let res = null;
+    damAttempt(s.ctx, false, { why: '' }).then(r => { res = r; });
+    s.w.player.position.set(sc.stand.x, s.w.player.position.y, sc.stand.z);
+    stepUntil(s.w, () => s.ctx.testHooks.damNow, 400);
+    const shown = () => { const c = s.ui.querySelector('.hud-counter'); return !!c && !c.hidden && /냇물 속 거란군/.test(c.textContent); };
+    ok(shown(), 'meter shown');
+    s.w.player.position.set(sc.plug.x, s.w.player.position.y, sc.plug.z);
+    s.w.step(0.05, { x: 0, z: 0 });
+    await sleep(5);
+    eq(res, true);
+    const caught = s.ctx.testHooks.damCaught;
+    ok(caught >= 10 && caught < sc.river.army.children.length, `신호 바로 뒤에 터뜨리면 일부만 ${caught}`);
+    ok(!shown(), 'meter hidden after');
+  } finally { s.done(); }
+});

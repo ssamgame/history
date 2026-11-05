@@ -405,3 +405,20 @@ test('ch2 fun: the wall gets faster over time, easy mode stays slow', () => {
   eq(wallPace(0, true), wallPace(40, true));
   ok(wallPace(0, true).climbTime > a.climbTime);
 });
+
+// 2026-11-05 선생님: 거란군이 물러간 뒤 장면을 바꿔(화면 어두워짐) 양규가 거란 대군에 둘러싸여 싸우다 쓰러진다(피 없음, 쓰러진 채 남는다)
+test('ch2 last stand: after the retreat the scene cuts to Yanggyu surrounded, fighting, then falling', async () => {
+  const s = touchSetup(ch2Script.speakers); const bot = touchBot(s, { answers: new Set() });
+  const ev = []; const fade0 = s.ctx.fade; s.ctx.fade = async v => { ev.push('fade' + (v ? 1 : 0)); return fade0(v); };
+  const say0 = s.dialogue.say; s.dialogue.say = l => { ev.push(l.text); return say0(l); };
+  try {
+    ch2.buildScene(s.w, s.ctx);
+    await ch2.stories.lastStand(s.ctx);
+    const h = s.ctx.testHooks.lastStand;
+    const i0 = ev.indexOf(ch2Script.result[0].text), i1 = ev.indexOf(ch2Script.result[1].text);
+    ok(i0 >= 0 && i1 > i0 && ev.slice(i0, i1).includes('fade1'), 'fade between retreat and last stand: ' + ev.join(','));
+    ok(h.surround >= 10, `둘러싼 거란군 ${h.surround}`);
+    ok(h.last && h.last.strikes >= 2, `양규가 싸운다 ${JSON.stringify(h.last)}`);
+    ok(h.fallen && h.fallenVisible, '양규가 쓰러져 남는다');
+  } finally { bot.stop(); s.done(); }
+}, { timeout: 90000 });

@@ -7,7 +7,7 @@ import { roam } from '../../core/flow.js';
 import { showHowTo, runWithRetries } from '../../core/minigame.js';
 import { enterThroughGate } from '../kit/gate.js';
 import { waitInteract } from '../../core/portal.js';
-import { labelSprite } from '../kit/play.js';
+import { labelSprite, toast } from '../kit/play.js';
 import { setCarry, mat } from '../../core/people.js';
 import * as THREE from 'three';
 import { strike, block } from '../../core/interact.js';
@@ -18,7 +18,7 @@ const EXPLORE_BOUNDS = { x0: -28, x1: 28, z0: -3.5, z1: 14 };
 export const INTRO_FROM = [0, 31]; // 장 시작 장면: 남문 밖 길
 const RETURN_AT = [0, 10];          // 싸움이 끝난 뒤 진영으로 돌아온 학생 자리
 const PEOPLE = ['soldier', 'scout']; // 이야기를 들어 볼 차례(병사 → 척후병), 그다음 강감찬
-const CROSS_SECONDS = { normal: 10, easy: 14 }; // 거란군이 냇물을 다 건너는 시간(쉬운 방식은 더 천천히)
+const CROSS_SECONDS = { normal: 9, easy: 14 }; // 거란군이 냇물을 다 건너는 시간(쉬운 방식은 더 천천히)
 const LABEL_SECONDS = 1.6;
 const SIDE_R = 1.9; // 강감찬 곁: 신호는 학생이 이 안에서 기다릴 때만 난다(D-12)
 let scene = null;
@@ -144,9 +144,15 @@ export function setupDam(ctx) {
 // 둑 터뜨리기 한 번(D-10, 버튼 없음): 거란군이 냇물을 건넌다. 무리가 냇물 한가운데에 오면(진행도 lo~hi) 강감찬이 "지금이다!" 하고
 // 둑 마개(빛나는 원)를 가리키고, 학생이 마개에 가까이 가면 막은 물이 쏟아진다. 그 전에 가면 마개는 반응하지 않고 강감찬이 "아직이다!".
 // 진행도 k에서 무리 가운데가 냇물 한가운데에 오는 때는 k≈0.67, 무리 전체가 물속에 있는 때는 k≈0.56~0.78이다.
-export const DAM_WINDOW = { normal: [0.5, 0.82], easy: [0.42, 0.88] };
+export const DAM_WINDOW = { normal: [0.6, 0.86], easy: [0.45, 0.9] }; // 2026-11-05 조금 더 어렵게: 무리가 많이 들어온 뒤에 신호, 짧은 틈
+// 지금 냇물(두 둑 사이) 안에 있는 거란군 수. 많이 들어왔을 때 터뜨릴수록 많이 휩쓸린다(2026-11-05 선생님)
+export function riverCount() {
+  const { army, zNorth, zSouth } = scene.river;
+  return army.children.filter(k => { const z = army.position.z + k.position.z; return z >= zNorth && z <= zSouth; }).length;
+}
+const meter = (n, all) => `냇물 속 거란군 ${'■'.repeat(n)}${'□'.repeat(all - n)} ${n}/${all}`;
 export function damAttempt(ctx, easy, fail) {
-  const { world, audio } = ctx;
+  const { world, audio, hud } = ctx;
   const [lo, hi] = easy ? DAM_WINDOW.easy : DAM_WINDOW.normal, T = easy ? CROSS_SECONDS.easy : CROSS_SECONDS.normal;
   const plug = scene.plug, gc = world.npcs.get('gangamchan');
   scene.river.army.visible = true; scene.river.army.position.y = 0; scene.flood.hide();
@@ -157,7 +163,7 @@ export function damAttempt(ctx, easy, fail) {
   return new Promise(resolve => {
     const finish = ok => {
       if (done) return; done = true;
-      off(); plug.ring.visible = false; hush(); world.setGoal(null); ctx.testHooks.damNow = false;
+      off(); plug.ring.visible = false; hush(); world.setGoal(null); ctx.testHooks.damNow = false; hud.setCounter(null);
       resolve(ok);
     };
     const off = world.onUpdate(dt => {
@@ -165,6 +171,7 @@ export function damAttempt(ctx, easy, fail) {
       t += dt;
       const k = Math.min(1, t / T);
       scene.river.setCross(k);
+      hud.setCounter(meter(riverCount(), scene.river.army.children.length));
       const p = world.player.position, open = k >= lo && k <= hi;
       const at = Math.hypot(p.x - plug.x, p.z - plug.z) < plug.r, beside = byGang(world);
       if (open && !ctx.testHooks.damNow && beside) { // 강감찬이 마개 쪽을 보고 "지금이다!"
@@ -173,7 +180,7 @@ export function damAttempt(ctx, easy, fail) {
         gc.mesh.rotation.y = Math.atan2(plug.x - gc.mesh.position.x, plug.z - gc.mesh.position.z);
         world.setGoal({ x: plug.x, z: plug.z });
       }
-      if (at && ctx.testHooks.damNow) { audio.play('water'); return finish(true); }
+      if (at && ctx.testHooks.damNow) { ctx.testHooks.damCaught = riverCount(); audio.play('water'); return finish(true); }
       if (at && !near && !ctx.testHooks.damNow) { // 신호 전에 마개로 오면: "내 곁에서 기다려라" 하고 강감찬 곁으로 화살표
         ctx.testHooks.damTooEarly = (ctx.testHooks.damTooEarly || 0) + 1; shout(world, script.dam.wait); labelT = 99;
         world.setGoal({ x: scene.stand.x, z: scene.stand.z });
@@ -190,7 +197,10 @@ export function damAttempt(ctx, easy, fail) {
 export function playFlood(ctx) {
   const { world } = ctx;
   scene.damWall.visible = false;
-  const army = scene.river.army, a0 = army.position.clone(), SPEED = 9;
+  const army = scene.river.army, a0 = army.position.clone(), SPEED = 9, { zNorth, zSouth } = scene.river;
+  for (const k of army.children) { const z = army.position.z + k.position.z; k.userData.dry = z < zNorth || z > zSouth; } // 둑 밖(물 밖)에 있던 군사는 휩쓸리지 않는다
+  const caught = army.children.filter(k => k.visible && !k.userData.dry).length, all = army.children.length;
+  toast(ctx, caught >= all ? `대성공! 거란군 ${caught}명이 모두 물에 휩쓸린다!` : `거란군 ${caught}명이 물에 휩쓸린다!`, 'good'); ctx.testHooks.floodToast = caught; // 물이 쏟아지는 동안(대화창이 열리기 전) 보인다
   return new Promise(resolve => {
     let t = 0, pushed = 0;
     const off = world.onUpdate(dt => {
@@ -199,7 +209,7 @@ export function playFlood(ctx) {
       scene.flood.show(front, 1 + Math.min(1, t / 2.4) * 0.35, t);
       // 물살 앞이 닿은 군사부터 아래쪽(+x)으로 빨라지며 떠밀리고, 뒹굴며 가라앉다가 화면 밖에서 사라진다
       army.children.forEach((k, i) => {
-        if (!k.visible) return;
+        if (!k.visible || k.userData.dry) return;
         const wx = army.position.x + k.position.x;
         if (!k.userData.swept && front > wx - 0.5) { k.userData.swept = { v: 2, t: 0, spin: (i % 2 ? 1 : -1) * (2 + (i % 3)) }; }
         const w = k.userData.swept; if (!w) return;
@@ -209,7 +219,7 @@ export function playFlood(ctx) {
         k.position.y = -Math.min(1.6, w.t * 0.55) + Math.sin(w.t * 5) * 0.08; // 물에 잠긴다
         if (w.t > 2.2 || k.position.x - k.userData.home.x > 16) { k.visible = false; pushed++; } // 쓸려 가 사라진다
       });
-      if (t > 3.4 || (t > 1 && army.children.every(k => !k.visible))) { off(); scene.flood.hide(); army.children.forEach(k => { k.visible = false; }); resolve(); }
+      if (t > 3.4 || (t > 1 && army.children.every(k => !k.visible || k.userData.dry))) { off(); scene.flood.hide(); army.children.forEach(k => { k.visible = false; }); resolve(); }
     });
   });
 }
@@ -443,7 +453,7 @@ export default {
     await showHowTo(ctx.ui, script.dam.howto);
     const damFail = { why: '' };
     const a = await runWithRetries(ctx, easy => { setupDam(ctx); input.enabled = true; return damAttempt(ctx, easy, damFail).finally(() => { input.enabled = false; }); }, {
-      failHint: () => script.dam.late,
+      failHint: () => script.dam.late, easyAfter: 2,
     });
     await playFlood(ctx);
     await sayAll(dialogue, script.dam.done);
