@@ -9,7 +9,8 @@
   --dan-green: #2f6b5e;
   --gold: #d9a441;
   --muted: #8a8172;
-  --font-display: 'Nanum Myeongjo', 'Batang', 'AppleMyungjo', serif;
+  --font-doc: 'Nanum Myeongjo', 'Batang', 'AppleMyungjo', serif; /* 옛 문서·시·두루마리 종이 안 글씨만 */
+  --font-display: var(--font-ui); /* 화면 글씨는 고딕 하나로(2026-11-05 선생님) */
   --font-ui: 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif;
   color-scheme: dark;
 }
@@ -245,7 +246,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
   .trace-board { width: min(calc(100vw - 72px), calc(100dvh - 230px), 720px); }
 }
 .trace-board svg { width: 100%; height: 100%; display: block; }
-.trace-glyph { font-family: var(--font-display); font-size: 78px; fill: rgba(80, 50, 25, .25); }
+.trace-glyph { font-family: var(--font-doc); font-size: 78px; fill: rgba(80, 50, 25, .25); }
 .trace-dot { fill: #fff3d0; stroke: #6b4a32; stroke-width: 1; }
 .trace-dot.first { fill: var(--gold); }
 .trace-dot.passed { fill: var(--dan-red); }
@@ -381,8 +382,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .scroll-sheet.poem-sheet { max-height: min(44dvh, 420px); overflow-y: auto; touch-action: pan-y; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
 .poem-hint { margin: 8px 0 0; text-align: center; font-size: 15px; color: var(--muted); }
 .doc-paper { background: #fbf5e6; border: 2px solid #8a6a48; border-radius: 3px; padding: 18px 22px; box-shadow: inset 0 0 0 5px #efe3c6; }
-.doc-paper h3 { margin: 0 0 10px; font-family: var(--font-display); text-align: center; font-size: 22px; }
-.doc-paper ol { margin: 0; padding-left: 24px; line-height: 1.7; font-size: 19px; color: #1d1712; font-weight: 600; }
+.doc-paper h3 { margin: 0 0 10px; font-family: var(--font-doc); text-align: center; font-size: 22px; }
+.doc-paper ol { font-family: var(--font-doc); margin: 0; padding-left: 24px; line-height: 1.7; font-size: 19px; color: #1d1712; font-weight: 600; }
 .doc-paper li small { display: block; color: var(--muted); font-size: 14px; }
 /* 낡은 두루마리(showDocument scroll: true): 누렇게 바랜 한지, 양끝에 말린 나무 축(끝 꼭지), 얼룩과 그을린 듯한 가장자리 */
 .doc-scroll { position: relative; display: flex; align-items: stretch; margin: 4px 0; filter: drop-shadow(0 6px 8px rgba(0,0,0,.45)); }
@@ -396,8 +397,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
     linear-gradient(180deg, rgba(120,80,30,.28) 0%, rgba(120,80,30,0) 9%, rgba(120,80,30,0) 90%, rgba(100,60,20,.32) 100%),
     repeating-linear-gradient(180deg, rgba(150,110,60,.07) 0 2px, rgba(0,0,0,0) 2px 7px),
     radial-gradient(ellipse at 50% 45%, #efdcaa 0%, #e2c88e 55%, #cfae6e 100%); }
-.scroll-sheet h3 { position: relative; margin: 0 0 10px; font-family: var(--font-display); text-align: center; font-size: 22px; color: #3a2210; letter-spacing: .04em; }
-.scroll-sheet ol { position: relative; margin: 0; padding-left: 24px; line-height: 1.7; font-size: 18px; font-family: var(--font-display); font-weight: 700; }
+.scroll-sheet h3 { position: relative; margin: 0 0 10px; font-family: var(--font-doc); text-align: center; font-size: 22px; color: #3a2210; letter-spacing: .04em; }
+.scroll-sheet ol { position: relative; margin: 0; padding-left: 24px; line-height: 1.7; font-size: 18px; font-family: var(--font-doc); font-weight: 700; }
 .scroll-stain { position: absolute; border-radius: 50%; pointer-events: none; background: radial-gradient(circle, rgba(140,90,35,0) 35%, rgba(140,90,35,.22) 62%, rgba(140,90,35,.05) 75%, rgba(140,90,35,0) 80%); }
 .scroll-stain.s1 { width: 110px; height: 90px; right: 8%; top: 8%; }
 .scroll-stain.s2 { width: 70px; height: 60px; left: 6%; bottom: 10%; background: radial-gradient(circle, rgba(120,75,30,.18) 0%, rgba(120,75,30,.1) 55%, rgba(120,75,30,0) 72%); }

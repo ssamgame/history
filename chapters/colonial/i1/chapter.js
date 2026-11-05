@@ -126,7 +126,7 @@ const ACT = {
     world.setFixedCamera([R.x - 7, 4.4, R.z + 1.2], [R.x + 1, 1.4, R.z]); // 열린 쪽으로 교실을 들여다본다
     hook.sword = !!set.swordTeacher;
     await say(st.lines[0]);
-    const room = set.swordTeacher.parent, e = room.localToWorld(new THREE.Vector3(-3.9, 1.9, -2.0)), l = room.localToWorld(new THREE.Vector3(0.9, 1.25, -2.7));
+    const room = set.swordTeacher.parent, e = room.localToWorld(new THREE.Vector3(-4.6, 2.0, -2.4)), l = room.localToWorld(new THREE.Vector3(1.1, 1.45, -4.1));
     world.setFixedCamera(e.toArray(), l.toArray()); // 칼 찬 쪽 앞에서 교사를 크게(2026-11-04 선생님): 학생들 책상 앞줄과 칠판 사이
     await say(st.lines[1]);
   },

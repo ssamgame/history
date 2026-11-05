@@ -21,7 +21,7 @@ export function portalName(next) {
 
 function textSprite(text, { size = 1, color = '#fff6d8', bg = 'rgba(60,20,10,0.88)', border = '#f2c45a' } = {}) {
   const cv = document.createElement('canvas'), c = cv.getContext('2d');
-  const font = 'bold 46px "Nanum Myeongjo", Batang, serif';
+  const font = 'bold 46px "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif';
   c.font = font;
   const w = Math.min(1400, Math.ceil(c.measureText(text).width) + 60), h = 80;
   cv.width = w; cv.height = h;

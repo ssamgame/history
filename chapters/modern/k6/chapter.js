@@ -212,7 +212,7 @@ const ACT = {
     const room = classroom(g, 3, -4), O = a.at(3, -4);
     placePlayer(world, [O.x + 2.6, O.z + 3.6], Math.PI);
     hook.classroom = room.kids.length;
-    const view = () => world.setFixedCamera([O.x - 1.2, 5.4, O.z + 7.5], [O.x, 1.3, O.z - 2.2]); // 학생들 머리 너머로 선생님과 칠판
+    const view = () => world.setFixedCamera([O.x - 1.2, 5.8, O.z + 9], [O.x, 1.4, O.z - 3.2]); // 학생들 머리 너머로 선생님과 칠판
     view();
     await ctx.fade?.(false);
     await say(st.lines[0], room.teacher);

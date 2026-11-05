@@ -10,7 +10,7 @@ import { playAction } from '../../../core/motion.js';
 import { signMaterial } from '../../kit/buildings.js';
 import { gateLeaves, nameBoard } from '../../kit/gate.js';
 import { walkInAndTalk, anyOrderTalk } from '../../kit/talk.js';
-import { wait, person, ease, face, sayer, classroom, meet, minigameWithMeet, facingShare } from '../../kit/walk.js';
+import { wait, person, ease, face, sayer, classroom, ROOM, meet, minigameWithMeet, facingShare } from '../../kit/walk.js';
 import { waitInteract } from '../../../core/portal.js';
 import { mat, setCarry } from '../../../core/people.js';
 import { placePlayer } from '../../joseon/common.js';
@@ -20,7 +20,24 @@ const PEOPLE = ['citizen', 'grandma', 'newsboy'];
 const GATE_Z = 14.5, INTRO_FROM = [0, 17.5], SPOT = [0, 7];
 // 받침이 있으면 '이에요', 없으면 '예요'
 const ieyo = w => { const c = w.charCodeAt(w.length - 1) - 0xac00; return c >= 0 && c % 28 ? `${w}이에요` : `${w}예요`; };
-const bookMesh = color => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.08, 0.3), mat(color, 'cloth', 'object')); m.castShadow = true; return m; };
+// 교과서(2026-11-05 선생님: 책처럼, 제목이 보이게): 겉표지(두 장)·속지 덩어리·책등, 앞표지에 제목을 쓴다. 눕혀 놓아 위가 앞표지. 책상 위 책은 칠판 쪽(카메라)에서 제목이 바로 읽히게 돌려 놓는다
+const bookMesh = (color, title) => {
+  const b = new THREE.Group(), W = 0.36, L = 0.5;
+  const part = (w, h, d, m, x, y, z) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(x, y, z); o.castShadow = true; b.add(o); };
+  const cover = mat(color, 'cloth', 'object');
+  part(L, 0.012, W, cover, 0, -0.034, 0); part(L, 0.012, W, cover, 0, 0.034, 0); part(0.014, 0.08, W, cover, -L / 2 + 0.007, 0, 0); // 뒤표지·앞표지·책등
+  part(L - 0.02, 0.056, W - 0.02, mat(0xf1ead6, 'grain', 'object'), 0.005, 0, 0); // 속지
+  if (title) {
+    const cv = document.createElement('canvas'); cv.width = 256; cv.height = 184; const c = cv.getContext('2d');
+    c.fillStyle = '#' + new THREE.Color(color).getHexString(); c.fillRect(0, 0, 256, 184);
+    c.strokeStyle = 'rgba(255,255,255,.55)'; c.lineWidth = 6; c.strokeRect(14, 14, 228, 156);
+    c.fillStyle = new THREE.Color(color).getHSL({}).l < 0.4 ? '#f2e8d2' : '#2a1d12'; c.font = 'bold 96px "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(title, 128, 92, 220);
+    const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
+    const f = new THREE.Mesh(new THREE.PlaneGeometry(L - 0.03, W - 0.02), new THREE.MeshLambertMaterial({ map: tex }));
+    f.rotation.x = -Math.PI / 2; f.position.set(0.01, 0.0405, 0); f.name = 'bookTitle'; f.userData.title = title; b.add(f);
+  }
+  return b;
+};
 
 // ── 무대(마을에서 떨어진 x 400) ──
 // 1945년 8월 15일 거리(탐험 끝 장면): 길 양쪽 가게와 집에서 사람들이 나와 길 가운데 모인다. 카메라는 남쪽에서 마주 본다
@@ -181,9 +198,7 @@ export async function nameplatePlay(ctx, scene, easy) {
       await playAction(h.owner, { dur: 1.1, fadeIn: 0.15, fadeOut: 0.2, pose: t => { const u = Math.sin(Math.min(1, t / 1.1) * Math.PI); return { arms: [[-Math.PI * 0.9 * u, 0, 0], [-Math.PI * 0.9 * u, 0, 0]] }; }, name: 'cheer' }); // 만세 한 번(2026-11-04 선생님: 옆을 보고 선 사람을 x로 기울이면 몸이 좌우로 흔들렸다)
       world.camMode = 'follow';
     }
-    hud.setCounter(`${P.counter} ${houses.length}/${houses.length}`);
-    for (const l of P.done) await dialogue.say(l);
-    dialogue.close();
+    hud.setCounter(`${P.counter} ${houses.length}/${houses.length}`); // 할머니 고맙다는 말(P.done)은 장 진행(kit)이 한 번만 한다(2026-11-05 선생님: 두 번 나왔다)
   } finally {
     ctx.testHooks.choice = null;
     await leaveArena(ctx, a);
@@ -204,14 +219,14 @@ export async function classroomPlay(ctx) {
   const crate = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.5, 0.6), mat(0x7a5a3c, 'wood', 'object')); crate.position.set(A.crate[0], 0.25, A.crate[1]); g.add(crate); // 걷은 교과서 상자
   const desks = kids.map((kid, i) => {
     const kx = kid.position.x, kz = kid.position.z - 0.3; // 책상 줄(아이는 그 뒤 의자에 앉아 있다)
-    const old = bookMesh(0x5a3a2a); old.position.set(kx, 0.74, kz - 0.55); room.group.add(old); hook.oldBooks += 1;
+    const old = bookMesh(0x5a3a2a, 'こくご'); old.rotation.y = Math.PI; old.position.set(kx, 0.74, kz - 0.55); room.group.add(old); hook.oldBooks += 1;
     const ring = new THREE.Mesh(new THREE.RingGeometry(0.45, 0.6, 24), new THREE.MeshBasicMaterial({ color: 0xd9a441, transparent: true, opacity: 0.9, side: THREE.DoubleSide }));
-    ring.rotation.x = -Math.PI / 2; ring.position.set(kx + 0.8, 0.1, kz - 0.2); ring.visible = false; room.group.add(ring);
-    return { kid, kx, kz, old, ring, word: P.words[i % P.words.length] };
+    ring.rotation.x = -Math.PI / 2; ring.position.set(kx + 1.4, 0.1, kz - 0.2); ring.visible = false; room.group.add(ring);
+    return { kid, kx, kz, old, ring };
   });
   const p0 = a.at(...A.from); placePlayer(world, [p0.x, p0.z], Math.PI);
-  setCarry(world.player, bookMesh(0xd8c08a), 'arms'); // 한글 교과서 묶음을 안고 들어간다
-  const classView = () => world.setFixedCamera([O.x + 0.4, 5, O.z - 3.3], [O.x, 0.6, O.z + 1.4]);
+  setCarry(world.player, bookMesh(0xd8c08a, '한글'), 'arms'); // 한글 교과서 묶음을 안고 들어간다
+  const classView = () => world.setFixedCamera([O.x + 0.4, 5, O.z - 4.2], [O.x, 0.6, O.z + 1.8]);
   try {
     await ctx.fade?.(false);
     world.setFixedCamera([O.x + 1.5, 3.6, O.z + 7], [O.x, 1, O.z - 1]);
@@ -221,26 +236,24 @@ export async function classroomPlay(ctx) {
     for (const [i, d] of desks.entries()) {
       hud.setCounter(`${P.counter} ${i}/${desks.length}`);
       d.ring.visible = true;
-      const pos = a.at(rx + d.kx + 0.8, rz + d.kz - 0.2);
+      const pos = a.at(rx + d.kx + 1.4, rz + d.kz - 0.2); // 책상 옆 통로
       await waitInteract(ctx, { pos, label: '한글 교과서 놓기', r: 1.3, markY: 2.6 });
       ctx.input.enabled = false;
       d.ring.visible = false;
       d.old.removeFromParent(); hook.oldBooks -= 1; // 일본어 교과서를 걷는다
-      const nb = bookMesh(0xd8c08a); nb.position.set(d.kx, 0.74, d.kz - 0.55); room.group.add(nb); hook.books += 1;
+      const nb = bookMesh(0xd8c08a, '한글'); nb.rotation.y = Math.PI; nb.position.set(d.kx, 0.74, d.kz - 0.55); room.group.add(nb); hook.books += 1;
       audio.play('tap');
-      const lab = labelSprite(d.word, { size: 0.7 }); lab.position.set(d.kx, 2.5, d.kz); room.group.add(lab); // 아이가 일어나 낱말을 읽는다
       classView(); // 칠판 쪽 높은 곳에서 아이들의 얼굴과 책상을 본다
       await wait(world, 0.9, k => { const ar = d.kid.userData.arms; if (ar) ar[1].rotation.x = -1.3 * Math.sin(k * Math.PI); }); // 앉은 채 손을 들고 읽는다
       hook.read += 1;
       await wait(world, 0.9);
-      lab.removeFromParent();
       world.camMode = 'follow';
     }
     hud.setCounter(`${P.counter} ${desks.length}/${desks.length}`);
     setCarry(world.player, null);
     // 선생님이 칠판에 '우리말 우리글'을 쓰고, 칠판 앞에서 아이들을 마주 보며 다 함께 읽는다
-    const bd = labelSprite(P.board, { size: 1 }); bd.position.set(0, 2.15, -3.2); room.group.add(bd); hook.board = true;
-    world.setFixedCamera([O.x + 0.6, 2.6, O.z + 5.5], [O.x, 1.7, O.z - 3]); // 교실 뒤에서 칠판 글씨를 본다
+    const bd = labelSprite(P.board, { size: 1 }); bd.position.set(0, 2.15, ROOM.boardZ + 0.1); room.group.add(bd); hook.board = true;
+    world.setFixedCamera([O.x + 0.6, 2.8, O.z + 6.5], [O.x, 1.8, O.z - 4.6]); // 교실 뒤에서 칠판 글씨를 본다
     audio.play('correct');
     await dialogue.say(P.end[0]);
     classView(); // 다 함께 읽는 아이들의 얼굴

@@ -15,6 +15,7 @@ import { MOODS } from '../../../core/world.js';
 import { LOOKS } from '../../../content/characters.js';
 import { placePlayer } from '../../joseon/common.js';
 import script from './script.js';
+import { classroom } from '../../kit/walk.js';
 
 const PEOPLE = ['gentleman', 'woman', 'student'];
 const GATE_Z = 14.5, INTRO_FROM = [0, 17.5], SPOT = [0, 7];
@@ -182,23 +183,6 @@ function goodsTable(g, x, z) { // 양화점 앞 진열대: 구두·모자·외�
   for (const i of [0, 1, 2]) { const j = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.2, 8), mat([0x8a2f24, 0x2f6b5e, 0xc9a040][i])); j.position.set(0.55 + i * 0.13, 1.0, 0.12); t.add(j); }
   return t;
 }
-function classroom(g) { // 학교 교실: 가운데 마당에 잠깐 세운다(앞은 열려 카메라가 들여다본다)
-  const c = new THREE.Group(); c.position.set(0, 0, 1); g.add(c);
-  const box = (w, h, d, color, x, y, z, kind = 'wood') => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color, kind)); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; c.add(m); return m; };
-  box(10, 0.1, 8, 0x8a6a48, 0, 0.05, 0);
-  box(10, 3.6, 0.2, 0xe6dcc3, 0, 1.8, -4, 'stone'); box(0.2, 3.6, 8, 0xe6dcc3, -5, 1.8, 0, 'stone'); box(0.2, 3.6, 8, 0xe6dcc3, 5, 1.8, 0, 'stone');
-  box(3.6, 1.4, 0.06, 0x24382e, 0, 2.0, -3.86, 'grain'); // 칠판
-  box(1.2, 0.8, 0.6, 0x6b4a32, 0, 0.4, -2.6);           // 선생님 책상
-  const teacher = person(c, 'scholarModern', 0.9, -3.1, 0);
-  const kids = [];
-  for (let r = 0; r < 2; r++) for (let i = 0; i < 4; i++) {
-    const x = -2.7 + i * 1.8, z = -0.6 + r * 1.9;
-    box(1.2, 0.7, 0.5, 0x7a5a3c, x, 0.35, z - 0.55);
-    kids.push(person(c, i % 2 ? 'schoolgirl' : 'student', x, z, Math.PI));
-  }
-  return { group: c, teacher, kids, seat: [2.6, 3.4] };
-}
-
 const ACT = {
   async tele({ ctx, a, g, st, say, hook, set }) {
     const { world } = ctx;
@@ -236,14 +220,14 @@ const ACT = {
   async school({ ctx, a, g, st, say, hook }) {
     const { world } = ctx;
     await ctx.fade?.(true);
-    const room = classroom(g), O = a.at(0, 0);
-    const seat = a.at(room.seat[0], room.seat[1] + 1);
+    const room = classroom(g, 0, 1), O = a.at(0, 0);
+    const seat = a.at(2.8, 4.4); // 뒷줄 뒤 통로
     placePlayer(world, [seat.x, seat.z], Math.PI);
     hook.classroom = room.kids.length;
-    world.setFixedCamera([O.x - 1.2, 5.6, O.z + 8], [O.x, 1.3, O.z - 2.6]); // 학생들 머리 너머로 선생님과 칠판이 보이게
+    world.setFixedCamera([O.x - 1.2, 6, O.z + 9.5], [O.x, 1.4, O.z - 3.2]); // 학생들 머리 너머로 선생님과 칠판이 보이게
     await ctx.fade?.(false);
     await say(st.lines[0], room.teacher);
-    world.setFixedCamera([O.x - 1.2, 5.6, O.z + 8], [O.x, 1.3, O.z - 2.6]); // 학생들 머리 너머로 선생님과 칠판이 보이게
+    world.setFixedCamera([O.x - 1.2, 6, O.z + 9.5], [O.x, 1.4, O.z - 3.2]); // 학생들 머리 너머로 선생님과 칠판이 보이게
     await say(st.lines[1]);
     ctx.dialogue.close();
     await ctx.fade?.(true);

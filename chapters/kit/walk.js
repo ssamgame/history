@@ -73,30 +73,35 @@ function canvasPlane(w, h, px, draw) {
   const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
   return new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshLambertMaterial({ map: tex }));
 }
+// 크기(2026-11-05 선생님): 넓은 교실(12×10), 책상 사이 통로 1.6m, 교단(높이 0.22)은 앞줄과 3m 넘게 떨어지고 칠판은 크게(5.2×1.9)
+export const ROOM = { w: 12, d: 10, boardZ: -4.86, teacherZ: -4.1, deskX: [-4.2, -1.4, 1.4, 4.2], rowZ: [0, 2.6] };
 export function classroom(g, x, z, { teacher = 'scholarModern', wall = 0xe6dcc3, seated = false, japan = false } = {}) {
   const c = new THREE.Group(); c.position.set(x, 0, z); g.add(c);
   const box = (w, h, d, color, bx, by, bz, kind = 'wood') => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color, kind)); m.position.set(bx, by, bz); m.castShadow = true; m.receiveShadow = true; c.add(m); return m; };
-  box(9, 0.1, 7, 0x8a6a48, 0, 0.05, 0);
-  box(9, 3.4, 0.2, wall, 0, 1.7, -3.5, 'stone'); box(0.2, 3.4, 7, wall, -4.5, 1.7, 0, 'stone'); box(0.2, 3.4, 7, wall, 4.5, 1.7, 0, 'stone');
-  box(3.4, 1.3, 0.06, 0x24382e, 0, 1.9, -3.36, 'grain'); // 칠판
+  const W = ROOM.w / 2, D = ROOM.d / 2, H = 3.8;
+  box(ROOM.w, 0.1, ROOM.d, 0x8a6a48, 0, 0.05, 0);
+  box(ROOM.w, H, 0.2, wall, 0, H / 2, -D, 'stone'); box(0.2, H, ROOM.d, wall, -W, H / 2, 0, 'stone'); box(0.2, H, ROOM.d, wall, W, H / 2, 0, 'stone');
+  box(5.6, 2.2, 0.05, 0x6b4a32, 0, 2.05, -D + 0.12, 'wood'); // 칠판 나무 테
+  box(5.2, 1.9, 0.06, 0x24382e, 0, 2.05, ROOM.boardZ, 'grain'); // 칠판
+  box(ROOM.w - 1, 0.22, 1.8, 0x6b4a32, 0, 0.11, -D + 0.9); // 교단
   if (japan) {
-    const words = canvasPlane(3.2, 1.15, 512, (c, w, h) => { c.fillStyle = '#24382e'; c.fillRect(0, 0, w, h); c.fillStyle = '#f2efe6'; c.font = 'bold 64px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('こくご', w / 2, h * 0.32); c.font = 'bold 46px sans-serif'; c.fillText('ヨミカタ  サクラ', w / 2, h * 0.7); });
-    words.name = 'boardJapanese'; words.position.set(0, 1.9, -3.32); c.add(words);
+    const words = canvasPlane(4.9, 1.7, 768, (c, w, h) => { c.fillStyle = '#24382e'; c.fillRect(0, 0, w, h); c.fillStyle = '#f2efe6'; c.font = 'bold 96px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('こくご', w / 2, h * 0.32); c.font = 'bold 70px sans-serif'; c.fillText('ヨミカタ  サクラ', w / 2, h * 0.7); });
+    words.name = 'boardJapanese'; words.position.set(0, 2.05, ROOM.boardZ + 0.04); c.add(words);
     const flag = canvasPlane(1.1, 0.74, 192, (c, w, h) => { c.fillStyle = '#f4f1ea'; c.fillRect(0, 0, w, h); c.fillStyle = '#c0282d'; c.beginPath(); c.arc(w / 2, h / 2, h * 0.3, 0, Math.PI * 2); c.fill(); });
-    flag.name = 'wallJapanFlag'; flag.position.set(0, 3.0, -3.38); c.add(flag);
+    flag.name = 'wallJapanFlag'; flag.position.set(0, 3.4, -D + 0.12); c.add(flag);
   }
-  box(1.2, 0.8, 0.6, 0x6b4a32, 0, 0.4, -2.2);            // 선생님 책상
-  const t = person(c, teacher, 0.9, -2.7, 0);
+  box(1.4, 0.8, 0.6, 0x6b4a32, 0, 0.62, -3.4); // 선생님 책상(교단 위)
+  const t = person(c, teacher, 1.1, ROOM.teacherZ, 0); t.position.y = 0.22;
   const kids = [];
-  for (let r = 0; r < 2; r++) for (let i = 0; i < 4; i++) {
-    const kx = -2.7 + i * 1.8, kz = -0.4 + r * 1.8;
+  for (const [r, rz] of ROOM.rowZ.entries()) for (const [i, kx] of ROOM.deskX.entries()) {
+    const kz = rz;
     box(1.2, 0.7, 0.5, 0x7a5a3c, kx, 0.35, kz - 0.55);
     if (seated) { // 책상 뒤 의자에 앉는다(무릎이 책상 밑으로 들어가게 조금 뒤로)
       box(0.62, 0.06, 0.7, 0x6b4a32, kx, SEAT_Y - 0.03, kz + 0.45); box(0.62, 0.62, 0.06, 0x6b4a32, kx, SEAT_Y + 0.31, kz + 0.8); // 의자 앉는 판과 등받이(옷자락 뒤로 보이게)
       for (const [lx, lz] of [[-0.26, 0.15], [0.26, 0.15], [-0.26, 0.76], [0.26, 0.76]]) box(0.06, SEAT_Y - 0.06, 0.06, 0x5e432c, kx + lx, (SEAT_Y - 0.06) / 2, kz + lz);
       const k = person(c, i % 2 ? 'schoolgirl' : 'student', kx, kz + 0.3, Math.PI); sitDown(k); kids.push(k);
     } else
-    kids.push(person(c, i % 2 ? 'schoolgirl' : 'student', kx, kz, Math.PI));
+    kids.push(person(c, (i + r) % 2 ? 'schoolgirl' : 'student', kx, kz, Math.PI));
   }
   return { group: c, teacher: t, kids, box };
 }

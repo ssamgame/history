@@ -634,7 +634,7 @@ export function arch(g, p = {}) {
   if (p.label) {
     const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64;
     const c = cv.getContext('2d'); c.fillStyle = '#e9e4da'; c.fillRect(0, 0, 256, 64); c.strokeStyle = '#8a8478'; c.lineWidth = 4; c.strokeRect(2, 2, 252, 60); c.fillStyle = '#2b241c';
-    c.font = 'bold 40px "Nanum Myeongjo", Batang, serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(p.label, 128, 34, 240);
+    c.font = 'bold 40px "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(p.label, 128, 34, 240);
     const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace;
     const m = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 0.6), new THREE.MeshLambertMaterial({ map: t })); m.position.set(0, H - 0.75, D / 2 + 0.02); g.add(m);
   }
@@ -665,7 +665,7 @@ export function cityGate(g, p = {}) {
   if (p.label) {
     const cv = document.createElement('canvas'); cv.width = 256; cv.height = 72;
     const c = cv.getContext('2d'); c.fillStyle = '#2b241c'; c.fillRect(0, 0, 256, 72); c.strokeStyle = '#d9a441'; c.lineWidth = 5; c.strokeRect(3, 3, 250, 66); c.fillStyle = '#f2e6b0';
-    c.font = 'bold 42px "Nanum Myeongjo", Batang, serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(p.label, 128, 38, 236);
+    c.font = 'bold 42px "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(p.label, 128, 38, 236);
     const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace;
     for (const sz of [-1, 1]) { const m = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 0.5), new THREE.MeshLambertMaterial({ map: t })); m.position.set(0, H + 3.3, sz * ((LD - 1.3) / 2 + 0.02)); if (sz < 0) m.rotation.y = Math.PI; g.add(m); }
   }

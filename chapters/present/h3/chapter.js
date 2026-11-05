@@ -14,6 +14,7 @@ import { mat, setCarry } from '../../../core/people.js';
 import { placePlayer } from '../../joseon/common.js';
 import script from './script.js';
 import { handshake } from '../../../core/interact.js';
+import { warMap, playWarMap } from '../../kit/warmap.js';
 
 const PEOPLE = ['soldier', 'unSoldier', 'refugee'];
 const GATE_Z = 14.5, INTRO_FROM = [0, 17.5], SPOT = [0, 7];
@@ -32,6 +33,24 @@ function landingCraft(g, x, z) {
   for (const dx of [-0.5, 0.5]) for (const dz of [-1, 0.2]) { const p = person(b, 'rokSoldier', dx, dz, Math.PI); p.scale.setScalar(0.85); p.position.y = 0.2; }
   return b;
 }
+
+// 탱크(2026-11-05 선생님: 남침 장면): 무한궤도(바퀴 여섯 쌍)·차체·포탑·긴 포신, 앞이 +z
+function tank(g, x, z, ry = 0) {
+  const t = new THREE.Group(); t.position.set(x, 0, z); t.rotation.y = ry; g.add(t);
+  const C = 0x4a5238, D = 0x2e3226;
+  for (const s of [-1, 1]) {
+    blk(t, 0.7, 0.75, 5.2, D, s * 1.35, 0.42, 0, 'grain'); // 무한궤도
+    for (let i = 0; i < 6; i++) { const w = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.74, 12).rotateZ(Math.PI / 2), mat(0x3a3e34, 'grain')); w.position.set(s * 1.35, 0.4, -2 + i * 0.8); t.add(w); }
+  }
+  blk(t, 2.2, 0.7, 4.8, C, 0, 0.95, 0, 'grain'); blk(t, 2.2, 0.4, 1.2, C, 0, 0.75, 2.6, 'grain'); // 차체·앞판
+  const tur = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 1.0, 0.7, 10), mat(C, 'grain')); tur.position.set(0, 1.65, -0.3); tur.castShadow = true; t.add(tur);
+  const gun = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.13, 3.2, 8).rotateX(Math.PI / 2), mat(D, 'grain')); gun.position.set(0, 1.7, 1.9); t.add(gun);
+  blk(t, 0.5, 0.25, 0.5, D, 0.3, 2.1, -0.5, 'grain'); // 해치
+  t.userData.dynamic = true;
+  return t;
+}
+// 남침에서 낙동강까지(국군이 밀려 내려간 길). 첫 곳은 38도선 위(이름은 선 옆 글씨가 대신)
+export const RETREAT = [['', 132, 196, 10], ['서울', 132, 228, -10], ['대전', 140, 276, -10], ['낙동강', 182, 300, 10]];
 
 // ── 무대(마을에서 떨어진 x 400) ──
 // 부산 항구(탐험 끝 장면): 북쪽 바다에 군함, 부두 위에 유엔군이 두 줄로 남쪽(카메라)을 보고 선다
@@ -387,7 +406,7 @@ const base = makeKitChapter({
     scatter: [{ kind: 'pine', count: 40, area: { x0: -70, x1: 70, z0: 18, z1: 50 }, seed: 531 }],
   },
   parts: [
-    { ...script.parts.tide, goal: script.goals[3], play: ctx => tidePlay(ctx) },
+    { ...script.parts.tide, ownDone: true, goal: script.goals[3], play: ctx => tidePlay(ctx) },
     { ...script.parts.seoul, goal: script.goals[4], intro: meet('soldier', '국군 병사와 이야기하기', script.parts.seoul.intro), play: ctx => seoulPlay(ctx) },
   ],
   decorate(world) {
@@ -398,22 +417,32 @@ const base = makeKitChapter({
   },
 });
 
-// 장 도입(C-03): ① 38도선을 넘어 내려오는 북한군 ② 낙동강까지 물러난 국군과 피란민. 끝나면 더한 것을 치운다
+// 장 도입(C-03): ① 탱크를 앞세워 38도선을 넘어 내려오는 북한군(2026-11-05 선생님) ② 낙동강까지 물러난 국군과 피란민, 지도에 밀려 내려간 길. 끝나면 더한 것을 치운다
 function introScene(ctx) {
-  const { world } = ctx, L = world.level;
+  const { world } = ctx, L = world.level, offs = [];
   const add = (look, x, z, ry) => { const p = person(L, look, x, z, ry); p.visible = false; return p; };
-  const line = new THREE.Mesh(new THREE.BoxGeometry(9, 0.04, 0.12), new THREE.MeshBasicMaterial({ color: 0xd9a441 })); line.position.set(0, 0.05, 1.6); line.visible = false; L.add(line); // 38도선
-  const north = [-2.4, -0.8, 0.8, 2.4].map((x, i) => add('nkSoldier', x, 0.4 - (i % 2) * 0.9, 0));
+  const line = new THREE.Mesh(new THREE.BoxGeometry(14, 0.04, 0.12), new THREE.MeshBasicMaterial({ color: 0xd9a441 })); line.position.set(0, 0.05, 1.6); line.visible = false; L.add(line); // 38도선
+  const tanks = [[-2.6, -5.5], [2.8, -7.5]].map(([x, z]) => { const t = tank(L, x, z); t.visible = false; return t; });
+  const north = [-3.6, -1.8, 0, 1.8, 3.6].map((x, i) => add('nkSoldier', x * 1.1, -9.5 - (i % 2) * 1.2, 0));
   const south = [-1.6, 0, 1.6].map((x, i) => add('rokSoldier', x * 1.2, 3.6 + (i % 2) * 0.8, 0));
   const folk = [[-2.6, 4.6, 'refugee'], [2.6, 4.4, 'woman'], [0.9, 5.2, 'grandma']].map(([x, z, l]) => add(l === 'refugee' ? 'citizen' : l, x, z, 0));
+  let map = null;
   const hide = on => { for (const id of [...PEOPLE, 'officer']) { const n = world.npcs.get(id); if (n) n.mesh.visible = on; } };
-  const show = list => { for (const o of [line, ...north, ...south, ...folk]) o.visible = list.includes(o); };
+  const all = [line, ...tanks, ...north, ...south, ...folk];
+  const show = list => { for (const o of all) o.visible = list.includes(o); };
   return {
     shots: [
-      { cam: [4.5, 2.6, 7.5], look: [0, 1, 1.4], to: { cam: [4, 2.5, 7], look: [0, 1, 1.4] }, act: () => { hide(false); show([line, ...north]); } },
-      { cam: [0.6, 2.2, 9.5], look: [0, 1.2, 4], to: { cam: [0.4, 2.2, 9], look: [0, 1.2, 4] }, act: () => show([...south, ...folk]) },
+      { cam: [7.5, 3.4, 9.5], look: [0, 1, -1], to: { cam: [6.5, 3.2, 8.5], look: [0, 1, 0] }, act: () => {
+        hide(false); show([line, ...tanks, ...north]);
+        offs.push(world.onUpdate(dt => { tanks.forEach(t => { t.position.z += dt * 1.6; }); north.forEach(p => { p.position.z += dt * 1.6; }); })); // 탱크를 앞세워 남쪽으로 밀고 내려온다
+      } },
+      { cam: [0.6, 2.2, 9.5], look: [-1.4, 1.2, 4], to: { cam: [0.4, 2.2, 9], look: [-1.4, 1.2, 4] }, act: () => {
+        offs.forEach(f => f()); offs.length = 0; show([...south, ...folk]);
+        map = warMap(ctx.ui, { stops: RETREAT }); ctx.testHooks.warMap = RETREAT.length;
+        if (map) offs.push(playWarMap(map, world, 3.2)); // 38도선 → 서울 → 대전 → 낙동강
+      } },
     ],
-    done: () => { hide(true); for (const o of [line, ...north, ...south, ...folk]) o.removeFromParent(); },
+    done: () => { offs.forEach(f => f()); map?.remove(); hide(true); for (const o of all) o.removeFromParent(); },
   };
 }
 

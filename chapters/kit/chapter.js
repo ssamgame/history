@@ -160,7 +160,7 @@ export function makeKitChapter(def) {
         if (['book', 'doc', 'scene'].includes(part.type)) await runPart(ctx, scene, part, false); // 읽기·장면은 첫 시도 점수에 넣지 않는다
         else results.push(await tryPart(ctx, easy => runPart(ctx, scene, part, easy), part.fail));
         if (part.after) part.after(ctx, scene);
-        if (part.done) { await sayAll(dialogue, part.done); dialogue.close(); }
+        if (part.done && !part.ownDone) { await sayAll(dialogue, part.done); dialogue.close(); } // ownDone: 놀이(play)가 끝 대사를 무대 안에서 직접 한다(두 번 나오지 않게, 2026-11-05)
       }
       await sayAll(dialogue, script.result); dialogue.close();
       placePlayer(world, def.spot || def.layout.start);

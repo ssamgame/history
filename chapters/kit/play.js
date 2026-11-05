@@ -39,7 +39,7 @@ const add = (g, geo, color, x, y, z) => { const m = new THREE.Mesh(geo, mat(colo
 // 장면 속 이름표(글씨 판). 늘 카메라를 본다.
 export function labelSprite(text, { color = '#231c14', bg = 'rgba(239,227,198,0.95)', border = '#6b4a32', size = 1 } = {}) {
   const cv = document.createElement('canvas'), c = cv.getContext('2d');
-  const font = 'bold 44px "Nanum Myeongjo", Batang, serif';
+  const font = 'bold 44px "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif';
   c.font = font;
   const w = Math.min(1024, Math.ceil(c.measureText(text).width) + 48), h = 72;
   cv.width = w; cv.height = h;

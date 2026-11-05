@@ -344,7 +344,7 @@ const base = makeKitChapter({
       { id: 'signOlympic', title: '올림픽 안내소', x: 12, z: -9.4, ry: 0, plaque: { y: 2.55, back: 0.45 } }],
   },
   parts: [
-    { ...script.parts.factory, goal: script.goals[3], play: ctx => factoryPlay(ctx) },
+    { ...script.parts.factory, ownDone: true, goal: script.goals[3], play: ctx => factoryPlay(ctx) },
     { ...script.parts.hoop, goal: script.goals[4], intro: meet('citizen', '시민과 이야기하기', script.parts.hoop.intro), play: ctx => hoopPlay(ctx) },
   ],
   decorate(world) {

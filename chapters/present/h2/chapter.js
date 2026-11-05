@@ -28,22 +28,37 @@ function canvasBoard(w, h, px = 128) {
   return { mesh, c: cv.getContext('2d'), cv, tex };
 }
 
+// 가림막 기표소(2026-11-05 선생님: 더 크게, 들어가는 입구를 터서 안이 빈 곳임을 보이게): 세 벽, 앞(+z)벽 가운데를 튼 입구와 걷어 둔 천, 입구 위 이름판, 안쪽 선반
+const BOOTH = { w: 2.8, h: 2.5, d: 2.6, door: 1.1 };
+function buildBooth(g, bx, bz) {
+  const { w: BW, h: BH, d: BD, door: DOOR } = BOOTH, side = (BW - DOOR) / 2;
+  blk(g, BW, BH, 0.08, 0x8a7a5a, bx, BH / 2, bz - BD / 2); blk(g, 0.08, BH, BD, 0x8a7a5a, bx - BW / 2, BH / 2, bz); blk(g, 0.08, BH, BD, 0x8a7a5a, bx + BW / 2, BH / 2, bz);
+  for (const sx of [-1, 1]) blk(g, side, BH, 0.08, 0x8a7a5a, bx + sx * (DOOR + side) / 2, BH / 2, bz + BD / 2); // 입구 양옆 앞벽
+  blk(g, DOOR, 0.35, 0.08, 0x8a7a5a, bx, BH - 0.175, bz + BD / 2); // 입구 위 가로대
+  blk(g, DOOR + 0.2, 0.06, 0.12, 0x5e432c, bx, 0.03, bz + BD / 2); // 입구 문턱
+  blk(g, 0.3, 1.8, 0.05, 0xd8ccb0, bx - DOOR / 2 + 0.15, 1.2, bz + BD / 2 + 0.06, 'cloth'); // 한쪽으로 걷어 둔 천
+  const sign = canvasBoard(1.4, 0.4, 128); sign.c.fillStyle = '#f2ecd8'; sign.c.fillRect(0, 0, sign.cv.width, sign.cv.height); sign.c.fillStyle = '#2b241c'; sign.c.font = 'bold 34px "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif'; sign.c.textAlign = 'center'; sign.c.textBaseline = 'middle'; sign.c.fillText('기표소', sign.cv.width / 2, sign.cv.height / 2); sign.tex.needsUpdate = true;
+  sign.mesh.position.set(bx, BH + 0.25, bz + BD / 2 + 0.05); g.add(sign.mesh);
+  blk(g, 1.4, 0.06, 0.55, 0x6b4a32, bx, 1.0, bz - BD / 2 + 0.35); // 도장 찍는 선반
+  return { BD };
+}
+
 // ── 무대(마을에서 떨어진 x 400) ──
 // 1948년 5월 10일 아침 투표소(탐험 끝 장면): 학교 건물 앞에 남쪽으로 길게 줄 선 사람들. 카메라는 투표소 입구 쪽에서 본다
 export const QUEUE = { edge: { style: 'city', seed: 510 },
   origin: [400, 0], ground: 'earth', groundColor: 0x9a8a6a, bounds: { x0: -16, x1: 16, z0: -20, z1: 14 },
   props: [
     { type: 'western', x: 0, z: -15, w: 12, d: 5, h: 6, color: 0x9a7a5a }, { type: 'flagpole', x: -7.5, z: -11 },
-    { type: 'tree', x: 7, z: -9, kind: 'poplar' }, { type: 'tree', x: -9, z: 6, kind: 'poplar' }, { type: 'hanok', x: 11, z: 4, ry: -Math.PI / 2, tile: true }, { type: 'concrete', x: -12, z: -3, floors: 2, w: 6, ry: Math.PI / 2, color: 0xbab2a2 },
+    { type: 'tree', x: 13, z: -8, kind: 'poplar' }, { type: 'tree', x: -9, z: 6, kind: 'poplar' }, // 줄 앞을 보는 카메라를 가리지 않게 { type: 'hanok', x: 11, z: 4, ry: -Math.PI / 2, tile: true }, { type: 'concrete', x: -12, z: -3, floors: 2, w: 6, ry: Math.PI / 2, color: 0xbab2a2 },
   ],
-  door: [0, -12], watch: [-4.2, -3],
+  door: [0, -12], watch: [-6.5, -2], lineX: 3.2, booth: [-2.6, -9.6], box: [0.6, -10.4], front: [-3, -3.4],
 };
 // 투표소 안: 명부 책상 → 투표용지 책상 → 가림막 기표소 → 투표함
 export const POLL = { edge: { style: 'city', seed: 291 },
   origin: [400, 0], ground: 'stone', groundColor: 0xb8b0a0, bounds: { x0: -12, x1: 12, z0: -12, z1: 12 },
   props: [{ type: 'western', x: 0, z: -17, w: 20, d: 4, h: 6, color: 0xb8b0a0 }, { type: 'flagpole', x: -9, z: 9 }, { type: 'crowd', x: -9, z: 3, n: 4, cols: 2, looks: ['citizen', 'woman', 'grandma', 'gentleman'], face: -Math.PI / 2 }],
   from: [0, 9],
-  roll: [-5, -1], paper: [-1, -4.5], booth: [5.5, -4], box: [1, -9.5],
+  paper: [-3, -4.5], booth: [4.5, -4.5], box: [0.5, -9.5],
 };
 // 제헌 국회 회의장: 북쪽 벽에 헌법 판, 국회 의원들이 줄지어 북쪽을 보고 선다
 export const HALL = { edge: { style: 'city', seed: 717 },
@@ -61,27 +76,46 @@ export async function electionScene(ctx) {
   world.closeView = true;
   await ctx.fade?.(true);
   const a = buildArena(world, A), g = a.group;
-  const looks = ['grandma', 'citizen', 'woman', 'gentleman', 'peasant', 'woman', 'citizen', 'grandma', 'commoner', 'woman', 'gentleman', 'peasant', 'citizen', 'woman'];
-  const line = looks.map((look, i) => person(g, look, Math.sin(i * 0.7) * 0.6, -9 + i * 1.25, Math.PI)); // 모두 북쪽(투표소 입구)을 본다
-  const hook = ctx.testHooks.election = { people: line.length, looks: new Set(looks).size, entered: 0, facing: 0 };
+  // 길게 줄 선 사람들(2026-11-05 선생님): 투표소 입구 오른쪽에서 남쪽으로 스물네 명, 모두 북쪽(입구)을 본다
+  const kinds = ['grandma', 'citizen', 'woman', 'gentleman', 'peasant', 'commoner'];
+  const looks = Array.from({ length: 24 }, (_, i) => kinds[(i * 5 + (i >> 2)) % kinds.length]);
+  const line = looks.map((look, i) => person(g, look, A.lineX + Math.sin(i * 0.7) * 0.35, -8 + i * 1.1, Math.PI));
+  // 입구 앞: 왼쪽에 가림막 기표소(입구가 남쪽), 오른쪽에 투표함 책상
+  const [bx, bz] = A.booth, { BD } = buildBooth(g, bx, bz);
+  blk(g, 1.4, 0.4, 0.8, 0x6b4a32, A.box[0], 0.2, A.box[1]); // 낮은 상(넣는 사람 얼굴이 투표함 위로 보이게)
+  const box = new THREE.Group(); box.position.set(A.box[0], 0.4, A.box[1]); g.add(box); BUILD.ballot(box, {});
+  const clerk = person(g, 'scholarModern', A.box[0] + 1.3, A.box[1] - 0.2, -Math.PI / 2);
+  const hook = ctx.testHooks.election = { people: line.length, looks: new Set(looks).size, entered: 0, facing: 0, voted: false, frontView: 0 };
   const W = a.at(...A.watch); placePlayer(world, [W.x, W.z], Math.PI * 0.75);
-  const C = a.at(5.6, -9.6), T = a.at(-0.6, -0.5);
-  const view = () => world.setFixedCamera([C.x, 3.2, C.z], [T.x, 1.1, T.z]); // 줄 맨 앞 옆(투표소 입구 쪽)에서 줄 선 사람들의 얼굴을 본다
+  const C = a.at(A.lineX + 5, -9.6), T = a.at(A.lineX - 0.8, -0.5);
+  const view = () => world.setFixedCamera([C.x, 3.2, C.z], [T.x, 1.1, T.z]); // 줄 맨 앞 옆(투표소 입구 쪽)에서 길게 줄 선 사람들의 얼굴을 본다
+  const F = a.at(A.front[0], A.front[1]), FL = a.at(bx + 2, bz - 0.6);
+  const front = () => world.setFixedCamera([F.x, 2.9, F.z], [FL.x, 1.3, FL.z]); // 기표소와 투표함을 정면(남쪽)에서
+  const walk = async (p, to, dur) => { const f = p.position.clone(), t = new THREE.Vector3(to[0], 0, to[1]); p.rotation.y = Math.atan2(t.x - f.x, t.z - f.z); p.userData.walking = true; await wait(world, dur, k => p.position.lerpVectors(f, t, ease(k))); p.userData.walking = false; };
   try {
     view();
     hook.facing = facingShare(world, line);
     await ctx.fade?.(false);
     await dialogue.say(L[0]);
     dialogue.close();
-    for (let n = 0; n < 2; n++) { // 맨 앞 사람이 투표소로 들어가고, 줄이 한 칸씩 앞으로
-      const first = line.shift(), f0 = first.position.clone(), [dx, dz] = A.door;
-      const p0 = line.map(p => p.position.clone());
-      await wait(world, 1.6, k => {
-        first.position.lerpVectors(f0, new THREE.Vector3(dx, 0, dz), ease(k));
-        line.forEach((p, i) => { p.position.z = p0[i].z - 1.25 * ease(k); });
-      });
-      first.visible = false; hook.entered += 1;
-    }
+    // 맨 앞 사람이 기표소에 들어가 도장을 찍고 나와 투표함에 넣는다(정면에서), 그동안 줄이 한 칸 앞으로
+    const first = line.shift(), p0 = line.map(p => p.position.clone());
+    front(); hook.frontView = 1;
+    const slip = paperMesh(); setCarry(first, slip, 'side');
+    const shift = wait(world, 1.6, k => line.forEach((p, i) => { p.position.z = p0[i].z - 1.1 * ease(k); }));
+    await walk(first, [bx, bz + BD / 2 + 0.5], 1.6); await shift;
+    await walk(first, [bx, bz - 0.3], 0.9); first.rotation.y = Math.PI; // 가림막 안 선반 앞
+    await wait(world, 1.0, k => { const ar = first.userData.arms; if (ar) ar[1].rotation.x = -0.9 - 0.3 * Math.sin(k * Math.PI * 3); }); // 도장을 찍는다
+    first.userData.arms?.[1]?.rotation.set(0, 0, 0);
+    await walk(first, [bx, bz + BD / 2 + 0.6], 0.9);
+    await walk(first, [A.box[0] - 0.9, A.box[1] + 0.6], 0.8); await walk(first, [A.box[0], A.box[1] - 0.8], 1.0); first.rotation.y = 0; // 투표함 뒤로 돌아 카메라 쪽(남쪽)을 보고 넣는다
+    setCarry(first, null); const drop = paperMesh(); drop.position.set(A.box[0], 1.5, A.box[1]); g.add(drop);
+    await wait(world, 0.6, k => { drop.position.y = 1.5 - 0.6 * k; });
+    drop.removeFromParent(); hook.voted = true; ctx.audio?.play?.('tap');
+    face(clerk, first.position.x, first.position.z);
+    await wait(world, 0.4);
+    await walk(first, A.door, 1.4); first.visible = false; hook.entered += 1;
+    view();
     await say(L[1], line[0]);
     dialogue.close();
     view();
@@ -120,17 +154,14 @@ export async function votePlay(ctx) {
   const hook = ctx.testHooks.vote = { steps: [], stamped: -1, inBox: false };
   // 명부 책상과 직원, 투표용지 책상과 직원
   const desk = ([x, z]) => { blk(g, 1.8, 0.8, 0.8, 0x6b4a32, x, 0.4, z); };
-  desk(A.roll); desk(A.paper);
-  blk(g, 0.5, 0.06, 0.4, 0xe6dcc3, A.roll[0] - 0.3, 0.83, A.roll[1], 'cloth'); // 펼친 명부
+  desk(A.paper);
+  blk(g, 0.5, 0.06, 0.4, 0xe6dcc3, A.paper[0] - 0.4, 0.83, A.paper[1], 'cloth'); // 펼친 명부(투표용지 직원이 이름도 확인한다)
   for (let i = 0; i < 4; i++) blk(g, 0.4, 0.02, 0.3, 0xf2ecd8, A.paper[0] + 0.4, 0.82 + i * 0.02, A.paper[1], 'cloth'); // 투표용지 더미
-  const clerk1 = person(g, 'scholarModern', A.roll[0], A.roll[1] - 1, 0), clerk2 = person(g, 'scholarModern', A.paper[0], A.paper[1] - 1, 0);
-  // 가림막 기표소: 세 벽과 앞 천, 안쪽 선반
-  const [bx, bz] = A.booth;
-  blk(g, 2, 2, 0.08, 0x8a7a5a, bx, 1, bz - 1); blk(g, 0.08, 2, 2, 0x8a7a5a, bx - 1, 1, bz); blk(g, 0.08, 2, 2, 0x8a7a5a, bx + 1, 1, bz);
-  const curtain = blk(g, 2, 1.3, 0.04, 0xd8ccb0, bx, 1.35, bz + 1, 'cloth');
-  blk(g, 1.2, 0.06, 0.5, 0x6b4a32, bx, 1.0, bz - 0.7);
+  const clerk2 = person(g, 'scholarModern', A.paper[0], A.paper[1] - 1, 0);
+  const [bx, bz] = A.booth, { BD } = buildBooth(g, bx, bz);
+  hook.booth = { ...BOOTH };
   // 투표용지(기표소 선반 위): 후보 세 칸
-  const ballot = (() => { const b = { ...canvasBoard(0.9, 0.6, 256) }; b.mesh.rotation.x = -Math.PI / 2; b.mesh.position.set(bx, 1.04, bz - 0.65); b.mesh.visible = false; g.add(b.mesh); return b; })();
+  const ballot = (() => { const b = { ...canvasBoard(0.9, 0.6, 256) }; b.mesh.rotation.x = -Math.PI / 2; b.mesh.position.set(bx, 1.04, bz - BD / 2 + 0.38); b.mesh.visible = false; g.add(b.mesh); return b; })();
   const drawBallot = mark => {
     const { c, cv } = ballot; c.fillStyle = '#f2ecd8'; c.fillRect(0, 0, cv.width, cv.height);
     c.fillStyle = '#2b241c'; c.font = 'bold 18px sans-serif'; c.textAlign = 'center'; c.fillText('국회 의원 선거 투표용지', cv.width / 2, 28);
@@ -143,7 +174,7 @@ export async function votePlay(ctx) {
   };
   drawBallot(-1);
   const box = new THREE.Group(); box.position.set(A.box[0], 0, A.box[1]); g.add(box); BUILD.ballot(box, {});
-  const spots = { roll: [A.roll[0], A.roll[1] + 1.3], paper: [A.paper[0], A.paper[1] + 1.3], booth: [bx, bz + 0.2], box: [A.box[0], A.box[1] + 1.5] };
+  const spots = { paper: [A.paper[0], A.paper[1] + 1.3], booth: [bx, bz + BD / 2 + 0.6], box: [A.box[0], A.box[1] + 1.5] };
   const marks = Object.fromEntries(Object.entries(spots).map(([k, [x, z]]) => [k, ring(g, x, z)]));
   const p0 = a.at(...A.from); placePlayer(world, [p0.x, p0.z], Math.PI);
   const say = sayer(ctx);
@@ -156,12 +187,12 @@ export async function votePlay(ctx) {
       await waitInteract(ctx, { pos, label: st.act, r: 1.6 });
       ctx.input.enabled = false;
       marks[st.id].visible = false;
-      if (st.id === 'roll') { await say(st.lines[0], clerk1); }
-      if (st.id === 'paper') { setCarry(world.player, paperMesh(), 'arms'); audio.play('tap'); await say(st.lines[0], clerk2); }
+      if (st.id === 'paper') { setCarry(world.player, paperMesh(), 'side'); // 받은 투표용지는 손에 쥔다(2026-11-05 선생님)
+        audio.play('tap'); await say(st.lines[0], clerk2); }
       if (st.id === 'booth') { // 가림막 안: 선반 위 투표용지에 도장을 찍는다
-        curtain.position.x = bx - 0.7; // 천을 젖히고 들어간다
+        const I = a.at(bx, bz + 0.2); placePlayer(world, [I.x, I.z], Math.PI); // 입구로 들어가 선반 앞에 선다
         setCarry(world.player, null); ballot.mesh.visible = true;
-        const B = a.at(bx, bz - 0.65);
+        const B = a.at(bx, bz - BD / 2 + 0.38);
         world.setFixedCamera([B.x, 2.2, B.z + 0.9], [B.x, 1.0, B.z - 0.05]);
         await dialogue.say(st.lines[0]);
         ctx.testHooks.choice = 0; // 테스트 봇이 고를 답(어느 후보든 괜찮다)
@@ -171,8 +202,8 @@ export async function votePlay(ctx) {
         dialogue.close();
         await wait(world, 0.9);
         await wait(world, 0.5, u => { ballot.mesh.scale.set(1, 1 - 0.5 * u, 1); }); // 반으로 접는다
-        ballot.mesh.visible = false; setCarry(world.player, paperMesh(), 'arms');
-        curtain.position.x = bx;
+        ballot.mesh.visible = false; setCarry(world.player, paperMesh(), 'side');
+        const O = a.at(bx, bz + BD / 2 + 0.9); placePlayer(world, [O.x, O.z], 0); // 입구 밖으로 나온다
         world.camMode = 'follow';
       }
       if (st.id === 'box') { // 접은 투표용지를 투표함에 넣는다
@@ -188,9 +219,7 @@ export async function votePlay(ctx) {
       dialogue.close();
       world.camMode = 'follow';
     }
-    hud.setCounter(`${P.counter} ${P.steps.length}/${P.steps.length}`);
-    for (const l of P.done) await dialogue.say(l);
-    dialogue.close();
+    hud.setCounter(`${P.counter} ${P.steps.length}/${P.steps.length}`); // 끝난 뒤 기자 말은 다음 놀이 안내(law.intro)가 이어 한다(겹치지 않게)
   } finally {
     ctx.testHooks.choice = null;
     await leaveArena(ctx, a);
@@ -310,7 +339,7 @@ const base = makeKitChapter({
   },
   parts: [
     { ...script.parts.vote, goal: script.goals[3], play: ctx => votePlay(ctx) },
-    { ...script.parts.law, goal: script.goals[4], intro: meet('reporter', '신문 기자와 이야기하기', script.parts.law.intro), play: ctx => constitutionPlay(ctx) },
+    { ...script.parts.law, ownDone: true, goal: script.goals[4], intro: meet('reporter', '신문 기자와 이야기하기', script.parts.law.intro), play: ctx => constitutionPlay(ctx) },
   ],
   // 서울 문과 「서울」 이름판은 굳히기에 합쳐지지 않게 돌려준다
   decorate(world) {

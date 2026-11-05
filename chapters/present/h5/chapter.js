@@ -326,8 +326,8 @@ const base = makeKitChapter({
       { id: 'signRelief', title: '구호소', x: -13, z: 9.5, ry: 0, plaque: { y: 1.7, back: 0 } }],
   },
   parts: [
-    { ...script.parts.noodle, goal: script.goals[3], play: ctx => noodlePlay(ctx) },
-    { ...script.parts.family, goal: script.goals[4], intro: meet('grandpa', '피란민 할아버지와 이야기하기', script.parts.family.intro), play: ctx => familyPlay(ctx) },
+    { ...script.parts.noodle, ownDone: true, goal: script.goals[3], play: ctx => noodlePlay(ctx) },
+    { ...script.parts.family, ownDone: true, goal: script.goals[4], intro: meet('grandpa', '피란민 할아버지와 이야기하기', script.parts.family.intro), play: ctx => familyPlay(ctx) },
   ],
   decorate(world) {
     const gate = gateLeaves(world.level, { x: 0, z: GATE_Z, width: 4, height: 2.6, inward: -1 });

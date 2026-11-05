@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { mat } from './people.js';
 
 export const SIGN_CANVAS = { w: 512, h: 200 }; // 판(2.6 × 1.0)과 같은 비율
-const FONT = size => `bold ${size}px "Nanum Myeongjo", Batang, serif`;
+const FONT = size => `bold ${size}px "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif`; // 화면 글씨는 고딕 하나로(2026-11-05 선생님), 옛 문서만 명조
 
 // 제목을 판에 크게 쓰는 방법: 한 줄로 크게 들어가면 한 줄, 길면 띄어쓰기에서 두 줄로 나눈다.
 export function signTextLayout(c, title) {

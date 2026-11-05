@@ -528,7 +528,7 @@ export function labelSprite(text) {
   const x = cv.getContext('2d');
   x.fillStyle = 'rgba(27,31,29,.85)'; x.fillRect(0, 0, 256, 72);
   x.strokeStyle = '#d9a441'; x.lineWidth = 4; x.strokeRect(2, 2, 252, 68);
-  x.fillStyle = '#f2ead9'; x.font = 'bold 34px "Nanum Myeongjo", Batang, serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.fillStyle = '#f2ead9'; x.font = 'bold 34px "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
   x.fillText(text, 128, 38);
   const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false }));
   s.scale.set(4.4, 1.25, 1);
