@@ -467,3 +467,12 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .nego-bar.win { border-color: #9cc3ea; box-shadow: 0 0 18px #6aa6dc; }
 @keyframes nego-hit { 50% { transform: scale(1.06); } }
 @keyframes nego-miss { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+
+/* 고려 5장 정성 막대(2026-11-05) */
+.care-bar { position: fixed; z-index: 12; left: 0; right: 0; margin: 0 auto; bottom: calc(120px + env(safe-area-inset-bottom, 0px)); width: min(460px, calc(100vw - 220px)); padding: 8px 14px 10px; border-radius: 8px; background: rgba(27,31,29,.85); border: 2px solid var(--gold); color: var(--hanji); text-align: center; pointer-events: none; box-sizing: border-box; }
+.care-title { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+.care-track { position: relative; height: 22px; border-radius: 11px; background: #5a4a3a; overflow: hidden; }
+.care-zone { position: absolute; top: 0; bottom: 0; background: #5fae6f; }
+.care-needle { position: absolute; top: -2px; bottom: -2px; width: 6px; margin-left: -3px; background: #ffd23a; border-radius: 3px; box-shadow: 0 0 6px #ffd23a; }
+.care-tip { font-size: 14px; margin-top: 6px; opacity: .85; }
+.care-bar.miss { animation: nego-miss .45s; }
