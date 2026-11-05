@@ -32,10 +32,20 @@ export function sailPace(t, easy) { return easy ? 2.2 : 3.6 + 1.4 * Math.min(1, 
 // 빛나는 물살: 뱃길 중간중간 옆으로 비켜 난 물살을 타면 BOOST_SEC 동안 빨라진다(몽골 배를 따돌릴 수 있다)
 const CURRENT_R = 2.6, BOOST = 1.6, BOOST_SEC = 2.5;
 let currentMeshes = null;
+// 물살은 가속 발판 모양(2026-11-05 선생님): 물 위 판에 가는 쪽(+z)을 가리키는 화살표 셋, 앞쪽부터 차례로 반짝인다(glowBooster)
+function makeBooster() {
+  const g = new THREE.Group(), basic = (color, opacity) => new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false, side: THREE.DoubleSide });
+  const pad = new THREE.Mesh(new THREE.PlaneGeometry(CURRENT_R * 1.5, CURRENT_R * 2.2), basic(0x1f6fa8, 0.45)); pad.rotation.x = -Math.PI / 2; g.add(pad);
+  const sh = new THREE.Shape(); sh.moveTo(-1, -0.5); sh.lineTo(0, 0.5); sh.lineTo(1, -0.5); sh.lineTo(0.6, -0.5); sh.lineTo(0, 0.1); sh.lineTo(-0.6, -0.5); sh.closePath(); // 갈매기 모양 화살표
+  const geo = new THREE.ShapeGeometry(sh); // 화살은 x축으로 +π/2 눕혀 끝(+y)이 가는 쪽(+z)을 본다
+  g.userData.arrows = [-1.4, 0, 1.4].map(z => { const m = new THREE.Mesh(geo, basic(0x9ff3ff, 0.9)); m.rotation.x = Math.PI / 2; m.position.set(0, 0.03, z); m.scale.setScalar(1.3); g.add(m); return m; });
+  return g;
+}
+function glowBooster(g, t) { g.userData.arrows.forEach((m, i) => { m.material.opacity = 0.35 + 0.6 * Math.max(0, Math.sin(t * 6 - i * 1.2)); }); }
 function placeCurrents(world, leg) {
-  if (!currentMeshes) currentMeshes = [0, 1, 2].map(() => { const m = new THREE.Mesh(new THREE.CircleGeometry(CURRENT_R, 24), new THREE.MeshBasicMaterial({ color: 0x7fe0ff, transparent: true, opacity: 0.45, depthWrite: false })); m.rotation.x = -Math.PI / 2; return m; });
+  if (!currentMeshes) currentMeshes = [0, 1, 2].map(makeBooster);
   const [fx, fz] = leg.from, dx = leg.to.x - fx, dz = leg.to.z - fz, len = Math.hypot(dx, dz), sx = -dz / len, sz = dx / len;
-  return currentMeshes.map((m, i) => { const k = [0.3, 0.55, 0.78][i], side = (i % 2 ? -1 : 1) * 3.5; m.position.set(fx + dx * k + sx * side, 0.12, fz + dz * k + sz * side); m.visible = true; world.level.add(m); return { x: m.position.x, z: m.position.z, mesh: m, used: false }; });
+  return currentMeshes.map((m, i) => { const k = [0.3, 0.55, 0.78][i], side = (i % 2 ? -1 : 1) * 3.5; m.position.set(fx + dx * k + sx * side, 0.12, fz + dz * k + sz * side); m.rotation.y = Math.atan2(dx, dz); m.visible = true; world.level.add(m); return { x: m.position.x, z: m.position.z, mesh: m, used: false }; });
 }
 export function sailLeg(ctx, leg, easy) {
   const { world, hud, audio, input } = ctx;
@@ -67,6 +77,7 @@ export function sailLeg(ctx, leg, easy) {
       if (left < leg.to.r) { audio.play('correct'); return finish(true); }
       for (const c of currents) if (!c.used && Math.hypot(b.x - c.x, b.z - c.z) < CURRENT_R) { c.used = true; c.mesh.visible = false; boostT = BOOST_SEC; audio.play('whoosh'); toast(ctx, '물살을 탔다! 배가 빨라졌다!', 'good'); }
       boostT -= dt; world.speedScale = boostT > 0 ? BOOST : 1;
+      for (const c of currents) if (!c.used) glowBooster(c.mesh, t);
       warnT -= dt; if (near < 7 && warnT <= 0 && t > CHASE_DELAY) { warnT = 6; toast(ctx, '몽골 배가 바짝 쫓아온다! 빛나는 물살을 타 보자!', 'bad'); }
       t += dt;
       if (t < CHASE_DELAY) return;
