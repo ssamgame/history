@@ -9,10 +9,14 @@ import { buildArena, labelSprite, toast } from '../../kit/play.js';
 import { BUILD } from '../../kit/town.js';
 import { gateLeaves, nameBoard } from '../../kit/gate.js';
 import { walkInAndTalk, anyOrderTalk } from '../../kit/talk.js';
-import { wait, person, ease, face, sayer, meet, minigameWithMeet, facingShare } from '../../kit/walk.js';
+import { wait, person, ease, face, sayer, meet, minigameWithMeet, facingShare, bottari } from '../../kit/walk.js';
 import { waitInteract } from '../../../core/portal.js';
 import { mat, setCarry } from '../../../core/people.js';
 import { LOOKS } from '../../../content/characters.js';
+import { handshake } from '../../../core/interact.js';
+import { warMap, playWarMap } from '../../kit/warmap.js';
+// 중국군이 밀고 내려온 길(2026-11-05 선생님: 지도에 이동 경로): 압록강 → 평양 → 서울(1·4 후퇴) → 그 남쪽
+export const CHINA_PUSH = [['압록강', 100, 66, 10], ['평양', 104, 168, -10], ['서울', 132, 228, -10], ['', 140, 258, 10]];
 import { placePlayer } from '../../joseon/common.js';
 import script from './script.js';
 
@@ -21,9 +25,9 @@ const GATE_Z = 14.5, INTRO_FROM = [0, 17.5], SPOT = [0, 7];
 const CHINA = { ...LOOKS.nkSoldier, robe: 0x6a6a52, hat: 'cap' }; // 중국군(누빈 겨울 군복)
 const blk = (g, w, h, d, color, x, y, z, kind = 'wood') => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color, kind)); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; g.add(m); return m; };
 const ring = (g, x, z, r = 0.9) => { const m = new THREE.Mesh(new THREE.RingGeometry(r, r + 0.25, 28), new THREE.MeshBasicMaterial({ color: 0xd9a441, transparent: true, opacity: 0.85, side: THREE.DoubleSide })); m.rotation.x = -Math.PI / 2; m.position.set(x, 0.09, z); m.visible = false; g.add(m); return m; };
-const bundle = (color = 0x8a5a6a, s = 1) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.62 * s, 0.42 * s, 0.5 * s), mat(color, 'cloth', 'object')); m.castShadow = true; return m; };
+const bundle = (color = 0x8a5a6a, s = 1) => bottari(color, s); // 천으로 싼 보따리(kit/walk.js)
 // 보따리를 머리에 이거나 등에 진다
-const headLoad = (p, color) => { const b = bundle(color, 0.9); b.position.set(0, 2.02, 0); p.add(b); return b; };
+const headLoad = (p, color) => { const b = bundle(color, 0.9); b.position.set(0, 2.2, 0); p.add(b); return b; };
 
 // ── 무대(마을에서 떨어진 x 400) ──
 // 마을 길(탐험 끝 장면): 북쪽에서 남쪽(카메라)으로 트럭과 병사들이 물러나고, 길가에서 마을 사람들이 지켜본다
@@ -52,7 +56,7 @@ export const ICE = { edge: { style: 'snow', seed: 104 },
 // 휴전선 긋기: 동서로 구불구불한 전선을 사이에 두고 남쪽에 국군·유엔군, 북쪽에 북한군·중국군. 남쪽 끝에 판문점 천막
 export const FRONT = { edge: { style: 'forest', seed: 1953 },
   origin: [400, 0], ground: 'grass', groundColor: 0x7a8a5a, bounds: { x0: -18, x1: 18, z0: -10, z1: 14 },
-  props: [{ type: 'tent', x: 0, z: 13.6, color: 0x9a9a8a, solid: false }, { type: 'flagpole', x: -3.4, z: 12.4, color: 0x5b92e5 }, { type: 'tree', x: -16, z: -8, kind: 'pine' }, { type: 'tree', x: 16, z: 9, kind: 'pine' }],
+  props: [{ type: 'flagpole', x: -3.4, z: 12.4, color: 0x5b92e5 }, { type: 'tree', x: -16, z: -8, kind: 'pine' }, { type: 'tree', x: 16, z: 9, kind: 'pine' }],
   from: [0, 6], stakes: [[-12, 0.6], [0, -1.2], [12, 0.8]],
 };
 
@@ -212,6 +216,7 @@ export async function packPlay(ctx) {
   return true;
 }
 
+// (협정 탁자 뒤 천막은 뺐다, 2026-11-05 선생님)
 // ── 놀이 ②: 휴전선 긋기와 정전 협정. 양쪽 군대가 맞선 곳 세 자리에 말뚝을 박아 선을 잇고, 양쪽이 물러나면 판문점 천막에서 협정 ──
 export async function linePlay(ctx) {
   const { world, dialogue, hud, audio } = ctx;
@@ -230,7 +235,6 @@ export async function linePlay(ctx) {
     }
   });
   const stakeMesh = (x, z) => { const s = new THREE.Group(); s.position.set(x, 0, z); g.add(s); blk(s, 0.14, 1.4, 0.14, 0x6b4a32, 0, 0.7, 0); blk(s, 0.6, 0.36, 0.04, 0xe0b830, 0, 1.2, 0.08, 'cloth'); return s; };
-  const pts = [[-17, 1.2], ...A.stakes, [17, 0.2]];
   const p0 = a.at(...A.from); placePlayer(world, [p0.x, p0.z], Math.PI);
   try {
     await ctx.fade?.(false);
@@ -246,11 +250,12 @@ export async function linePlay(ctx) {
       audio.play('tap');
       await wait(world, 0.5, k => { s.position.y = 0.8 * (1 - ease(k)); });
       hook.stakes += 1;
-      // 앞 말뚝(처음에는 서쪽 끝)에서 이 말뚝까지 줄을 잇는다
-      const [ax, az] = pts[i], d = Math.hypot(x - ax, z - az);
-      const rope = blk(g, 0.06, 0.06, d, 0xe0b830, (ax + x) / 2, 1.0, (az + z) / 2, 'cloth'); rope.rotation.y = Math.atan2(x - ax, z - az); 
-      hook.segments += 1;
-      if (i === A.stakes.length - 1) { const [bx, bz] = pts.at(-1), e = Math.hypot(bx - x, bz - z); const r2 = blk(g, 0.06, 0.06, e, 0xe0b830, (bx + x) / 2, 1.0, (bz + z) / 2, 'cloth'); r2.rotation.y = Math.atan2(bx - x, bz - z); hook.segments += 1; }
+      // 앞 말뚝에서 이 말뚝까지 줄을 잇는다. 끝 말뚝 바깥으로는 줄을 늘이지 않는다(2026-11-05 선생님: 끝에 줄이 생기지 않게)
+      if (i > 0) {
+        const [ax, az] = A.stakes[i - 1], d = Math.hypot(x - ax, z - az);
+        const rope = blk(g, 0.06, 0.06, d, 0xe0b830, (ax + x) / 2, 1.0, (az + z) / 2, 'cloth'); rope.rotation.y = Math.atan2(x - ax, z - az);
+        hook.segments += 1;
+      }
       toast(ctx, `○ ${P.stakes[i].label}`, 'good');
     }
     hud.setCounter(`${P.counter} ${A.stakes.length}/${A.stakes.length}`);
@@ -278,6 +283,11 @@ export async function linePlay(ctx) {
     await wait(world, 1.6, k => { for (const p of [d1, d2]) { const ar = arm(p); if (ar) ar.rotation.x = -0.9 - Math.sin(k * Math.PI * 6) * 0.15; } });
     hook.signed = true;
     audio.play('correct');
+    // 서명한 두 대표가 일어나 탁자 앞(남쪽)에서 마주 보고 악수한다(2026-11-05 선생님: 정확한 자리에서)
+    const T0 = [d1.position.clone(), d2.position.clone()], S1 = new THREE.Vector3(-0.7, 0, 1.6), S2 = new THREE.Vector3(0.6, 0, 1.24); // S2: 악수 자리(S1 앞 1.3m, 오른손끼리 닿게 0.36m 비킴)라서 다시 걷지 않는다
+    world.setFixedCamera([D.x + 0.3, 2.0, D.z + 6.2], [D.x, 1.3, D.z + 1.2]); // 탁자 앞에서 두 대표를 옆모습으로
+    await wait(world, 1.4, k => { d1.position.lerpVectors(T0[0], S1, ease(k)); d2.position.lerpVectors(T0[1], S2, ease(k)); face(d1, S1.x + (S2.x - S1.x) * k + 0.01, S1.z + 0.5 * (1 - k)); face(d2, S2.x - (S2.x - S1.x) * k - 0.01, S2.z + 0.5 * (1 - k)); });
+    hook.shake = await handshake(world, d1, d2);
     await dialogue.say(P.sign[0]);
     await dialogue.say(P.sign[1]);
     await dialogue.say(P.sign[2]);
@@ -312,7 +322,7 @@ const base = makeKitChapter({
     npcs: [
       { id: 'soldier', look: 'rokSoldier', x: -4.5, z: 5, ry: Math.PI * 0.8 },
       { id: 'unSoldier', look: 'unSoldier', x: -3, z: -4, ry: 0 },
-      { id: 'grandpa', look: 'peasant', x: 8, z: 5, ry: -Math.PI * 0.6 },
+      { id: 'grandpa', look: 'grandpa', x: 8, z: 5, ry: -Math.PI * 0.6 },
       { id: 'mother', look: 'woman', x: 4.5, z: -3, ry: -Math.PI * 0.2 },
     ],
     // 길 위 안내판 대신 판잣집 간판(C-03): 「피란민 쉼터」·「국군 초소」. 안내판 글(판문점·정전)은 놀이 대사로 옮겼다
@@ -341,12 +351,17 @@ function introScene(ctx) {
   south.slice(3).forEach(p => headLoad(p, 0x8a5a6a));
   const hide = on => { for (const id of [...PEOPLE, 'mother']) { const n = world.npcs.get(id); if (n) n.mesh.visible = on; } };
   const show = list => { for (const o of [...north, ...south]) o.visible = list.includes(o); };
+  let map = null; const offs = [];
   return {
     shots: [
-      { cam: [4.5, 2.6, 7.5], look: [0, 1, 0.4], to: { cam: [4, 2.5, 7], look: [0, 1, 0.4] }, act: () => { hide(false); show(north); } },
-      { cam: [0.6, 2.2, 10.5], look: [0, 1.2, 4.6], to: { cam: [0.4, 2.2, 10], look: [0, 1.2, 4.6] }, act: () => show(south) },
+      { cam: [4.5, 2.6, 7.5], look: [0, 1, 0.4], to: { cam: [4, 2.5, 7], look: [0, 1, 0.4] }, act: () => {
+        hide(false); show(north);
+        map = warMap(ctx.ui, { stops: CHINA_PUSH, river: null }); if (ctx.testHooks) ctx.testHooks.warMap = CHINA_PUSH.length;
+        if (map) offs.push(playWarMap(map, world, 3.6)); // 압록강에서 남쪽으로 밀고 내려온다
+      } },
+      { cam: [0.6, 2.2, 10.5], look: [-1.2, 1.2, 4.6], to: { cam: [0.4, 2.2, 10], look: [-1.2, 1.2, 4.6] }, act: () => { show(south); map?.to(CHINA_PUSH.length - 1); } },
     ],
-    done: () => { hide(true); for (const o of [...north, ...south]) o.removeFromParent(); },
+    done: () => { offs.forEach(f => f()); map?.remove(); hide(true); for (const o of [...north, ...south]) o.removeFromParent(); },
   };
 }
 

@@ -156,3 +156,14 @@ export function chatter(world, people, { turn = 0.9, seed = 1 } = {}) {
   });
   return Object.assign(() => { off(); for (const P of pairs) { setTalking(P.a, null); setTalking(P.b, null); } for (const [p, r] of ry0) p.rotation.y = r; }, { pairs: pairs.length });
 }
+
+// 보따리(2026-11-05 선생님: 사람들이 든 것이 무엇인지 알아보게): 천으로 둥글게 싼 짐, 위에 묶은 매듭 두 귀, 천 무늬 띠
+export function bottari(color = 0x8a5a6a, s = 1) {
+  const b = new THREE.Group(), cloth = mat(color, 'cloth', 'object');
+  const body = new THREE.Mesh(new THREE.SphereGeometry(0.34 * s, 12, 9), cloth); body.scale.set(1, 0.72, 0.85); body.castShadow = true; b.add(body);
+  const band = new THREE.Mesh(new THREE.TorusGeometry(0.3 * s, 0.03 * s, 6, 18), mat(new THREE.Color(color).multiplyScalar(0.6).getHex(), 'cloth', 'object')); band.rotation.x = Math.PI / 2; band.scale.set(1.08, 0.92, 1); b.add(band);
+  for (const sx of [-1, 1]) { const ear = new THREE.Mesh(new THREE.ConeGeometry(0.07 * s, 0.2 * s, 6), cloth); ear.position.set(sx * 0.07 * s, 0.28 * s, 0); ear.rotation.z = -sx * 0.6; b.add(ear); }
+  const knot = new THREE.Mesh(new THREE.SphereGeometry(0.06 * s, 8, 6), cloth); knot.position.y = 0.25 * s; b.add(knot);
+  b.name = 'bottari';
+  return b;
+}

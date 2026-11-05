@@ -10,7 +10,7 @@ export default {
     soldier: { name: '국군 병사', mark: '軍', color: '#5a6448', look: 'rokSoldier' },
     mother: { name: '피란민 어머니', mark: '母', color: '#b8768a', look: 'woman' },
     unSoldier: { name: '유엔군 병사', mark: 'UN', color: '#5b92e5', look: 'unSoldier' },
-    grandpa: { name: '이웃 할아버지', mark: '老', color: '#6b4a32', look: 'peasant' },
+    grandpa: { name: '이웃 할아버지', mark: '老', color: '#6b4a32', look: 'grandpa' },
     delegate: { name: '회담 대표', mark: '代', color: '#2b2f36', look: 'gentleman' },
   },
   intro: [

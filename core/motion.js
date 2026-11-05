@@ -168,7 +168,7 @@ export function animateWalk(person, moving, dt) {
   const m = state(u);
   u.t = (u.t || 0) + dt;
   // ① 실제 빠르기를 재고 부드럽게 따라간다(출발할 때 가속, 멈출 때 감속). 크게 건너뛴 것(장면 전환)은 빠르기로 보지 않는다
-  person.getWorldPosition(v3);
+  if (u.aboard) v3.copy(person.position); else person.getWorldPosition(v3); // aboard: 배·차에 탄 사람은 탈것이 움직여도 걷지 않는다(탈것 안 자리로 잰다)
   let raw = 0;
   if (m.last) raw = Math.hypot(v3.x - m.last.x, v3.z - m.last.z) / dt; else m.last = new THREE.Vector3();
   m.last.copy(v3);
@@ -284,7 +284,7 @@ function animateSkel(person, moving, dt) {
   const u = person.userData, m = state(u), S = u.skel;
   S.picked = true; // 이 프레임에 동작을 골랐다(core/body.js 제자리걸음 막기가 끼어들지 않게)
   u.t = (u.t || 0) + dt;
-  person.getWorldPosition(v3);
+  if (u.aboard) v3.copy(person.position); else person.getWorldPosition(v3); // aboard: 배·차에 탄 사람은 탈것이 움직여도 걷지 않는다(탈것 안 자리로 잰다)
   let raw = 0;
   if (m.last) raw = Math.hypot(v3.x - m.last.x, v3.z - m.last.z) / dt; else m.last = new THREE.Vector3();
   m.last.copy(v3);

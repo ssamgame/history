@@ -93,7 +93,9 @@ test('h2 D-48: 투표 날 장면 — 투표소 앞에 줄 선 사람들(얼굴�
     const h = s.ctx.testHooks.election;
     ok(h.people >= 12, `줄 선 사람 ${h.people}`);
     ok(h.looks >= 5, `여러 사람(나이·남녀) ${h.looks}`);
-    ok(h.entered >= 2, `차례로 들어감 ${h.entered}`);
+    ok(h.people >= 20, `길게 줄 섰다 ${h.people}`);
+    ok(h.entered >= 1 && h.voted, `맨 앞 사람이 기표소에 들어갔다 나와 투표함에 넣고 들어간다 ${h.entered}`);
+    eq(h.frontView, 1, '2026-11-05: 투표하는 모습을 정면에서');
     ok(h.facing >= 0.8, `D-45: 얼굴이 보인다 ${h.facing}`);
     eq(s.w.level.children.length, n0, '무대를 치웠다');
     eq(s.w.bounds, b0, '걷는 곳도 마을로');
@@ -110,7 +112,8 @@ test('h2 D-48: 내 손으로 투표하기 — 명부 → 투표용지 → 기표
     const r = await votePlay(s.ctx, null, false);
     ok(r === true, `끝냄 ${r}`);
     const h = s.ctx.testHooks.vote;
-    eq(h.steps, ['roll', 'paper', 'booth', 'box']);
+    eq(h.steps, ['paper', 'booth', 'box'], '2026-11-05: 앞 명부 직원 없이 투표용지 받기부터');
+    ok(h.booth.w >= 2.8 && h.booth.door > 0.9, `큰 기표소, 입구를 텄다 ${JSON.stringify(h.booth)}`);
     ok(h.stamped >= 0 && h.stamped < 3, `도장 ${h.stamped}`);
     ok(h.inBox, '투표함에 넣었다');
     eq(s.w.level.children.length, n0, '무대를 치웠다');

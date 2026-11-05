@@ -116,7 +116,7 @@ test('h4 D-51: 휴전선 긋기 — 말뚝 셋으로 선을 잇고, 양쪽이 �
     const r = await linePlay(s.ctx);
     ok(r === true, `끝냄 ${r}`);
     const h = s.ctx.testHooks.line;
-    eq(h.stakes, 3); eq(h.segments, 4, '서쪽 끝부터 동쪽 끝까지 줄');
+    eq(h.stakes, 3); eq(h.segments, 2, '말뚝과 말뚝 사이만 줄(끝 바깥으로는 없다)');
     ok(h.backed && h.dmz && h.signed, '물러남·비무장 지대·서명');
     eq(s.w.level.children.length, n0, '무대를 치웠다');
     eq(s.w.bounds, b0);

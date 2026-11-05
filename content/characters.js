@@ -89,6 +89,7 @@ export const LOOKS = {
   rokSoldier: { outfit: 'uniform', pants: 0x4e5840, robe: 0x5a6448, hat: 'steel', gear: 'rifle', trim: 0x3a3f2c, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   unSoldier: { outfit: 'uniform', pants: 0x5a5a3e, robe: 0x6b6a4a, hat: 'steel', gear: 'rifle', trim: 0x3a3f2c, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   citizen: { eras: { present: { outfit: 'shirt', robe: 0xe8e6e0, pants: 0x3a3f4a }, presentLate: { outfit: 'shirt', robe: 0x9ab0c8, pants: 0x4a4038 } }, outfit: 'short', pants: 0xd8cfbf, robe: 0x5d7a9a, hat: 'short', trim: 0xe6dcc3, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
+  grandpa: { outfit: 'short', pants: 0xd8d0bc, robe: 0xe6e0d2, hat: 'topknot', hairColor: '#d8d4cc', trim: 0x6b5a48, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'goatee', beardColor: '#e8e4dc', browColor: '#c8c2b8', age: 'old', shape: 'long' } }, // 할아버지(2026-11-05 선생님: 이웃 할아버지가 할아버지답게): 흰 머리·흰 수염·주름
   grandma: { outfit: 'chima', pants: 0x5a4a3a, robe: 0xd8cfbf, hat: 'bun', hairColor: '#b8b2a8', trim: 0x6b4a32, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', age: 'old' } },
   nkSoldier: { outfit: 'uniform', pants: 0x5a5a32, robe: 0x6b6a3a, hat: 'cap', gear: 'rifle', trim: 0x8a2f24, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   builder: { outfit: 'shirt', pants: 0x5a5040, robe: 0x8a7a5a, hat: 'steel', trim: 0x3a3f2c, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },

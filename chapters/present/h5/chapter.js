@@ -8,9 +8,10 @@ import { buildArena, toast } from '../../kit/play.js';
 import { BUILD } from '../../kit/town.js';
 import { gateLeaves, nameBoard } from '../../kit/gate.js';
 import { walkInAndTalk, anyOrderTalk } from '../../kit/talk.js';
-import { wait, person, ease, face, sayer, meet, minigameWithMeet, facingShare, sitDown, SEAT_Y } from '../../kit/walk.js';
+import { wait, person, ease, face, sayer, meet, minigameWithMeet, facingShare, sitDown, SEAT_Y, bottari } from '../../kit/walk.js';
 import { waitInteract } from '../../../core/portal.js';
 import { mat, setCarry } from '../../../core/people.js';
+import { playAction } from '../../../core/motion.js';
 import { placePlayer } from '../../joseon/common.js';
 import script from './script.js';
 
@@ -21,6 +22,16 @@ const cyl = (g, rt, rb, h, color, x, y, z, kind = 'wood') => { const m = new THR
 const ring = (g, x, z, r = 0.9) => { const m = new THREE.Mesh(new THREE.RingGeometry(r, r + 0.25, 28), new THREE.MeshBasicMaterial({ color: 0xd9a441, transparent: true, opacity: 0.85, side: THREE.DoubleSide })); m.rotation.x = -Math.PI / 2; m.position.set(x, 0.09, z); m.visible = false; g.add(m); return m; };
 const sack = () => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.62, 0.34), mat(0xe8e0cc, 'cloth', 'object')); m.castShadow = true; return m; };
 const bowl = () => { const g = new THREE.Group(); const b = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.12, 0.14, 12), mat(0xd8d0c0, 'stone', 'object')); g.add(b); const n = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.04, 12), mat(0xe8d8a8, 'grain', 'object')); n.position.y = 0.06; g.add(n); return g; };
+// 속이 빈 그릇(가마솥·함지): 둘레 벽(안팎 두 겹)·바닥·테, 안쪽 움푹한 곳에 물(테보다 낮게). 돌려준 water의 y로 물 높이(2026-11-05 선생님: 홈에 물이 담긴 모습)
+function basin(g, x, y, z, { r = 0.6, rb = 0.45, h = 0.42, color = 0x2a2a2a, kind = 'stone', water = 0x8fb4c8, level = 0.72 } = {}) {
+  const b = new THREE.Group(); b.position.set(x, y, z); g.add(b);
+  const wall = new THREE.Mesh(new THREE.CylinderGeometry(r, rb, h, 20, 1, true), mat(color, kind)); wall.position.y = h / 2; wall.material = wall.material.clone(); wall.material.side = THREE.DoubleSide; wall.castShadow = true; b.add(wall);
+  const bottom = new THREE.Mesh(new THREE.CircleGeometry(rb, 20).rotateX(-Math.PI / 2), mat(color, kind)); bottom.position.y = 0.02; b.add(bottom);
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(r, 0.04, 6, 24), mat(color, kind)); rim.rotation.x = Math.PI / 2; rim.position.y = h; b.add(rim);
+  const wr = rb + (r - rb) * level, wm = new THREE.Mesh(new THREE.CircleGeometry(wr * 0.98, 20).rotateX(-Math.PI / 2), new THREE.MeshPhongMaterial({ color: water, shininess: 80, transparent: true, opacity: 0.88 }));
+  wm.position.y = h * level; wm.name = 'water'; b.add(wm);
+  return { group: b, water: wm, top: y + h };
+}
 function canvasBoard(w, h, px = 128) {
   const cv = document.createElement('canvas'); cv.width = Math.round(w * px); cv.height = Math.round(h * px);
   const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
@@ -111,6 +122,13 @@ async function leaveArena(ctx, a) {
   await ctx.fade?.(false);
 }
 
+// 밀면 만드는 손놀림(arms[0] 왼팔, arms[1] 오른팔; x가 음수면 앞으로 든다)
+const ACT_POSE = {
+  dough: t => { const u = Math.sin(t / 0.6 * Math.PI), p = Math.abs(Math.sin(t / 0.6 * Math.PI * 2)); return { arms: [[-1.0 - 0.35 * p, 0, 0.15], [-1.0 - 0.35 * (1 - p), 0, -0.15]], upper: [0.25 * u, 0, 0] }; }, // 두 손으로 번갈아 꾹꾹 치댄다
+  press: t => { const u = Math.sin(Math.min(1, t / 0.6) * Math.PI); return { arms: [[-2.4 + 1.0 * u, 0, 0.1], [-2.4 + 1.0 * u, 0, -0.1]], upper: [0.3 * u, 0, 0] }; }, // 머리 위 지레를 잡고 내리누른다
+  rinse: t => { const w = Math.sin(t / 1.2 * Math.PI * 6); return { arms: [[-0.9, 0.25 * w, 0.2], [-0.9, 0.25 * w, -0.2]], upper: [0.35, 0, 0] }; }, // 허리를 굽혀 찬물 속에서 면을 흔들어 헹군다
+};
+
 // ── 놀이 ①: 밀면 만들기. 자리마다 대화 버튼을 여러 번 눌러 반죽·국수틀·헹구기를 하고, 손님상에 밀면을 낸다 ──
 export async function noodlePlay(ctx) {
   const { world, dialogue, hud, audio } = ctx;
@@ -126,16 +144,19 @@ export async function noodlePlay(ctx) {
   const ball = new THREE.Mesh(new THREE.SphereGeometry(0.3, 12, 10), mat(0xf0e6cc, 'cloth', 'object')); ball.position.set(D[0], 0.9, D[1]); ball.scale.set(1.2, 0.35, 1.2); g.add(ball);
   // 가마솥(아궁이 위)과 국수틀
   blk(g, 1.6, 0.7, 1.4, 0x7a6a5a, R[0], 0.35, R[1], 'stone');
-  cyl(g, 0.6, 0.45, 0.4, 0x2a2a2a, R[0], 0.9, R[1], 'stone');
-  const steam = new THREE.Mesh(new THREE.SphereGeometry(0.4, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.22 })); steam.scale.set(1.2, 0.5, 1.2); steam.position.set(R[0], 1.25, R[1]); g.add(steam);
+  blk(g, 0.5, 0.3, 0.06, 0x2a1a12, R[0], 0.3, R[1] + 0.71, 'stone'); // 아궁이 입구
+  const pot = basin(g, R[0], 0.7, R[1], { r: 0.62, rb: 0.42, h: 0.42, color: 0x2a2a2a, water: 0xb8ccd4, level: 0.7 }); // 끓는 물이 담긴 가마솥
+  const steam = new THREE.Mesh(new THREE.SphereGeometry(0.4, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.22 })); steam.scale.set(1.2, 0.5, 1.2); steam.position.set(R[0], 1.32, R[1]); g.add(steam);
   for (const s of [-1, 1]) blk(g, 0.12, 2.2, 0.12, 0x5a3f2a, R[0] + s * 0.9, 1.1, R[1] - 0.2);
   blk(g, 2, 0.14, 0.2, 0x5a3f2a, R[0], 2.2, R[1] - 0.2);
   const lever = new THREE.Group(); lever.position.set(R[0] - 0.9, 2.05, R[1] - 0.2); g.add(lever); blk(lever, 2.2, 0.1, 0.1, 0x6b4a32, 1.1, 0, 0);
   const noodles = new THREE.Group(); noodles.position.set(R[0], 1.3, R[1]); noodles.visible = false; g.add(noodles);
   for (let i = 0; i < 9; i++) { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.6, 4), mat(0xe8d8a8, 'grain', 'object')); m.position.set((i % 3 - 1) * 0.08, 0, (Math.floor(i / 3) - 1) * 0.08); noodles.add(m); }
   // 찬물 함지
-  blk(g, 1.4, 0.6, 1, 0x6b4a32, N[0], 0.3, N[1]);
-  const water = cyl(g, 0.5, 0.5, 0.06, 0x6a9ab8, N[0], 0.64, N[1], 'stone');
+  blk(g, 1.4, 0.45, 1, 0x6b4a32, N[0], 0.225, N[1]);
+  const tub = basin(g, N[0], 0.45, N[1], { r: 0.55, rb: 0.46, h: 0.3, color: 0x8a6a48, kind: 'wood', water: 0x6a9ab8, level: 0.75 }), water = tub.water; // 찬물 함지
+  const rinsed = new THREE.Group(); rinsed.position.set(N[0], tub.top - 0.06, N[1]); rinsed.visible = false; g.add(rinsed); // 함지 속 면 타래
+  for (let i = 0; i < 7; i++) { const m = new THREE.Mesh(new THREE.TorusGeometry(0.12 + i * 0.025, 0.012, 4, 16), mat(0xe8d8a8, 'grain', 'object')); m.rotation.x = Math.PI / 2; m.position.y = i * 0.006; rinsed.add(m); }
   const grandma = person(g, 'grandma', R[0] + 1.6, R[1] + 0.4, 0);
   // 손님 상과 손님(상 뒤에서 남쪽을 보고 앉는다)
   const guests = A.tables.map(([x, z], i) => { // 상 뒤 걸상에 앉아 남쪽(학생)을 본다
@@ -153,16 +174,19 @@ export async function noodlePlay(ctx) {
       await waitInteract(ctx, { pos: a.at(sx, sz + 1.4), label: st.act, r: 1.4 });
       ctx.input.enabled = false;
       mk.visible = false;
-      const S = a.at(sx, sz); world.setFixedCamera([S.x + 2.2, 2.6, S.z + 3.6], [S.x, 1, S.z]);
+      const S = a.at(sx, sz); placePlayer(world, [S.x, S.z + 0.95], Math.PI); // 그 자리 앞에 서서 직접 한다
+      world.setFixedCamera([S.x + 2.2, 2.6, S.z + 3.6], [S.x, 1, S.z]);
       await say(st.line, grandma);
       dialogue.close();
       world.setFixedCamera([S.x + 2.2, 2.6, S.z + 3.6], [S.x, 1, S.z]);
       for (let k = 0; k < st.presses; k++) {
         if (k) { ctx.input.enabled = true; await waitInteract(ctx, { pos: a.at(sx, sz + 1.4), label: `${st.act} ${k + 1}/${st.presses}`, r: 1.4 }); ctx.input.enabled = false; }
         audio.play('tap'); hook.presses += 1;
+        playAction(world.player, { dur: st.id === 'rinse' ? 1.2 : 0.6, fadeIn: 0.08, fadeOut: 0.12, name: st.id, pose: t => ACT_POSE[st.id](t) }); // 반죽 치대기·지레 누르기·면 헹구기 손놀림
+        hook.acts = (hook.acts || 0) + 1;
         if (st.id === 'dough') await wait(world, 0.4, u => { const s = 0.35 + (k + u) / st.presses * 0.65; ball.scale.set(1.2 - 0.3 * (k + u) / st.presses, s, 1.2 - 0.3 * (k + u) / st.presses); });
         if (st.id === 'press') { if (!k) ball.visible = false; noodles.visible = true; await wait(world, 0.4, u => { lever.rotation.z = -0.35 * Math.sin(u * Math.PI); noodles.scale.y = (k + u) / st.presses; noodles.position.y = 1.6 - 0.3 * (k + u) / st.presses; }); }
-        if (st.id === 'rinse') { noodles.visible = false; await wait(world, 0.6, u => { water.position.y = 0.64 + Math.sin(u * Math.PI * 4) * 0.03; }); }
+        if (st.id === 'rinse') { noodles.visible = false; rinsed.visible = true; const wy = water.position.y; await wait(world, 1.2, u => { water.position.y = wy + Math.sin(u * Math.PI * 6) * 0.015; rinsed.rotation.y = u * 4; rinsed.position.y = tub.top - 0.06 + 0.12 * Math.max(0, Math.sin(u * Math.PI * 2)); }); water.position.y = wy; }
       }
       hook.steps.push(st.id);
       toast(ctx, `○ ${st.act}`, 'good');
@@ -213,8 +237,9 @@ export async function familyPlay(ctx) {
   for (const [ox, oz] of [[-2.8, 1.6], [-1.6, 3]]) { const c = new THREE.Group(); c.position.set(sx + ox, 0, sz + oz); g.add(c); for (const r of [0, 2.1, 4.2]) { const l = blk(c, 0.05, 1.3, 0.05, 0x3a3a3a, Math.sin(r) * 0.25, 0.62, Math.cos(r) * 0.25, 'stone'); l.rotation.z = Math.sin(r) * 0.2; } blk(c, 0.4, 0.35, 0.6, 0x2a2a2a, 0, 1.4, 0, 'stone'); }
   const host = person(g, 'gentleman', sx - 0.6, sz, Math.PI / 6);
   const sister = person(g, 'grandma', sx + 0.8, sz - 0.5, -Math.PI / 6); sister.visible = false;
-  const grandpa = person(g, 'peasant', dx + 1.4, dz + 0.4, -Math.PI / 2);
-  const crowd = ['citizen', 'woman', 'grandma', 'gentleman', 'peasant', 'woman', 'citizen', 'grandma'].map((look, i) => { const p = person(g, look, -9 + i * 2.4, -5.8 + (i % 2) * 0.7, Math.PI); return p; });
+  const grandpa = person(g, 'grandpa', dx + 1.4, dz + 0.4, -Math.PI / 2);
+  // 벽보를 보러 온 사람들: 벽보 붙일 자리(A.wall) 앞은 비워 둔다(2026-11-05 선생님: 그 앞 모자 쓴 신사를 뺐다)
+  const crowd = ['citizen', 'woman', 'grandma', 'peasant', 'woman', 'citizen', 'grandma'].map((look, i) => [look, -9.6 + i * 2.6]).filter(([, x]) => Math.abs(x - A.wall[0]) > 1.8).map(([look, x], i) => person(g, look, x, -5.8 + (i % 2) * 0.7, Math.PI));
   // 벽보(캔버스)
   const poster = canvasBoard(0.9, 1.2, 160);
   const drawPoster = () => {
@@ -256,7 +281,8 @@ export async function familyPlay(ctx) {
     mk = ring(g, wx, wz + 1.4); mk.visible = true;
     await waitInteract(ctx, { pos: a.at(wx, wz + 1.4), label: P.wall.act, r: 1.5 });
     ctx.input.enabled = false; mk.removeFromParent();
-    setCarry(world.player, null); poster.mesh.position.set(wx, 1.4, wz + 0.02); g.add(poster.mesh);
+    setCarry(world.player, null); g.add(poster.mesh); poster.mesh.position.set(wx, 1.4, wz + 0.02); poster.mesh.rotation.set(0, 0, 0); poster.mesh.quaternion.identity(); poster.mesh.scale.setScalar(1); // 들고 다닐 때 바뀐 기울기·크기를 지우고 벽 빈자리에 반듯이
+    hook.posterAt = [poster.mesh.position.x - wx, poster.mesh.position.y, poster.mesh.rotation.x];
     audio.play('tap'); hook.posted = true;
     const Wv = a.at(wx, wz); world.setFixedCamera([Wv.x + 1.4, 1.8, Wv.z + 3.4], [Wv.x, 1.4, Wv.z]);
     grandpa.position.set(wx + 1.3, 0, wz + 1.4); face(grandpa, wx, wz);
@@ -296,6 +322,7 @@ export async function familyPlay(ctx) {
 
 const base = makeKitChapter({
   id: 'h5', mood: 'sea', script,
+  howtoEach: true, // 벽보 놀이 방법은 밀면 놀이 뒤, 할아버지 이야기 다음에(2026-11-05 선생님)
   player: { robe: 0x5d7a9a, hat: 'short', trim: 0xe6dcc3, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   order: ['mother', 'grandma', 'student', 'grandpa'],
   spot: SPOT,
@@ -319,7 +346,7 @@ const base = makeKitChapter({
       { id: 'mother', look: 'woman', x: -4.5, z: 5.5, ry: Math.PI * 0.8, work: 'carry' },
       { id: 'grandma', look: 'grandma', x: 7, z: 5, ry: -Math.PI * 0.6 },
       { id: 'student', look: 'student', x: 1, z: -2, ry: 0 },
-      { id: 'grandpa', look: 'peasant', x: -8.5, z: 3.6, ry: Math.PI * 0.4 },
+      { id: 'grandpa', look: 'grandpa', x: -8.5, z: 3.6, ry: Math.PI * 0.4 },
     ],
     // 길 위 안내판 대신 판잣집 간판(C-03): 「밀면집」·「구호소」. 안내판 글(이산가족 찾기·평화 통일)은 놀이 대사로 옮겼다
     signs: [{ id: 'signNoodle', title: '밀면집', x: 13, z: 9.5, ry: 0, plaque: { y: 1.7, back: 0 } },
@@ -342,7 +369,7 @@ function introScene(ctx) {
   const { world } = ctx, L = world.level;
   const add = (look, x, z, ry) => { const p = person(L, look, x, z, ry); p.visible = false; return p; };
   const walkers = [[-2.4, 4, 'woman'], [-0.8, 5, 'peasant'], [0.8, 4.4, 'grandma'], [2.4, 5.2, 'citizen'], [0, 6.2, 'kidModern']].map(([x, z, l]) => add(l, x, z, 0));
-  walkers.forEach(p => setCarry(p, sack(), 'arms'));
+  walkers.forEach((p, i) => setCarry(p, bottari([0x8a5a6a, 0x5a6a8a, 0x7a6a4a, 0x6a7a5a, 0x9a6a4a][i % 5]), 'arms')); // 천 보따리를 안고 도시로(2026-11-05 선생님: 흰 상자는 무엇인지 알기 어려웠다)
   const workers = [[-2, 1.6, 'woman'], [0, 1, 'citizen'], [2, 1.6, 'student']].map(([x, z, l]) => add(l, x, z, 0));
   const hide = on => { for (const id of [...PEOPLE, 'grandpa']) { const n = world.npcs.get(id); if (n) n.mesh.visible = on; } };
   const show = list => { for (const o of [...walkers, ...workers]) o.visible = list.includes(o); };

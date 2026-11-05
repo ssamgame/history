@@ -141,7 +141,7 @@ export function buildArena(world, arena) {
       const pg = new THREE.Group(); pg.position.set(p.x, p.y || 0, p.z); pg.rotation.y = p.ry || 0; if (p.scale) pg.scale.setScalar(p.scale); (p.center ? cg : g).add(pg);
       const r = BUILD[p.type](pg, p);
       if (p.type === 'crowd') bakeStatic(pg, m => m.material.map === taegukgiTexture()); // 서 있는 무리는 한 덩어리로
-      if (p.type === 'water') pg.position.y = 0.32; // 무대 땅 위로 물이 보이게
+      if (p.type === 'water') pg.position.y = 0.55; // 무대 땅 위로 물이 보이게. 물결 골(-0.16)도 돌바닥(0.04)보다 높아야 경계가 깜박이지 않는다(2026-11-05 선생님: 배 있는 곳 육지·바다 경계)
       if (r && p.solid !== false) addFootprint(world, { ...p, ...at(p.x, p.z) }, r); // 긴 건물·기차는 작은 원을 줄지어
     }
     if (cg.children.length) g.add(bakeStatic(cg));

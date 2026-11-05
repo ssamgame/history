@@ -11,6 +11,10 @@ import { walkInAndTalk, anyOrderTalk } from '../../kit/talk.js';
 import { wait, person, ease, face, sayer, meet, minigameWithMeet, facingShare, sitDown, SEAT_Y } from '../../kit/walk.js';
 import { waitInteract } from '../../../core/portal.js';
 import { mat, setCarry } from '../../../core/people.js';
+import { setWork, playAction } from '../../../core/motion.js';
+import { handOf } from '../../../core/interact.js';
+import { holdPress } from '../../ch5/work.js';
+import { burning } from '../../kit/fire.js';
 import { placePlayer } from '../../joseon/common.js';
 import script from './script.js';
 
@@ -24,10 +28,10 @@ function canvasBoard(w, h, px = 128) {
   const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshLambertMaterial({ map: tex, side: THREE.DoubleSide }));
   return { mesh, c: cv.getContext('2d'), cv, tex };
 }
-// 「수출」이라고 쓴 종이 상자
+// 「수출」이라고 쓴 종이 상자(작은 영어 글씨는 뭉개져 보여 뺐다, 2026-11-05 선생님)
 let exportTex = null;
 function exportBox() {
-  if (!exportTex) { const b = canvasBoard(0.5, 0.36, 128); b.c.fillStyle = '#c8a878'; b.c.fillRect(0, 0, b.cv.width, b.cv.height); b.c.fillStyle = '#7a2f24'; b.c.font = 'bold 30px sans-serif'; b.c.textAlign = 'center'; b.c.fillText('수출', b.cv.width / 2, 32); b.c.font = '16px sans-serif'; b.c.fillText('MADE IN KOREA', b.cv.width / 2, 44); b.tex.needsUpdate = true; exportTex = b.tex; }
+  if (!exportTex) { const b = canvasBoard(0.5, 0.36, 128); b.c.fillStyle = '#c8a878'; b.c.fillRect(0, 0, b.cv.width, b.cv.height); b.c.fillStyle = '#7a2f24'; b.c.font = 'bold 34px "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif'; b.c.textAlign = 'center'; b.c.textBaseline = 'middle'; b.c.fillText('수출', b.cv.width / 2, b.cv.height / 2); b.tex.needsUpdate = true; exportTex = b.tex; }
   const m = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.36, 0.4), [mat(0xb8956a, 'cloth', 'object'), mat(0xb8956a, 'cloth', 'object'), new THREE.MeshLambertMaterial({ map: exportTex }), mat(0xb8956a, 'cloth', 'object'), new THREE.MeshLambertMaterial({ map: exportTex }), mat(0xb8956a, 'cloth', 'object')]);
   m.castShadow = true; return m;
 }
@@ -67,7 +71,8 @@ export async function openingScene(ctx) {
   const halves = [-1, 1].map(s => { const h = new THREE.Group(); h.position.set(s * 4.4, 1.1, A.tape); g.add(h); const m = blk(h, 4.4, 0.12, 0.04, 0xc8282c, -s * 2.2, 0, 0, 'cloth'); m.castShadow = false; return h; });
   for (const s of [-1, 1]) blk(g, 0.12, 1.2, 0.12, 0xe8e4d8, s * 4.4, 0.6, A.tape, 'stone');
   const chiefs = [-1.4, 0, 1.4].map(x => person(g, x ? 'gentleman' : 'builder', x, A.tape - 0.9, 0));
-  const cars = [[-2, -9], [2, -12], [-2, -16], [2, -19]].map(([x, z], i) => { const c = new THREE.Group(); c.position.set(x, 0, z); g.add(c); BUILD.truck(c, { color: [0x3f6a8a, 0x8a3a2a, 0x55603f, 0xd8c8a0][i] }); return c; });
+  // 차 앞(모형의 -z)이 달려오는 남쪽(카메라)을 보게 돌려 놓는다(2026-11-05 선생님)
+  const cars = [[-2, -9], [2, -12], [-2, -16], [2, -19]].map(([x, z], i) => { const c = new THREE.Group(); c.position.set(x, 0, z); c.rotation.y = Math.PI; g.add(c); BUILD.truck(c, { color: [0x3f6a8a, 0x8a3a2a, 0x55603f, 0xd8c8a0][i] }); return c; });
   const looks = ['citizen', 'woman', 'student', 'schoolgirl', 'gentleman', 'kidModern', 'woman', 'citizen', 'builder', 'grandma'];
   const crowd = looks.map((look, i) => { const s = i % 2 ? 1 : -1, row = Math.floor(i / 2); const p = person(g, look, s * (5.8 + (row % 2) * 1.1), -0.5 + row * 1.6, 0); holdFlag(p); return p; });
   const C = a.at(0.6, 11.5), T = a.at(0, -3);
@@ -88,7 +93,7 @@ export async function openingScene(ctx) {
     await wait(world, 0.8, k => halves.forEach((h, i) => { h.rotation.z = (i ? 1 : -1) * 1.3 * ease(k); }));
     hook.cut = true;
     chiefs.forEach((p, i) => { p.position.x = (i - 1) * 3.6; }); // 일꾼들이 길 밖으로 비켜선다
-    chiefs[0].position.x = -5; chiefs[2].position.x = 5;
+    chiefs[0].position.x = -5; chiefs[1].position.x = -6.2; chiefs[2].position.x = 5; // 가운데 사람도 찻길 밖으로(차가 지나가게)
     const c0 = cars.map(c => c.position.z);
     const go = wait(world, 4, k => cars.forEach((c, i) => { c.position.z = c0[i] + 14 * ease(Math.min(1, k * 1.2)); }));
     for (let n = 0; n < 2; n++) {
@@ -165,7 +170,7 @@ export async function factoryPlay(ctx) {
   const packer = person(g, 'woman', kx + 1.2, kz, -Math.PI / 2);
   // 수출 트럭(앞이 남쪽)
   const [tx, tz] = A.truck;
-  const truck = new THREE.Group(); truck.position.set(tx, 0, tz); g.add(truck); BUILD.truck(truck, { color: 0x3f6a8a });
+  const truck = new THREE.Group(); truck.position.set(tx, 0, tz); truck.rotation.y = Math.PI; g.add(truck); BUILD.truck(truck, { color: 0x3f6a8a }); // 앞이 떠나는 쪽(남쪽)
   const say = sayer(ctx);
   const p0 = a.at(...A.from); placePlayer(world, [p0.x, p0.z], Math.PI);
   try {
@@ -176,15 +181,21 @@ export async function factoryPlay(ctx) {
       drawStitch(0);
       const mk = ring(g, mx, mz + 1.6, 0.7); mk.visible = true;
       const M = a.at(mx, mz);
-      for (let k = 0; k < P.stitches; k++) {
-        await waitInteract(ctx, { pos: a.at(mx, mz + 1.6), label: k ? `박음질 ${k + 1}/${P.stitches}` : '재봉틀 돌리기', r: 1.3 });
-        ctx.input.enabled = false;
-        if (!k) world.setFixedCamera([M.x + 1.4, 2.0, M.z + 2.2], [M.x - 0.2, 0.8, M.z]);
-        audio.play('tap');
-        await wait(world, 0.4, u => { mine.needle.position.y = 0.96 - 0.06 * Math.abs(Math.sin(u * Math.PI * 4)); });
-        hook.stitches += 1; drawStitch(k + 1);
-        ctx.input.enabled = true;
-      }
+      // 재봉틀 앞 걸상에 앉아 1인칭으로(2026-11-05 선생님): 대화 버튼(E)을 몇 초 꾹 누르는 동안 바늘이 오르내리며 박음질 선이 이어진다
+      await waitInteract(ctx, { pos: a.at(mx, mz + 1.6), label: '재봉틀 앞에 앉기', r: 1.3 });
+      ctx.input.enabled = false;
+      const seat = a.at(mx, mz + 0.85); placePlayer(world, [seat.x, seat.z], Math.PI); world.player.visible = false;
+      world.setFixedCamera([M.x + 0.05, 1.3, M.z + 0.95], [M.x - 0.15, 0.72, M.z - 0.05]); // 앉은 눈높이에서 재봉틀과 천을 내려다본다
+      let tN = 0;
+      hook.seated = true;
+      const HP = a.at(mx, mz + 0.4);
+      await holdPress(ctx, '꾹 눌러 박음질', new THREE.Vector3(HP.x, 1.2, HP.z), P.holdSec, k => {
+        const on = ctx.input?.actionHeld?.(); tN += on ? 0.016 : 0;
+        mine.needle.position.y = 0.96 - (on ? 0.06 * Math.abs(Math.sin(tN * 40)) : 0);
+        const n = Math.floor(k * P.stitches * 4) / 4; if (n !== hook.stitchK) { hook.stitchK = n; drawStitch(n); }
+      });
+      hook.stitches += P.stitches; drawStitch(P.stitches); audio.play('tap');
+      world.player.visible = true; hook.seated = false;
       ctx.input.enabled = false;
       mk.visible = false; mk.removeFromParent();
       hook.shirts += 1;
@@ -204,7 +215,7 @@ export async function factoryPlay(ctx) {
       await waitInteract(ctx, { pos: a.at(tx + 2, tz - 1.4), label: '트럭에 싣기', r: 1.5 });
       ctx.input.enabled = false; m3.removeFromParent();
       setCarry(world.player, null);
-      box.position.set(-0.3 + (b % 2) * 0.6, 1.45 + Math.floor(b / 2) * 0.38, -1.6); box.rotation.set(0, 0, 0); truck.add(box);
+      box.position.set(-0.4 + (b % 2) * 0.8, 1.2 + Math.floor(b / 2) * 0.38, 1.3); // 짐칸(모형의 +z 쪽) box.rotation.set(0, 0, 0); truck.add(box);
       audio.play('correct'); hook.loaded += 1;
       toast(ctx, `○ 수출 상자 ${b + 1}`, 'good');
       ctx.input.enabled = true;
@@ -263,14 +274,28 @@ export async function hoopPlay(ctx) {
   world.setMood('noon');
   const a = buildArena(world, A), g = a.group;
   stands(g);
-  const banner = labelSprite('제24회 서울 올림픽 1988', { size: 1.6 }); banner.position.set(0, 8.5, -24); g.add(banner);
-  const [cx, cz] = A.torch; blk(g, 1.4, 6, 1.4, 0xd8d0c0, cx, 3, cz, 'stone'); blk(g, 3, 0.6, 3, 0xc8a050, cx, 6.3, cz, 'stone');
-  const flame = new THREE.Mesh(new THREE.ConeGeometry(1.5, 3.4, 10), new THREE.MeshBasicMaterial({ color: 0xff9a2a, transparent: true, opacity: 0.9 })); flame.position.set(cx, 8.3, cz); flame.visible = false; g.add(flame);
+  const banner = labelSprite('제24회 서울 올림픽 1988', { size: 1.6 }); banner.position.set(-11, 8.5, -24); g.add(banner);
+  // 성화대(2026-11-05 선생님: 더 구체적으로): 관중석 앞 세 층 받침과 높은 기둥, 위에 넓은 성화 그릇(테 무늬), 기둥 옆 오르는 계단과 점화대.
+  // 성화를 든 주자가 계단을 올라 그릇에 불을 붙이면 큰 불꽃(kit/fire.js)이 타오른다
+  const [cx, cz] = A.torch, TOP = 9;
+  [[5, 0.6], [3.8, 0.6], [2.6, 0.6]].forEach(([w, h], i) => blk(g, w, h, w, [0xc8c0b0, 0xb8b0a0, 0xa8a090][i], cx, 0.3 + i * 0.6, cz, 'stone'));
+  const col = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 1.0, TOP - 1.8, 12), mat(0xd8d0c0, 'stone')); col.position.set(cx, 1.8 + (TOP - 1.8) / 2, cz); col.castShadow = true; g.add(col);
+  for (let i = 0; i < 4; i++) { const r = new THREE.Mesh(new THREE.TorusGeometry(0.78 - i * 0.02, 0.05, 6, 20), mat(0xc8a050, 'stone')); r.rotation.x = Math.PI / 2; r.position.set(cx, 3 + i * 1.6, cz); g.add(r); } // 금빛 띠
+  const cup = new THREE.Mesh(new THREE.LatheGeometry([[0.5, 0], [1.6, 0.5], [2.1, 1.2], [2.2, 1.35], [2.0, 1.35]].map(([x, y]) => new THREE.Vector2(x, y)), 24), mat(0xc8a050, 'stone')); cup.material = cup.material.clone(); cup.material.side = THREE.DoubleSide; cup.position.set(cx, TOP, cz); cup.castShadow = true; g.add(cup);
+  for (let i = 0; i < 12; i++) { const sh = (TOP - 0.5) / 12; blk(g, 1.6, sh * (i + 1), 0.32, 0xb8b0a0, cx + 2.2, sh * (i + 1) / 2, cz + 3.9 - i * 0.3, 'stone'); } // 점화대로 오르는 계단(남쪽·동쪽)
+  blk(g, 1.6, 0.2, 1.4, 0xb8b0a0, cx + 2.2, TOP - 0.4, cz + 0.4, 'stone'); // 그릇 옆 점화대
+  const flameFx = burning(world, { parent: g, x: cx, y: TOP + 0.9, z: cz, size: 2.6, level: 0 }), flame = flameFx.group;
+  const runner = person(g, 'student', cx + 2.2, cz + 4.6, Math.PI); runner.visible = false;
+  const torch = new THREE.Group(); blk(torch, 0.08, 0.6, 0.08, 0xd8c070, 0, 0, 0, 'stone'); const tf = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.35, 8), new THREE.MeshBasicMaterial({ color: 0xffa030 })); tf.position.y = 0.45; torch.add(tf); // 성화 봉
+  setCarry(runner, torch, 'side');
   const hook = ctx.testHooks.hoop = { marks: 0, rolled: 0, lit: false };
   // 굴렁쇠와 막대
   const hoop = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.035, 6, 24), mat(0x8a8a88, 'stone', 'object')); hoop.castShadow = true; g.add(hoop);
-  const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.9, 5), mat(0x6b4a32, 'wood', 'object')); stick.rotation.x = 0.9;
-  setCarry(world.player, stick, 'side');
+  // 막대(2026-11-05 선생님: 손과 굴렁쇠가 맞게): 들고 다니게 붙이지 않고, 프레임마다 오른손에서 굴렁쇠 뒤쪽 테까지 잇는다. 오른팔은 앞으로 내민다
+  const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1, 5), mat(0x6b4a32, 'wood', 'object')); stick.castShadow = true; g.add(stick);
+  const reachArm = playAction(world.player, { dur: 9999, fadeIn: 0.3, fadeOut: 0.1, name: 'hoop', pose: () => ({ arms: [null, [-0.75, 0, -0.12]] }) });
+  void reachArm;
+  const vH = new THREE.Vector3(), vC = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
   const p0 = a.at(...A.from); placePlayer(world, [p0.x, p0.z], Math.PI / 2);
   const O = a.at(0, 0), last = new THREE.Vector3().copy(world.player.position);
   let spin = 0;
@@ -280,6 +305,11 @@ export async function hoopPlay(ctx) {
     hoop.rotation.set(0, pl.rotation.y + Math.PI / 2, 0);
     const d = last.distanceTo(pl.position); last.copy(pl.position); hook.rolled += d;
     spin += d / 0.42 + dt * 2; hoop.rotateZ(-spin);
+    handOf(pl, 1).getWorldPosition(vH); g.worldToLocal(vH);
+    vC.set(hoop.position.x - fwd.x * 0.3, 0.46 + 0.3, hoop.position.z - fwd.z * 0.3); // 굴렁쇠 뒤쪽 위 테(학생 쪽)
+    const dir = vC.clone().sub(vH), len = dir.length();
+    stick.position.copy(vH).addScaledVector(dir, 0.5); stick.scale.set(1, len, 1); stick.quaternion.setFromUnitVectors(up, dir.normalize());
+    hook.stickGap = Math.hypot(vC.x - hoop.position.x, vC.z - hoop.position.z);
   });
   try {
     await ctx.fade?.(false);
@@ -298,13 +328,19 @@ export async function hoopPlay(ctx) {
     ctx.input.enabled = false;
     hud.setCounter(`${P.counter} ${A.marks.length}/${A.marks.length}`);
     // 성화대에 불이 붙고 관중이 환호
-    const F = a.at(cx, cz); world.setFixedCamera([F.x + 6, 5, F.z + 22], [F.x, 6, F.z]);
-    flame.visible = true; hook.lit = true; audio.play('correct');
-    await wait(world, 1.2, k => { flame.scale.set(0.3 + 0.7 * ease(k), 0.3 + 0.7 * ease(k), 0.3 + 0.7 * ease(k)); });
+    const F = a.at(cx, cz); world.setFixedCamera([F.x + 10, 8.5, F.z + 13], [F.x + 1, 8.6, F.z]); // 관중석 위에서 성화대를 가까이
+    // 성화 주자가 계단을 올라 점화대에 서서 그릇에 불을 붙인다
+    runner.visible = true;
+    const r0 = new THREE.Vector3(cx + 2.2, 0, cz + 4.6), r1 = new THREE.Vector3(cx + 2.2, TOP - 0.3, cz + 0.4);
+    await wait(world, 3.2, k => { runner.position.lerpVectors(r0, r1, ease(k)); face(runner, cx + 2.2, cz - 2); });
+    face(runner, cx, cz);
+    await playAction(runner, { dur: 0.8, fadeIn: 0.15, fadeOut: 0.01, name: 'light', pose: t => { const u = Math.min(1, t / 0.6); return { arms: [null, [-2.4 * u, 0, 0.3 * u]] }; } }); // 성화 봉을 그릇 쪽으로 높이 든다
+    hook.lit = true; audio.play('correct'); hook.cauldron = true;
+    await wait(world, 1.6, k => flameFx.setLevel(0.2 + 0.8 * ease(k)));
     for (const l of P.end) await dialogue.say(l);
     dialogue.close();
   } finally {
-    off();
+    off(); const pu = world.player.userData; pu.act?.resolve?.(); pu.act = null; stick.removeFromParent();
     world.setMood(base.mood);
     await leaveArena(ctx, a);
   }
@@ -358,18 +394,31 @@ const base = makeKitChapter({
 // 장 도입(C-03): ① 다시 일어서는 사람들(일꾼·노동자) ② 민주주의를 지키려는 학생과 시민. 끝나면 더한 것을 치운다
 function introScene(ctx) {
   const { world } = ctx, L = world.level;
-  const add = (look, x, z, ry) => { const p = person(L, look, x, z, ry); p.visible = false; return p; };
-  const work = [[-2, 4.4, 'builder'], [0, 4, 'woman'], [2, 4.4, 'builder']].map(([x, z, l]) => add(l, x, z, 0));
-  const demo = [[-2.4, 4.6, 'student'], [-0.8, 4, 'citizen'], [0.8, 4.2, 'schoolgirl'], [2.4, 4.6, 'woman']].map(([x, z, l]) => add(l, x, z, 0));
-  demo.forEach(p => holdFlag(p));
+  // 장 도입(2026-11-05 선생님: 태극기 대신 저마다 제자리에서 일하는 모습): ① 건설 현장(망치질·벽돌 나르기) ② 공장의 재봉틀·가발 만들기와 시장 가게
+  const site = new THREE.Group(), shop = new THREE.Group(); site.visible = shop.visible = false; L.add(site, shop);
+  const add = (g, look, x, z, ry) => person(g, look, x, z, ry);
+  for (let i = 0; i < 3; i++) for (let j = 0; j < 4 - i; j++) blk(site, 0.5, 0.25, 0.3, 0x9a4a32, -2.9 + j * 0.52 + i * 0.26, 0.13 + i * 0.26, 3.4, 'stone'); // 벽돌 더미
+  blk(site, 2.6, 1.4, 0.3, 0x9a4a32, 1.6, 0.7, 3.0, 'stone'); // 쌓아 올리는 벽
+  const b1 = setWork(add(site, 'builder', 0.9, 3.7, 0), 'hammer'), b2 = setWork(add(site, 'builder', 2.4, 3.7, 0), 'hammer');
+  const carrier = add(site, 'builder', -1.2, 4.4, Math.PI / 2); setCarry(carrier, (() => { const m = new THREE.Group(); for (let i = 0; i < 3; i++) blk(m, 0.5, 0.22, 0.3, 0x9a4a32, 0, i * 0.23, 0, 'stone'); return m; })(), 'arms');
+  // 공장: 재봉틀 둘(일하는 사람이 카메라 쪽을 보게 책상을 돌려 놓는다), 가발 틀이 놓인 책상
+  const sewers = [-3, -1.5].map(x => { const sd = sewingDesk(shop, x, 3.6); sd.d.rotation.y = Math.PI; const p = add(shop, 'woman', x, 3.6 - 0.85, 0); sitDown(p); setWork(p, 'sew'); return p; });
+  blk(shop, 1.2, 0.75, 0.6, 0x6b4a32, 0.3, 0.375, 3.6);
+  for (const dx of [-0.35, 0.35]) { blk(shop, 0.05, 0.25, 0.05, 0x3a3a3a, 0.3 + dx, 0.875, 3.6, 'stone'); const hd = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 8), mat(0xe0c8a8, 'cloth', 'object')); hd.position.set(0.3 + dx, 1.1, 3.6); shop.add(hd); const hair = new THREE.Mesh(new THREE.SphereGeometry(0.17, 10, 8, 0, Math.PI * 2, 0, Math.PI * 0.6), mat(0x1e1a16, 'cloth', 'object')); hair.position.set(0.3 + dx, 1.13, 3.6); shop.add(hair); } // 가발 틀
+  const wig = setWork(add(shop, 'schoolgirl', 0.3, 2.9, 0), 'sew');
+  // 시장 가게: 노점과 상인, 물건을 고르는 손님
+  const stall = new THREE.Group(); stall.position.set(2.8, 0, 3.4); shop.add(stall); BUILD.stall(stall, { w: 2.4 });
+  const seller = add(shop, 'grandma', 2.8, 2.5, 0), buyer = add(shop, 'citizen', 3.9, 4.6, -Math.PI * 0.8);
+  void b1; void b2; void sewers; void wig; void seller; void buyer;
   const hide = on => { for (const id of [...PEOPLE, 'builder']) { const n = world.npcs.get(id); if (n) n.mesh.visible = on; } };
-  const show = list => { for (const o of [...work, ...demo]) o.visible = list.includes(o); };
+  const show = list => { for (const o of [site, shop]) o.visible = list.includes(o); };
+  const wi = (ctx.testHooks || {}).workIntro = { flags: 0, workers: 0 };
   return {
     shots: [
-      { cam: [0.6, 2.2, 10.5], look: [0, 1.2, 4.2], to: { cam: [0.4, 2.2, 10], look: [0, 1.2, 4.2] }, act: () => { hide(false); show(work); } },
-      { cam: [-0.6, 2.2, 10.5], look: [0, 1.3, 4.2], to: { cam: [-0.4, 2.2, 10], look: [0, 1.3, 4.2] }, act: () => show(demo) },
+      { cam: [0.6, 2.2, 10.5], look: [0, 1.1, 3.6], to: { cam: [0.4, 2.2, 10], look: [0, 1.1, 3.6] }, act: () => { hide(false); show([site]); wi.workers += 3; } },
+      { cam: [0.2, 2.4, 10.5], look: [0, 1.0, 3.4], to: { cam: [0.2, 2.3, 10], look: [0, 1.0, 3.4] }, act: () => { show([shop]); wi.workers += 5; } },
     ],
-    done: () => { hide(true); for (const o of [...work, ...demo]) o.removeFromParent(); },
+    done: () => { hide(true); site.removeFromParent(); shop.removeFromParent(); },
   };
 }
 

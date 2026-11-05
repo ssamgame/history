@@ -11,7 +11,7 @@ export default {
     mother: { name: '행상 아주머니', mark: '母', color: '#b8768a', look: 'woman' },
     grandma: { name: '밀면집 할머니', mark: '老', color: '#6b4a32', look: 'grandma' },
     student: { name: '학생', mark: '學', color: '#22262e', look: 'student' },
-    grandpa: { name: '피란민 할아버지', mark: '翁', color: '#5a4a3a', look: 'peasant' },
+    grandpa: { name: '피란민 할아버지', mark: '翁', color: '#5a4a3a', look: 'grandpa' },
     guest: { name: '손님', mark: '客', color: '#5d7a9a', look: 'citizen' },
     sister: { name: '방송에 나온 할머니', mark: '妹', color: '#8a5a6a', look: 'grandma' },
     host: { name: '방송 진행자', mark: '放', color: '#3a4a5a', look: 'gentleman' },

@@ -26,11 +26,27 @@ function canvasBoard(w, h, px = 128) {
   const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshLambertMaterial({ map: tex }));
   return { mesh, c: cv.getContext('2d'), cv, tex };
 }
-// 상륙정: 납작한 배와 앞판(앞이 -z, 북쪽)
+// 상륙정(2026-11-05 선생님: 하나로, 크게, 배답게): 뾰족한 뱃머리·앞 내림판·양 뱃전·뒤 조타실과 굴뚝·국기, 뒤에 하얀 물보라.
+// 탄 병사는 aboard(배가 움직여도 걷지 않는다). 앞이 -z(북쪽). 돌려준 함수 rock(t)로 출렁인다
 function landingCraft(g, x, z) {
   const b = new THREE.Group(); b.position.set(x, 0, z); g.add(b);
-  blk(b, 2.2, 0.8, 4.4, 0x55603f, 0, 0.3, 0, 'grain'); blk(b, 2.2, 1.1, 0.16, 0x4a5436, 0, 0.75, -2.2, 'grain');
-  for (const dx of [-0.5, 0.5]) for (const dz of [-1, 0.2]) { const p = person(b, 'rokSoldier', dx, dz, Math.PI); p.scale.setScalar(0.85); p.position.y = 0.2; }
+  const hull = new THREE.Group(); b.add(hull);
+  const H = 0x55603f, D = 0x3e4630;
+  blk(hull, 3.6, 0.9, 7.4, H, 0, 0.25, 0.4, 'grain'); // 배 바닥
+  const bow = new THREE.Mesh(new THREE.CylinderGeometry(1.8, 1.8, 0.9, 3, 1, false, -Math.PI / 6, Math.PI / 3 * 2).rotateY(Math.PI), mat(H, 'grain')); bow.scale.set(1, 1, 0.9); bow.position.set(0, 0.25, -3.3); hull.add(bow); // 뾰족한 뱃머리
+  for (const s of [-1, 1]) { blk(hull, 0.16, 0.9, 7.4, D, s * 1.72, 1.05, 0.4, 'grain'); blk(hull, 0.24, 0.08, 7.4, 0x2e3426, s * 1.72, 1.52, 0.4, 'grain'); } // 뱃전과 그 위 테
+  blk(hull, 3.4, 1.2, 0.16, D, 0, 1.0, -3.0, 'grain'); // 앞 내림판
+  blk(hull, 1.6, 1.1, 1.4, 0x6a7350, 0, 1.25, 3.3, 'grain'); blk(hull, 1.8, 0.08, 1.6, 0x2e3426, 0, 1.84, 3.3, 'grain'); // 조타실
+  for (let i = 0; i < 3; i++) blk(hull, 0.28, 0.2, 0.04, 0x9ab0b8, -0.5 + i * 0.5, 1.45, 2.58, 'grain'); // 조타실 창
+  const pole = blk(hull, 0.05, 1.4, 0.05, 0x3a3a3a, 0.6, 2.5, 3.8, 'grain'); void pole;
+  const flag = flagMesh(0.7, 0.47); flag.position.set(0.97, 2.9, 3.8); hull.add(flag);
+  blk(hull, 3.7, 0.12, 0.12, 0xc8c0a8, 0, 0.72, -1.4, 'grain'); // 흰 띠
+  const crew = [];
+  for (const dx of [-0.8, 0, 0.8]) for (const dz of [-1.6, -0.2]) { const p = person(hull, 'rokSoldier', dx, dz, Math.PI); p.position.y = 0.7; p.userData.aboard = true; crew.push(p); }
+  const wake = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 4).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xf4f6f6, transparent: true, opacity: 0.55, depthWrite: false })); wake.position.set(0, 0.32, 6); b.add(wake);
+  b.userData.dynamic = true;
+  b.userData.rock = (t, speed) => { hull.position.y = 0.06 * Math.sin(t * 2.1); hull.rotation.z = 0.035 * Math.sin(t * 1.3); hull.rotation.x = 0.025 * Math.sin(t * 1.7) - 0.03 * speed; wake.material.opacity = 0.15 + 0.5 * speed; wake.scale.z = 0.4 + speed; };
+  b.userData.crew = crew;
   return b;
 }
 
@@ -82,8 +98,8 @@ export const RUINS = { edge: { style: 'city', seed: 928 },
     { type: 'concrete', x: -14, z: -4, floors: 2, w: 6, ry: Math.PI / 2, color: 0x8a8478, shop: false }, { type: 'concrete', x: 14, z: 3, floors: 2, w: 6, ry: -Math.PI / 2, color: 0x948e82, shop: false },
     { type: 'tree', x: -8.5, z: 10, kind: 'bare' }, { type: 'tree', x: 8.5, z: -11, kind: 'bare' },
   ],
-  rubble: [[-3.2, 6, 1.5], [3.6, 1.5, 1.5], [-2.6, -3.5, 1.5], [3.2, -8.5, 1.3]],
-  colliders: [{ x: -3.2, z: 6, r: 1.5 }, { x: 3.6, z: 1.5, r: 1.5 }, { x: -2.6, z: -3.5, r: 1.5 }, { x: 3.2, z: -8.5, r: 1.3 }],
+  rubble: [[-3.2, 6, 1.5], [3.6, 1.5, 1.5], [-5.4, 1.2, 1.3], [3.2, -8.5, 1.3]], // 시민들이 모이는 길(양옆 x ±9 → 깃대 앞 두 줄)을 막지 않게(2026-11-05 선생님: 벽돌을 뚫고 걸었다)
+  colliders: [{ x: -3.2, z: 6, r: 1.5 }, { x: 3.6, z: 1.5, r: 1.5 }, { x: -5.4, z: 1.2, r: 1.3 }, { x: 3.2, z: -8.5, r: 1.3 }],
   from: [0, 11], pole: [0, -13],
 };
 
@@ -135,8 +151,14 @@ export async function arrivalScene(ctx) {
     await say(L[3], officer);
     dialogue.close();
     // 지휘관이 가장 가까운 유엔군 병사와 악수한다(바라보기 → 다가서기 → 손 뻗기 → 흔들기 → 놓기, 2026-10-30 움직임 개선)
-    const near = troops.reduce((b, p) => (p.position.distanceTo(officer.position) < b.position.distanceTo(officer.position) ? p : b));
-    hook.handshake = await handshake(world, officer, near);
+    // 앞줄 끝(동쪽) 유엔군 병사에게 지휘관이 다가가 서로 바라보며 악수한다. 옆(동쪽, 가리는 사람이 없는 쪽)에서 본다(2026-11-05 선생님: 시선·자리·손)
+    const near = troops[15], N = a.at(near.position.x, near.position.z);
+    await wait(world, 0.5, k => troops.forEach(p => { const ar = p.userData.arms; if (ar) ar[1].rotation.set(-2.3 * (1 - ease(k)), 0, 0.5 * (1 - ease(k))); })); // 경례를 내린다
+    greet.forEach(p => { if (p.position.x > 0) p.visible = false; }); // 동쪽 환영 인파는 카메라 앞을 가리지 않게
+    officer.position.set(near.position.x + 0.4, 0, near.position.z + 2.4); face(officer, near.position.x, near.position.z); // 장면을 바꾸며 병사 앞(남쪽)에 세운다: 둘이 남북으로 마주 보아 옆에서 손이 보인다
+    world.setFixedCamera([N.x + 6.2, 1.8, N.z + 0.65], [N.x + 0.2, 1.25, N.z + 0.65]);
+    hook.handshake = await handshake(world, near, officer);
+    await wait(world, 0.4);
   } finally {
     await ctx.fade?.(true);
     a.dispose();
@@ -210,17 +232,31 @@ export async function tidePlay(ctx) {
   const land = new THREE.Mesh(new THREE.PlaneGeometry(120, 40).rotateX(-Math.PI / 2), mat(0x8a8070, 'earth')); land.position.set(0, 2.6, A.wall - 20.6); g.add(land);
   blk(g, 120, 2.8, 1.2, 0x8a8478, 0, 1.3, A.wall, 'stone'); // 방파제
   const isle = a.at(-17, -34);
-  const crafts = [[-5, -21], [0, -22], [5, -21]].map(([x, z]) => landingCraft(g, x, z));
-  const toIsle = [[-13, -29], [-17.5, -28], [-21, -30]], toWall = [[-4, A.wall + 3], [0.5, A.wall + 3], [5, A.wall + 3]];
-  const ladders = toWall.map(([x]) => { const l = new THREE.Group(); l.position.set(x, 0, A.wall + 1.1); l.rotation.x = -0.25; l.visible = false; g.add(l); for (const s of [-0.3, 0.3]) blk(l, 0.08, 3.2, 0.08, 0x6b4a32, s, 1.6, 0); for (let i = 0; i < 7; i++) blk(l, 0.6, 0.06, 0.06, 0x6b4a32, 0, 0.3 + i * 0.45, 0); return l; });
-  const climbers = toWall.flatMap(([x]) => [x - 0.4, x + 0.4]).map(x => { const p = person(g, 'rokSoldier', x, A.wall + 2.2, Math.PI); p.visible = false; return p; });
-  const level = v => { flat.position.y = 0.05 - 0.35 * v; }; // 물이 차면 갯벌이 물에 잠긴다
+  const crafts = [landingCraft(g, 0, -21)]; // 상륙정 하나(2026-11-05 선생님)
+  const toIsle = [[-15, -28.5]], toWall = [[0, A.wall + 7.2]]; // 뱃머리 끝이 사다리 밑(wall+1.75) 앞에 멈춘다
+  // 사다리: 방파제 앞(남쪽) 면에 기대 세운다. 밑은 앞으로 1.2m, 꼭대기는 방파제 면(wall+0.6) 바로 앞(벽을 뚫지 않게, 2026-11-05 선생님)
+  const LADDER_X = [-1.2, 1.2], LEAN = Math.atan2(1.0, 3.0);
+  const ladders = LADDER_X.map(x => { const l = new THREE.Group(); l.position.set(x, 0, A.wall + 1.75); l.rotation.x = -LEAN; l.visible = false; g.add(l); for (const s of [-0.3, 0.3]) blk(l, 0.08, 3.2, 0.08, 0x6b4a32, s, 1.6, 0); for (let i = 0; i < 7; i++) blk(l, 0.6, 0.06, 0.06, 0x6b4a32, 0, 0.3 + i * 0.45, 0); return l; });
+  hook.ladderTop = A.wall + 1.75 - Math.sin(LEAN) * 3.2;
+  const climbers = [...LADDER_X, ...LADDER_X].map((x, i) => { const p = person(g, 'rokSoldier', x, A.wall + 2.6 + (i >> 1) * 0.9, Math.PI); p.visible = false; return p; });
+  const level = v => { flat.position.y = 0.25 - 0.6 * v; }; // 물이 차면 갯벌이 물에 잠긴다. 물결(±0.1) 마루·골과 겹치지 않게 위(0.25)·아래(-0.35)로(2026-11-05 선생님: 경계가 계속 바뀜)
   level(0);
   const shore = () => { const C = a.at(3, -11), T = a.at(-6, A.wall + 9); world.setFixedCamera([C.x, 6, C.z], [T.x, 0.4, T.z]); }; // 갑판 앞 바다 위에서 갯벌과 월미도·방파제를 내려다본다
   const wallView = () => { const C = a.at(7, A.wall + 13), T = a.at(0, A.wall + 1); world.setFixedCamera([C.x, 4.2, C.z], [T.x, 1.6, T.z]); }; // 방파제를 오르는 병사들
   const p0 = a.at(...A.from); placePlayer(world, [p0.x, p0.z], Math.PI);
   const say = sayer(ctx), total = P.rounds.length + 1;
-  const sail = async (list, sec) => { const s0 = crafts.map(b => b.position.clone()); await wait(world, sec, k => crafts.forEach((b, i) => { b.position.lerpVectors(s0[i], new THREE.Vector3(list[i][0], 0, list[i][1]), ease(k)); })); };
+  // 배가 나아가기: 가는 쪽으로 천천히 뱃머리를 돌리고, 빨라졌다 느려지며 출렁인다(물보라는 빠를수록 길게)
+  let tRock = 0; const offRock = world.onUpdate(dt => { tRock += dt; crafts.forEach(b => b.userData.rock(tRock, b.userData.speed || 0)); });
+  const sail = async (list, sec) => {
+    const s0 = crafts.map(b => b.position.clone()), r0 = crafts.map(b => b.rotation.y);
+    await wait(world, sec, k => crafts.forEach((b, i) => {
+      const to = new THREE.Vector3(list[i][0], 0, list[i][1]), want = Math.atan2(-(to.x - s0[i].x), -(to.z - s0[i].z)); // 앞이 -z
+      const turn = Math.atan2(Math.sin(want - r0[i]), Math.cos(want - r0[i])), back = k > 0.75 ? (k - 0.75) / 0.25 : 0;
+      b.rotation.y = r0[i] + turn * Math.min(1, k * 3) * (1 - back);
+      b.position.lerpVectors(s0[i], to, ease(k)); b.userData.speed = Math.sin(Math.PI * k);
+    }));
+    crafts.forEach(b => { b.userData.speed = 0; });
+  };
   try {
     await ctx.fade?.(false);
     for (const [r, R] of P.rounds.entries()) {
@@ -231,7 +267,7 @@ export async function tidePlay(ctx) {
       ctx.input.enabled = false;
       mk.removeFromParent();
       const B = a.at(...A.board);
-      world.setFixedCamera([B.x + 0.3, 2.1, B.z + 4.4], [B.x, 1.8, B.z]);
+      world.player.visible = false; world.setFixedCamera([B.x, 1.75, B.z + 2.3], [B.x, 1.85, B.z]); // 1인칭(2026-11-05 선생님): 내 캐릭터는 숨기고 물때표만 본다
       face(officer, world.player.position.x - a.at(0, 0).x, world.player.position.z - a.at(0, 0).z);
       await dialogue.say(R.ask);
       for (;;) {
@@ -245,6 +281,7 @@ export async function tidePlay(ctx) {
         await dialogue.say({ who: 'guide', text: `× ${P.wrong}` });
       }
       dialogue.close();
+      world.player.visible = true; hook.firstPerson = (hook.firstPerson || 0) + 1;
       audio.play('correct'); toast(ctx, `○ ${R.marks[R.answer]} 물이 가득 차요`, 'good');
       if (r === 0) { // 물이 차오르고 상륙정이 월미도로
         shore();
@@ -282,9 +319,12 @@ export async function tidePlay(ctx) {
     wallView();
     ladders.forEach(l => { l.visible = true; });
     climbers.forEach(p => { p.visible = true; });
-    await wait(world, 2.6, k => climbers.forEach((p, i) => {
-      const u = Math.min(1, Math.max(0, (k - i * 0.08) / 0.5)), x0 = p.position.x;
-      p.position.set(x0, 2.6 * ease(u), A.wall + 2.2 - 3 * ease(u));
+    const z0s = climbers.map(p => p.position.z), top = hook.ladderTop;
+    await wait(world, 3.4, k => climbers.forEach((p, i) => {
+      const u = Math.min(1, Math.max(0, (k - (i >> 1) * 0.35) / 0.55)), x0 = p.position.x;
+      const w = Math.min(1, u * 3), c = Math.max(0, (u - 0.33) / 0.67); // 사다리 밑까지 걷고 → 사다리를 따라 오른다 → 방파제 위로
+      const zb = A.wall + 2.0, z = c < 0.9 ? (z0s[i] + (zb - z0s[i]) * w) + (top + 0.3 - zb) * (c / 0.9) : top + 0.3 - (top + 0.3 - (A.wall - 0.3)) * ((c - 0.9) / 0.1);
+      p.position.set(x0, 2.8 * Math.min(1, c / 0.9), z);
       if (u >= 1 && !p.userData.up) { p.userData.up = true; hook.climbed += 1; }
     }));
     for (const l of P.signal.lines) await dialogue.say(l);
@@ -294,7 +334,8 @@ export async function tidePlay(ctx) {
     dialogue.close();
     void isle;
   } finally {
-    ctx.testHooks.choice = null;
+    offRock();
+    ctx.testHooks.choice = null; world.player.visible = true;
     await leaveArena(ctx, a);
   }
   return true;
@@ -349,11 +390,16 @@ export async function seoulPlay(ctx) {
     const front = () => world.setFixedCamera([C.x, 3.4, C.z], [T.x, 1.3, T.z]);
     front();
     const q0 = crowd.map(p => p.position.clone()), to = spots.map(([x, z]) => new THREE.Vector3(x, 0, z));
-    await wait(world, 3.2, k => crowd.forEach((p, i) => {
-      const u = Math.min(1, Math.max(0, (k - i * 0.04) / 0.5));
+    // 양옆 길(x ±9)을 따라 깃대 앞 줄 높이까지 걸어온 뒤 옆으로 들어가 선다(벽돌 더미를 지나지 않게)
+    const mid = q0.map((q, i) => new THREE.Vector3(q.x, 0, to[i].z));
+    await wait(world, 4.2, k => crowd.forEach((p, i) => {
+      const u = Math.min(1, Math.max(0, (k - i * 0.04) / 0.6));
       if (u > 0 && !p.visible) { p.visible = true; hook.people += 1; }
-      p.position.lerpVectors(q0[i], to[i], ease(u));
-      if (u > 0 && u < 1) face(p, to[i].x, to[i].z);
+      const l1 = mid[i].distanceTo(q0[i]), l2 = to[i].distanceTo(mid[i]), d = ease(u) * (l1 + l2);
+      const tgt = d < l1 ? mid[i] : to[i];
+      if (d < l1) p.position.lerpVectors(q0[i], mid[i], l1 ? d / l1 : 1); else p.position.lerpVectors(mid[i], to[i], l2 ? (d - l1) / l2 : 1);
+      if (u > 0 && u < 1) face(p, tgt.x, tgt.z);
+      hook.minRubble = Math.min(hook.minRubble ?? 99, ...A.rubble.map(([x, z, r]) => Math.hypot(p.position.x - x, p.position.z - z) - r));
     }));
     crowd.forEach(p => { p.visible = true; p.rotation.y = Math.PI; });
     hook.people = crowd.length;
@@ -438,7 +484,7 @@ function introScene(ctx) {
       } },
       { cam: [0.6, 2.2, 9.5], look: [-1.4, 1.2, 4], to: { cam: [0.4, 2.2, 9], look: [-1.4, 1.2, 4] }, act: () => {
         offs.forEach(f => f()); offs.length = 0; show([...south, ...folk]);
-        map = warMap(ctx.ui, { stops: RETREAT }); ctx.testHooks.warMap = RETREAT.length;
+        map = warMap(ctx.ui, { stops: RETREAT }); if (ctx.testHooks) ctx.testHooks.warMap = RETREAT.length;
         if (map) offs.push(playWarMap(map, world, 3.2)); // 38도선 → 서울 → 대전 → 낙동강
       } },
     ],

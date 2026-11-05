@@ -143,10 +143,9 @@ export function makeKitChapter(def) {
       input.enabled = false;
       setTalkStep(ctx, script, def.order, def.order.length);
       world.setGoal(null);
-      await showHowTo(ctx.ui, {
-        title: script.minigameTitle,
-        steps: def.parts.filter(p => !['book', 'doc', 'scene'].includes(p.type)).map(p => p.howto || HOWTO[p.type]).filter(Boolean),
-      });
+      const howSteps = p => [p].filter(q => !['book', 'doc', 'scene'].includes(q.type)).map(q => q.howto || HOWTO[q.type]).filter(Boolean);
+      // howtoEach: 놀이마다 바로 앞에서 그 놀이 방법만 보인다(2026-11-05 선생님: 뒤 놀이 설명이 앞 놀이 전에 나오지 않게)
+      if (!def.howtoEach) await showHowTo(ctx.ui, { title: script.minigameTitle, steps: def.parts.flatMap(howSteps) });
       const results = [];
       const q = typeof location !== 'undefined' ? new URLSearchParams(location.search) : null;
       const from = q && q.get('debug') ? +(q.get('part') || 0) : 0; // 개발용: ?debug=h3-minigame&part=1 이면 그 부분부터
@@ -155,6 +154,7 @@ export function makeKitChapter(def) {
         const warm = part.type === 'book' && part.intro ? bookWarmup(part, renderDiorama, 1200, ms => world.perf?.time('역사책 첫 그림(안내 대사 동안 미리)', ms, part.title)) : null;
         if (part.goal) ctx.setGoal(part.goal); // 부분마다 목표 문장(없으면 앞의 것 그대로)
         if (part.intro) { await sayAll(dialogue, part.intro); dialogue.close(); }
+        if (def.howtoEach && howSteps(part).length) await showHowTo(ctx.ui, { title: part.title || script.minigameTitle, steps: howSteps(part) });
         warm?.();
         if (part.before) part.before(ctx, scene);
         if (['book', 'doc', 'scene'].includes(part.type)) await runPart(ctx, scene, part, false); // 읽기·장면은 첫 시도 점수에 넣지 않는다
