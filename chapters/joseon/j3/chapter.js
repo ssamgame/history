@@ -25,7 +25,8 @@ export const hourLabel = k => ({ text: `${HOUR_ANIMALS[k][1]} ${HOUR_ANIMALS[k][
 // 그림자가 닿는 시각 칸 번호(해가 움직여 세 번 바뀐다)
 export const DIAL_ROUNDS = [1, 4, 6];
 // 측우기에 고이는 빗물 높이(눈금). 소나기가 두 번 온다
-export const GAUGE_ROUNDS = [5, 3];
+export const GAUGE_ROUNDS = [3, 5, 2]; // 서운관·서쪽 감영·동쪽 감영의 빗물 눈금(2026-11-05: 고을 돌며 재기)
+const WALK_LIMIT = { normal: 24, easy: 40 }; // 측우기 사이를 걷는 시간(초, 읽는 동안은 멈춘다)
 // 자격루 장면의 차례: 물 붓기 → 수수호에 물이 차오름 → 살대가 떠오름 → 구슬이 굴러 동판을 침 → 인형이 종·북·징을 침
 export const CLOCK_STEPS = ['pour', 'rise', 'rod', 'ball', 'strike'];
 
@@ -119,26 +120,47 @@ async function readDial(ctx, easy) {
 }
 
 // 3) 측우기: 소나기가 오면 측우기 속(단면)에 빗물이 차오르고, 비가 그치면 물 윗면과 같은 눈금 단추를 누른다
-async function readGauge(ctx, easy) {
-  const { world, dialogue } = ctx;
-  const g = scene.gauge.position;
-  scene.showGauge(true);
-  world.setFixedCamera([g.x + 0.2, 4.5, g.z + 3.3], [g.x + 0.25, 4.15, g.z]); // 측우기 속이 크게 보이게(놀이 카메라 예외)
-  const items = [1, 2, 3, 4, 5, 6].map(n => ({ text: `${n}`, sub: '눈금', at: scene.tickPoint(n) }));
+// 측우기 세 곳(2026-11-05 선생님): 소나기 뒤 서운관 측우기를 읽고, 시간 안에 서쪽·동쪽 감영으로 걸어가 읽은 뒤, 비가 가장 많이 온 곳을 고른다.
+// 시간이 다 되면 fail.why = 'late'(처음부터 다시). 눈금을 틀렸다 고치거나 고르기를 틀리면 'missed'
+export async function readGauges(ctx, easy, fail = {}) {
+  const { world, dialogue, hud } = ctx;
+  const G = scene.gauges, limit = easy ? WALK_LIMIT.easy : WALK_LIMIT.normal;
   ctx.testHooks.gaugeLevels = [];
-  let missed = false;
+  let missed = false, left = limit;
+  const read = async (i, withRain) => {
+    const g = G[i].gauge.position;
+    G[i].show(true);
+    world.setFixedCamera([g.x + 0.2, 4.5, g.z + 3.3], [g.x + 0.25, 4.15, g.z]); // 측우기 속이 크게 보이게(놀이 카메라 예외)
+    if (withRain) { scene.setRain(true); await dialogue.say(script.rain.shower); dialogue.close(); }
+    await G[i].fill(GAUGE_ROUNDS[i], withRain ? 2.2 : 0.8);
+    scene.setRain(false);
+    ctx.testHooks.gaugeLevels.push(GAUGE_ROUNDS[i]);
+    await dialogue.say(script.rain.read); dialogue.close();
+    const items = [1, 2, 3, 4, 5, 6].map(n => ({ text: `${n}`, sub: '눈금', at: G[i].tick(n) }));
+    if (await pickOnScreen(ctx, { cls: 'gauge-pick', items, answer: GAUGE_ROUNDS[i] - 1, easy, hint: script.rain.fail, width: 70 }) === 'missed') missed = true;
+    G[i].show(false);
+    world.camMode = 'follow'; placePlayer(world, G[i].stand);
+  };
+  const walkTo = i => new Promise(resolve => { // 시간은 걷는 동안만 줄어든다
+    const f = G[i].front; world.setGoal(f); ctx.input.enabled = true;
+    const off = world.onUpdate(dt => {
+      left -= dt; hud.setTimer(left);
+      const p = world.player.position;
+      if (Math.hypot(p.x - f.x, p.z - f.z) < 1.6) { off(); ctx.input.enabled = false; world.setGoal(null); resolve(true); }
+      else if (left <= 0) { off(); ctx.input.enabled = false; world.setGoal(null); resolve(false); }
+    });
+  });
   try {
-    for (const lv of GAUGE_ROUNDS) {
-      scene.setRain(true);
-      await dialogue.say(script.rain.shower); dialogue.close();
-      await scene.fillGauge(lv);
-      scene.setRain(false);
-      ctx.testHooks.gaugeLevels.push(lv);
-      await dialogue.say(script.rain.read); dialogue.close();
-      const r = await pickOnScreen(ctx, { cls: 'gauge-pick', items, answer: lv - 1, easy, hint: script.rain.fail, width: 70 });
-      if (r === 'missed') missed = true;
+    await read(0, true);
+    for (const i of [1, 2]) {
+      await sayAll(dialogue, script.rain.next); dialogue.close();
+      if (!(await walkTo(i))) { fail.why = 'late'; return false; }
+      hud.setTimer(null);
+      await read(i, false);
     }
-  } finally { scene.setRain(false); scene.showGauge(false); placePlayer(world, scene.gaugeStand); ctx.input.enabled = false; }
+    const r = await dialogue.ask(script.rain.most); dialogue.close();
+    if (!r.firstTry) missed = true;
+  } finally { scene.setRain(false); G.forEach(x => x.show(false)); hud.setTimer(null); world.setGoal(null); placePlayer(world, scene.gaugeStand); ctx.input.enabled = false; }
   return missed ? 'missed' : true;
 }
 
@@ -303,7 +325,7 @@ export default {
     ctx.testHooks.j3Started.push('gauge');
     await sayAll(dialogue, script.rain.intro); dialogue.close();
     await showHowTo(ctx.ui, script.rain.howto);
-    parts.push(await tryPart(ctx, easy => readGauge(ctx, easy), script.rain.fail));
+    parts.push(await tryPart(ctx, easy => readGauges(ctx, easy), () => script.rain.late, 2));
     await sayAll(dialogue, script.rain.done); dialogue.close();
     placePlayer(world, SPOT);
     return sumParts(parts);

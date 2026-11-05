@@ -88,26 +88,43 @@ export function buildJ3Scene(world) {
 
   // 3) 서운관 마당: 돌 측우대 위의 측우기, 하늘을 살피는 관천대
   const GAUGE = [-7, -8];
-  const gauge = cheugugi(); gauge.position.set(GAUGE[0], 0, GAUGE[1]); L.add(gauge);
-  world.addCollider({ x: GAUGE[0], z: GAUGE[1], r: 1.6 });
-  // 측우기 크게 보기(D-23): 쇠 원통을 비쳐 보이게 하고, 안에 고이는 빗물과 옆의 자(눈금 1~6)를 보인다
-  // D-30 S-04: 측우기 속 크게 보기 — 앞쪽 반을 잘라 낸 쇠 원통(단면), 안쪽 벽의 눈금 1~6, 차오르는 빗물
-  const section = new THREE.Group(); section.visible = false; gauge.add(section);
-  const ironM = new THREE.MeshLambertMaterial({ color: 0x4a4a48, side: THREE.DoubleSide });
-  { const shell = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.72, 24, 1, true, Math.PI / 2, Math.PI), ironM); shell.position.y = 1.35; section.add(shell);
-    const inside = new THREE.Mesh(new THREE.CylinderGeometry(0.185, 0.185, 0.72, 24, 1, true, Math.PI / 2, Math.PI), new THREE.MeshLambertMaterial({ color: 0xbdb6a6, side: THREE.BackSide })); inside.position.y = 1.35; section.add(inside); // 밝은 안쪽 벽(눈금이 잘 보이게)
-    for (const sx of [-1, 1]) { const cut = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.72, 0.02), ironM); cut.position.set(sx * 0.2, 1.35, 0); section.add(cut); } // 잘린 가장자리
-    const bottom = new THREE.Mesh(new THREE.CircleGeometry(0.2, 24, Math.PI, Math.PI), ironM); bottom.rotation.x = -Math.PI / 2; bottom.position.y = 0.995; section.add(bottom);
-    for (let n = 1; n <= 6; n++) { // 눈금: 안쪽 뒷벽에 가로줄
-      const tk = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.012, 0.01), new THREE.MeshBasicMaterial({ color: 0x2a221a })); tk.position.set(0, 1.0 + n * 0.12, -0.17); section.add(tk);
-      for (const sx of [-1, 1]) { const e = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.016, 0.03), new THREE.MeshBasicMaterial({ color: 0xf4ead2 })); e.position.set(sx * 0.215, 1.0 + n * 0.12, 0.012); section.add(e); } // 잘린 가장자리에도 눈금(물 앞에서도 보이게)
-    } }
-  const water = new THREE.Group(); water.visible = false; gauge.add(water);
-  { const wm = new THREE.MeshLambertMaterial({ color: 0x6fb6e4, transparent: true, opacity: 0.5, depthWrite: false, side: THREE.DoubleSide });
-    const half = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 1, 24, 1, false, Math.PI / 2, Math.PI), wm); half.position.y = 0.5; water.add(half);
-    const face = new THREE.Mesh(new THREE.PlaneGeometry(0.36, 1), wm); face.position.y = 0.5; water.add(face); }
-  water.position.y = 1.0; water.scale.y = 0.001;
-  const ironHidden = [];
+  // 측우기 하나(2026-11-05: 서운관과 두 감영, 세 곳에 둔다 — S33 '서운관과 팔도 감영에 둠')
+  const makeGauge = ([gx, gz], back = 4) => {
+    const gauge = cheugugi(); gauge.position.set(gx, 0, gz); L.add(gauge);
+    world.addCollider({ x: gx, z: gz, r: 1.6 });
+    // 측우기 크게 보기(D-23): 쇠 원통을 비쳐 보이게 하고, 안에 고이는 빗물과 옆의 자(눈금 1~6)를 보인다
+    // D-30 S-04: 측우기 속 크게 보기 — 앞쪽 반을 잘라 낸 쇠 원통(단면), 안쪽 벽의 눈금 1~6, 차오르는 빗물
+    const section = new THREE.Group(); section.visible = false; gauge.add(section);
+    const ironM = new THREE.MeshLambertMaterial({ color: 0x4a4a48, side: THREE.DoubleSide });
+    { const shell = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.72, 24, 1, true, Math.PI / 2, Math.PI), ironM); shell.position.y = 1.35; section.add(shell);
+      const inside = new THREE.Mesh(new THREE.CylinderGeometry(0.185, 0.185, 0.72, 24, 1, true, Math.PI / 2, Math.PI), new THREE.MeshLambertMaterial({ color: 0xbdb6a6, side: THREE.BackSide })); inside.position.y = 1.35; section.add(inside); // 밝은 안쪽 벽(눈금이 잘 보이게)
+      for (const sx of [-1, 1]) { const cut = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.72, 0.02), ironM); cut.position.set(sx * 0.2, 1.35, 0); section.add(cut); } // 잘린 가장자리
+      const bottom = new THREE.Mesh(new THREE.CircleGeometry(0.2, 24, Math.PI, Math.PI), ironM); bottom.rotation.x = -Math.PI / 2; bottom.position.y = 0.995; section.add(bottom);
+      for (let n = 1; n <= 6; n++) { // 눈금: 안쪽 뒷벽에 가로줄
+        const tk = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.012, 0.01), new THREE.MeshBasicMaterial({ color: 0x2a221a })); tk.position.set(0, 1.0 + n * 0.12, -0.17); section.add(tk);
+        for (const sx of [-1, 1]) { const e = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.016, 0.03), new THREE.MeshBasicMaterial({ color: 0xf4ead2 })); e.position.set(sx * 0.215, 1.0 + n * 0.12, 0.012); section.add(e); } // 잘린 가장자리에도 눈금(물 앞에서도 보이게)
+      } }
+    const water = new THREE.Group(); water.visible = false; gauge.add(water);
+    { const wm = new THREE.MeshLambertMaterial({ color: 0x6fb6e4, transparent: true, opacity: 0.5, depthWrite: false, side: THREE.DoubleSide });
+      const half = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 1, 24, 1, false, Math.PI / 2, Math.PI), wm); half.position.y = 0.5; water.add(half);
+      const face = new THREE.Mesh(new THREE.PlaneGeometry(0.36, 1), wm); face.position.y = 0.5; water.add(face); }
+    water.position.y = 1.0; water.scale.y = 0.001;
+    const ironHidden = [];
+    return {
+      gauge, front: { x: gx, z: gz + 2.4 }, stand: [gx, gz + back],
+      show(on) {
+        gauge.scale.setScalar(on ? 3 : 1); section.visible = water.visible = on;
+        if (!on) { water.scale.y = 0.001; gauge.userData.level = 0; }
+        if (on) gauge.children.forEach(o => { if (o.isMesh && o.position.y >= 0.99 && o.visible) { o.visible = false; ironHidden.push(o); } });
+        else ironHidden.splice(0).forEach(o => { o.visible = true; });
+      },
+      tick(n) { gauge.updateWorldMatrix(true, false); return gauge.localToWorld(new THREE.Vector3(0.42, 1.0 + n * 0.12, 0)); },
+      async fill(lv, sec = 2.2) { gauge.userData.level = lv; gauge.userData.filling = true; await tween(sec, k => { water.scale.y = Math.max(0.001, lv * 0.12 * k); }); gauge.userData.filling = false; },
+    };
+  };
+  const gauges = [makeGauge(GAUGE), makeGauge([-20, -7], 3), makeGauge([12, 5])]; // 서운관 → 서쪽 감영 → 동쪽 감영(걷는 길에 앙부일구·보루각·사람이 막지 않는 빈터)
+  const gauge = gauges[0].gauge;
+  gauges.slice(1).forEach((G, i) => { const t = labelSprite(['서쪽 감영', '동쪽 감영'][i], { size: 0.8 }); t.position.set(G.gauge.position.x, 3.2, G.gauge.position.z); L.add(t); }); // 감영 이름(어느 도인지는 말하지 않는다)
   mk(new THREE.BoxGeometry(3, 2.4, 3), 0x8c8577, -12, 1.2, -10);
   for (let i = 0; i < 4; i++) { const h = 0.6 * (i + 1); mk(new THREE.BoxGeometry(0.9, h, 0.6), 0xa59c8a, -10.1, h / 2, -7.3 - i * 0.6); } // 오르는 돌계단
   world.addCollider({ x: -12, z: -10, r: 2 });
@@ -175,19 +192,11 @@ export function buildJ3Scene(world) {
       return tween(1.2, f => { shadow.rotation.y = a0 + (a1 - a0) * f * f * (3 - 2 * f); });
     },
     // 측우기 속 크게 보기: 커지고, 앞쪽 반을 잘라 낸 단면과 눈금이 보인다
-    showGauge(on) {
-      gauge.scale.setScalar(on ? 3 : 1); section.visible = water.visible = on;
-      if (!on) { water.scale.y = 0.001; gauge.userData.level = 0; }
-      if (on) gauge.children.forEach(o => { if (o.isMesh && o.position.y >= 0.99 && o.visible) { o.visible = false; ironHidden.push(o); } });
-      else ironHidden.splice(0).forEach(o => { o.visible = true; });
-    },
+    showGauge: on => gauges[0].show(on),
     // 눈금 n 옆 단추 자리(세계 좌표)
-    tickPoint(n) { gauge.updateWorldMatrix(true, false); return gauge.localToWorld(new THREE.Vector3(0.42, 1.0 + n * 0.12, 0)); },
+    tickPoint: n => gauges[0].tick(n),
     // 빗물이 lv 눈금까지 차오른다(처음부터)
-    async fillGauge(lv) {
-      gauge.userData.level = lv; gauge.userData.filling = true;
-      await tween(2.2, k => { water.scale.y = Math.max(0.001, lv * 0.12 * k); });
-      gauge.userData.filling = false;
-    },
+    fillGauge: lv => gauges[0].fill(lv),
+    gauges, // 서운관·서쪽 감영·동쪽 감영(고을 돌며 빗물 재기)
   };
 }

@@ -8,7 +8,7 @@ import { runChapter } from '../core/flow.js';
 import { JOSEON } from '../chapters/index.js';
 import { testWorld, touchSetup, touchBot, memSave } from './bot.js';
 
-const answers = new Set(j3Script.quizzes.map(q => q.options[q.answer]));
+const answers = new Set([...j3Script.quizzes.map(q => q.options[q.answer]), j3Script.rain.most.options.find(o => o.correct).text]);
 
 test('j3: script passes validation', () => eq(validateScript(j3Script, SOURCES), []));
 
@@ -28,7 +28,7 @@ test('j3: sundial rounds — three different hours, named 묘시~유시 with clo
   ok(HOURS.every(h => /^\d+~\d+시$/.test(h[1])), 'every hour has a clock time');
   ok(HOUR_ANGLES[0] > HOUR_ANGLES[6] && Math.abs(HOUR_ANGLES[3] - Math.PI) < 1e-6, 'west → north(오시) → east');
   eq(new Set(DIAL_ROUNDS).size, 3);
-  eq(GAUGE_ROUNDS.length, 2);
+  eq(GAUGE_ROUNDS.length, 3); // 2026-11-05: 서운관·동쪽 감영·서쪽 감영 세 곳
 });
 
 test('j3: scene has the three instruments and people', () => {
@@ -111,7 +111,7 @@ test('j3 D-30: tap the hour the shadow points at, the 자격루 plays as one sce
     const r = await j3.minigame(s.ctx);
     const P = s.ctx.testHooks.picks;
     eq(P.filter(p => p.cls === 'dial-pick').map(p => p.n), [7, 7, 7], 'seven hour buttons on the bowl, three rounds');
-    eq(P.filter(p => p.cls === 'gauge-pick').map(p => p.n), [6, 6], 'six tick buttons in the gauge, two rounds');
+    eq(P.filter(p => p.cls === 'gauge-pick').map(p => p.n), [6, 6, 6], 'six tick buttons in each of the three gauges');
     ok(P.every(p => p.onScreen), 'buttons on screen');
     ok(s.ctx.testHooks.shadowErr.every(e => e < 1e-6), 'shadow points at the asked hour');
     ok(rainWhileFill, 'it rains while the gauge fills');
@@ -122,3 +122,24 @@ test('j3 D-30: tap the hour the shadow points at, the 자격루 plays as one sce
     eq(DIAL_ROUNDS.length, 3);
   } finally { off(); bot.stop(); s.done(); }
 }, { timeout: 150000 });
+
+// 2026-11-05 선생님: 조선 2장 더 재밌게 — 소나기 뒤 서운관과 두 감영의 측우기 세 곳을 시간 안에 돌며 빗물을 재고, 어디에 비가 가장 많이 왔는지 고른다
+test('j3 fun: three gauges in different places, a walking time limit, then pick where it rained most', async () => {
+  const { GAUGE_ROUNDS: L } = await import('../chapters/joseon/j3/chapter.js');
+  ok(new Set(L).size === 3, 'each place got a different amount');
+  const most = j3Script.rain.most;
+  eq(most.options.length, 3);
+  eq(most.options.findIndex(o => o.correct), L.indexOf(Math.max(...L)));
+  const w = testWorld(); const sc = j3.buildScene(w, {});
+  eq(sc.gauges.length, 3);
+  const P = sc.gauges.map(g => g.gauge.position);
+  ok(P.every((p, i) => P.every((q, j) => i === j || Math.hypot(p.x - q.x, p.z - q.z) > 12)), 'far apart: the student has to walk');
+  const s = touchSetup(j3Script.speakers), bot = touchBot(s, { answers, holdStill: () => true }); // 대화·눈금은 누르지만 걷지 않는다
+  try {
+    j3.buildScene(s.w, s.ctx); j3.enterStage(s.ctx, 'minigame');
+    const { readGauges } = await import('../chapters/joseon/j3/chapter.js');
+    const fail = {}; let res = null; readGauges(s.ctx, false, fail).then(r => { res = r; });
+    for (let i = 0; i < 2000 && res === null; i++) { s.w.step(1 / 20, { x: 0, z: 0 }); if (i % 20 === 0) await new Promise(r => setTimeout(r, 1)); } // 아무도 걷지 않으면 시간이 다 된다
+    eq(res, false); eq(fail.why, 'late');
+  } finally { bot.stop(); s.done(); }
+}, { timeout: 120000 });
