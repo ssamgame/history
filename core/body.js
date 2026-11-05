@@ -107,14 +107,14 @@ export function attachBody(g, look = {}) {
 
 // 팔꿈치 관절을 더 단다(조선 5장 웅크린 백성·무릎 꿇은 사람처럼 장이 팔꿈치를 직접 굽히는 사람): 예전 팔 관절 안에 팔꿈치 관절(빈 껍데기)을 두고
 // 그 회전을 아래팔 뼈가 따라가게 한다. 돌려주는 것은 [x−쪽 팔꿈치, x+쪽 팔꿈치]
-export function addElbows(g) {
+export function addElbows(g, { keepStraight = false } = {}) { // keepStraight: 팔꿈치를 안 굽힐 때는 예전처럼 아래팔을 곧게(팔꿈치 덧씌움이 그 뒤에 덮는다)
   const S = g.userData.skel; if (!S) return null;
   g.updateMatrixWorld(true);
   return g.userData.arms.map((arm, i) => {
     if (arm.userData.elbow) return arm.userData.elbow;
     const s = i === 0 ? 'R' : 'L', elbow = new THREE.Group(); elbow.position.y = -0.36; arm.add(elbow); elbow.updateMatrixWorld(true);
     const bone = S.bones(`forearm_${s}`), up = S.links.find(L => L.proxy === arm);
-    if (up) up.extra = up.extra.filter(e => e.bone !== bone); // 위팔 덧씌움이 아래팔을 곧게 펴지 않게
+    if (up && !keepStraight) up.extra = up.extra.filter(e => e.bone !== bone); // 위팔 덧씌움이 아래팔을 곧게 펴지 않게
     S.links.push({ proxy: elbow, bone, C: elbow.getWorldQuaternion(wq).clone().invert().multiply(bone.getWorldQuaternion(wq2)), rest: bone.quaternion.clone(), extra: [], w: 0 });
     arm.userData.elbow = elbow;
     return elbow;

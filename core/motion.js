@@ -290,7 +290,7 @@ function autoElbows(person, u, arms, c) {
   if (!u.elbowAuto) { // 팔꿈치는 팔을 내리고 있을 때 단다(든 채로 달면 위팔이 엉뚱한 쪽을 가리킨다)
     if (arms.some(a => a.userData.elbow)) { u.elbowAuto = false; return; }
     if (!arms.every(a => Math.abs(a.rotation.x) + Math.abs(a.rotation.z) < 0.02)) return;
-    u.elbowAuto = addElbows(person) || false; return;
+    u.elbowAuto = addElbows(person, { keepStraight: true }) || false; return;
   }
   u.elbowAuto.forEach((e, i) => { const r = raise[i], w = ss(0.45, 0.6, r); e.rotation.set(-1.1 * Math.sin(Math.PI * r) * w, 0, 0); });
 }
