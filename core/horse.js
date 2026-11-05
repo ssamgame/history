@@ -146,17 +146,25 @@ export function animateHorse(horse, dt) {
   st.forEach(o => { o.l.rotation.x += (o.a - o.l.rotation.x) * blend; });
   let low = Infinity;
   for (const o of st) if (o.on) low = Math.min(low, legH(o.l.rotation.x, 0, o.l.position.z));
-  if (low === Infinity) for (const o of st) low = Math.min(low, legH(o.l.rotation.x, 0, o.l.position.z));
+  if (low === Infinity) low = m.lastLow ?? Math.min(...st.map(o => legH(o.l.rotation.x, 0, o.l.position.z))); // 네 발이 다 뜬 순간(속보·구보)은 앞의 높이를 그대로 이어 간다(툭 꺼지지 않게)
+  m.lastLow = low;
+  // 몸통 높이: 디딘 발굽이 땅에 닿는 높이(-low)를 용수철처럼 부드럽게 따라간다(2026-11-05 선생님: 삐그덕 걸음). 빨리 달릴수록 바짝 따른다
+  if (m.bodyY == null) { m.bodyY = -low; m.bodyV = 0; }
+  { const w = m.gait === 'canter' ? 34 : m.gait === 'trot' ? 26 : 18, h = Math.min(dt, 1 / 30);
+    for (let t = 0; t < dt - 1e-6; t += h) { const e = Math.min(h, dt - t); m.bodyV += (w * w * (-low - m.bodyY) - 2 * w * m.bodyV) * e; m.bodyY += m.bodyV * e; } }
+  if (st.some(o => o.on)) { const sink = m.gait === 'canter' ? 0 : m.gait === 'trot' ? 0.01 : 0.02, y = Math.max(-low - sink, Math.min(-low + 0.012, m.bodyY)); if (y !== m.bodyY) { m.bodyY = y; m.bodyV *= 0.5; } } // 디딘 발굽이 땅에서 뜨거나 묻히는 것은 아주 조금만
+  const lowNow = -m.bodyY; // 든 다리의 무릎은 지금 몸통 높이에 맞춰 접는다
+  const kf = Math.min(1, dt * (m.gait === 'canter' ? 32 : m.gait === 'trot' ? 30 : 22)); // 무릎은 목표 각도로 빠르게 따라가되 한 프레임에 툭 꺾이지 않는다
   for (const o of st) {
     const kn = o.l.userData.knee; if (!kn) continue;
-    if (o.on || kk <= 0.02) { kn.rotation.x *= o.on ? 0 : 1 - blend; continue; }
+    if (o.on || kk <= 0.02) { kn.rotation.x += (0 - kn.rotation.x) * (o.on ? kf : blend); continue; }
     const s1 = (o.f - G.duty) / (1 - G.duty), lift = Math.sin(Math.PI * s1), r = o.l.rotation.x;
     let k = lift * (o.i < 2 ? 1.1 : 0.7) * kk;
-    const C = (LEG - 0.42 * Math.cos(r) - low - o.l.position.z * Math.sin(pitch) - 0.12 * lift * kk) / 0.43; // 이만큼은 땅에서 떠 있어야 한다
+    const C = (LEG - 0.42 * Math.cos(r) - lowNow - o.l.position.z * Math.sin(pitch) - 0.12 * lift * kk) / 0.43; // 이만큼은 땅에서 떠 있어야 한다
     if (C < 1 && Math.cos(r + k) > C) { const q = Math.acos(Math.max(-1, C)), k1 = q - r, k2 = -q - r; k = Math.abs(k1 - k) < Math.abs(k2 - k) ? k1 : k2; } // 모자라면 가장 덜 접는 쪽으로 더 접는다
-    kn.rotation.x = k;
+    kn.rotation.x += (k - kn.rotation.x) * kf;
   }
-  H.body.position.y = -low; // 디딘 발굽은 늘 땅에 닿는다(박히지도 뜨지도 않게). 걸음에 따른 오르내림은 다리 각도에서 저절로 생긴다
+  H.body.position.y = m.bodyY; // 디딘 발굽은 늘 땅에 닿는다(박히지도 뜨지도 않게). 걸음에 따른 오르내림은 다리 각도에서 저절로 생긴다
   H.body.rotation.x = pitch;
   // 방향 바꾸기: 머리가 먼저 돌고 몸은 도는 쪽으로 조금 기운다
   const yaw = horse.rotation.y; if (m.yaw === null) m.yaw = yaw;

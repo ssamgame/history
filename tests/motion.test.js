@@ -200,7 +200,7 @@ test('motion: 제자리에 선 사람은 moving이어도 발만 계속 움직이
 test('horse: 빠르기에 따라 평보·속보·구보, 디딘 발굽은 미끄러지지 않고 땅 위에, 기수는 안장에', async () => {
   const { makeHorse, mount, animateHorse } = await import('../core/horse.js');
   const scene = new THREE.Scene();
-  for (const [v, want] of [[1.4, 'walk'], [3.5, 'trot'], [6.2, 'canter']]) {
+  for (const [v, want] of [[1.4, 'walk'], [3.5, 'trot'], [6.2, 'canter'], [1.4, 'walk'], [3.5, 'trot'], [6.2, 'canter'], [6.2, 'canter'], [6.2, 'canter']]) { // 말마다 크기·박자가 조금 달라 여러 마리(2026-11-05)
     const h = makeHorse(), r = makePerson(LOOKS.mongol); mount(h, r); h.rotation.y = Math.PI / 2; scene.add(h); // +x 쪽을 보고 +x로 간다
     const hoofs = h.userData.legs.map(l => l.userData.knee.children[1]), wp = new THREE.Vector3(), seat = new THREE.Vector3();
     for (let i = 0; i < 90; i++) { h.position.x += v / 30; h.updateMatrixWorld(true); animateHorse(h, 1 / 30); }
