@@ -219,13 +219,13 @@ export async function classroomPlay(ctx) {
   const crate = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.5, 0.6), mat(0x7a5a3c, 'wood', 'object')); crate.position.set(A.crate[0], 0.25, A.crate[1]); g.add(crate); // 걷은 교과서 상자
   const desks = kids.map((kid, i) => {
     const kx = kid.position.x, kz = kid.position.z - 0.3; // 책상 줄(아이는 그 뒤 의자에 앉아 있다)
-    const old = bookMesh(0x5a3a2a, 'こくご'); old.rotation.y = Math.PI; old.position.set(kx, 0.74, kz - 0.55); room.group.add(old); hook.oldBooks += 1;
+    const old = bookMesh(0x5a3a2a, '國語'); old.rotation.y = Math.PI; old.position.set(kx, 0.74, kz - 0.55); room.group.add(old); hook.oldBooks += 1;
     const ring = new THREE.Mesh(new THREE.RingGeometry(0.45, 0.6, 24), new THREE.MeshBasicMaterial({ color: 0xd9a441, transparent: true, opacity: 0.9, side: THREE.DoubleSide }));
     ring.rotation.x = -Math.PI / 2; ring.position.set(kx + 1.4, 0.1, kz - 0.2); ring.visible = false; room.group.add(ring);
     return { kid, kx, kz, old, ring };
   });
   const p0 = a.at(...A.from); placePlayer(world, [p0.x, p0.z], Math.PI);
-  setCarry(world.player, bookMesh(0xd8c08a, '한글'), 'arms'); // 한글 교과서 묶음을 안고 들어간다
+  setCarry(world.player, bookMesh(0xd8c08a, '국어'), 'arms'); // 한글 교과서 묶음을 안고 들어간다
   const classView = () => world.setFixedCamera([O.x + 0.4, 5, O.z - 4.2], [O.x, 0.6, O.z + 1.8]);
   try {
     await ctx.fade?.(false);
@@ -241,7 +241,7 @@ export async function classroomPlay(ctx) {
       ctx.input.enabled = false;
       d.ring.visible = false;
       d.old.removeFromParent(); hook.oldBooks -= 1; // 일본어 교과서를 걷는다
-      const nb = bookMesh(0xd8c08a, '한글'); nb.rotation.y = Math.PI; nb.position.set(d.kx, 0.74, d.kz - 0.55); room.group.add(nb); hook.books += 1;
+      const nb = bookMesh(0xd8c08a, '국어'); nb.rotation.y = Math.PI; nb.position.set(d.kx, 0.74, d.kz - 0.55); room.group.add(nb); hook.books += 1;
       audio.play('tap');
       classView(); // 칠판 쪽 높은 곳에서 아이들의 얼굴과 책상을 본다
       await wait(world, 0.9, k => { const ar = d.kid.userData.arms; if (ar) ar[1].rotation.x = -1.3 * Math.sin(k * Math.PI); }); // 앉은 채 손을 들고 읽는다

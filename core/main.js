@@ -134,7 +134,9 @@ function boot() {
         if (listener) { setTalking(listener, 'talk', 'listen'); talkers.push(listener); }
       }
     };
-    dialogue = createDialogue(ui, mod.script.speakers, { reduceMotion, onSay, onClose: calm });
+    // '나'(학생)의 대화창 그림은 글자(我) 대신 이 장에서 맡은 인물의 얼굴(2026-11-05 선생님)
+    const speakers = { ...mod.script.speakers, me: { name: '나', ...(mod.script.speakers?.me || {}), look: roleLook(meta.id, mod.player) } };
+    dialogue = createDialogue(ui, speakers, { reduceMotion, onSay, onClose: calm });
     hud.show(meta);
     hud.setTouchVisible(true);
     inChapter = true; input.enabled = true;
@@ -208,7 +210,7 @@ function boot() {
       if (dm[2] === 'story') { // 개발용: 이야기 장면(D-58)만 띄운다. 대화창을 눌러 넘긴다
         const mod = (await meta.load()).default; curMeta = meta;
         world.setMood(mod.mood); world.setPlayerLook(roleLook(meta.id, mod.player), ROLES[meta.id]?.scale ?? 1); mod.buildScene(world, ctx);
-        dialogue = createDialogue(ui, mod.script.speakers, { reduceMotion });
+        dialogue = createDialogue(ui, { ...mod.script.speakers, me: { name: '나', ...(mod.script.speakers?.me || {}), look: roleLook(meta.id, mod.player) } }, { reduceMotion });
         const name = new URLSearchParams(location.search).get('s'), run = mod.stories?.[name] || Object.values(mod.stories || {})[0];
         inChapter = true; await run?.(ctx); window.__storyDone = true; return;
       }

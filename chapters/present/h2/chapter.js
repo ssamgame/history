@@ -10,6 +10,7 @@ import { gateLeaves, nameBoard } from '../../kit/gate.js';
 import { walkInAndTalk, anyOrderTalk } from '../../kit/talk.js';
 import { wait, person, ease, face, sayer, meet, minigameWithMeet, facingShare } from '../../kit/walk.js';
 import { waitInteract } from '../../../core/portal.js';
+import { walkTo } from '../../../core/interact.js';
 import { mat, setCarry } from '../../../core/people.js';
 import { LOOKS } from '../../../content/characters.js';
 import { placePlayer } from '../../joseon/common.js';
@@ -374,6 +375,17 @@ function introScene(ctx) {
   };
 }
 
+// 김구는 이야기를 마치면 광장을 떠난다(2026-11-05 선생님: 남한만의 총선거에 함께하지 않았으니 투표 날·놀이에는 없는 편이 맞다)
+export async function kimguLeaves(ctx, id, isNew) {
+  if (id !== 'kimgu' || !isNew) return;
+  const { world } = ctx, k = world.npcs.get('kimgu');
+  ctx.input.enabled = false; k.mark.visible = false;
+  await walkTo(world, k.mesh, [15.5, 1.5], { speed: 1.4 }); // 광장 동쪽 길로 걸어 나간다
+  world.moveNpc('kimgu', 300, 300, 0); k.mesh.visible = false; // 다시 말을 걸 수 없게 멀리
+  if (ctx.testHooks) ctx.testHooks.kimguLeft = true;
+  ctx.input.enabled = true;
+}
+
 let scene = null;
 export const villageTalk = (id, heard) => anyOrderTalk(script, PEOPLE, id, heard);
 export const devScene = () => scene; // 개발용(사진 찍기)
@@ -384,10 +396,10 @@ export default {
   introScene,
   portal: { at: [0, 3.4], ry: 0 }, // 미니게임 뒤 빛나는 문(C-02): 돌아온 학생(SPOT) 바로 앞, 앞면은 학생(남쪽) 쪽
   buildScene(world) { scene = base.buildScene(world); return scene; },
-  enterStage(ctx, stage) { scene.gate.setOpen(0); ctx.world.closeView = true; base.enterStage(ctx, stage); },
+  enterStage(ctx, stage) { scene.gate.setOpen(0); ctx.world.closeView = true; base.enterStage(ctx, stage); if (stage === 'minigame' || stage === 'quiz') { ctx.world.moveNpc('kimgu', 300, 300, 0); ctx.world.npcs.get('kimgu').mesh.visible = false; } }, // 이어하기로 놀이부터 열어도 김구는 이미 떠났다
   // 모두 들은 뒤 기자에게 가면 학생의 결심 → 5·10 총선거 투표 날 장면
   async explore(ctx) {
-    await walkInAndTalk(ctx, script, { people: PEOPLE, final: 'reporter', gate: scene.gate, from: INTRO_FROM, to: base.layout.start });
+    await walkInAndTalk(ctx, script, { people: PEOPLE, final: 'reporter', gate: scene.gate, from: INTRO_FROM, to: base.layout.start, afterTalk: kimguLeaves });
     await electionScene(ctx);
   },
   // 공용 kit 미니게임을 그대로 돌리되, { meet } 줄에서는 그 사람에게 말을 걸 때까지 기다린다(C-05, chapters/kit/walk.js)

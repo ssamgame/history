@@ -23,7 +23,7 @@ function mark(ctx, script, people, final, heard) {
 }
 
 // { people, final, gate, from(문 밖), to(들어와 서는 곳) }
-export async function walkInAndTalk(ctx, script, { people, final, gate, from, to }) {
+export async function walkInAndTalk(ctx, script, { people, final, gate, from, to, afterTalk = null }) { // afterTalk(id, isNew): 그 사람 이야기를 마친 뒤(대화창을 닫고) 할 일
   const { world, dialogue, hud } = ctx;
   world.closeView = true;
   placePlayer(world, from);
@@ -43,6 +43,7 @@ export async function walkInAndTalk(ctx, script, { people, final, gate, from, to
           await sayAll(dialogue, anyOrderTalk(script, people, id, heard));
           heard.add(id); mark(ctx, script, people, final, heard);
           if (isNew && heard.size < people.length) await dialogue.say(script.more);
+          if (afterTalk) { dialogue.close(); await afterTalk(id, isNew); }
           return;
         }
         if (id !== final) { await sayAll(dialogue, n.always || n.later || n.first); return; } // 안내판·다른 사람

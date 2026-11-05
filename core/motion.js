@@ -9,7 +9,7 @@
 //   ④ 머리: 바라볼 곳(look)·대화 끄덕임·서 있을 때 두리번거리기. 몸통이 기운 만큼 머리는 반대로 세워 시선이 흔들리지 않는다.
 // 장 코드가 직접 정한 팔 자세(만세 등)는 걷지 않는 동안 건드리지 않는다(예전과 같다).
 import * as THREE from 'three';
-import { play, paceScale, manualGait, holdOnBody } from './body.js'; // 공통 뼈대 몸(2026-10-31): userData.skel이 있는 사람은 동작 묶음으로 움직인다
+import { play, paceScale, manualGait, holdOnBody, addElbows } from './body.js'; // 공통 뼈대 몸(2026-10-31): userData.skel이 있는 사람은 동작 묶음으로 움직인다
 import { stepRate } from './gait.js'; // 걸음 박자(사람 박자 안)
 
 export const HIP = 1.05; // 몸통 관절(upper) 높이: 상체·팔·머리·든 물건은 이 관절의 자식
@@ -280,6 +280,21 @@ export function setWork(person, kind) { person.userData.work = kind; return pers
 // 뼈대 몸(core/body.js)의 한 프레임: 실제 빠르기로 기본 동작(서기·걷기·달리기·창 들고 걷기·짐 안고 걷기·말하기·일하기)을 고르고,
 // 예전처럼 장·행동이 정하는 자세(행동 act, 표정 손짓, 옆구리·어깨에 든 짐, 묶인 손)는 예전 관절에 적는다. 그 관절이 쉬는 자세가 아니면
 // core/body.js가 그 뼈에 덧씌운다. 뼈의 실제 회전과 짐을 손에 붙이는 일은 world.step 끝(POST_POSE)에 core/body.js가 한다
+// 팔꿈치 저절로 굽히기(2026-11-05 선생님: '대한독립 만세' 팔이 막대처럼 돌았다): 팔을 높이(어깨 위로) 들어 올리는 중간에는
+// 팔꿈치를 앞으로 굽혀 주먹이 먼저 올라가고, 다 올리면 쭉 편다. 손 자리가 중요한 짐(안기·두 손 들기·겨누기)과
+// 장이 팔꿈치를 직접 움직이는 사람(addElbows를 먼저 단 사람)은 건드리지 않는다.
+const ELBOW_SKIP = new Set(['arms', 'read', 'aim']);
+function autoElbows(person, u, arms, c) {
+  if (u.elbowAuto === false || (c && ELBOW_SKIP.has(c.style))) return;
+  const raise = arms.map(a => Math.max(0, Math.min(1, -a.rotation.x / 2.8)));
+  if (!u.elbowAuto) { // 팔꿈치는 팔을 내리고 있을 때 단다(든 채로 달면 위팔이 엉뚱한 쪽을 가리킨다)
+    if (arms.some(a => a.userData.elbow)) { u.elbowAuto = false; return; }
+    if (!arms.every(a => Math.abs(a.rotation.x) + Math.abs(a.rotation.z) < 0.02)) return;
+    u.elbowAuto = addElbows(person) || false; return;
+  }
+  u.elbowAuto.forEach((e, i) => { const r = raise[i], w = ss(0.45, 0.6, r); e.rotation.set(-1.1 * Math.sin(Math.PI * r) * w, 0, 0); });
+}
+
 function animateSkel(person, moving, dt) {
   const u = person.userData, m = state(u), S = u.skel;
   S.picked = true; // 이 프레임에 동작을 골랐다(core/body.js 제자리걸음 막기가 끼어들지 않게)
@@ -325,6 +340,7 @@ function animateSkel(person, moving, dt) {
     if (A.t >= A.dur) { u.act = null; if (!u.carry || u.carry.style !== 'arms') u.armRest = true; A.resolve(); }
   }
   u.upper.rotation.set(ux, uy, uz);
+  autoElbows(person, u, arms, c);
   // 머리: 바라볼 곳(머리 묶음은 head 뼈에 붙어 있어 그 위에 더한다)
   if (u.head) {
     let look = 0;
