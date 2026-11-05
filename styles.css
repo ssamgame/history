@@ -377,7 +377,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .screen.doc { place-items: safe center; }
 .screen.doc .card.poem-card { width: min(880px, 100%); padding-top: 14px; padding-bottom: 14px; }
 .screen.doc .card.poem-card h2 { margin: 2px 0 8px; }
-.scroll-sheet ol.poem { list-style: none; padding-left: 0; line-height: 1.9; font-size: 19px; }
+.scroll-sheet ol.poem { list-style: none; word-break: keep-all; padding-left: 0; line-height: 1.9; font-size: 19px; }
 .scroll-sheet.poem-sheet { max-height: min(44dvh, 420px); overflow-y: auto; touch-action: pan-y; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
 .poem-hint { margin: 8px 0 0; text-align: center; font-size: 15px; color: var(--muted); }
 .doc-paper { background: #fbf5e6; border: 2px solid #8a6a48; border-radius: 3px; padding: 18px 22px; box-shadow: inset 0 0 0 5px #efe3c6; }
