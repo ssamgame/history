@@ -422,3 +422,19 @@ test('ch2 last stand: after the retreat the scene cuts to Yanggyu surrounded, fi
     ok(h.fallen && h.fallenVisible, '양규가 쓰러져 남는다');
   } finally { bot.stop(); s.done(); }
 }, { timeout: 90000 });
+
+// 2026-11-05 선생님: 언덕에서 거란군과 맞붙을 때 고려 병사끼리 몸이 겹치며 지나간다 → 고려군 사이가 늘 0.7m 넘게
+test('ch2 last stand: Goryeo soldiers never pass through each other while charging the rear guard', async () => {
+  const s = touchSetup(ch2Script.speakers); const bot = touchBot(s, { answers: new Set() });
+  let near = Infinity, at = '', stand = false;
+  const off = s.w.onUpdate(() => {
+    const h = s.ctx.testHooks.lastStand; if (!h?.goryeo || h.surround) return; // 장면이 바뀐(둘러싸인) 뒤는 따로 세운 자리
+    const v = h.goryeo.filter(p => p.visible), P = v.map(p => p.getWorldPosition(new p.position.constructor()));
+    for (let i = 0; i < P.length; i++) for (let j = i + 1; j < P.length; j++) { const d = Math.hypot(P[i].x - P[j].x, P[i].z - P[j].z); if (d < near) { near = d; at = `${i}-${j}`; } }
+  });
+  try {
+    ch2.buildScene(s.w, s.ctx);
+    await ch2.stories.lastStand(s.ctx);
+    ok(near > 0.7, `고려군 사이 가장 가까울 때 ${near.toFixed(2)}m (${at})`);
+  } finally { off(); bot.stop(); s.done(); }
+}, { timeout: 90000 });

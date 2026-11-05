@@ -9,7 +9,7 @@ import { wait } from '../kit/walk.js';
 import { roam } from '../../core/flow.js';
 import { showHowTo, runWithRetries, pickOnMap } from '../../core/minigame.js';
 import { enterThroughGate } from '../kit/gate.js';
-import { labelSprite } from '../kit/play.js';
+import { labelSprite, toast } from '../kit/play.js';
 import { leadWalk } from '../kit/lead.js';
 import { setCarry } from '../../core/people.js';
 import { waitInteract } from '../../core/portal.js';
@@ -125,10 +125,30 @@ const FLY = 0.95, FALL = 0.5, LIE = 1.4, RISE = 0.6; // 화살 나는 시간, �
 const SPOT_R = 1.6;
 const KEEP_CLEAR = 0.9, RUN_NEAR = 2.5, RUN_SPEED = 7; // 김윤후와 학생 사이를 이만큼 띄운다(몸이 겹치지 않게). 학생이 이만큼 가까이 따라오면 이 빠르기로 뛴다
 const angleOf = (p, cx) => { let a = Math.atan2(p.z, p.x - cx); if (a < 0) a += Math.PI * 2; return a; };
+// 버틸수록 빨라진다(2026-11-05 선생님: 조금 더 어렵게). 쉬운 모드는 처음부터 끝까지 같다
+export function cheoinPace(t, easy) {
+  if (easy) return { spawnEvery: 3.6, speed: 1.3 };
+  const k = Math.min(1, t / 16);
+  return { spawnEvery: 2.6 - 0.6 * k, speed: 2.0 + 0.5 * k };
+}
+// 끝 무렵 나타나는 말 탄 살리타(2026-11-05 선생님). 한 번 만들어 두고 다시 하기마다 숨겼다 쓴다
+let salitai = null;
+function makeSalitai(world) {
+  if (salitai) return salitai;
+  const g = new THREE.Group(); g.visible = false; g.rotation.order = 'YXZ'; g.scale.setScalar(1.35); world.level.add(g);
+  const horse = makeHorse({ coat: 0x3a2e26, armor: 0x6a5a40, saddle: 0x8a6a22 }), rider = makePerson(LOOKS.mongolGeneral); mount(horse, rider); g.add(horse);
+  const name = labelSprite('살리타', { size: 0.8 }); name.position.set(0, 4.6, 0); g.add(name);
+  salitai = { group: g, top: new THREE.Object3D(), angle: Math.PI * 1.5, horse, rider, salitai: true };
+  return salitai;
+}
+const SAL_AT = { normal: 16, easy: 14 };
 export function cheoinDefense(ctx, easy) {
   const { world, hud, audio } = ctx;
   const A = scene.areas.cheoin, [cx] = A.center, R = A.radius;
-  const spawnEvery = easy ? 3.6 : 2.6, speed = easy ? 1.3 : 2.0, duration = 30; // D-62: 30초
+  const duration = 30; // D-62: 30초
+  const sal = makeSalitai(world), salAt = easy ? SAL_AT.easy : SAL_AT.normal;
+  let salOut = false, caughtT = null;
+  ctx.testHooks.salitaiOut = 0; ctx.testHooks.salitaiCaught = false; ctx.testHooks.cheoinWhy = '';
   ctx.testHooks.cheoinDuration = duration; ctx.testHooks.stuckArrows = 0; ctx.testHooks.horseFlee = 0; ctx.testHooks.horseToCamp = 0;
   const travel = A.spawnR - A.radius - 1;
   ctx.testHooks.cheoinAttempts = (ctx.testHooks.cheoinAttempts || 0) + 1;
@@ -137,6 +157,7 @@ export function cheoinDefense(ctx, easy) {
     for (const m of scene.mongols) { m.group.visible = false; m.group.rotation.x = 0; m.fall = 0; if (m.horse) unfall(m); }
     for (const ar of scene.arrows) { if (ar.parent !== world.level) world.level.add(ar); ar.visible = false; ar.scale.setScalar(3.4); }
     for (const ar of scene.archers) { ar.group.visible = true; ar.group.position.y = ar.baseY; ar.group.rotation.y = ar.rest; }
+    sal.group.visible = false;
     ring.visible = false; label.visible = false;
   };
   reset();
@@ -173,8 +194,16 @@ export function cheoinDefense(ctx, easy) {
       if (done) return;
       t += dt;
       hud.setTimer(duration - t);
-      hud.setCounter(`막은 몽골군 ${stopped} · 성벽에 닿은 적 ${breaches}/3`);
-      if (t >= nextSpawn) {
+      hud.setCounter(`막은 몽골군 ${stopped} · 성벽 ${'♥'.repeat(Math.max(0, 3 - breaches))}${'♡'.repeat(Math.min(3, breaches))}`);
+      const { spawnEvery, speed } = cheoinPace(t, easy);
+      if (caughtT != null) { if (t >= caughtT + 1.6) return finish(true); } // 살리타를 찾았다: 김윤후가 활을 겨누는 장면으로
+      else if (!salOut && t >= salAt) { // 살리타가 마지막으로 몰려온다(다른 몽골군은 더 나오지 않는다)
+        salOut = true; ctx.testHooks.salitaiOut = t;
+        sal.angle = angleOf(world.player.position, cx) < Math.PI * 1.5 ? CHEOIN.arc[1] - 0.3 : CHEOIN.arc[0] + 0.3; // 학생과 먼 쪽 들판에서 온다(달려가야 한다)
+        sal.group.visible = true; active.set(sal, { d: 0, spot: spotAngle(sal), slow: 0.85 });
+        toast(ctx, '몽골 장수 살리타가 나타났다! 살리타 쪽 성벽으로 가자!', 'bad');
+      }
+      if (!salOut && t >= nextSpawn) {
         nextSpawn = t + spawnEvery;
         const free = scene.mongols.filter(m => !active.has(m) && !hit.has(m));
         if (free.length) {
@@ -208,19 +237,21 @@ export function cheoinDefense(ctx, easy) {
         }
       }
       for (const [m, a] of active) {
-        a.d += speed * dt;
+        a.d += speed * (a.slow || 1) * dt;
         const r = A.spawnR - a.d;
         { const x = cx + Math.cos(m.angle) * r, z = Math.sin(m.angle) * r; m.group.position.set(x, fieldH(x, z), z); } // 들판 높이 위에(발굽·발이 땅에 묻히지 않게)
         m.group.rotation.y = Math.atan2(-Math.cos(m.angle), -Math.sin(m.angle)); // 성 쪽을 바라본다
+        if (a.d >= travel && m === sal) { ctx.testHooks.cheoinWhy = 'salitai'; audio.play('wrong'); return finish(false); }
         if (a.d >= travel) {
           breaches += 1; audio.play('wrong');
           active.delete(m); m.group.visible = false;
-          if (breaches >= 3) return finish(false);
+          if (breaches >= 3) { ctx.testHooks.cheoinWhy = 'breach'; return finish(false); }
         }
       }
       // 김윤후는 가장 급한(성에 가장 가까운) 적 쪽 성벽 위 자리를 가리킨다
       let target = null;
       for (const [m, a] of active) if (!target || a.d > active.get(target).d) target = m;
+      if (active.has(sal)) target = sal; // 살리타가 나오면 김윤후는 살리타 쪽을 가리킨다
       if (target !== pointed) { pointed = target; if (target) { callT = 1.6; ctx.testHooks.pointed = (ctx.testHooks.pointed || 0) + 1; } }
       callT -= dt; label.visible = callT > 0;
       const p = world.player.position;
@@ -230,8 +261,10 @@ export function cheoinDefense(ctx, easy) {
         world.setGoal({ x: sx, z: sz });
         ctx.testHooks.spot = { x: sx, z: sz };
         if (Math.hypot(p.x - sx, p.z - sz) < SPOT_R) { // 가리킨 자리에 왔다: 궁수가 쏜다
-          stopped += 1; ctx.testHooks.cheoinShot = (ctx.testHooks.cheoinShot || 0) + 1; audio.play('tap');
-          active.delete(target); shoot(target); ring.visible = false; pointed = null;
+          stopped += 1; ctx.testHooks.cheoinShot = (ctx.testHooks.cheoinShot || 0) + 1;
+          if (target === sal) { active.delete(sal); caughtT = t; ctx.testHooks.salitaiCaught = true; audio.play('correct'); toast(ctx, '살리타를 찾았다! 김윤후가 활을 겨눈다!', 'good'); } // 쏘는 것은 김윤후(다음 장면)
+          else { audio.play('tap'); active.delete(target); shoot(target); }
+          ring.visible = false; pointed = null;
         }
         // 김윤후는 성벽 위를 걸어 그 자리 곁(학생 반대쪽)으로 가서 적 쪽을 본다
         const ka = angleOf(km, cx), pa = angleOf(p, cx), goal = sa + (pa < sa ? 0.16 : -0.16), da = goal - ka;
@@ -242,7 +275,7 @@ export function cheoinDefense(ctx, easy) {
       } else { ring.visible = false; world.setGoal(null); }
       { const ka = angleOf(km, cx), pa = angleOf(p, cx); if (Math.abs(ka - pa) * R < KEEP_CLEAR && Math.abs(p.y - km.y) < 1) { const st = RUN_SPEED / R * dt, away = Math.sign(ka - pa) || 1; moveKim(Math.max(CHEOIN.arc[0], Math.min(CHEOIN.arc[1], ka + away * st)), null); } } // 학생이 걸어 들어오면 성벽을 따라 비켜선다(2026-10-31 자동 점검: 둘이 겹쳐 섰다)
       kim.collider.x = 1e5; // 좁은 성벽 위에서 학생 길을 막지 않게(대신 김윤후가 비켜서고 앞서 뛴다)
-      if (t >= duration) finish(true);
+      if (t >= duration && caughtT == null) { ctx.testHooks.cheoinWhy = 'salitai'; finish(false); }
     });
   });
 }
@@ -503,7 +536,7 @@ export default {
     await sayAll(dialogue, script.cheoin.start);
     dialogue.close();
     await showHowTo(ctx.ui, script.cheoin.howto);
-    const b = await runWithRetries(ctx, easy => { putOnCheoinWall(ctx); input.enabled = true; return cheoinDefense(ctx, easy).finally(() => { input.enabled = false; }); }, { failHint: script.cheoin.failHint });
+    const b = await runWithRetries(ctx, easy => { putOnCheoinWall(ctx); input.enabled = true; return cheoinDefense(ctx, easy).finally(() => { input.enabled = false; }); }, { failHint: () => (ctx.testHooks.cheoinWhy === 'salitai' ? script.cheoin.salitaiMiss : script.cheoin.failHint), easyAfter: 2 });
     cheoinOn(ctx, true); world.followOffset = null;
     await salitaiScene(ctx); // 김윤후가 활로 살리타를 쏘아 쓰러뜨리고 몽골군이 달아난다(D-62)
 

@@ -103,6 +103,7 @@ export function lastStandScene(ctx) {
     // 남쪽 언덕 위 양규와 적은 고려군(카메라 앞)
     const yg = person(g, 'yanggyu', 1.2, 9, Math.PI);
     const few = [[-0.6, 10.2], [2.8, 10.4], [0.4, 11.6], [3.6, 9], [-1.8, 9.2]].map(([x, z], i) => person(g, i === 3 ? 'archer' : 'soldier', x, z, Math.PI));
+    hook.goryeo = [yg, ...few]; // 고려군끼리 몸이 겹치지 않는지 테스트가 잰다
     const gflag = new THREE.Group(); gflag.position.set(2, 0, 11.8); BLD.banner(gflag, { color: 0x8a2f24, h: 3.6 }); g.add(gflag);
     cam([5, 7.5, 22], [0, 1.2, -6]); // 고려군 너머로 거란 대군 전체가 보이게
     await fadeIn();

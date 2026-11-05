@@ -241,6 +241,7 @@ export function setupGuju(ctx, easy) {
 // 귀주의 바람 한 번(D-10, 버튼 없음): 김종현의 지원군이 오고 깃발이 북쪽으로 휘날리는 동안(3초, 쉬운 방식 5초)
 // 강감찬이 "지금이다!" 하고 신호 북(빛나는 원)을 가리키고, 학생이 북에 가까이 가면 북이 울린다. 그 전에 가면 "깃발을 보아라!".
 let gujuSeed = 7;
+const REINF_X = 13.5; // 지원군이 멈추는 자리: 고려군 줄(x -11~11) 오른쪽 바깥(2026-11-05 선생님: 돌격 때 고려군끼리 몸이 겹쳐 지나갔다)
 export function gujuAttempt(ctx, easy, fail) {
   const { world, hud, audio } = ctx;
   gujuSeed = (gujuSeed * 16807) % 2147483647;
@@ -258,7 +259,7 @@ export function gujuAttempt(ctx, easy, fail) {
     const off = world.onUpdate(dt => {
       if (done) return;
       t += dt;
-      scene.reinforcements.position.x = Math.max(9, 30 - (t / arriveAt) * 21);
+      scene.reinforcements.position.x = Math.max(REINF_X, 30 - (t / arriveAt) * (30 - REINF_X));
       if (t >= arriveAt && !flags) { flags = true; scene.setFlags(true); hud.setCounter(script.guju.arrive); }
       if (flags && !announced && byGang(world)) {
         announced = true;
@@ -310,8 +311,8 @@ export function playGujuBattle(ctx) {
       const adv = Math.min(1, t / 2.2), e = adv * adv * (3 - 2 * adv); // 돌격
       const lunge = q => { const a = (t - (q.userData.hitAt ?? -9)) / 0.6; return a > 0 && a < 1 ? Math.sin(Math.PI * a) * 0.45 : 0; }; // 찌를 때 한 걸음 내디뎠다 돌아온다
       G.forEach((p, i) => { p.position.set(go[i].x, 0, go[i].z - e * CHARGE - Math.max(0, t - 4.6) * 1.5 - lunge(p)); }); // 앞뒤로만 나아간다(옆으로 흔들지 않는다), 거란군이 무너지면 뒤쫓는다
-      scene.reinforcements.position.set(rf.x - e * 10, 0, rf.z - e * 14); // 지원군은 옆에서 들이친다
-      R.forEach(p => { p.rotation.y = -Math.PI / 2 - e * 0.6; });
+      scene.reinforcements.position.set(Math.max(REINF_X, rf.x - e * 10), 0, rf.z - e * 14); // 지원군은 고려군 줄 바깥에서 곧게 들이쳐 거란군 오른쪽 끝을 친다(고려군 줄을 가로지르지 않는다)
+      R.forEach(p => { p.rotation.y = -Math.PI / 2 - e * (Math.PI / 2 - 0.35); }); // 옆을 보던 지원군이 앞(북쪽)으로 돌아선다
       while (next < plan.length && plan[next][0] <= t) {
         const [, who, what, side] = plan[next++];
         if (!who.visible || who.rotation.x < -0.2) continue;

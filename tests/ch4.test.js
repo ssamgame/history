@@ -299,18 +299,19 @@ test('ch4: 처인성 방어 내내 김윤후와 학생이 겹치지 않고, 처�
     let nearArcher = Infinity;
     const p = s.w.player.position, km = s.w.npcs.get('kimyunhu').mesh.position;
     ok(Math.hypot(p.x - km.x, p.z - km.z) > 1, `처인성 첫 자리 ${Math.hypot(p.x - km.x, p.z - km.z).toFixed(2)}m`);
-    putOnCheoinWall(s.ctx); cheoinDefense(s.ctx, false);
-    let near = Infinity, bumped = 0;
-    for (let i = 0; i < 580; i++) { // 방어는 30초(D-62): 그 안에서만 본다
+    putOnCheoinWall(s.ctx); let over = false; cheoinDefense(s.ctx, false).then(() => { over = true; });
+    let near = Infinity, bumped = 0; const dbg = [];
+    for (let i = 0; i < 580; i++) { // 방어는 30초(D-62): 그 안에서만 본다(살리타를 찾으면 일찍 끝난다, 2026-11-05)
+      await (i % 20 ? null : sleep(1)); if (over) break;
       const g = s.w.getGoal(), into = i % 120 >= 70 && i % 120 < 90; // 120걸음마다 잠깐 김윤후 쪽으로 곧장 걸어 들어간다
       const t = into ? km : g, d = t ? Math.hypot(t.x - p.x, t.z - p.z) : 0;
       if (into) bumped += 1;
       s.w.step(0.05, t && d > 0.2 ? { x: (t.x - p.x) / d, z: (t.z - p.z) / d } : { x: 0, z: 0 }); // 조이스틱으로 성벽 위를 걷는다
-      near = Math.min(near, Math.hypot(p.x - km.x, p.z - km.z));
+      { const d = Math.hypot(p.x - km.x, p.z - km.z); if (d < 0.6 && dbg.length < 6) dbg.push([i, into, d.toFixed(2), s.ctx.testHooks.salitaiOut ? 'S' : '-', Math.atan2(p.z, p.x - sc.areas.cheoin.center[0]).toFixed(2), Math.atan2(km.z, km.x - sc.areas.cheoin.center[0]).toFixed(2), (Math.hypot(km.x - sc.areas.cheoin.center[0], km.z)).toFixed(2)].join(' ')); near = Math.min(near, d); }
       for (const ar of sc.archers) { const q = ar.group.position; for (const w of [p, km]) nearArcher = Math.min(nearArcher, Math.hypot(w.x - q.x, w.z - q.z)); } // 성벽 위에 줄지어 선 궁수
     }
-    ok(bumped > 60, 'bumped');
-    ok(near > 0.6, `가장 가까웠을 때 ${near.toFixed(2)}m`);
+    ok(bumped > 40, 'bumped ' + bumped); // 살리타를 찾으면 30초 전에 끝나 걸어 들어가는 횟수가 줄었다(2026-11-05)
+    ok(near > 0.6, `가장 가까웠을 때 ${near.toFixed(2)}m ` + dbg.join(' | '));
     ok(nearArcher > 0.5, `궁수와 가장 가까웠을 때 ${nearArcher.toFixed(2)}m`);
   } finally { s.done(); }
 }, { timeout: 60000 });
@@ -360,3 +361,33 @@ test('ch4: 김윤후가 앞장서 걸을 때 길 위에 선 학생 몸을 지나
     }
   } finally { s.done(); }
 }, { timeout: 60000 });
+
+// 2026-11-05 선생님: 처인성 방어를 더 재밌게(조금 더 어렵게) — 갈수록 빨라지고, 끝 무렵 말 탄 살리타가 나타난다.
+// 살리타 쪽 성벽 자리로 가면 성공, 살리타가 성벽에 닿으면 실패. 두 번 지면 쉬운 모드
+test('ch4 fun: Salitai appears late in the defense; reaching his spot wins, letting him reach the wall fails', async () => {
+  const { cheoinDefense, putOnCheoinWall, cheoinPace } = await import('../chapters/ch4/chapter.js');
+  const a = cheoinPace(0, false), b = cheoinPace(25, false);
+  ok(b.spawnEvery < a.spawnEvery && b.speed > a.speed, 'faster later');
+  eq(cheoinPace(0, true), cheoinPace(25, true));
+  for (const chase of [true, false]) {
+    const s = touchSetup(ch4Script.speakers);
+    try {
+      const sc = ch4.buildScene(s.w, s.ctx);
+      const { CHEOIN } = await import('../chapters/ch4/scene.js'), A = sc.areas.cheoin, far = CHEOIN.arc[0] + 0.05;
+      putOnCheoinWall(s.ctx);
+      let res = null; cheoinDefense(s.ctx, false).then(r => { res = r; });
+      const p = s.w.player.position;
+      for (let i = 0; i < 40 * 20 && res === null; i++) {
+        const sp = s.ctx.testHooks.spot;
+        if (sp && (chase || !s.ctx.testHooks.salitaiOut)) { p.x = sp.x; p.z = sp.z; }
+        else if (!chase) { p.x = A.center[0] + Math.cos(far) * A.radius; p.z = Math.sin(far) * A.radius; } // chase=false: 살리타가 나오면 성벽 끝에 비켜 선다
+        s.w.step(0.05, { x: 0, z: 0 });
+        await (i % 50 ? null : sleep(1));
+      }
+      await sleep(5);
+      ok(s.ctx.testHooks.salitaiOut > 10, `살리타가 끝 무렵 나온다 ${s.ctx.testHooks.salitaiOut}`);
+      if (chase) { eq(res, true); ok(s.ctx.testHooks.salitaiCaught, 'caught'); }
+      else { eq(res, false, JSON.stringify({ out: s.ctx.testHooks.salitaiOut, c: s.ctx.testHooks.salitaiCaught, w: s.ctx.testHooks.cheoinWhy, p: [p.x.toFixed(1), p.z.toFixed(1)] })); eq(s.ctx.testHooks.cheoinWhy, 'salitai'); }
+    } finally { s.done(); }
+  }
+}, { timeout: 120000 });

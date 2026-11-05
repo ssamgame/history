@@ -1,7 +1,7 @@
 // 2026-10-24 선생님 의견(고려편 3~6장): 둑 터뜨리기 때, 귀주 싸움 장면, 저고여 사건, 강화도 까닭, 화살, 노비 문서, 퀴즈 배경,
 // 차례대로 만나는 장인과 그림 카드, 몽골군이 탄 적선, 바다 말, 인물 넣기.
 import { test, eq, ok } from './harness.js';
-import ch3, { DAM_WINDOW, playGujuBattle } from '../chapters/ch3/chapter.js';
+import ch3, { DAM_WINDOW, playGujuBattle, gujuAttempt, setupGuju } from '../chapters/ch3/chapter.js';
 import ch3Script from '../chapters/ch3/script.js';
 import ch4 from '../chapters/ch4/chapter.js';
 import ch4Script from '../chapters/ch4/script.js';
@@ -120,3 +120,23 @@ test('goryeo6: 뒤쫓는 배에는 몽골군이 타 있고, 남은 거리는 바
   } finally { s.done(); }
 });
 
+
+// 2026-11-05 선생님: 언덕 앞에서 맞붙을 때 고려 병사끼리(지원군 포함) 몸이 겹치며 지나가지 않는다
+test('goryeo3: during the Guju charge no two Goryeo soldiers pass through each other', async () => {
+  const s = touchSetup(ch3Script.speakers);
+  try {
+    const sc = ch3.buildScene(s.w, s.ctx);
+    setupGuju(s.ctx, false);
+    gujuAttempt(s.ctx, false, { why: '' }); step(s.w, 8); // 지원군이 실제로 멈추는 자리까지 오게 한다
+    const G = [...sc.gujuGoryeo, ...sc.reinforcements.children];
+    let near = Infinity, at = '';
+    const off = s.w.onUpdate(() => {
+      const P = G.filter(p => p.visible).map(p => p.getWorldPosition(new p.position.constructor()));
+      for (let i = 0; i < P.length; i++) for (let j = i + 1; j < P.length; j++) { const d = Math.hypot(P[i].x - P[j].x, P[i].z - P[j].z); if (d < near) { near = d; at = `${i}-${j} t`; } }
+    });
+    const p = playGujuBattle(s.ctx);
+    step(s.w, 9); await p; off();
+    ok(G.length === 20, 'Goryeo + reinforcements');
+    ok(near > 0.7, `가장 가까울 때 ${near.toFixed(2)}m (${at})`);
+  } finally { s.done(); }
+});
