@@ -30,16 +30,16 @@ export function showHowTo(ui, { title, steps }) {
 }
 
 // 실패하면 안내를 보여 주고 다시. 세 번째 실패 뒤부터는 쉬운 모드로 시도한다.
-export async function runWithRetries(ctx, attempt, { failHint }) {
+export async function runWithRetries(ctx, attempt, { failHint, easyAfter = 3 }) {
   let fails = 0, easyModeUsed = false;
   for (;;) {
-    const easy = fails >= 3;
+    const easy = fails >= easyAfter;
     if (easy) easyModeUsed = true;
     const ok = await attempt(easy);
     if (ok) return { easyModeUsed, first: fails === 0 && ok === true }; // first: 첫 시도에 틀림 없이 해냈나('missed'는 아님)
     fails += 1;
     const hint = typeof failHint === 'function' ? failHint() : failHint;
-    await ctx.dialogue.say({ who: 'guide', text: fails === 3 ? `${hint} 이번에는 조금 쉽게 해 볼게요.` : hint });
+    await ctx.dialogue.say({ who: 'guide', text: fails === easyAfter ? `${hint} 이번에는 조금 쉽게 해 볼게요.` : hint });
     ctx.dialogue.close();
   }
 }

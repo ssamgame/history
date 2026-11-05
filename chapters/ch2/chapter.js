@@ -5,7 +5,7 @@ import { roam } from '../../core/flow.js';
 import { showHowTo, runWithRetries } from '../../core/minigame.js';
 import { enterThroughGate } from '../kit/gate.js';
 import { waitInteract } from '../../core/portal.js';
-import { labelSprite } from '../kit/play.js';
+import { labelSprite, toast } from '../kit/play.js';
 import script from './script.js';
 import { setStyle } from '../../core/motion.js';
 import { strike } from '../../core/interact.js';
@@ -225,11 +225,19 @@ function callLabel(world) { // 양규 머리 위 "저기다!"
 // 성벽 방어 한 번(D-8): 학생은 성벽 위를 걷는다. 거란 병사가 사다리를 세우면 양규가 "저기다!" 하고 그쪽을 가리키고
 // (성벽 위 빛나는 원·화살표), 학생이 그 자리에 가까이 가면 사다리를 밀어낸다. 버튼도 멈춤도 없다.
 // 성공: 사다리 10개를 밀어내거나 45초 버티기. 실패: 사다리 3개가 꼭대기까지 올라옴. 시간은 월드 시계로 잰다.
+// 버틸수록 빨라진다(2026-11-05 선생님: 조금 더 어렵게). 쉬운 모드는 처음부터 끝까지 느리다
+export function wallPace(t, easy) {
+  if (easy) return { spawnEvery: 5, climbTime: 10 };
+  const k = Math.min(1, t / 40);
+  return { spawnEvery: 3.6 - 1.2 * k, climbTime: 7 - 2 * k };
+}
+const COMBO_GAP = 4; // 앞 사다리를 밀고 이 초 안에 또 밀면 연속
 const KEEP_CLEAR = 0.9, RUN_NEAR = 2.5, RUN_SPEED = 7; // 양규와 학생 사이를 이만큼 띄운다(몸이 겹치지 않게). 학생이 이만큼 가까이 따라오면 이 빠르기로 뛴다
 function wallDefense(ctx, easy) {
   const { world, hud, audio } = ctx;
   ctx.testHooks.wallAttempts = (ctx.testHooks.wallAttempts || 0) + 1;
-  const spawnEvery = easy ? 5 : 3.6, climbTime = easy ? 10 : 7, duration = 45;
+  const duration = 45;
+  let combo = 0, lastPush = -99, warned = false;
   resetLadders();
   scene.kingToCamp(); // 왕은 천막 앞에서 장군들과 지켜본다(D-63)
   world.bounds = WALL_BOUNDS;
@@ -248,7 +256,10 @@ function wallDefense(ctx, easy) {
     };
     const push = l => {
       blocked += 1; ctx.testHooks.wallPushed = (ctx.testHooks.wallPushed || 0) + 1;
-      audio.play('tap'); active.delete(l); falling.set(l, { k: 0, from: l.pivot.rotation.x });
+      combo = t - lastPush < COMBO_GAP ? combo + 1 : 1; lastPush = t;
+      ctx.testHooks.wallBestCombo = Math.max(ctx.testHooks.wallBestCombo || 0, combo);
+      if (combo >= 2) toast(ctx, `${combo}연속으로 밀어냈다!`, 'good');
+      audio.play(combo >= 2 ? 'correct' : 'tap'); active.delete(l); falling.set(l, { k: 0, from: l.pivot.rotation.x });
       scene.wallRings[scene.ladders.indexOf(l)].visible = false;
       gauge(l).visible = false; horde.pushed(l);
       if (!world.player.userData.act) strike(world.player, 'push'); // 두 손으로 사다리를 밀어낸다(준비 → 밀기 → 돌아오기, 2026-10-30 움직임 개선)
@@ -257,7 +268,9 @@ function wallDefense(ctx, easy) {
       if (done) return;
       t += dt;
       hud.setTimer(duration - t);
-      hud.setCounter(`밀어낸 사다리 ${blocked}/${NEED_PUSH} · 올라온 사다리 ${breaches}/3`);
+      hud.setCounter(`밀어낸 사다리 ${blocked}/${NEED_PUSH} · 성벽 ${'♥'.repeat(3 - breaches)}${'♡'.repeat(breaches)}`);
+      const { spawnEvery, climbTime } = wallPace(t, easy);
+      if (!easy && !warned && t >= 25) { warned = true; toast(ctx, '거란군이 더 몰려온다! 조금만 버텨라!', 'bad'); }
       if (t >= nextSpawn) {
         nextSpawn = t + spawnEvery;
         const free = scene.ladders.filter(l => !active.has(l) && !falling.has(l) && Math.abs(l.x - p.x) >= PUSH_R + 0.6);
@@ -286,7 +299,7 @@ function wallDefense(ctx, easy) {
         const k = Math.min(1, (a.t - RAISE_SECONDS) / climbTime);
         l.climber.position.set(0, k * (l.len - 0.3), 0.25); // 끝에 다다르면 성가퀴 위로 몸이 드러난다
         if (a.t >= RAISE_SECONDS + climbTime) {
-          breaches += 1; audio.play('wrong'); ctx.testHooks.wallBreaches = (ctx.testHooks.wallBreaches || 0) + 1;
+          breaches += 1; combo = 0; audio.play('wrong'); toast(ctx, `거란군이 성벽에 올라왔다! 남은 성벽 ${'♥'.repeat(Math.max(0, 3 - breaches))}`, 'bad'); ctx.testHooks.wallBreaches = (ctx.testHooks.wallBreaches || 0) + 1;
           active.delete(l); l.group.visible = false;
           scene.wallRings[scene.ladders.indexOf(l)].visible = false; gauge(l).visible = false;
           if (breaches >= 3) return finish(false);
@@ -316,7 +329,10 @@ function wallDefense(ctx, easy) {
         if (nx !== m.x && Math.sign(nx - m.x) === Math.sign(p.x - m.x) && Math.abs(nx - p.x) < KEEP_CLEAR) nx = m.x;
       }
       if (Math.abs(m.x - p.x) < KEEP_CLEAR) { const away = Math.sign(m.x - p.x) || 1; nx = clamp(m.x + away * run, WALL_BOUNDS.x0, WALL_BOUNDS.x1); }
-      if (nx !== m.x) setYanggyu(world, nx, WALK_Z, nx > m.x ? Math.PI / 2 : -Math.PI / 2);
+      // 성벽 끝에 몰려 더 비킬 곳이 없으면 성안 쪽 가장자리로 반걸음 비켜선다(2026-11-05: 사다리가 빨라져 끝에 몰리는 일이 생겼다)
+      const cornered = Math.abs(nx - p.x) < KEEP_CLEAR + 0.3 && (nx <= WALL_BOUNDS.x0 + 0.05 || nx >= WALL_BOUNDS.x1 - 0.05);
+      const nz = cornered ? Math.min(WALK_Z + 0.5, m.z + run) : Math.max(WALK_Z, m.z - run * 0.5);
+      if (nx !== m.x || nz !== m.z) setYanggyu(world, nx, nz, nx === m.x ? yg.mesh.rotation.y : nx > m.x ? Math.PI / 2 : -Math.PI / 2);
       else if (target) yg.mesh.rotation.y = Math.atan2(target.x - m.x, -14 - m.z);
       world.setGoal(target ? { x: target.x, z: WALK_Z } : null);
       if (blocked >= NEED_PUSH || t >= duration) finish(true);
@@ -560,7 +576,7 @@ export default {
     dialogue.close();
     await showHowTo(ctx.ui, script.wall.howto);
     input.enabled = true;
-    const a = await runWithRetries(ctx, easy => wallDefense(ctx, easy), { failHint: script.wall.failHint });
+    const a = await runWithRetries(ctx, easy => wallDefense(ctx, easy), { failHint: script.wall.failHint, easyAfter: 2 });
     input.enabled = false;
     await sayAll(dialogue, script.wall.done);
     dialogue.close();

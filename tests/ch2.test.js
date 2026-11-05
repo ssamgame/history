@@ -4,7 +4,7 @@ import { validateScript } from '../core/content.js';
 import { runChapter } from '../core/flow.js';
 import { CHAPTERS } from '../chapters/index.js';
 import ch2Script from '../chapters/ch2/script.js';
-import ch2, { yanggyuTalk } from '../chapters/ch2/chapter.js';
+import ch2, { yanggyuTalk, wallPace } from '../chapters/ch2/chapter.js';
 import { buildCh2Scene, WALK_Z } from '../chapters/ch2/scene.js';
 import { testWorld, touchSetup, touchBot, memSave, sleep } from './bot.js';
 
@@ -51,13 +51,13 @@ test('ch2: resume at minigame starts the wall defense', async () => {
   } finally { s.done(); }
 });
 
-test('ch2: failing the wall three times turns on easy mode', async () => {
+test('ch2: failing the wall twice turns on easy mode (2026-11-05: 조금 더 어렵게, 두 번 지면 쉽게)', async () => {
   const s = touchSetup(ch2Script.speakers);
-  const bot = touchBot(s, { answers, holdStill: () => (s.ctx.testHooks.wallAttempts || 0) <= 3 });
+  const bot = touchBot(s, { answers, holdStill: () => (s.ctx.testHooks.wallAttempts || 0) <= 2 });
   try {
     ch2.buildScene(s.w, s.ctx);
     const r = await ch2.minigame(s.ctx);
-    eq(s.ctx.testHooks.wallAttempts, 4);
+    eq(s.ctx.testHooks.wallAttempts, 3);
     eq(r.easyModeUsed, true);
   } finally { bot.stop(); s.done(); }
 }, { timeout: 150000 });
@@ -389,9 +389,19 @@ test('ch2: 성벽 방어 내내 양규와 학생이 겹치지 않는다(학생�
       const tx = into ? m.x : g ? g.x : p.x, dx = tx - p.x;
       if (into) bumped += 1;
       s.w.step(0.05, Math.abs(dx) > 0.15 ? { x: Math.sign(dx), z: 0 } : { x: 0, z: 0 }); // 조이스틱으로 걷는다(사람에게 막히는 것도 실제와 같다)
-      near = Math.min(near, Math.hypot(p.x - m.x, p.z - m.z));
+      const d = Math.hypot(p.x - m.x, p.z - m.z);
+      near = Math.min(near, d);
     }
     ok(bumped > 40, 'bumped');
     ok(near > 0.6, `가장 가까웠을 때 ${near.toFixed(2)}m`);
   } finally { s.done(); }
 }, { timeout: 60000 });
+
+// 2026-11-05 선생님: 2장 사다리 밀어내기를 더 재밌게(조금 더 어렵게) — 버틸수록 거란군이 빨리 몰려온다. 쉬운 모드는 그대로 느리다
+test('ch2 fun: the wall gets faster over time, easy mode stays slow', () => {
+  const a = wallPace(0, false), b = wallPace(40, false);
+  ok(b.spawnEvery < a.spawnEvery && b.climbTime < a.climbTime, 'faster later ' + JSON.stringify([a, b]));
+  ok(b.climbTime >= 4.5, 'still reachable at the end');
+  eq(wallPace(0, true), wallPace(40, true));
+  ok(wallPace(0, true).climbTime > a.climbTime);
+});
