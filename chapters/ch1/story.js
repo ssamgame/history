@@ -35,13 +35,13 @@ export function gangdongScene(ctx) {
     // 일꾼들이 돌을 안고 천천히 걸어가 성벽 앞에 놓으면 성벽이 한 켜씩 올라간다(두 번, 2026-10-31 선생님: 이동 빠르기를 줄인다)
     for (let n = 0; n < 2; n++) {
       ctx.dialogue.close();
-      await march(world, masons, 4.6, -2.7, 6.5);
+      await march(world, masons, 4.6, -2.7, 4.2); // 2026-11-05 선생님: 조금 더 빠르게(예전 6.5초)
       ctx.audio?.play?.('tap');
       const h0 = walls[0].scale.y, h1 = Math.min(1, h0 + 0.375);
       await wait(world, 0.5, k => walls.forEach(w => { w.scale.y = h0 + (h1 - h0) * ease(k); }));
       hook.rows = n + 1;
       if (n === 0) await say(L.lines[1], masons[1]);
-      if (n < 1) await march(world, masons, -4.6, 2.7, 5.5);
+      if (n < 1) await march(world, masons, -4.6, 2.7, 3.6);
     }
     walls.forEach(w => { w.scale.y = 1; w.userData.flags.forEach(f => { f.visible = true; }); }); board.visible = true; hook.built = true;
     masons.forEach(p => face(p, 0, -4));

@@ -189,11 +189,10 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
   const player = makePerson(LOOKS.player, { track: false, stable: true }); player.userData.straightArms = true; // 학생은 걸을 때 팔을 곧게(D-68)
   scene.add(player);
 
-  // 바닥 방향 화살표(2026-11-05 플레이 점검: 더 크고 밝게): 밝은 노란 화살촉 + 짧은 몸통, 테두리처럼 어두운 그림자 판
-  const goalArrow = new THREE.Group();
-  goalArrow.add(new THREE.Mesh(new THREE.ConeGeometry(0.55, 1.3, 3).rotateX(Math.PI / 2).translate(0, 0, 2.15), new THREE.MeshBasicMaterial({ color: 0xffd23a, transparent: true, opacity: 0.95, depthWrite: false })));
-  goalArrow.add(new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.06, 0.9).translate(0, 0, 1.1), new THREE.MeshBasicMaterial({ color: 0xffd23a, transparent: true, opacity: 0.9, depthWrite: false })));
-  goalArrow.add(new THREE.Mesh(new THREE.ConeGeometry(0.7, 1.55, 3).rotateX(Math.PI / 2).translate(0, -0.04, 2.15), new THREE.MeshBasicMaterial({ color: 0x3a2a10, transparent: true, opacity: 0.45, depthWrite: false })));
+  const goalArrow = new THREE.Mesh(
+    new THREE.ConeGeometry(0.35, 1, 3).rotateX(Math.PI / 2).translate(0, 0, 1.6),
+    new THREE.MeshBasicMaterial({ color: 0xd9a441, transparent: true, opacity: 0.85 }),
+  ); // 2026-11-05 선생님: 크고 밝게 바꾼 화살표를 예전 모양으로 되돌렸다
   goalArrow.visible = false;
   scene.add(goalArrow);
 
@@ -399,7 +398,7 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
       if (goal) {
         const dx = goal.x - p.x, dz = goal.z - p.z;
         goalArrow.visible = Math.hypot(dx, dz) > 3;
-        goalArrow.position.set(p.x, world.goalArrowLift ?? 0.15, p.z); goalArrow.scale.setScalar((world.goalArrowScale ?? 1) * (1 + 0.08 * Math.sin(elapsed * 5))); // 배를 탔을 때는 갑판 위로 크게(D-68)
+        goalArrow.position.set(p.x, world.goalArrowLift ?? 0.15, p.z); goalArrow.scale.setScalar(world.goalArrowScale ?? 1); // 배를 탔을 때는 갑판 위로 크게(D-68)
         goalArrow.rotation.y = Math.atan2(dx, dz);
       } else goalArrow.visible = false;
       for (const fn of [...updaters]) fn(dt, elapsed); // 도중에 해제해도 안전하도록 복사본을 돈다

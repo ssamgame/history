@@ -112,7 +112,7 @@ test('d62 고려1: 성벽 쌓는 백성은 돌을 안고 천천히 걷는다', a
   await mod.stories.gangdong(s.ctx);
   const h = s.ctx.testHooks.gangdong;
   ok(h.built, '성을 다 쌓았다');
-  ok(h.masonSpeed > 0.3 && h.masonSpeed <= 1.5, `일꾼 빠르기 ${h.masonSpeed?.toFixed(2)}m/s`);
+  ok(h.masonSpeed > 0.3 && h.masonSpeed <= 2.4, `일꾼 빠르기(2026-11-05 조금 빠르게) ${h.masonSpeed?.toFixed(2)}m/s`);
 }, { timeout: 40000 });
 
 // ── 고려 2장(거란 2차 침입) ──
