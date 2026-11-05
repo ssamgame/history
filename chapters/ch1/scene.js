@@ -149,19 +149,19 @@ export function buildCh1Scene(world) {
     mk(new THREE.BoxGeometry(8.4, 0.3, 6.4), 0x2f6b5e, px, 3.15, pz);
     hipRoof(11, 8.6, 2.4, 0x3d4846, px, 3.3, pz);
     mk(new THREE.BoxGeometry(2.4, 0.8, 1.2), 0x6b4a32, px, 0.9, pz - 0.6);
-    world.addCollider({ x: px - 2, z: pz, r: 3.3 }); world.addCollider({ x: px + 2, z: pz, r: 3.3 });
+    for (const dx of [-2.4, 0, 2.4]) world.addCollider({ x: px + dx, z: pz, r: 3.3 }); // 지휘소 마루 전체(기둥·네 귀퉁이까지, 2026-11-05 플레이 점검: 위로 걸어 지나갔다)
     flag(px - 4.6, pz + 3.6, 0xb8452f); flag(px + 4.6, pz + 3.6, 0xd9a441);
   }
   // 천막: 앞뒤가 세모인 맞배 천막(기둥과 줄). 자리와 부딪힘은 예전 그대로
   for (const [x, z] of [[10, 3], [15, -4], [-3, 8], [-17, 11], [17, 13], [-21, -1], [21, 4]]) {
     const g = new THREE.Group(); g.position.set(x, groundH(x, z), z); g.rotation.y = rand() * 0.6 - 0.3 + (x > 0 ? -0.4 : 0.4); L.add(g);
     tent(g, { color: 0xe6dcc3 });
-    world.addCollider({ x, z, r: 1.9 });
+    world.addCollider({ x, z, r: 2.35 }); // 천막 네 귀퉁이와 줄까지(3.2×3.4)
   }
   // 군량과 물자: 쌀가마 더미, 군량 수레, 창걸이(예전 상자 자리)
   const put = (fn, x, z, ry = 0, p = {}) => { const g = new THREE.Group(); g.position.set(x, groundH(x, z), z); g.rotation.y = ry; L.add(g); fn(g, p); return g; };
   put(BUILD.rice, 12.9, 6.8, 0.3, { n: 6 }); world.addCollider({ x: 12.9, z: 6.8, r: 1.4 });
-  put(cart, -6, 10, 0.8, { load: true }); world.addCollider({ x: -6, z: 10, r: 1.2 });
+  put(cart, -6, 10, 0.8, { load: true }); world.addCollider({ x: -6, z: 10, r: 1.5 }); world.addCollider({ x: -6 + Math.sin(0.8) * 1.6, z: 10 + Math.cos(0.8) * 1.6, r: 0.6 }); // 수레 몸과 앞 채
   put(spearRack, 19, 0, -Math.PI / 2); world.addCollider({ x: 19, z: 0, r: 0.9 });
   put(spearRack, -16, 6, Math.PI / 2); world.addCollider({ x: -16, z: 6, r: 0.9 });
   put(archeryTarget, -7, 27, Math.PI); world.addCollider({ x: -7, z: 27, r: 0.6 }); // 궁수가 연습하는 과녁
@@ -182,7 +182,7 @@ export function buildCh1Scene(world) {
   for (let i = 0; i < 7; i++) { const a = (i / 7) * Math.PI * 2; mk(new THREE.DodecahedronGeometry(0.28, 0), 0x77736a, fx + Math.cos(a) * 0.8, 0.15, fz + Math.sin(a) * 0.8); }
   for (let i = 0; i < 4; i++) mk(new THREE.CylinderGeometry(0.1, 0.12, 1.1, 5), 0x4e3826, fx + Math.cos(i * 1.6) * 0.25, 0.15, fz + Math.sin(i * 1.6) * 0.25).rotation.set(Math.PI / 2, i * 0.8, 0.3);
   const fire = makeFire({ size: 0.75, detail: q.particles }); fire.group.position.set(fx, 0.45, fz); fire.setLit(true); L.add(fire.group);
-  world.addCollider({ x: fx, z: fz, r: 1.1 });
+  world.addCollider({ x: fx, z: fz, r: 1.35 }); // 둘러친 돌까지
 
   // 나루터와 배, 빛나는 원
   mk(new THREE.BoxGeometry(2.4, 0.2, 5), 0x8a6a45, 8, 0.05, -16.6);
@@ -198,8 +198,10 @@ export function buildCh1Scene(world) {
   // 거란 진영 (강 건너편)
   const khitanGroup = new THREE.Group(); L.add(khitanGroup);
   const khitanCamp = new THREE.Group(); khitanGroup.add(khitanCamp); // 천막·깃발: 군대를 물릴 때 진영을 걷는다(D-7)
+  const yurtCols = [];
   const yurt = (x, z, s = 1) => {
     mk(new THREE.CylinderGeometry(2.2 * s, 2.2 * s, 1.7 * s, 9), 0x8f7556, x, 0.85 * s, z, khitanCamp);
+    yurtCols.push(world.addCollider({ x, z, r: 2.2 * s })); // 거란 천막도 부딪힌다(진영을 걷으면 함께 뺀다)
     mk(new THREE.ConeGeometry(2.5 * s, 1.5 * s, 9), 0x5e432c, x, 2.45 * s, z, khitanCamp);
   };
   yurt(0, -41, 1.5);
@@ -270,6 +272,7 @@ export function buildCh1Scene(world) {
   scene.startRetreat = () => {
     if (march.length) return scene.army;
     khitanCamp.visible = false;
+    for (const c of yurtCols) c.r = 0; // 걷은 천막 자리는 지나갈 수 있다
     mount(horse, sonn);
     [guards[0], horse, ...guards.slice(1)].forEach((o, i) => {
       const row = i < 2 ? i : 2 + Math.floor((i - 2) / 2);

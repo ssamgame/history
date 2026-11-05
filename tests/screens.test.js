@@ -232,19 +232,16 @@ test('title: 오른쪽에 다섯 시대가 진행과 함께 있고, 고른 시�
   eq(cards.map(c => c.dataset.course), ['goryeo', 'joseon', 'modern', 'colonial', 'present']);
   ok(cards[0].textContent.includes('2/6') && cards[0].textContent.includes('★5'), cards[0].textContent);
   eq(cards[0].getAttribute('aria-pressed'), 'true', '하던 시대가 처음부터 골라져 있다');
-  cards[1].click();
-  eq(cards[1].getAttribute('aria-pressed'), 'true'); eq(cards[0].getAttribute('aria-pressed'), 'false');
-  btn(el, '이어하기').click();
+  cards[1].click(); // 시대를 누르면 바로 그 편으로(이어하기)
   eq(await p, { action: 'continue', course: 'joseon' });
   el.remove();
 });
 
-test('title: 처음부터도 고른 시대로 시작한다', async () => {
+test('title: 기록이 없으면 시대를 누르자마자 그 시대로 처음부터 시작한다', async () => {
   const { COURSES } = await import('../chapters/index.js');
   const el = root();
   const p = showTitle(el, { savedName: '', hasProgress: false, storageOk: true, courses: COURSES, save: titleSave({}) });
   el.querySelector('[data-course="present"]').click();
-  btn(el, '처음부터').click();
   eq(await p, { action: 'new', course: 'present' });
   el.remove();
 });

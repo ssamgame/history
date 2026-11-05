@@ -77,7 +77,7 @@ function boot() {
       if (change.quality) { quality.set(change.quality); storage.set(PREF_QUALITY, change.quality); }
     });
     world.paused = false;
-    if (choice === 'map') { save.abandonCurrent(); location.reload(); } // 하던 장을 버리고 새로 열면 첫 화면 → 지도
+    if (choice === 'map') { const c = curMeta ? courseOfChapter(curMeta.id).id : save.data.course; save.abandonCurrent(); location.hash = `map=${c || ''}`; location.reload(); } // 하던 장을 버리고 다시 열어 첫 화면 없이 그 편의 장 선택 지도로(#map, 2026-11-05 플레이 점검: 첫 화면으로 갔다)
   };
   input.onMenu(openMenu);
   hud.menuBtn.addEventListener('click', openMenu);
@@ -102,6 +102,7 @@ function boot() {
     wasTalking = talking;
     hud.setTouchVisible(inChapter && !talking);
     world.step(dt, talking ? { x: 0, z: 0 } : input.move());
+    hud.setEdge(inChapter && !talking && world.camMode === 'follow' && input.enabled ? world.offscreenTarget() : null); // 목표·느낌표 인물이 화면 밖이면 가장자리 화살표
     if (perf) { const r0 = performance.now(); world.render(); perf.frame(raw * 1000, performance.now() - r0, world.renderer.info.render); perfPanel.tick(now); }
     else world.render();
     requestAnimationFrame(frame);
@@ -217,6 +218,12 @@ function boot() {
       const [sx, sz] = sc.start || [0, 19];
       world.player.position.set(sx, 0, sz); world.snapCamera(); input.enabled = true; inChapter = true;
       return;
+    }
+    const toMap = /^#map=(\w*)$/.exec(location.hash); // 메뉴 「장 선택으로」: 첫 화면을 건너뛰고 그 편 지도로(저장이 안 되는 기기에서도 편은 주소에 실어 간다)
+    if (toMap && courseById(toMap[1] || save.data.course)) {
+      history.replaceState(null, '', location.pathname + location.search);
+      save.setCourse(toMap[1] || save.data.course);
+      world.player.visible = false; await mapLoop(); return;
     }
     const hasProgress = !!(save.data.name || Object.keys(save.data.chapters).length || save.data.current);
     const cur = save.data.current && courseOfChapter(save.data.current.id).id; // 하다 만 장이 있는 시대

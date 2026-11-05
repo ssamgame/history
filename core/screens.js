@@ -35,7 +35,7 @@ export function showTitle(root, { savedName, hasProgress, storageOk, courses = [
       const results = save ? c.chapters.map(ch => save.chapterResult(ch.id)).filter(Boolean) : [];
       const stars = results.reduce((a, r) => a + (r.stars || 0), 0);
       return h('button', { class: 'title-course', type: 'button', 'data-course': c.id, 'aria-pressed': String(c.id === picked),
-        onclick: () => { picked = c.id; cards.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.course === picked))); } },
+        onclick: () => { picked = c.id; cards.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.course === picked))); done(hasProgress ? 'continue' : 'new'); } }, // 시대를 누르면 바로 그 편 장 선택으로(2026-11-05 플레이 점검: 선택 표시만 되어 헷갈렸다)
         h('span', { class: 'title-course-era' }, `${c.era}편`),
         h('b', { class: 'title-course-name' }, c.title),
         h('span', { class: 'title-course-progress' }, results.length ? `마친 장 ${results.length}/${c.chapters.length} · ★${stars}` : '아직 시작 전'));
@@ -261,7 +261,8 @@ export function createHud(root, { touch }) {
   const joyZone = h('div', { class: 'joyzone', hidden: true });
   const talkBtn = h('button', { class: 'talkbtn', type: 'button', hidden: true, disabled: true }, '대화');
   const fade = h('div', { class: 'fade' });
-  root.append(box, menuBtn, prompt, joyZone, talkBtn, fade, notice, bigTimer, bigWait);
+  const edge = h('div', { class: 'hud-edge', hidden: true, 'aria-hidden': 'true' }, h('span', { class: 'hud-edge-tip' }, '▶')); // 화면 밖 목표를 가리키는 가장자리 화살표(2026-11-05 플레이 점검)
+  root.append(box, menuBtn, prompt, joyZone, talkBtn, fade, notice, bigTimer, bigWait, edge);
   let noticeTimer = null;
   let camera = null;
   let lastList = null, lastIdx = -1; // 퀘스트 목록에서 마지막으로 보인 차례
@@ -271,7 +272,7 @@ export function createHud(root, { touch }) {
     show(meta) { // 화면 위 "나: …" 줄은 2026-10-27 선생님 말씀으로 뺐다
       chapter.textContent = `${meta.no}장 · ${meta.years} ${meta.event}`;
       box.hidden = false; menuBtn.hidden = false; joyZone.hidden = talkBtn.hidden = !touch; },
-    hide() { box.hidden = true; menuBtn.hidden = true; prompt.hidden = true; joyZone.hidden = talkBtn.hidden = true; notice.hidden = true; found.hidden = true; bigTimer.hidden = true; bigWait.hidden = true; },
+    hide() { edge.hidden = true; box.hidden = true; menuBtn.hidden = true; prompt.hidden = true; joyZone.hidden = talkBtn.hidden = true; notice.hidden = true; found.hidden = true; bigTimer.hidden = true; bigWait.hidden = true; },
     // 잠깐 뜨는 알림(새 장소 발견 등): 화면 위 가운데, 누르지 않아도 사라진다
     notice(text) { notice.textContent = text; notice.hidden = false; if (!box.hidden) notice.style.top = `${Math.round(box.getBoundingClientRect().bottom + 8)}px`; /* 목표 상자 바로 아래 */ clearTimeout(noticeTimer); noticeTimer = setTimeout(() => { notice.hidden = true; }, 2800); },
     // 예전 '살펴본 안내판 a/b': 퀘스트 목록으로 합쳐 더는 보이지 않는다(C-01)
@@ -294,6 +295,7 @@ export function createHud(root, { touch }) {
     // 기다리기(정류장에서 손님이 내리는 중 등): 화면 위 가운데에 크게 (null이면 숨김)
     setWait(text, { center = false } = {}) { bigWait.hidden = text == null; bigWait.classList.toggle('center', text != null && center); if (text != null) bigWait.textContent = text; }, // center: 화면 한가운데에 크게
     setCounter(text) { counter.hidden = text == null; if (text != null) counter.textContent = text; },
+    setEdge(t) { edge.hidden = !t; if (t) { edge.style.left = `${(t.x * 100).toFixed(1)}%`; edge.style.top = `${(t.y * 100).toFixed(1)}%`; edge.style.transform = `translate(-50%, -50%) rotate(${t.angle.toFixed(3)}rad)`; } },
     setTalkEnabled(b) { talkBtn.disabled = !b; },
     setTouchVisible(b) { joyZone.hidden = talkBtn.hidden = !(touch && b); },
     // label: 말풍선 글(없으면 'E 대화하기'). 문·물건 앞에서는 '문으로 들어가기' 등으로 바꾼다

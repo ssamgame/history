@@ -6,6 +6,8 @@ import { enterThroughGate } from '../kit/gate.js';
 import { gangdongScene } from './story.js';
 import { waitInteract } from '../../core/portal.js';
 import * as THREE from 'three';
+import { labelSprite } from '../../core/people.js';
+import { toast } from '../kit/play.js';
 
 export const START = [0, 19];
 export const INTRO_FROM = [0, 36]; // 장 시작 장면: 진영 밖 길(걷는 곳 z1=22 바깥)
@@ -52,8 +54,11 @@ function walkBounds(p) {
 export function followSeohui(ctx) {
   const { world, input } = ctx;
   const sh = world.npcs.get('seohui'), m = sh.mesh.position, path = scene.leadPath, sp = scene.negotiationSpot;
-  let i = 0, waiting = false;
+  let i = 0, waiting = false, riverT = 0, hintT = 0;
   for (const id of [...PEOPLE, 'seohui']) world.npcs.get(id).mark.visible = false;
+  // 기다릴 때 서희 머리 위 「따라와!」(2026-11-05 플레이 점검: 멈춘 건지 길을 잃은 건지 알기 어려웠다)
+  const call = labelSprite('따라와!'); call.position.set(0, 3.3, 0); call.visible = false; sh.mesh.add(call);
+  ctx.testHooks && (ctx.testHooks.follow = { waited: 0, riverHint: 0 });
   ctx.setGoal(script.goals[2]);
   input.enabled = true;
   return new Promise(resolve => {
@@ -62,7 +67,13 @@ export function followSeohui(ctx) {
       world.bounds = walkBounds(p);
       if (i < path.length) {
         const dp = Math.hypot(p.x - m.x, p.z - m.z);
-        if (waiting ? dp < WAIT_NEAR : dp > WAIT_FAR) waiting = !waiting;
+        if (waiting ? dp < WAIT_NEAR : dp > WAIT_FAR) { waiting = !waiting; if (waiting && ctx.testHooks?.follow) ctx.testHooks.follow.waited += 1; }
+        call.visible = waiting; call.position.y = 3.3 + Math.sin(performance.now() / 180) * 0.06;
+        // 강가에서 다리 아닌 곳으로 밀고 있으면 「다리로 건너자」(다리 앞 강가에서 막혀 서 버렸다)
+        const c = scene.campBounds, br = scene.bridge, mv = input.move();
+        if (p.z < c.z0 + 0.4 && Math.abs(p.x - br.x) >= br.half && mv.z < -0.3) riverT += dt; else riverT = 0;
+        hintT -= dt;
+        if (riverT > 0.6 && hintT <= 0) { toast(ctx, '강은 다리로 건너자! 서희를 따라 다리 쪽으로'); hintT = 5; riverT = 0; if (ctx.testHooks?.follow) ctx.testHooks.follow.riverHint += 1; }
         if (waiting) sh.mesh.rotation.y = Math.atan2(p.x - m.x, p.z - m.z);
         else {
           let dx = path[i][0] - m.x, dz = path[i][1] - m.z;
@@ -76,7 +87,7 @@ export function followSeohui(ctx) {
       }
       world.setGoal({ x: sp.player[0], z: sp.player[1] });
       if (Math.hypot(p.x - sp.player[0], p.z - sp.player[1]) < 1.6) {
-        off(); input.enabled = false; scene.ring.visible = false; world.setGoal(null);
+        off(); call.removeFromParent(); input.enabled = false; scene.ring.visible = false; world.setGoal(null);
         p.set(sp.player[0], 0, sp.player[1]); world.player.rotation.y = sp.player[2];
         resolve();
       }

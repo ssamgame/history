@@ -189,14 +189,15 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
   const player = makePerson(LOOKS.player, { track: false, stable: true }); player.userData.straightArms = true; // 학생은 걸을 때 팔을 곧게(D-68)
   scene.add(player);
 
-  const goalArrow = new THREE.Mesh(
-    new THREE.ConeGeometry(0.35, 1, 3).rotateX(Math.PI / 2).translate(0, 0, 1.6),
-    new THREE.MeshBasicMaterial({ color: 0xd9a441, transparent: true, opacity: 0.85 }),
-  );
+  // 바닥 방향 화살표(2026-11-05 플레이 점검: 더 크고 밝게): 밝은 노란 화살촉 + 짧은 몸통, 테두리처럼 어두운 그림자 판
+  const goalArrow = new THREE.Group();
+  goalArrow.add(new THREE.Mesh(new THREE.ConeGeometry(0.55, 1.3, 3).rotateX(Math.PI / 2).translate(0, 0, 2.15), new THREE.MeshBasicMaterial({ color: 0xffd23a, transparent: true, opacity: 0.95, depthWrite: false })));
+  goalArrow.add(new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.06, 0.9).translate(0, 0, 1.1), new THREE.MeshBasicMaterial({ color: 0xffd23a, transparent: true, opacity: 0.9, depthWrite: false })));
+  goalArrow.add(new THREE.Mesh(new THREE.ConeGeometry(0.7, 1.55, 3).rotateX(Math.PI / 2).translate(0, -0.04, 2.15), new THREE.MeshBasicMaterial({ color: 0x3a2a10, transparent: true, opacity: 0.45, depthWrite: false })));
   goalArrow.visible = false;
   scene.add(goalArrow);
 
-  const camTarget = new THREE.Vector3();
+  const camTarget = new THREE.Vector3(), edgeV = new THREE.Vector3();
   const tmp = new THREE.Vector3();
   const updaters = [];
   let goal = null, elapsed = 0, fit = null, lastPP = null;
@@ -317,6 +318,18 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
     },
     setGoal(target) { goal = target; },
     getGoal() { return goal; },
+    // 가리킬 곳(목표, 없으면 가장 가까운 느낌표 인물)이 화면 밖이면 화면 가장자리 화살표 자리 { x, y, angle }(0~1 화면 비율), 화면 안이면 null
+    offscreenTarget() {
+      let t = goal ? { x: goal.x, z: goal.z } : null;
+      if (!t) { let best = Infinity; for (const n of world.npcs.values()) if (n.mark.visible && !n.spot) { const d = n.mesh.position.distanceTo(player.position); if (d < best) { best = d; t = { x: n.mesh.position.x, z: n.mesh.position.z }; } } }
+      if (!t) return null;
+      edgeV.set(t.x, 1.6, t.z).project(camera);
+      const behind = edgeV.z > 1, inside = !behind && Math.abs(edgeV.x) < 0.92 && Math.abs(edgeV.y) < 0.86;
+      if (inside) return null;
+      let x = edgeV.x, y = edgeV.y; if (behind) { x = -x; y = -Math.abs(y) - 1; }
+      const a = Math.atan2(y, x), k = Math.min(0.88 / Math.abs(Math.cos(a)) || 9, 0.8 / Math.abs(Math.sin(a)) || 9);
+      return { x: 0.5 + Math.cos(a) * k / 2, y: 0.5 - Math.sin(a) * k / 2, angle: -a };
+    },
     // 대화 카메라: 플레이어 어깨 너머로 말하는 인물의 얼굴이 보이도록 다가간다. 끝나면 camMode를 'follow'로.
     setTalkCamera(npcMesh) {
       talkAt.copy(npcMesh.position);
@@ -379,13 +392,14 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
       animateWalk(player, moving || (mv > 0.12 && mv < 8), dt); // 장이 학생을 몇 걸음 옮길 때(walkTo)도 다리를 움직인다(미끄러지듯 떠가지 않게)
       for (const n of world.npcs.values()) if (n.mark.visible) { // 카메라 바로 앞(2.5m 안)의 표시는 화면을 덮으니 줄여 숨긴다(2026-11-04 플레이 점검)
         n.mark.userData.s0 ??= n.mark.scale.x; n.mark.getWorldPosition(markV);
-        n.mark.scale.setScalar(markV.distanceTo(camera.position) < 2.5 ? 0.001 : n.mark.userData.s0);
+        const talkingTo = world.camMode === 'talk' && Math.hypot(n.mesh.position.x - talkAt.x, n.mesh.position.z - talkAt.z) < 0.05; // 대화하는 동안 그 사람의 느낌표는 숨긴다(화면 위에 잘려 남았다, 2026-11-05)
+        n.mark.scale.setScalar(talkingTo || markV.distanceTo(camera.position) < 2.5 ? 0.001 : n.mark.userData.s0);
       }
       for (const n of world.npcs.values()) if (n.mark.visible) n.mark.position.y = (n.spot ? (n.mesh.userData.markY ?? 3.1) : 3.5 + (n.mesh.userData.seatLift || 0)) + Math.sin(elapsed * 3) * 0.12; // 높이 앉은 사람(단상 위 세종)은 머리 위로(D-67: 관 속에 묻혀 안 보였다)
       if (goal) {
         const dx = goal.x - p.x, dz = goal.z - p.z;
         goalArrow.visible = Math.hypot(dx, dz) > 3;
-        goalArrow.position.set(p.x, world.goalArrowLift ?? 0.15, p.z); goalArrow.scale.setScalar(world.goalArrowScale ?? 1); // 배를 탔을 때는 갑판 위로 크게(D-68)
+        goalArrow.position.set(p.x, world.goalArrowLift ?? 0.15, p.z); goalArrow.scale.setScalar((world.goalArrowScale ?? 1) * (1 + 0.08 * Math.sin(elapsed * 5))); // 배를 탔을 때는 갑판 위로 크게(D-68)
         goalArrow.rotation.y = Math.atan2(dx, dz);
       } else goalArrow.visible = false;
       for (const fn of [...updaters]) fn(dt, elapsed); // 도중에 해제해도 안전하도록 복사본을 돈다

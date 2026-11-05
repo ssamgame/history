@@ -453,3 +453,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .intro-sub-text { margin: 0; font-size: clamp(17px, 2.4vw, 21px); line-height: 1.6; word-break: keep-all; }
 .intro-tap { display: block; text-align: right; font-size: 13px; color: rgba(255,255,255,.6); }
 .intro-skip { position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); top: calc(9vh + 12px); min-height: 48px; background: rgba(27,31,29,.85); color: var(--hanji); border: 1px solid var(--gold); }
+
+/* 화면 밖 목표를 가리키는 가장자리 화살표(2026-11-05): 가리키는 쪽으로 돌아가며 살짝 맥박친다 */
+.hud-edge { position: fixed; z-index: 11; width: 54px; height: 54px; border-radius: 50%; background: rgba(27,31,29,.7); border: 3px solid #ffd23a; display: grid; place-items: center; pointer-events: none; animation: edgePulse 1s ease-in-out infinite alternate; }
+.hud-edge-tip { color: #ffd23a; font-size: 28px; line-height: 1; transform: translateX(2px); }
+@keyframes edgePulse { from { box-shadow: 0 0 0 0 rgba(255,210,58,.5); } to { box-shadow: 0 0 0 8px rgba(255,210,58,0); } }
+@media (prefers-reduced-motion: reduce) { .hud-edge { animation: none; } }
