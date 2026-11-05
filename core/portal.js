@@ -114,12 +114,12 @@ export function makePortal(world, { x, z, ry = 0, name, grand = false }) {
 
 // 그 자리(pos)에 가서 E를 누를 때까지 기다린다(C-05). quest: 퀘스트 목록에 띄울 글, label: 말풍선 글.
 // mark: 그 자리 위에 띄울 느낌표(이미 인물 머리 위 표시가 있으면 false). 테스트 봇은 바닥 화살표(world goal)를 따라가 누른다.
-export function waitInteract(ctx, { pos, quest = null, label = '시작하기', r = 2.8, mark = true, markY = 3.2 }) {
+export function waitInteract(ctx, { pos, quest = null, label = '시작하기', r = 2.8, mark = true, markY = 3.2, markAt = pos }) { // markAt: 느낌표·화살표 자리(닿는 범위 가운데 pos와 다를 때, 예: 건물 앞)
   const { world, hud } = ctx;
   if (quest) ctx.setGoal(quest);
-  world.setGoal({ x: pos.x, z: pos.z });
+  world.setGoal({ x: markAt.x, z: markAt.z });
   let sprite = null;
-  if (mark) { sprite = markerSprite('!'); sprite.position.set(pos.x, markY, pos.z); world.level.add(sprite); }
+  if (mark) { sprite = markerSprite('!'); sprite.position.set(markAt.x, markY, markAt.z); world.level.add(sprite); }
   const wasInput = ctx.input.enabled;
   ctx.input.enabled = true;
   if (world.camMode !== 'follow') world.camMode = 'follow';
@@ -131,7 +131,7 @@ export function waitInteract(ctx, { pos, quest = null, label = '시작하기', r
       if (sprite) sprite.position.y = markY + Math.sin(t * 3) * 0.12;
       const busy = ctx.dialogue?.isOpen?.();
       const ok = near() && !busy;
-      hud.setPrompt(ok ? new THREE.Vector3(pos.x, 0, pos.z) : null, label);
+      hud.setPrompt(ok ? new THREE.Vector3(markAt.x, 0, markAt.z) : null, label);
       hud.setTalkEnabled(ok);
     });
     const unbind = ctx.onAction(() => {

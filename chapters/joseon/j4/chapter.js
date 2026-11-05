@@ -29,7 +29,7 @@ function markPort(ctx, heard) {
   const next = world.npcs.get(PEOPLE.find(id => !heard.has(id)) || 'yisunsin').mesh.position;
   world.setGoal({ x: next.x, z: next.z });
   ctx.setGoal(script.goals[heard.size === PEOPLE.length ? 1 : 0]);
-  hud.setCounter(`들은 이야기 ${heard.size}/${PEOPLE.length}`);
+  hud.setCounter(heard.size < PEOPLE.length ? `들은 이야기 ${heard.size}/${PEOPLE.length}` : null); // 다 들으면 수를 숨긴다(2026-11-05: 퀘스트가 바뀐 뒤에도 2/2가 남았다)
 }
 export function portTalk(id, heard) {
   const n = script.npc[id];

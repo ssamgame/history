@@ -162,6 +162,7 @@ export function buildJ3Scene(world) {
     dialAt: DIAL, gaugeAt: GAUGE, gaugeStand: [GAUGE[0], GAUGE[1] + 4],
     // 다가가 살펴보는 자리(C-05): 앙부일구·보루각·측우기 바로 앞(학생 쪽)
     dialFront: { x: DIAL[0], z: DIAL[1] + 2.4 }, dialStand: [DIAL[0], DIAL[1] + 2.6],
+    dialSpot: { x: DIAL[0], z: DIAL[1], r: 3.2 }, clockSpot: { x: 9, z: -4, r: 6.6 }, gaugeSpot: { x: GAUGE[0], z: GAUGE[1], r: 3.1 }, // 2026-11-05: 기구 둘레 어디서든 닿게(몸이 닿는 거리 + 1m 남짓)
     clockFront: { x: 9, z: 1.8 }, gaugeFront: { x: GAUGE[0], z: GAUGE[1] + 2.4 },
     setRain(on) { rain.points.visible = on; },
     ringClock() { ring = 3; },

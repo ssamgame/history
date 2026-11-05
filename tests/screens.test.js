@@ -1,5 +1,5 @@
 import { test, eq, ok } from './harness.js';
-import { showTitle, askName, showMap, showSessionCard, showMenu, showChapterResult } from '../core/screens.js';
+import { showTitle, askName, showMap, showSessionCard, showMenu, showChapterResult, createHud } from '../core/screens.js';
 import { CHAPTERS, SESSIONS } from '../chapters/index.js';
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -126,7 +126,7 @@ test('screens: session card lists chapters with stars and wrong quiz answers', a
 
 test('screens: title button is really clickable with HUD layers on top', async () => {
   const ui = document.getElementById('ui');
-  const { createHud } = await import('../core/screens.js');
+
   const hud = createHud(ui, { touch: true });
   const p = showTitle(ui, { savedName: '', hasProgress: false, storageOk: true });
   const b = btn(ui, '처음부터');
@@ -287,7 +287,7 @@ test('portrait: 휴대폰 세로로 들어도 「가로로 돌려 주세요」 �
 
 // 2026-10-27 선생님: 장 시작 카드의 "이번 장의 나" 상자와 화면 위 "나: …" 줄을 모든 장에서 뺀다
 test('screens: intro card and hud show no "이번 장의 나" box or "나:" line', async () => {
-  const { showIntroCard, createHud } = await import('../core/screens.js');
+  const { showIntroCard } = await import('../core/screens.js');
   const r = root();
   const role = { name: '고려의 젊은 병사', does: '진영을 둘러본다', lookOpts: 'soldier' };
   const done = showIntroCard(r, CHAPTERS[0], [{ text: '줄거리 한 문단.' }], role);
@@ -324,4 +324,22 @@ test('title D-11-2: one short controls line (walk and talk) on the first screen'
   ok(t.includes('걷기') && t.includes('방향키') && t.includes('WASD') && t.includes('화면 왼쪽'), t);
   ok(t.includes('말 걸기') && t.includes('대화') && t.includes('스페이스'), t);
   ui.remove();
+});
+
+test('hud 11-05: 지금 퀘스트도 진행 수도 없으면 빈 퀘스트 상자를 숨긴다(조선 3장·고려 4장 도입 직후)', () => {
+  const root = document.createElement('div'); document.body.appendChild(root);
+  try {
+    const hud = createHud(root, { touch: false });
+    const box = root.querySelector('.hud-goal');
+    hud.setGoal(null);
+    ok(box.hidden, '처음엔 숨김');
+    hud.setGoal('가 보자', [1, 2], ['가 보자', '나']);
+    ok(!box.hidden, '퀘스트가 생기면 보임');
+    hud.setGoal(null, null, ['가 보자', '나']);
+    ok(box.hidden, '퀘스트가 없어지면 다시 숨김');
+    hud.setCounter('지은 것 1/3');
+    ok(!box.hidden, '진행 수만 있어도 보임');
+    hud.setCounter(null);
+    ok(box.hidden, '진행 수도 없어지면 숨김');
+  } finally { root.remove(); }
 });

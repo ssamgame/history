@@ -156,6 +156,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .hud[hidden] { display: none; }
 .hud-chapter { font-size: 13px; color: var(--gold); }
 .hud-goal { display: flex; gap: 8px; align-items: flex-start; font-size: 16px; line-height: 1.4; }
+.hud-goal[hidden] { display: none; }
 .quest-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; min-width: 0; } /* 퀘스트 목록(C-01) */
 .quest.done { font-size: 13px; color: rgba(242,234,217,.6); }
 .quest.done::before { content: '✓ '; color: #9fd37a; }

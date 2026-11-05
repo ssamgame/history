@@ -8,7 +8,7 @@ export function leadWalk(ctx, { id, path, stand, ring = null, face = Math.PI, sp
   const n = world.npcs.get(id), m = n.mesh.position;
   const r0 = n.collider.r; n.collider.r = 0.3; // 좁은 곳에서 학생 길을 덜 막게 작게(학생 몸 0.4와 합쳐 0.7m 띄움, 인물이 학생 몸 둘레로 비켜 돈다). 끝나면 되돌린다
   n.mark.visible = false;
-  let i = 0, waiting = false;
+  let i = 0, waiting = false, best = Infinity, stuck = 0; // best·stuck: 다음 길점에 2초 넘게 더 가까워지지 못하면 그 길점으로 옮긴다(2026-11-05 한양 터 둘러보기에서 학생 몸 둘레만 돌다 멈췄다)
   input.enabled = true;
   const setY = () => { if (heightAt) m.y = heightAt(m.x, m.z); };
   return new Promise(resolve => {
@@ -21,7 +21,8 @@ export function leadWalk(ctx, { id, path, stand, ring = null, face = Math.PI, sp
         else {
           let dx = path[i][0] - m.x, dz = path[i][1] - m.z;
           const d = Math.hypot(dx, dz), step = speed * dt;
-          if (d <= step) { world.moveNpc(id, path[i][0], path[i][1], n.mesh.rotation.y); i += 1; }
+          if (d < best - 0.1) { best = d; stuck = 0; } else stuck += dt;
+          if (d <= step || stuck > 2) { world.moveNpc(id, path[i][0], path[i][1], n.mesh.rotation.y); i += 1; best = Infinity; stuck = 0; }
           else { dx /= d; dz /= d; world.moveNpc(id, m.x + dx * step, m.z + dz * step, Math.atan2(dx, dz)); }
           setY();
           if (i === path.length) {

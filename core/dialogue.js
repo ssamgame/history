@@ -2,6 +2,8 @@
 import { portraitURL } from './faces.js';
 
 const NARR = { name: '해설', mark: '史', color: '#5a5248' };
+// 마우스로 누른 단추에 키보드 초점이 남으면 방향키가 게임으로 가지 않을 수 있다(2026-11-05 선생님 점검): 초점을 풀고 게임 창으로 되돌린다
+export function releaseFocus() { const a = document.activeElement; if (a && a !== document.body && a.blur && !/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) a.blur(); try { window.focus(); } catch { /* 없음 */ } }
 const CLICK_GUARD_MS = 250; // 선택지가 열린 직후의 탭은 앞 대사를 넘기려던 탭이므로 무시
 
 // onSay(line): 대사가 나올 때마다 부른다, onClose(): 대화창이 닫힐 때
@@ -85,7 +87,7 @@ export function createDialogue(root, speakers, { typeMs = 26, reduceMotion = fal
           // 키보드 엔터처럼 포인터 없는 클릭(detail 0)은 열린 직후만 막는다.
           const pointerTap = e.detail > 0;
           if (pointerTap ? downAt < openedAt : performance.now() - openedAt < CLICK_GUARD_MS) return;
-          dialogue.pick(i);
+          dialogue.pick(i); releaseFocus();
         });
         choicesEl.appendChild(b);
       });
@@ -129,7 +131,7 @@ export function createDialogue(root, speakers, { typeMs = 26, reduceMotion = fal
     if (i < choicesEl.children.length) dialogue.pick(i);
   };
   window.addEventListener('keydown', onKey);
-  el.addEventListener('click', () => { if (advanceFn) advanceFn(); });
+  el.addEventListener('click', () => { releaseFocus(); if (advanceFn) advanceFn(); });
 
   const dialogue = {
     say, choose, ask, quiz,
@@ -137,7 +139,7 @@ export function createDialogue(root, speakers, { typeMs = 26, reduceMotion = fal
     pick(i) { if (pickFn && !choicesEl.children[i]?.disabled) pickFn(i); }, // 막아 둔(이미 틀린) 답은 고를 수 없다
     isOpen() { return !el.hidden; },
     isChoosing() { return !!pickFn; },
-    close() { clearInterval(timer); timer = null; advanceFn = pickFn = null; el.hidden = true; if (onClose) onClose(); },
+    close() { clearInterval(timer); timer = null; advanceFn = pickFn = null; el.hidden = true; releaseFocus(); if (onClose) onClose(); },
     dispose() { dialogue.close(); window.removeEventListener('keydown', onKey); el.remove(); },
   };
   return dialogue;

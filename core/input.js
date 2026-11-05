@@ -59,6 +59,8 @@ export function createInput({ target = window, joyZone, actionButton }) {
   target.addEventListener('keydown', onKeyDown);
   target.addEventListener('keyup', onKeyUp);
   target.addEventListener('blur', onBlur);
+  const onClickBtn = e => { const b = e.target?.closest?.('button'); if (b && e.detail > 0) setTimeout(() => { if (document.activeElement === b) b.blur(); }, 0); }; // 마우스·손가락으로 누른 단추는 초점을 풀어 방향키가 게임으로 가게(2026-11-05)
+  document.addEventListener('click', onClickBtn, true);
   joyZone.addEventListener('pointerdown', onDown);
   joyZone.addEventListener('pointermove', onMove);
   joyZone.addEventListener('pointerup', endJoy);
@@ -87,6 +89,7 @@ export function createInput({ target = window, joyZone, actionButton }) {
       target.removeEventListener('keydown', onKeyDown);
       target.removeEventListener('keyup', onKeyUp);
       target.removeEventListener('blur', onBlur);
+      document.removeEventListener('click', onClickBtn, true);
       joyZone.removeEventListener('pointerdown', onDown);
       joyZone.removeEventListener('pointermove', onMove);
       joyZone.removeEventListener('pointerup', endJoy);

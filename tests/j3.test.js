@@ -122,3 +122,30 @@ test('j3 D-30: tap the hour the shadow points at, the 자격루 plays as one sce
     eq(DIAL_ROUNDS.length, 3);
   } finally { off(); bot.stop(); s.done(); }
 }, { timeout: 150000 });
+
+// ---- 2026-11-05 선생님 플레이 점검(ego browser) ----
+test('j3 11-05: 앙부일구·자격루·측우기는 둘레 어느 쪽에서 다가가도 닿는다(E 표시가 뜬다)', async () => {
+  const s = touchSetup(j3Script.speakers);
+  try {
+    const sc = j3.buildScene(s.w, s.ctx);
+    j3.enterStage(s.ctx, 'minigame');
+    let label = null; const sp = s.hud.setPrompt.bind(s.hud); s.hud.setPrompt = (pos, l) => { label = pos ? (l || 'talk') : null; return sp(pos, l); };
+    const pending = j3.minigame(s.ctx); pending.catch(() => {});
+    for (const key of ['dialSpot', 'clockSpot', 'gaugeSpot']) {
+      const c = sc[key]; ok(c, key);
+      const col = s.w.colliders.filter(k => k.r > 0).reduce((b, k) => { const d = Math.hypot(k.x - c.x, k.z - c.z); return d < b.d ? { k, d } : b; }, { k: null, d: Infinity }).k;
+      for (let a = 0; a < 8; a++) {
+        const ang = a * Math.PI / 4, R = col.r + 0.45, x = col.x + Math.sin(ang) * R, z = col.z + Math.cos(ang) * R;
+        ok(Math.hypot(x - c.x, z - c.z) < c.r, `${key} ${a * 45}°: 몸이 닿은 자리에서 닿는다`);
+      }
+    }
+    const c = sc.dialSpot, p = s.w.player.position; // 실제로 앙부일구 뒤(북쪽)에 붙어 서면 E 표시가 뜬다
+    p.x = c.x; p.z = c.z - 2.15; for (let i = 0; i < 10; i++) { s.w.step(0.05, { x: 0, z: 0 }); await Promise.resolve(); }
+    ok(label === '앙부일구 살펴보기', `뒤쪽에서 표시: ${label}`);
+  } finally { s.done(); }
+}, { timeout: 60000 });
+
+test('j3 11-05: 장영실을 두 번째로 만나도 맞는 첫 마디(「여러 기구를 보고 왔구나」를 쓰지 않는다)', () => {
+  const second = townTalk('jangyeongsil', new Set(['commoner']));
+  ok(!second[0].text.includes('여러'), second[0].text);
+});

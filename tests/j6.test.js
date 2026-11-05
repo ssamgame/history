@@ -355,3 +355,22 @@ test('j6 D-30 J-05: hold E or the big button to pull; letting go stops and slowl
     window.dispatchEvent(new PointerEvent('pointerup', { pointerId: 9 }));
   } finally { s.done(); }
 });
+
+// ---- 2026-11-05 선생님 플레이 점검(ego browser) ----
+test('j6 11-05: 두 사람을 다 들으면 「들은 이야기」 수가 사라지고, 관리에게 다시 말을 걸면 정조께 가라고 한다', async () => {
+  const s = touchSetup(j6Script.speakers);
+  const bot = touchBot(s, { answers });
+  let goal = null, counter = null, bad = false;
+  const sg = s.ctx.setGoal; s.ctx.setGoal = t => { goal = t; return sg(t); };
+  const sc = s.hud.setCounter.bind(s.hud); s.hud.setCounter = t => { counter = t; return sc(t); };
+  try {
+    j6.buildScene(s.w, s.ctx);
+    j6.enterStage(s.ctx, 'explore');
+    const off = s.w.onUpdate(() => { if (goal === j6Script.goals[1] && counter && counter.startsWith('들은')) bad = true; });
+    await j6.explore(s.ctx);
+    off();
+    ok(!bad, '정조에게 가는 동안 「들은 이야기 2/2」가 남지 않는다');
+  } finally { bot.stop(); s.done(); }
+  const again = yardTalk('official', new Set(['official', 'worker']));
+  ok(again.some(l => /전하|정조/.test(l.text)) && !again.some(l => l.text.includes('일꾼들에게도 가')), `다 들은 뒤 관리의 말: ${again.map(l => l.text).join(' ')}`);
+}, { timeout: 90000 });

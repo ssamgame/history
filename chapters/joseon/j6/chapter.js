@@ -28,11 +28,11 @@ function markYard(ctx, heard) {
   const next = world.npcs.get(PEOPLE.find(id => !heard.has(id)) || 'jeongjo').mesh.position;
   world.setGoal({ x: next.x, z: next.z });
   ctx.setGoal(script.goals[all ? 1 : 0]);
-  hud.setCounter(`들은 이야기 ${heard.size}/${PEOPLE.length}`);
+  hud.setCounter(heard.size < PEOPLE.length ? `들은 이야기 ${heard.size}/${PEOPLE.length}` : null); // 다 들으면 수를 숨긴다(2026-11-05: 퀘스트가 바뀐 뒤에도 2/2가 남았다)
 }
 export function yardTalk(id, heard) {
   const n = script.npc[id];
-  if (heard.has(id)) return n.later;
+  if (heard.has(id)) return PEOPLE.every(k => heard.has(k)) && n.done ? n.done : n.later; // 다 들었으면 다음 할 일(정조께 가기)을 말한다
   return PEOPLE.some(k => k !== id && heard.has(k)) ? [n.bridge, ...n.first] : n.first;
 }
 

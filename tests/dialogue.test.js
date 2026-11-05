@@ -131,3 +131,20 @@ test('dialogue: a tap that started before the choices opened is ignored even aft
   eq(picked, 0);
   } finally { done(); }
 });
+
+test('dialogue 11-05: 대화창을 누르거나 닫으면 단추에 남은 키보드 초점을 풀어 방향키가 게임으로 간다', async () => {
+  const { root, d, q, done } = setup();
+  try {
+    const btn = document.createElement('button'); root.appendChild(btn);
+    const p = d.say({ who: 'sonn', text: '가' });
+    btn.focus(); eq(document.activeElement, btn, 'focused');
+    q('.dlg').click(); q('.dlg').click(); await p;
+    ok(document.activeElement !== btn, '대화창을 누르면 초점이 풀린다');
+    btn.focus(); d.close();
+    ok(document.activeElement !== btn, '대화가 닫히면 초점이 풀린다');
+    const c = d.choose({ who: 'sonn', text: '?' }, ['하나', '둘']);
+    await sleep(300);
+    const b0 = q('.dlg-choices button'); b0.focus(); b0.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); b0.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }));
+    eq(await c, 0); ok(document.activeElement !== b0, '고른 단추의 초점이 풀린다');
+  } finally { done(); }
+});

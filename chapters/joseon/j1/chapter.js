@@ -53,7 +53,7 @@ function markCamp(ctx, heard) {
   const next = world.npcs.get(PEOPLE.find(id => !heard.has(id)) || 'yiseonggye').mesh.position;
   world.setGoal({ x: next.x, z: next.z });
   ctx.setGoal(script.goals[heard.size === PEOPLE.length ? 1 : 0]);
-  hud.setCounter(`들은 걱정 ${heard.size}/${PEOPLE.length}`);
+  hud.setCounter(heard.size < PEOPLE.length ? `들은 걱정 ${heard.size}/${PEOPLE.length}` : null); // 다 들으면 수를 숨긴다(2026-11-05: 퀘스트가 바뀐 뒤에도 2/2가 남았다)
 }
 
 // 군사의 말: 다른 군사 말을 먼저 들었으면 그 말을 받아 잇는 한 줄로 시작한다
@@ -74,12 +74,16 @@ export async function tourHanyang(ctx, s) {
   const m = world.npcs.get('minister');
   m.mesh.visible = true; world.moveNpc('minister', p0.x, p0.z + 0, Math.PI);
   ctx.setGoal(script.goals[5]);
+  if (ctx.testHooks) { const pts = [p0, ...TOUR.stops.flatMap(st => [at(...st.at), at(...st.stand)])]; ctx.testHooks.tour = { pts: pts.map(q => [q.x, q.z]), colliders: world.colliders.filter(c => c !== m.collider && c.r > 0).map(c => ({ ...c })) }; }
   await sayAll(dialogue, T.start); dialogue.close();
+  const ring = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.25, 28), new THREE.MeshBasicMaterial({ color: 0xd9a441, transparent: true, opacity: 0.85, side: THREE.DoubleSide })); // 학생이 설 자리(2026-11-05: 빛나는 원이 없어 어디로 갈지 몰랐다)
+  ring.rotation.x = -Math.PI / 2; ring.visible = false; world.level.add(ring);
   for (const st of TOUR.stops) {
     const a = at(...st.at), b = at(...st.stand);
-    await leadWalk(ctx, { id: 'minister', path: [[a.x, a.z]], stand: [b.x, b.z], face: st.face });
+    await leadWalk(ctx, { id: 'minister', path: [[a.x, a.z]], stand: [b.x, b.z], face: st.face, ring });
     await sayAll(dialogue, T[st.key]); dialogue.close();
   }
+  world.level.remove(ring); ring.geometry.dispose();
   m.mesh.visible = false; m.collider.r = 0; m.mark.visible = false;
   ctx.setGoal(script.goals[6]);
 }
@@ -430,6 +434,7 @@ export default {
     yi.mark.visible = true;
     await waitInteract(ctx, { pos: yi.mesh.position, quest: script.goals[3], label: '이성계와 이야기하기', mark: false });
     yi.mark.visible = false;
+    ctx.setGoal(script.watchGoal); // 결심을 들었으니 이제 회군 이야기를 지켜본다(2026-11-05: 끝난 퀘스트가 남아 있었다)
     world.setTalkCamera(yi.mesh);
     await sayAll(dialogue, script.npc.yiseonggye.turn); // 이성계의 결심
     dialogue.close();
@@ -448,7 +453,6 @@ export default {
     await sayAll(dialogue, script.npc.minister.first);
     dialogue.close(); world.camMode = 'follow';
     world.setGoal(null);
-    await showHowTo(ctx.ui, script.hanyang.howto);
     tries = 0;
     ctx.testHooks.built = [];
     const BUILDS = [
@@ -458,7 +462,7 @@ export default {
     ];
     const b = await runWithRetries(ctx, async easy => { // 관리를 따라 터를 둘러보는 것은 처음 한 번만
       tries += 1; ctx.testHooks.built = [];
-      const ok = await PLAY.build(ctx, { arena: HANYANG_SITE, from: [0, 13], fail: script.hanyang.fail, sites: SITES, before: tries === 1 ? sv => tourHanyang(ctx, sv) : null, builds: BUILDS.map(x => ({ ...x, make: () => { ctx.testHooks.built.push(x.id); return x.make(); } })) }, easy);
+      const ok = await PLAY.build(ctx, { arena: HANYANG_SITE, from: [0, 13], fail: script.hanyang.fail, sites: SITES, before: tries === 1 ? async sv => { await tourHanyang(ctx, sv); await showHowTo(ctx.ui, script.hanyang.howto); } : null, builds: BUILDS.map(x => ({ ...x, make: () => { ctx.testHooks.built.push(x.id); return x.make(); } })) }, easy);
       if (ok === true && tries === 1) firstTryCorrect += 1;
       return ok;
     }, { failHint: script.hanyang.fail });

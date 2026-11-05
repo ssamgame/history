@@ -252,7 +252,9 @@ export function createHud(root, { touch }) {
   const counter = h('div', { class: 'hud-counter', hidden: true });
   const found = h('div', { class: 'hud-found', hidden: true }); // 예전 '살펴본 안내판' 칸: 이제 쓰지 않는다(늘 숨김)
   quests.append(h('li', { class: 'quest' }, counter)); // 퀘스트를 정하기 전에도 진행 수는 보인다
-  const box = h('div', { class: 'hud', hidden: true }, chapter, h('div', { class: 'hud-goal' }, h('span', { class: 'seal' }, '퀘스트'), quests), found, h('div', { class: 'hud-row' }, timer));
+  const goalBox = h('div', { class: 'hud-goal', hidden: true }, h('span', { class: 'seal' }, '퀘스트'), quests);
+  const syncGoalBox = () => { goalBox.hidden = !goal.textContent && counter.hidden; }; // 지금 퀘스트도 진행 수도 없으면 빈 상자를 숨긴다(2026-11-05)
+  const box = h('div', { class: 'hud', hidden: true }, chapter, goalBox, found, h('div', { class: 'hud-row' }, timer));
   const notice = h('div', { class: 'hud-notice', hidden: true, role: 'status' });
   const bigTimer = h('div', { class: 'hud-bigtimer', hidden: true, 'aria-live': 'off' }); // 남은 시간: 화면 위 가운데에 크게
   const bigWait = h('div', { class: 'hud-bigwait', hidden: true, 'aria-live': 'off' }); // 기다리는 동안 남은 초(정류장 등): 큰 시간 바로 아래
@@ -286,6 +288,7 @@ export function createHud(root, { touch }) {
       if (i >= 0) lastIdx = i;
       const cur = h('li', { class: 'quest now' }, goal, counter);
       quests.replaceChildren(...done.map(t => h('li', { class: 'quest done' }, t)), text ? cur : h('li', { class: 'quest' }, counter)); // 퀘스트가 없어도 진행 수는 보인다
+      syncGoalBox();
     },
     setTimer(sec) {
       timer.hidden = true; bigTimer.hidden = sec == null; // 작은 글 대신 가운데 큰 숫자
@@ -293,7 +296,7 @@ export function createHud(root, { touch }) {
     },
     // 기다리기(정류장에서 손님이 내리는 중 등): 화면 위 가운데에 크게 (null이면 숨김)
     setWait(text, { center = false } = {}) { bigWait.hidden = text == null; bigWait.classList.toggle('center', text != null && center); if (text != null) bigWait.textContent = text; }, // center: 화면 한가운데에 크게
-    setCounter(text) { counter.hidden = text == null; if (text != null) counter.textContent = text; },
+    setCounter(text) { counter.hidden = text == null; if (text != null) counter.textContent = text; syncGoalBox(); },
     setTalkEnabled(b) { talkBtn.disabled = !b; },
     setTouchVisible(b) { joyZone.hidden = talkBtn.hidden = !(touch && b); },
     // label: 말풍선 글(없으면 'E 대화하기'). 문·물건 앞에서는 '문으로 들어가기' 등으로 바꾼다

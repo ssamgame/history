@@ -46,7 +46,7 @@ export function markCourt(ctx, heard) {
   const next = who ? world.npcs.get(who).mesh.position : talkSpot(world); // 세종은 단상 위라 단상 앞 계단 아래를 가리킨다
   world.setGoal({ x: next.x, z: next.z });
   ctx.setGoal(script.goals[heard.size === PEOPLE.length ? 1 : 0]);
-  hud.setCounter(`들은 이야기 ${heard.size}/${PEOPLE.length}`);
+  hud.setCounter(heard.size < PEOPLE.length ? `들은 이야기 ${heard.size}/${PEOPLE.length}` : null); // 다 들으면 수를 숨긴다(2026-11-05: 퀘스트가 바뀐 뒤에도 2/2가 남았다)
 }
 export function courtTalk(id, heard) {
   const n = script.npc[id];

@@ -40,7 +40,7 @@ export default {
         { who: 'jangyeongsil', text: '흘러드는 물과 쇠구슬, 나무 인형, 종을 이어서 움직이게 했지.', src: ['S31'] },
         { who: 'jangyeongsil', text: '이 보루각에 두고 나라의 표준 시계로 쓴다네.', src: ['S32'] },
       ],
-      bridge: { who: 'jangyeongsil', text: '여러 기구를 보고 왔구나. 이곳 보루각의 물시계도 보아라.' },
+      bridge: { who: 'jangyeongsil', text: '새 기구를 살펴보러 다니는구나. 이곳 보루각의 물시계도 보아라.' },
       later: [{ who: 'jangyeongsil', text: '사람의 손을 거치지 않고 시간을 알리는 물시계라네.', src: ['S31', 'S32'] }],
     },
     crownPrince: {

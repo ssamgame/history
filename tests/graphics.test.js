@@ -194,3 +194,27 @@ test('quality: 화질이 낮으면 멀리 있는 장식(무대 둘레 일부)만
   eq(shown(a.group), mid, '다시 올리면 모두 보인다');
   a.dispose();
 });
+
+test('graphics 11-05: 카메라와 학생 사이의 소나무·지붕(fadeOcc)은 반투명해지고, 비키면 돌아온다', async () => {
+  const { testWorld } = await import('./bot.js');
+  const w = testWorld();
+  try {
+    w.camMode = 'follow';
+    const p = w.player.position; p.set(0, 0, 0);
+    w.snapCamera();
+    const c = w.camera.position, mid = { x: (c.x + p.x) / 2, z: (c.z + p.z) / 2 };
+    const pines = scatter(w, { kind: 'pine', count: 1, area: { x0: mid.x, x1: mid.x + 0.001, z0: mid.z, z1: mid.z + 0.001 }, seed: 3, scale: [1.4, 1.4] });
+    const roof = new THREE.Group(); roof.userData.fadeOcc = true; roof.position.set(mid.x + 30, 0, mid.z);
+    const rm = new THREE.Mesh(new THREE.BoxGeometry(4, 1, 4), mat(0x3d4846)); rm.position.y = 1.5; roof.add(rm); w.level.add(roof);
+    const scale0 = () => { const m = new THREE.Matrix4(), s = new THREE.Vector3(); pines.meshes[1].getMatrixAt(0, m); m.decompose(new THREE.Vector3(), new THREE.Quaternion(), s); return s.x; };
+    for (let i = 0; i < 6; i++) w.step(0.05, { x: 0, z: 0 });
+    ok(scale0() < 0.01, '가리는 소나무는 숨기고');
+    let ghost = 0; w.level.traverse(o => { if (o.userData.fadeGhost && o.material.opacity < 0.6) ghost++; });
+    ok(ghost >= 1, `반투명한 모습으로 남긴다 (${ghost})`);
+    ok(rm.material.opacity === 1 || !rm.material.transparent, '가리지 않는 지붕은 그대로');
+    roof.position.set(mid.x, 0, mid.z); pines.meshes.forEach(m => m.position.x = 40);
+    for (let i = 0; i < 6; i++) w.step(0.05, { x: 0, z: 0 });
+    ok(rm.material.transparent && rm.material.opacity < 0.6, '가리는 지붕은 반투명');
+    ok(scale0() > 1, '비킨 소나무는 돌아온다');
+  } finally { w.dispose(); }
+});

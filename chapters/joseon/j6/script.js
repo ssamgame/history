@@ -26,6 +26,7 @@ export default {
       ],
       bridge: { who: 'official', text: '일꾼의 말을 들었구나. 이 공사는 임금의 큰 뜻으로 하는 일이란다.' },
       later: [{ who: 'official', text: '일꾼들이 지치지 않아야 공사가 빨리 끝날 텐데. 저쪽 일꾼들에게도 가 보아라.' }],
+      done: [{ who: 'official', text: '전하께서 차일 아래에서 너를 기다리신다. 어서 가 보아라.' }], // 두 사람을 다 들은 뒤(2026-11-05)
     },
     worker: {
       first: [
@@ -34,6 +35,7 @@ export default {
       ],
       bridge: { who: 'worker', text: '관리 나리 말씀은 들었지? 우리는 돌 나르느라 정신이 없어.' },
       later: [{ who: 'worker', expr: 'tension', text: '영차, 영차! 이 돌 하나 옮기는 데도 여럿이 붙어야 해.' }],
+      done: [{ who: 'worker', text: '전하께서 차일 아래에 계셔. 어서 가 봐!' }],
     },
     jeongyakyong: {
       first: [

@@ -140,13 +140,25 @@ test('j1 D-22: before building, the 관리 leads a walk north, east and west of 
   try {
     j1.buildScene(s.w, s.ctx);
     j1.enterStage(s.ctx, 'minigame');
+    const seq = []; const sg = s.ctx.setGoal; s.ctx.setGoal = t => { seq.push('goal:' + t); return sg(t); };
+    const say2 = s.dialogue.say; s.dialogue.say = l => { seq.push('say:' + l.text); return say2(l); };
+    const mo = new MutationObserver(() => { if (s.ui.textContent.includes(j1Script.hanyang.howto.title) && seq[seq.length - 1] !== 'howto') seq.push('howto'); }); mo.observe(s.ui, { childList: true, subtree: true });
     await j1.minigame(s.ctx);
+    mo.disconnect();
     const T = j1Script.hanyang.tour;
+    const iWest = seq.indexOf('say:' + T.west[0].text), iHow = seq.indexOf('howto');
+    ok(iHow > iWest && iWest > 0, `11-05: 짓기 방법 카드는 둘러보기가 끝난 뒤 (${iWest} < ${iHow})`);
+    const iTurn = seq.indexOf('say:' + j1Script.npc.yiseonggye.turn[0].text), iWatch = seq.indexOf('goal:' + j1Script.watchGoal);
+    ok(iWatch >= 0 && iWatch < iTurn, '11-05: 결심을 들을 때부터 퀘스트가 「위화도 회군 이야기를 지켜보자」');
     const at = ['north', 'east', 'west'].map(k => said.findIndex(l => l === T[k][0]));
     ok(at.every(i => i >= 0) && at[0] < at[1] && at[1] < at[2], `tour lines in order ${at}`);
     ok(['north', 'east', 'west'].every(k => T[k][0].src), 'sourced');
     eq(TOUR.stops.length, 3);
     eq(s.ctx.testHooks.built, ['palace', 'jongmyo', 'sajik']);
+    const { pts, colliders } = s.ctx.testHooks.tour, seg = (c, a, b) => { const vx = b[0] - a[0], vz = b[1] - a[1], L = vx * vx + vz * vz || 1, t = Math.max(0, Math.min(1, ((c.x - a[0]) * vx + (c.z - a[1]) * vz) / L)); return Math.hypot(c.x - a[0] - vx * t, c.z - a[1] - vz * t); };
+    const legs = [[pts[0], pts[1]], [pts[1], pts[2]], [pts[1], pts[3]], [pts[3], pts[4]], [pts[3], pts[5]], [pts[5], pts[6]]]; // 관리가 걷는 길과 학생이 서는 자리로 가는 길
+    const hit = colliders.filter(c => c !== s.w.player && legs.some(([a, b]) => seg(c, a, b) < c.r + 0.45));
+    eq(hit.length, 0, `11-05: 둘러보기 길이 담·나무·터와 겹치지 않는다 ${JSON.stringify(hit.slice(0, 3))}`);
   } finally { bot.stop(); s.done(); }
 }, { timeout: 150000 });
 
@@ -232,3 +244,39 @@ test('j1: 진영 곳곳의 여섯 군사를 찾아 듣고 이성계에게 돌아
     ok(Math.abs(t.w.player.position.x - COURT.x) < 15, '퀴즈부터 이어 해도 궁궐 마당');
   } finally { t.done(); }
 }, { timeout: 150000 });
+
+// ---- 2026-11-05 선생님 플레이 점검(ego browser) ----
+test('j1 11-05: 학생이 관리의 다음 길점 위에 서 있어도 관리가 2초 안에 그 길점으로 가고 둘러보기가 끝난다', async () => {
+  const { leadWalk } = await import('../chapters/kit/lead.js');
+  const s = touchSetup(j1Script.speakers);
+  try {
+    j1.buildScene(s.w, s.ctx);
+    if (!s.w.npcs.has('minister')) s.w.addNpc('minister', { role: 'soldier' }, 0, 0, Math.PI);
+    s.w.moveNpc('minister', 4, -2.5, 0);
+    const p = s.w.player.position; p.x = 6.5; p.z = -1; // 다음 길점 바로 위(관리가 학생 몸 둘레만 돈다)
+    let done = false;
+    leadWalk(s.ctx, { id: 'minister', path: [[6.5, -1]], stand: [4, 0.5] }).then(() => { done = true; });
+    const m = s.w.npcs.get('minister').mesh.position;
+    let arrived = false;
+    for (let i = 0; i < 70; i++) { s.w.step(0.05, { x: 0, z: 0 }); if (s.w.getGoal() && Math.abs(s.w.getGoal().x - 4) < 0.01) arrived = true; await Promise.resolve(); }
+    ok(arrived, `관리가 3.5초 안에 길 끝에 닿는다(지금 ${m.x.toFixed(2)},${m.z.toFixed(2)})`);
+    for (let i = 0; i < 200 && !done; i++) { const d = Math.hypot(4 - p.x, 0.5 - p.z); s.w.step(0.05, d > 0.3 ? { x: (4 - p.x) / d, z: (0.5 - p.z) / d } : { x: 0, z: 0 }); await Promise.resolve(); }
+    ok(done, '학생이 자리로 가면 끝난다');
+  } finally { s.done(); }
+}, { timeout: 60000 });
+
+test('j1 11-05: 걱정을 다 들으면 「들은 걱정」 수가 사라진다(이성계에게 가는 동안)', async () => {
+  const s = touchSetup(j1Script.speakers);
+  const bot = touchBot(s, { answers });
+  let goal = null, counter = null, bad = false;
+  const sg = s.ctx.setGoal; s.ctx.setGoal = t => { goal = t; return sg(t); };
+  const sc = s.hud.setCounter.bind(s.hud); s.hud.setCounter = t => { counter = t; return sc(t); };
+  try {
+    j1.buildScene(s.w, s.ctx);
+    j1.enterStage(s.ctx, 'explore');
+    const off = s.w.onUpdate(() => { if (goal === j1Script.goals[1] && counter && counter.startsWith('들은')) bad = true; });
+    await j1.explore(s.ctx);
+    off();
+    ok(!bad, '이성계에게 가는 동안 「들은 걱정 2/2」가 남지 않는다');
+  } finally { bot.stop(); s.done(); }
+}, { timeout: 90000 });

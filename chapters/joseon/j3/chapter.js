@@ -285,21 +285,21 @@ export default {
     ctx.testHooks.j3Started = [];
     const parts = [];
     // 1) 앙부일구: 다가가서 살펴보면 시작(C-05)
-    await waitInteract(ctx, { pos: scene.dialFront, quest: script.goals[1], label: '앙부일구 살펴보기', markY: 2.6 });
+    await waitInteract(ctx, { pos: scene.dialSpot, r: scene.dialSpot.r, quest: script.goals[1], label: '앙부일구 살펴보기', markY: 2.6 });
     ctx.testHooks.j3Started.push('dial');
     await sayAll(dialogue, script.dial.intro); dialogue.close();
     await showHowTo(ctx.ui, script.dial.howto);
     parts.push(await tryPart(ctx, easy => readDial(ctx, easy), script.dial.fail));
     await sayAll(dialogue, script.dial.done); dialogue.close();
     // 2) 자격루: 보루각에 가서 물을 부으면 한 장면으로 움직인다(점수에 넣지 않는 장면)
-    await waitInteract(ctx, { pos: scene.clockFront, quest: script.goals[2], label: '자격루에 물 붓기', markY: 3.2 });
+    await waitInteract(ctx, { pos: scene.clockSpot, r: scene.clockSpot.r, markAt: scene.clockFront, quest: script.goals[2], label: '자격루에 물 붓기', markY: 3.2 });
     ctx.testHooks.j3Started.push('clock');
     input.enabled = false;
     await clockScene(ctx);
     placePlayer(world, [scene.clockFront.x, scene.clockFront.z]);
     await sayAll(dialogue, script.clock.done); dialogue.close();
     // 3) 측우기: 서운관 마당에 가서 살펴보면 시작
-    await waitInteract(ctx, { pos: scene.gaugeFront, quest: script.goals[3], label: '측우기 살펴보기', markY: 3 });
+    await waitInteract(ctx, { pos: scene.gaugeSpot, r: scene.gaugeSpot.r, quest: script.goals[3], label: '측우기 살펴보기', markY: 3 });
     ctx.testHooks.j3Started.push('gauge');
     await sayAll(dialogue, script.rain.intro); dialogue.close();
     await showHowTo(ctx.ui, script.rain.howto);
