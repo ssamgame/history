@@ -13,7 +13,6 @@ import * as THREE from 'three';
 import script from './script.js';
 import { tripitakaScene } from './story.js';
 import { doWork, shelveFirstPerson, carryPlank } from './work.js';
-import { toast } from '../kit/play.js';
 
 const ARTISANS = ['artisan1', 'artisan2', 'artisan3', 'artisan4'];
 const NEAR = 1.3;      // 서가 앞 빛나는 자리에 닿았다고 보는 거리
@@ -70,37 +69,6 @@ export function showStepPicture(ctx, i) {
   });
 }
 
-// 정성 막대(2026-11-05 선생님: 5장 더 재밌게, 쉽게 유지): 바늘이 좌우로 오가고 초록 칸에 왔을 때 E(대화 버튼)를 누르면 끝.
-// 놓쳐도 실패가 없고 곧바로 다시 누를 수 있다. 한 번에 맞히면 정성 별 하나({ tries, star })
-const CARE_ZONE = [0.38, 0.62], CARE_PERIOD = 2; // 초록 칸(넉넉하게), 바늘이 한 번 오가는 초
-export function careBar(ctx, title) {
-  const { world, hud, audio } = ctx;
-  const box = document.createElement('div'); box.className = 'care-bar';
-  box.innerHTML = `<div class="care-title"></div><div class="care-track"><div class="care-zone"></div><div class="care-needle"></div></div><div class="care-tip">바늘이 초록 칸에 오면 누르자!</div>`;
-  box.querySelector('.care-title').textContent = title;
-  const zone = box.querySelector('.care-zone'), needle = box.querySelector('.care-needle');
-  zone.style.left = `${CARE_ZONE[0] * 100}%`; zone.style.width = `${(CARE_ZONE[1] - CARE_ZONE[0]) * 100}%`;
-  ctx.ui.append(box);
-  let t = 0, tries = 0, done = false, x = 0;
-  hud.setTalkEnabled(true);
-  return new Promise(resolve => {
-    const off = world.onUpdate(dt => {
-      t += dt; const k = (t / CARE_PERIOD) % 1; x = k < 0.5 ? k * 2 : 2 - k * 2; // 왼쪽 끝 → 오른쪽 끝 → 왼쪽 끝
-      needle.style.left = `${x * 100}%`;
-      const inZone = x >= CARE_ZONE[0] && x <= CARE_ZONE[1];
-      ctx.testHooks.careZone = inZone; ctx.testHooks.pressing = inZone ? title : null; // 테스트 봇은 초록 칸에서만 누른다
-    });
-    const unbind = ctx.onAction(() => {
-      if (done || ctx.dialogue?.isOpen?.()) return;
-      tries += 1;
-      if (x >= CARE_ZONE[0] && x <= CARE_ZONE[1]) {
-        done = true; off(); unbind(); box.remove(); hud.setTalkEnabled(false); ctx.testHooks.pressing = null; ctx.testHooks.careZone = false;
-        audio.play('correct'); resolve({ tries, star: tries === 1 });
-      } else { audio.play('wrong'); box.classList.remove('miss'); void box.offsetWidth; box.classList.add('miss'); } // 흔들고 다시
-    });
-  });
-}
-
 // 3번 장인 자리에서 내려놓은 판에 大藏經 세 글자를 바로 새긴다(글자판)
 async function carve(ctx) {
   const { dialogue, hud } = ctx;
@@ -116,7 +84,7 @@ async function carve(ctx) {
 export async function makeBlock(ctx) {
   const { world, hud, dialogue, audio } = ctx;
   const S = scene.stations;
-  let k = 0, first = true, busy = false, stars = 0;
+  let k = 0, first = true, busy = false;
   const stay = new Map(), told = new Set(); // 다른 자리에 머문 시간, 이번에 머무는 동안 이미 알려 준 자리
   scene.setStage(0); scene.setCarved(0); hold(world); // 스님이 나무판을 건넨다
   const show = () => {
@@ -150,14 +118,12 @@ export async function makeBlock(ctx) {
     await doWork(ctx, scene, st.id, (ctx.testHooks.work[st.id] = {}), async () => { // 몸으로 일한다(판 내려놓기 → 도구질). 3번 자리에서는 大藏經 새기기
       if (st.id === 'carve') await carve(ctx);
     });
-    if (st.id !== 'carve') { const c = await careBar(ctx, script.making.steps[k]); stars += c.star ? 1 : 0; ctx.testHooks.careStars = stars; } // 정성을 다해 마무리(새기기는 글자 쓰기로 대신)
     k += 1; scene.setStage(k); audio.play('correct');
     if (st.id === 'carve') { hud.setCounter(`경판 만들기 ${k}/${S.length}`); await dialogue.say(script.carving.toEnds); dialogue.close(); }
     ctx.input.enabled = was;
   }
   offHint();
   S.forEach(s => { s.ring.visible = false; }); hud.setCounter(null); world.setGoal(null);
-  { const n = S.filter(s => s.id !== 'carve').length; toast(ctx, `정성 별 ${'★'.repeat(stars)}${'☆'.repeat(n - stars)} — ${stars === n ? '정성을 다한 경판이에요!' : '경판을 다 만들었어요!'}`, 'good'); }
   return { first };
 }
 

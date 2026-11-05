@@ -177,10 +177,6 @@ test('ch5 D-32: each work place waits for E (talk button), then shows a drawn pi
     s.hud.talkBtn.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
     for (let n = 0; n < 60 && s.ctx.testHooks.holding; n++) { stepN(s.w, 3); await sleep(1); }
     s.hud.talkBtn.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
-    for (let n = 0; n < 200 && !s.ui.querySelector('.care-bar'); n++) { stepN(s.w, 2); await sleep(1); } // 2026-11-05: 일을 마치면 정성 막대
-    eq(sc.plank.userData.stage, 0, 'care bar comes before the next stage');
-    for (let n = 0; n < 200 && !s.ctx.testHooks.careZone; n++) { stepN(s.w, 1); }
-    s.hud.talkBtn.click(); await sleep(5);
     stepN(s.w, 40); await sleep(5);
     ok(!stepPanel(s), 'closed');
     eq(sc.plank.userData.stage, 1, 'soaked');
@@ -282,25 +278,3 @@ test('ch5: 자리마다 앞에 서서 판을 내려놓고 도구 끝이 판에 �
     eq(sc.plank.parent, sc.library, '제자리에 남는다'); eq(s.w.camMode, 'follow'); ok(s.w.player.userData.head.visible, '머리가 다시 보인다'); eq(s.w.player.scale.x, 0.8, '학생 크기가 되돌아온다');
   } finally { bot.stop(); s.done(); }
 }, { timeout: 120000 });
-
-// 2026-11-05 선생님: 5장을 더 재밌게(쉽게 유지) — 일하는 자리마다 바늘이 초록 칸에 올 때 누르기. 놓쳐도 실패 없이 다시, 한 번에 맞히면 정성 별
-import { careBar } from '../chapters/ch5/chapter.js';
-test('ch5 fun: care bar — a press outside the green zone just retries, inside finishes; first-try gives a star', async () => {
-  const s = touchSetup(ch5Script.speakers);
-  try {
-    const step = n => { for (let i = 0; i < n; i++) s.w.step(1 / 30, { x: 0, z: 0 }); };
-    let res = null; careBar(s.ctx, '소금물에 삶기').then(r => { res = r; });
-    ok(s.ui.querySelector('.care-bar'), 'bar shown');
-    for (let i = 0; i < 200 && s.ctx.testHooks.careZone; i++) step(1); // 초록 칸 밖으로
-    s.hud.talkBtn.click(); await new Promise(r => setTimeout(r, 5));
-    eq(res, null, 'miss does not finish');
-    for (let i = 0; i < 200 && !s.ctx.testHooks.careZone; i++) step(1);
-    s.hud.talkBtn.click(); await new Promise(r => setTimeout(r, 5));
-    eq(res, { tries: 2, star: false });
-    eq(s.ui.querySelector('.care-bar'), null, 'bar removed');
-    let r2 = null; careBar(s.ctx, '옻칠하기').then(r => { r2 = r; });
-    for (let i = 0; i < 200 && !s.ctx.testHooks.careZone; i++) step(1);
-    s.hud.talkBtn.click(); await new Promise(r => setTimeout(r, 5));
-    eq(r2, { tries: 1, star: true });
-  } finally { s.done(); }
-});
