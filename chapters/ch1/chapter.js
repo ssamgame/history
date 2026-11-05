@@ -40,6 +40,27 @@ function setStep(ctx, n, heard) {
   hud.setCounter(n === 0 ? `들은 이야기 ${heard.size}/${PEOPLE.length}` : null);
 }
 
+// 담판 기세 막대(2026-11-05 선생님: 1장 더 재밌게). 왼쪽 소손녕, 오른쪽 서희. 맞히면 한 칸 서희 쪽으로(마지막 답은 끝까지), 틀리면 소손녕 쪽으로 조금 밀린다
+function momentumBar(ctx) {
+  const box = document.createElement('div'); box.className = 'nego-bar';
+  box.innerHTML = '<span class="nego-who sonn">소손녕</span><div class="nego-track"><div class="nego-fill"></div></div><span class="nego-who seohui">서희</span><div class="nego-title">담판의 기세</div>';
+  ctx.ui.append(box);
+  const fill = box.querySelector('.nego-fill');
+  let v = 20;
+  const show = () => { box.dataset.value = String(Math.round(v)); fill.style.width = `${v}%`; };
+  show();
+  return {
+    pick(right, last, step) {
+      v = right ? (last ? 100 : Math.min(100, v + step)) : Math.max(5, v - 12);
+      box.classList.remove('hit', 'miss'); void box.offsetWidth; box.classList.add(right ? 'hit' : 'miss'); // 같은 효과를 다시 틀려고 한 번 비운다
+      ctx.audio.play(right ? 'correct' : 'wrong');
+      box.classList.toggle('win', v >= 100);
+      show();
+    },
+    remove: () => box.remove(),
+  };
+}
+
 // 강을 건널 수 있는 곳은 널다리뿐: 학생 자리에 따라 걷는 곳을 바꾼다(진영 / 다리 위 / 강 건너)
 function walkBounds(p) {
   const c = scene.campBounds, br = scene.bridge, far = { x0: -6, x1: 12, z0: -34.5 };
@@ -199,11 +220,16 @@ export default {
     scene.sonn.rotation.y = 0;
     const glide = glideTo(world, spot.cam.pos, spot.cam.target); // 두 사람 뒤에서 소손녕 얼굴을 정면으로
 
+    const bar = momentumBar(ctx);
     await sayAll(dialogue, script.negotiation.opening);
-    const a = await dialogue.ask(script.negotiation.q1);
-    const b = await dialogue.ask(script.negotiation.q2);
+    const qs = ['q0', 'q1', 'q2'].map(k => script.negotiation[k]);
+    const res = [];
+    for (const [i, q] of qs.entries()) {
+      res.push(await dialogue.ask({ ...q, onPick: right => bar.pick(right, i === qs.length - 1, 80 / qs.length) }));
+    }
     await sayAll(dialogue, script.negotiation.closing);
     dialogue.close();
+    bar.remove();
 
     // 거란군이 진영을 걷고 줄지어 물러난다(D-7). 서희와 학생은 다리 건너편에 나란히 서서 그 뒷모습을 바라본다
     await ctx.fade(true);
@@ -224,6 +250,6 @@ export default {
     world.bounds = { ...scene.campBounds };
     placePlayer(world, RETURN_AT);
     await ctx.fade(false);
-    return { firstTryCorrect: Number(a.firstTry) + Number(b.firstTry), firstTryTotal: 2, easyModeUsed: false };
+    return { firstTryCorrect: res.filter(r => r.firstTry).length, firstTryTotal: res.length, easyModeUsed: false };
   },
 };

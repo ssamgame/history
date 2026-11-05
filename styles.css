@@ -460,3 +460,15 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .hud-edge[hidden] { display: none; }
 @keyframes edgePulse { from { box-shadow: 0 0 0 0 rgba(255,210,58,.5); } to { box-shadow: 0 0 0 8px rgba(255,210,58,0); } }
 @media (prefers-reduced-motion: reduce) { .hud-edge { animation: none; } }
+
+/* 고려 1장 담판 기세 막대(2026-11-05) */
+.nego-bar { position: fixed; z-index: 12; top: calc(10px + env(safe-area-inset-top, 0px)); right: calc(92px + env(safe-area-inset-right, 0px)); width: clamp(260px, calc(100vw - 470px), 520px); /* 왼쪽 퀘스트 상자와 오른쪽 메뉴 사이 */ display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; padding: 6px 12px 4px; border-radius: 8px; background: rgba(27,31,29,.82); border: 2px solid var(--gold); color: var(--hanji); pointer-events: none; box-sizing: border-box; }
+.nego-title { grid-column: 1 / -1; text-align: center; font-size: 14px; opacity: .85; order: -1; }
+.nego-who { font-size: 16px; font-weight: 700; }
+.nego-who.sonn { color: #e3a27a; } .nego-who.seohui { color: #9cc3ea; }
+.nego-track { height: 18px; border-radius: 9px; background: #8a3b2b; overflow: hidden; border: 1px solid #00000066; }
+.nego-fill { height: 100%; width: 20%; margin-left: auto; /* 서희 쪽(오른쪽)에서 차오른다 */ background: linear-gradient(90deg, #6aa6dc, #3c6fa3); transition: width .6s ease-out; }
+.nego-bar.hit { animation: nego-hit .5s; } .nego-bar.miss { animation: nego-miss .45s; }
+.nego-bar.win { border-color: #9cc3ea; box-shadow: 0 0 18px #6aa6dc; }
+@keyframes nego-hit { 50% { transform: scale(1.06); } }
+@keyframes nego-miss { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }

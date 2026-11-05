@@ -98,6 +98,7 @@ export function createDialogue(root, speakers, { typeMs = 26, reduceMotion = fal
     for (;;) {
       const i = await choose(choice.prompt, choice.options.map(o => o.text));
       const opt = choice.options[i];
+      choice.onPick?.(opt.correct); // 고른 순간 알림(고려 1장 기세 막대)
       if (opt.correct) {
         if (opt.reply) await say(opt.reply);
         return { firstTry };

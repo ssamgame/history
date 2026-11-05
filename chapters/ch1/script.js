@@ -62,8 +62,18 @@ export default {
 
   negotiation: {
     opening: [
-      { who: 'narr', text: '소손녕이 절을 하라고 하자, 서희는 대신끼리는 절할 수 없다며 당당히 맞섰어요.', src: ['S16'] },
+      { who: 'guide', text: '담판이 시작됐어! 위의 막대를 서희 쪽으로 끝까지 밀어 보자. 알맞게 대답할수록 서희의 기세가 세져.' },
     ],
+    // 2026-11-05 선생님(1장 더 재밌게): 절 요구에 맞서는 것도 학생이 고른다
+    q0: {
+      kind: 'choice', who: 'sonn', src: ['S16'], hintWho: 'seohui',
+      prompt: { who: 'sonn', text: '나는 큰 나라의 장수다. 고려의 사신은 내게 절을 하라!', src: ['S16'] },
+      options: [
+        { text: '얼른 엎드려 절한다.', correct: false, reply: null, hint: '나도 고려의 대신이다. 대신끼리 만나는데 고개를 숙일 까닭이 없다.' },
+        { text: '대신끼리는 절할 수 없다.', correct: true, reply: { who: 'narr', text: '서희는 대신끼리는 절할 수 없다며 당당히 맞섰어요.', src: ['S16'] }, hint: null },
+        { text: '화를 내며 돌아간다.', correct: false, reply: null, hint: '돌아가면 담판을 할 수 없다. 물러서지 말고 말로 맞서야 한다.' },
+      ],
+    },
     q1: {
       kind: 'choice', who: 'sonn', src: ['S18'], hintWho: 'seohui',
       prompt: { who: 'sonn', text: '고려는 신라 땅에서 일어났다. 고구려의 옛 땅은 거란의 것인데 왜 너희가 차지하고 있느냐?', src: ['S18'] },

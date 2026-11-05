@@ -30,7 +30,7 @@ import { runChapter, roam } from '../core/flow.js';
 import { CHAPTERS } from '../chapters/index.js';
 
 const answers = new Set([
-  ...[ch1Script.negotiation.q1, ch1Script.negotiation.q2].map(c => c.options.find(o => o.correct).text),
+  ...[ch1Script.negotiation.q0, ch1Script.negotiation.q1, ch1Script.negotiation.q2].map(c => c.options.find(o => o.correct).text),
   ...ch1Script.quizzes.map(q => q.options[q.answer]),
 ]);
 
@@ -49,8 +49,8 @@ test('ch1: completes with touch-only actions', async () => {
   const bot = touchBot(s, { answers });
   try {
     const r = await runChapter(CHAPTERS[0], ch1, s.ctx, memSave());
-    eq(r.firstTryTotal, 2);
-    eq(r.firstTryCorrect, 2);
+    eq(r.firstTryTotal, 3);
+    eq(r.firstTryCorrect, 3);
     eq(r.quizCorrect, 2);
     eq(r.stars, 3);
     ok(bot.taps >= 2, 'talked through the touch button');
@@ -63,7 +63,7 @@ test('ch1: wrong first answer gives hint and lowers firstTryCorrect', async () =
   try {
     ch1.buildScene(s.w, s.ctx);
     const r = await ch1.minigame(s.ctx);
-    eq(r, { firstTryCorrect: 1, firstTryTotal: 2, easyModeUsed: false });
+    eq(r, { firstTryCorrect: 2, firstTryTotal: 3, easyModeUsed: false });
   } finally { bot.stop(); s.done(); }
 }, { timeout: 60000 });
 
@@ -222,7 +222,7 @@ test('ch1 D-6: negotiation stays in the same scene and faces Sonn from the front
   let sc = null; const checks = [];
   // 소손녕이 묻는 그 순간의 구도를 검사한다(담판 뒤 소손녕은 말을 타고 물러난다, D-7)
   s.dialogue.ask = c => { events.push('ask'); if (!shot) { for (let i = 0; i < 60; i++) s.w.step(1 / 30, { x: 0, z: 0 }); shot = s.w.camera.position.clone(); checks.push(lookCheck()); } return ask0(c); };
-  const answers = new Set([ch1Script.negotiation.q1, ch1Script.negotiation.q2].map(c => c.options.find(o => o.correct).text));
+  const answers = new Set([ch1Script.negotiation.q0, ch1Script.negotiation.q1, ch1Script.negotiation.q2].map(c => c.options.find(o => o.correct).text));
   const bot = touchBot(s, { answers });
   try {
     sc = ch1.buildScene(s.w, s.ctx);
@@ -259,7 +259,7 @@ test('ch1 D-6: a wrong answer gets a short hint from Seohui', async () => {
   try {
     ch1.buildScene(s.w, s.ctx);
     const r = await ch1.minigame(s.ctx);
-    eq(r.firstTryCorrect, 1);
+    eq(r.firstTryCorrect, 2);
     const hints = ch1Script.negotiation.q1.options.map(o => o.hint).filter(Boolean);
     ok(said.some(l => l.who === 'seohui' && hints.includes(l.text)), 'hint said by Seohui');
   } finally { bot.stop(); s.done(); }
@@ -355,4 +355,31 @@ test('ch1 D-9: retreating army faces the way it walks', () => {
     const hm = sc.horse.getWorldDirection(fwd).setY(0).normalize();
     ok(sonnHead.dot(hm) > 0.8, 'Sonn looks the same way as his horse');
   } finally { w.dispose(); }
+});
+
+// 2026-11-05 선생님: 1장을 더 재밌게 — 담판에 '기세 막대'(소손녕 ↔ 서희). 맞히면 서희 쪽으로, 틀리면 힌트와 함께 소손녕 쪽으로 밀린다
+test('ch1 fun: the momentum bar moves toward Seohui on right answers, back on a wrong one, and is removed after', async () => {
+  const s = touchSetup(ch1Script.speakers);
+  const seen = []; const ask0 = s.dialogue.ask;
+  const val = () => Number(s.ctx.ui.querySelector('.nego-bar')?.dataset.value);
+  s.dialogue.ask = async c => { seen.push(val()); const r = await ask0(c); seen.push(val()); return r; };
+  const bot = touchBot(s, { answers, wrongFirst: new Set(['고려는 고구려를 이은 나라이다.']) });
+  try {
+    ch1.buildScene(s.w, s.ctx);
+    const r = await ch1.minigame(s.ctx);
+    eq(r.firstTryTotal, 3);
+    eq(seen.length, 6);
+    ok(seen.every(v => v >= 0 && v <= 100), 'bar shown during every question ' + seen);
+    ok(seen[1] > seen[0], 'first right answer pushes toward Seohui ' + seen);
+    ok(seen[3] < seen[2] + 25, 'wrong try costs momentum ' + seen);
+    eq(seen[5], 100);
+    eq(s.ctx.ui.querySelector('.nego-bar'), null);
+  } finally { bot.stop(); s.done(); }
+}, { timeout: 60000 });
+
+test('ch1 fun: the bow refusal is a choice (S16) before the two questions', () => {
+  const q0 = ch1Script.negotiation.q0;
+  eq(q0.options.filter(o => o.correct).length, 1);
+  ok(q0.options.find(o => o.correct).text.includes('절할 수 없다'));
+  eq(q0.src, ['S16']);
 });
