@@ -238,10 +238,12 @@ import { CROSSING, crossRiver } from '../chapters/joseon/j1/chapter.js';
 test('j1 fun: the turn-back crossing — gather all stragglers, then wade across past drifting logs, inside the time limit', async () => {
   const river = CROSSING.arena.props.find(p => p.type === 'water');
   const [z0, z1] = [river.z - river.d / 2, river.z + river.d / 2];
+  // 2026-11-05 선생님: 강은 아래쪽(남쪽, +z), 군사들은 강 위쪽(북쪽) 육지. 학생은 북쪽에서 남쪽으로 건넌다
+  ok(river.z > 0 && CROSSING.from[1] < z0, 'river in the south, start in the north');
   ok(CROSSING.pickups.filter(p => p.follow).length >= 5, 'stragglers to gather');
-  ok(CROSSING.pickups.every(p => p.z > z1), 'all on the near bank');
-  ok(CROSSING.route[0].needPickups && CROSSING.route[0].z > z1, 'must gather before entering the river');
-  ok(CROSSING.route.at(-1).z < z0, 'ends on the far bank');
+  ok(CROSSING.pickups.every(p => p.z < z0), 'all on the north bank');
+  ok(CROSSING.route[0].needPickups && CROSSING.route[0].z < z0, 'must gather before entering the river');
+  ok(CROSSING.route.at(-1).z > z1, 'ends on the south bank');
   ok(CROSSING.hazards.length >= 2 && CROSSING.hazards.every(h => h.kind === 'log' && h.z > z0 && h.z < z1 && h.to), 'logs drift across the river');
   ok(CROSSING.seconds > 0);
   const s = touchSetup(j1Script.speakers), bot = touchBot(s, { answers: new Set() });

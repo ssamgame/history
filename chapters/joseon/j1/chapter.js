@@ -28,23 +28,23 @@ export const CAMP = {
   ],
 };
 // 2) 회군 이끌기(2026-11-05 선생님): 비 오는 강가에 흩어진 군사를 모두 모아, 떠내려오는 통나무를 피해 여울을 건넌다
-export const CROSSING = {
+export const CROSSING = { // 강은 아래쪽(남쪽, 개경 쪽), 군사들은 강 위쪽(북쪽) 육지에 흩어져 있다(2026-11-05 선생님)
   arena: {
     origin: [460, 0], ground: 'grass', groundColor: 0x6a8656,
-    bounds: { x0: -16, x1: 16, z0: -26, z1: 14 },
+    bounds: { x0: -16, x1: 16, z0: -24, z1: 18 },
     props: [
-      { type: 'water', x: 0, z: -10, w: 140, d: 10, color: 0x5a7a86, river: true },
-      { type: 'tent', x: -13, z: 11, color: 0xb8a888 }, { type: 'tent', x: 13, z: 11, color: 0xb8a888 },
+      { type: 'water', x: 0, z: 6, w: 140, d: 10, color: 0x5a7a86, river: true },
+      { type: 'tent', x: -13, z: -21, color: 0xb8a888 }, { type: 'tent', x: 13, z: -21, color: 0xb8a888 },
     ],
     edge: { style: 'forest', back: false },
   },
-  from: [0, 9], seconds: 55, counter: '지난 곳', pickupCounter: '모은 군사',
-  pickups: [[-11, 5], [-6, 1], [7, 8], [11, 2], [-2, 6], [4, 0]].map(([x, z]) => ({ x, z, follow: 'soldier', label: '뒤처진 군사', say: '군사가 함께해요!' })),
+  from: [0, -19], seconds: 55, counter: '지난 곳', pickupCounter: '모은 군사',
+  pickups: [[-11, -15], [-6, -11], [7, -18], [11, -12], [-2, -16], [4, -9]].map(([x, z]) => ({ x, z, follow: 'soldier', label: '뒤처진 군사', say: '군사가 함께해요!' })),
   route: [
     { x: 0, z: -3, label: '강가', needPickups: true, needSay: '아직 뒤처진 군사가 있어요. 모두 모아 함께 건너요!' },
-    { x: 0, z: -21, label: '건너편 둑', say: '모두 강을 건넜어요!' },
+    { x: 0, z: 15, label: '건너편 둑', say: '모두 강을 건넜어요!' },
   ],
-  hazards: [{ kind: 'log', x: -14, z: -8, to: [14, -8], speed: 0.9, r: 1.2 }, { kind: 'log', x: 14, z: -12, to: [-14, -12], speed: 0.7, r: 1.2 }],
+  hazards: [{ kind: 'log', x: -14, z: 4, to: [14, 4], speed: 0.9, r: 1.2 }, { kind: 'log', x: 14, z: 8, to: [-14, 8], speed: 0.7, r: 1.2 }],
   bump: '떠내려오는 통나무에 부딪혔어요! 강가에서 다시 건너요.',
 };
 export async function crossRiver(ctx) {
@@ -52,7 +52,8 @@ export async function crossRiver(ctx) {
   await sayAll(ctx.dialogue, script.crossing.start);
   ctx.dialogue.close();
   await showHowTo(ctx.ui, script.crossing.howto);
-  return tryPart(ctx, easy => PLAY.drive(ctx, CROSSING, easy), script.crossing.fail, 2);
+  ctx.world.followOffset = new THREE.Vector3(0, 20, 14); // 높고 멀리서 내려다본다: 학생이 걸어가는 화면 아래쪽 강과 통나무가 보이게
+  try { return await tryPart(ctx, easy => PLAY.drive(ctx, CROSSING, easy), script.crossing.fail, 2); } finally { ctx.world.followOffset = null; }
 }
 // 진영 곳곳에서 이성계의 말을 전해 주는 병사들(자리)
 export const REASON_SPOTS = [{ x: -11, z: -2 }, { x: -6, z: 7 }, { x: 0, z: -1 }, { x: 11, z: -2 }, { x: 6, z: 7 }, { x: -12, z: 8 }];
