@@ -187,3 +187,24 @@ test('play: 무대의 길(roads)은 마을 길과 같은 높이(윗면 0.05m 이
     a.dispose();
   } finally { w.dispose(); }
 });
+
+// 2026-11-06 선생님: 따라오는 사람들의 몸이 사라졌다 생겼다 빛나 보인다 → 함께하게 된 사람은 제자리에서 걸어오고, 서로(학생과도) 몸이 겹치지 않는다
+test('play: followers never overlap each other or the student (no flicker from bodies inside bodies)', async () => {
+  const s = touchSetup(script.speakers);
+  try {
+    const spots = [[-4, 6], [-2, 6], [0, 6], [2, 6], [4, 6]];
+    PLAY.drive(s.ctx, { arena, from: [0, 10], seconds: 60, route: [{ x: 0, z: -8 }], pickups: spots.map(([x, z]) => ({ x, z, follow: 'soldier' })) }, false);
+    const F = () => s.ctx.testHooks.followers || [];
+    let near = Infinity;
+    const off = s.w.onUpdate(() => {
+      const P = [s.w.player.position, ...F().map(f => f.position)];
+      for (let i = 0; i < P.length; i++) for (let j = i + 1; j < P.length; j++) near = Math.min(near, Math.hypot(P[i].x - P[j].x, P[i].z - P[j].z));
+    });
+    for (const [x, z] of spots) { s.w.player.position.set(300 + x, 0, z); for (let i = 0; i < 4; i++) s.w.step(1 / 20, { x: 0, z: 0 }); } // 빠르게 다섯을 모은다
+    for (let i = 0; i < 60; i++) s.w.step(1 / 20, { x: 0, z: -1 }); // 걸어간다
+    off();
+    eq(F().length, 5);
+    ok(F().every(f => [f.position.x, f.position.y, f.position.z].every(Number.isFinite) && f.position.y === 0), 'followers stand on the ground (no NaN)');
+    ok(near > 0.6, `가장 가까웠을 때 ${near.toFixed(2)}m`);
+  } finally { s.done(); }
+});

@@ -118,3 +118,24 @@ test('k3 D-31: 전봉준을 따라 황토현 → 전주성 → 집강소 → 다
   for (const want of ['황토현에서 관군을 크게 물리쳤어요', '전주성을 차지했어요', '집강소', '다시 일어났어요', '우금치에서 일본군과 관군에게 크게 졌고']) ok(texts.some(l => l.text.includes(want)), want);
   eq(WALK_ARENA.names.map(n => n.text), ['황토현', '전주성', '집강소', '공주 우금치']);
 });
+
+// 2026-11-06 선생님: 보국안민·제폭구민 구호는 첫 장면(마을을 돌며 농민 모으기)에서 빼고, 청·일본군이 들어온 뒤 다시 일어설 때 처음 보인다
+test('k3: no slogan banners in the first (gathering) scene', async () => {
+  const { FARMS } = await import('../chapters/modern/k3/chapter.js');
+  const all = [...(FARMS.center || []), ...(FARMS.props || [])];
+  eq(all.filter(p => /보국안민|제폭구민/.test(p.text || '')).length, 0);
+});
+// 2026-11-06 선생님: 농민을 공격하는 일본군이 총을 손에 잡고 쏜다 — 불빛은 손에 든 총의 총구에서
+test('k3: Japanese soldiers fire from the rifle in their hands (muzzle flash at the gun tip)', async () => {
+  const THREE = await import('three');
+  const { gunFlash, aimRifle } = await import('../chapters/kit/clash.js');
+  const { person, JAPAN } = await import('../chapters/modern/k3/stage.js');
+  const w = testWorld(), g = new THREE.Group(); w.level.add(g);
+  const p = person(g, JAPAN, 0, 0, 0); ok(aimRifle(p), 'rifle in both hands');
+  eq(p.userData.carry.obj.name, 'rifle');
+  g.updateMatrixWorld(true);
+  const tip = p.userData.carry.obj.localToWorld(new THREE.Vector3(0, 0.78, 0));
+  const n0 = g.children.length; gunFlash(w, g, p);
+  const flash = g.children[n0];
+  ok(flash.position.distanceTo(g.worldToLocal(tip.clone())) < 0.35, 'flash at the muzzle');
+});

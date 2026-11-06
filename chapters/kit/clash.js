@@ -60,7 +60,9 @@ export function melee(world, pairs, { approach = 1.6, gap = 1.35, lose = 0.5, fl
 
 // 선 채로 쏘는 총: 총구 불빛·연기(사람 가슴 앞). shooters를 번갈아 쏜다. onShot(i)에서 맞은 쪽을 쓰러뜨린다
 export function gunFlash(world, g, p) {
-  const at = p.localToWorld(new THREE.Vector3(0.2, 1.45, 1.1)); g.worldToLocal(at);
+  const gun = p.userData.carry?.obj?.name === 'rifle' ? p.userData.carry.obj : null; // 손에 든 총이면 총구 끝에서(2026-11-06 선생님: 총을 잡고 쏘는 게 보이게)
+  if (gun) { gun.rotation.x = Math.PI / 2 - 0.35; const back = world.onUpdate(dt => { gun.rotation.x = Math.min(Math.PI / 2, gun.rotation.x + dt * 2.5); if (gun.rotation.x >= Math.PI / 2) back(); }); } // 반동: 총구가 들렸다 돌아온다
+  const at = gun ? gun.localToWorld(new THREE.Vector3(0, 0.78, 0)) : p.localToWorld(new THREE.Vector3(0.2, 1.45, 1.1)); g.worldToLocal(at);
   const flash = new THREE.Mesh(new THREE.SphereGeometry(0.26, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffe08a }));
   const smoke = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 6), new THREE.MeshBasicMaterial({ color: 0xe8e4da, transparent: true, opacity: 0.7, depthWrite: false }));
   flash.position.copy(at); smoke.position.copy(at); g.add(flash, smoke);

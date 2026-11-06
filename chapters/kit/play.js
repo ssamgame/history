@@ -344,7 +344,7 @@ export function drive(ctx, part, easy) {
     return { ...pk, pg, item, pos: s.at(pk.x, pk.z), got: false };
   });
   const left = () => pickups.filter(x => !x.got);
-  const followers = [];
+  const followers = ctx.testHooks.followers = [];
   let next = 0, last = part.from, safe = 0, held = 0;
   const total = route.length;
   const show = () => {
@@ -426,7 +426,7 @@ export function drive(ctx, part, easy) {
     if (part.followers) for (let i = 0; i < part.followers.per; i++) {
       const looks = part.followers.looks, f = new THREE.Group(); // 따라오는 사람(flags면 태극기를 든다)
       BUILD.crowd(f, { n: 1, looks: [looks[followers.length % looks.length]], flags: part.followers.flags ? 1 : 0 });
-      f.position.copy(p); g.parent.add(f); followers.push(f);
+      f.position.copy(followers.length ? followers[followers.length - 1].position : p); f.position.x += 0.9; g.parent.add(f); followers.push(f); // 맨 뒷사람 곁에서 생긴다(아래 떼어 놓기가 벌린다)
     }
     if (route[next]) { route[next].m.visible = true; if (route[next].lab) route[next].lab.visible = true; }
     show();
@@ -455,7 +455,7 @@ export function drive(ctx, part, easy) {
       if (pk.flag) pk.item.rotation.y = Math.sin(el * 1.5 + pk.x) * 0.5; else if (!pk.follow) pk.item.rotation.y += dt * 2; else pk.item.rotation.y = Math.atan2(p.x - pk.pos.x, p.z - pk.pos.z); // 사람은 학생 쪽을 본다
       if (near(p, pk.pos, 1.5)) {
         pk.got = true; pk.pg.visible = false; audio.play('tap'); toast(ctx, pk.say || (pk.follow ? `${pk.label || '한 사람'}이(가) 함께해요!` : `${pk.label || '하나'}를 주웠어요!`), 'good'); show();
-        if (pk.follow) { const f = new THREE.Group(); BUILD.crowd(f, { n: 1, looks: [pk.follow] }); f.scale.setScalar(pk.small ? 0.7 : 1); f.position.copy(p); g.parent.add(f); followers.push(f); } // 찾은 사람이 뒤따라온다
+        if (pk.follow) { const f = new THREE.Group(); BUILD.crowd(f, { n: 1, looks: [pk.follow] }); f.scale.setScalar(pk.small ? 0.7 : 1); f.position.set(pk.pos.x, 0, pk.pos.z); g.parent.add(f); followers.push(f); } // 찾은 사람이 서 있던 자리에서 걸어와 뒤따른다(학생 몸 안에서 생기면 겹쳐 깜빡였다, 2026-11-06)
       }
     }
     const r = route[next];
@@ -487,6 +487,11 @@ export function drive(ctx, part, easy) {
       const dx = lead.x - f.position.x, dz = lead.z - f.position.z, d = Math.hypot(dx, dz);
       if (d > 1.3) { f.position.x += (dx / d) * Math.min(d - 1.3, dt * 9); f.position.z += (dz / d) * Math.min(d - 1.3, dt * 9); f.rotation.y = Math.atan2(dx, dz); }
       lead = f.position;
+    }
+    // 서로(학생과도) 몸이 겹치지 않게 떼어 놓는다: 겹친 몸은 번갈아 그려져 깜빡인다
+    for (let i = 0; i < followers.length; i++) for (const o of [world.player.position, ...followers.slice(0, i).map(q => q.position)]) {
+      const a = followers[i].position, dx = a.x - o.x, dz = a.z - o.z, d = Math.hypot(dx, dz), MIN = 0.85;
+      if (d < MIN) { const k = d > 1e-4 ? (MIN - d) / d : 1; a.x += (d > 1e-4 ? dx : 0.7) * k; a.z += (d > 1e-4 ? dz : 0.7) * k; }
     }
   });
   s.cleanup(() => followers.forEach(f => f.parent && f.parent.remove(f)));

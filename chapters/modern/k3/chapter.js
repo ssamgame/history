@@ -29,7 +29,7 @@ const xy = (list, pts) => list.map((it, i) => ({ ...it, ...pts[i] }));
 // ── 무대(마을에서 떨어진 x 400) ──
 // 들판 사이 마을 길: 마을마다 초가와 살림살이를 두어 어디가 어느 마을인지 한눈에 보이게
 const paddy = (x, z, w, d) => [{ x, z, w, d, color: 0x7a9a4a, kind: 'grass' }, { x, z: z - d / 2 - 0.3, w, d: 0.5, color: 0x8f7556 }]; // 논과 둑
-const FARMS = { edge: { style: 'thatch', seed: 187 }, center: [{ type: 'banner', x: -10, z: -15, text: '보국안민' }, { type: 'banner', x: 7, z: -14, text: '제폭구민' }, { type: 'toolRack', x: -9, z: 8, ry: 0.3 }, { type: 'cargo', x: 11, z: -10, kind: 'sack', n: 4 }, { type: 'banner', x: 7, z: 18, text: '제폭구민' }, { type: 'toolRack', x: -9, z: 11, ry: 0.3 }, { type: 'cargo', x: 9, z: 11, kind: 'sack', n: 4 }],
+export const FARMS = { edge: { style: 'thatch', seed: 187 }, center: [{ type: 'toolRack', x: -9, z: 8, ry: 0.3 }, { type: 'cargo', x: 11, z: -10, kind: 'sack', n: 4 }, { type: 'toolRack', x: -9, z: 11, ry: 0.3 }, { type: 'cargo', x: 9, z: 11, kind: 'sack', n: 4 }],
   origin: [400, 0], ground: 'grass', groundColor: 0x7a8a4c, bounds: { x0: -24, x1: 24, z0: -26, z1: 26 },
   roads: [{ x: 0, z: 0, w: 5, d: 52, color: 0x8f7556 }, ...paddy(14, 20, 12, 7), ...paddy(-16, 2, 12, 8), ...paddy(15, -12, 12, 7)],
   props: [
@@ -234,7 +234,8 @@ export function walkStage({ ctx, a, g, jeon }) { // (테스트가 싸움 장면�
   // 2 전주성: 성문(문짝), 성 위 깃발은 차지한 뒤 올린다
   const gate = gateLeaves(g, { x: 0, z: -32, width: 5.4, height: 3.2, inward: -1, color: 0x6b4a32 });
   const lintel = new THREE.Mesh(new THREE.BoxGeometry(6.4, 0.6, 1.2), new THREE.MeshLambertMaterial({ color: 0x3d4846 })); lintel.position.set(0, 3.5, -32); g.add(lintel);
-  const flags = [-4, 4].map(x => { const b = new THREE.Group(); BUILD.banner(b, { text: '보국안민', h: 3 }); b.position.set(x, 3.2, -32); b.visible = false; g.add(b); return b; });
+  // 구호(보국안민·제폭구민)는 청·일본군이 들어온 뒤 다시 일어설 때 처음 보인다(2026-11-06 선생님): 전주성 깃발은 글자 없이
+  const flags = [-4, 4].map(x => { const b = new THREE.Group(); BUILD.banner(b, { color: 0xe8dcc0, h: 3 }); b.position.set(x, 3.2, -32); b.visible = false; g.add(b); return b; });
   const army2 = torchCrowd(g, [[-1.2, -21], [1.2, -21], [-1.2, -19.6], [1.2, -19.6], [0, -18.4]], () => 'peasant');
   army2.forEach((p, i) => setCarry(p, makeTool(i + 1), 'side'));
   // 3 집강소: 화약을 맺는 정부 관리와 농민군, 동쪽에서 들어온 청·일본 군대
@@ -292,7 +293,7 @@ export function walkStage({ ctx, a, g, jeon }) { // (테스트가 싸움 장면�
     },
     async ugeumchi() {
       map?.to(4); // 농민군이 고개로 올라가자 고개 위 일본군과 관군이 줄지어 총을 쏘고(불빛·연기), 몇이 쓰러진 뒤 농민군이 크게 져서 물러선다(D-65). 체포는 해설로만, 잡힌 곳은 보여 주지 않는다
-      this.view = cam([4, 3.2, -80], [0, 2.4, -96]); this.view();
+      this.view = cam([-13, 3.6, -90], [2, 2.6, -98]); this.view(); // 2026-11-06 선생님: 일본군이 총을 잡고 쏘는 게 보이게 비스듬한 옆에서
       ctx.audio?.play?.('boom');
       for (const [x, z] of heavy ? [[-4, -99.5], [2, -99], [6.5, -100]] : [[0, -99]]) fires.push(burning(world, { parent: g, x, y: ridge.top(x, z), z, size: heavy ? 0.9 : 0.6, level: 1 }));
       const up = army5.map(p => runTo(world, p, { x: p.position.x * 0.9, z: p.position.z - 3 }, 1.6, { lean: 0.2, heightAt: ridge.top }));
