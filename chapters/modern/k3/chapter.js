@@ -16,7 +16,6 @@ import { showHowTo } from '../../../core/minigame.js';
 import { makePerson, setCarry } from '../../../core/people.js';
 import { waitInteract } from '../../../core/portal.js';
 import { LOOKS } from '../../../content/characters.js';
-import { MAP_OUTLINE } from '../../../core/screens.js';
 import { placePlayer } from '../../joseon/common.js';
 import { NIGHT_MOOD, wait, person, JAPAN, makeTorch, makeTool, flicker, torchLights, addTorchLight, equipFollowers, runTo, mound, followJeon } from './stage.js';
 import script from './script.js';
@@ -201,25 +200,6 @@ async function gobuScene(ctx) {
   }
 }
 
-// 동학 농민 운동이 퍼져 간 길 지도(2026-11-04 선생님: 조선 4장 피란 지도처럼): 화면 오른쪽 한반도 지도에 고부에서 멈춘 곳까지 길을 이어 그린다
-export const MOVE_MAP = [['고부', 112, 336], ['황토현', 117, 331], ['전주성', 125, 318], ['집강소', 112, 322], ['다시 일어섬', 128, 312], ['공주 우금치', 122, 282]]; // [이름, x, y](지도 300×400)
-export function moveMap(ui) {
-  if (!ui) return null;
-  const box = document.createElement('div'); box.className = 'route-map';
-  Object.assign(box.style, { position: 'absolute', right: '3%', top: '12%', height: '58%', aspectRatio: '3 / 4', background: 'rgba(127,168,191,0.92)', border: '4px solid #6b4a32', borderRadius: '10px', zIndex: 5, pointerEvents: 'none' });
-  ui.appendChild(box);
-  const draw = n => { // 0번(고부)부터 n번 곳까지
-    const pts = MOVE_MAP.slice(0, n + 1), last = pts[pts.length - 1];
-    box.innerHTML = `<svg viewBox="50 175 205 205" aria-hidden="true"><polygon points="${MAP_OUTLINE}" fill="#d9cfa8" stroke="#6b5a3a" stroke-width="2"/>
-      <polyline class="route" points="${pts.map(q => `${q[1]},${q[2]}`).join(' ')}" fill="none" stroke="#a3262a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 4"/>
-      ${pts.map((q, i) => `<circle cx="${q[1]}" cy="${q[2]}" r="${i === n ? 3.6 : 2.4}" fill="${i === n ? '#a3262a' : '#2b241c'}"/>`).join('')}
-      <text x="${last[1] + 5}" y="${last[2] + 4}" font-size="10" font-weight="bold" fill="#a3262a">${last[0]}</text>
-      <text x="${MOVE_MAP[0][1] - 26}" y="${MOVE_MAP[0][2] + 12}" font-size="8" font-weight="bold" fill="#2b241c">고부</text></svg>`;
-  };
-  draw(0);
-  return { to: i => draw(i + 1), remove: () => box.remove() };
-}
-
 // ── 전봉준을 따라 걷기: 멈춘 곳마다 그 일 ──
 export function walkStage({ ctx, a, g, jeon }) { // (테스트가 싸움 장면을 따로 돌린다)
   const { world } = ctx;
@@ -254,12 +234,10 @@ export function walkStage({ ctx, a, g, jeon }) { // (테스트가 싸움 장면�
   const top = [[-6, -98.5, JAPAN], [-3, -98, JAPAN], [0, -98, JAPAN], [3, -98, JAPAN], [6, -98.5, 'joseonSoldier'], [8.5, -99, 'joseonSoldier']].map(([x, z, look]) => { const p = person(g, look, x, z, 0); p.position.y = ridge.top(x, z); return p; });
   const army5 = torchCrowd(g, [[-3, -91], [-1.6, -91.6], [0, -91], [1.6, -91.6], [3, -91], [-2.2, -92.8], [2.2, -92.8]], () => 'peasant');
   army5.forEach((p, i) => setCarry(p, makeTool(i), 'side'));
-  const map = moveMap(ctx.ui);
   return {
     keepDark: false,
-    map,
     async hwangto() { // 농민군이 무기를 들고 언덕으로 달려가고, 관군은 돌아서서 언덕 너머 동쪽으로 달아난다(2026-11-04 선생님)
-      map?.to(0);
+      
       this.view = cam([-2, 3.6, -1], [11, 1.4, -9]); this.view();
       const hook = this.hook = { charged: 0, fled: 0 };
       const up = army1.map((p, i) => runTo(world, p, { x: 9 + (i % 3) * 0.4, z: p.position.z }, 2.6 + i * 0.12, { lean: 0.25, heightAt: hill1.top }).then(() => { hook.charged += 1; }));
@@ -269,7 +247,7 @@ export function walkStage({ ctx, a, g, jeon }) { // (테스트가 싸움 장면�
       army1.forEach(p => { p.rotation.y = Math.PI / 2; });
     },
     async jeonju() { // 성문이 열리고 농민군이 성 안으로, 성 위에 깃발
-      map?.to(1);
+      
       this.view = cam([3, 3.2, -18], [0, 2.6, -32]); this.view();
       await wait(world, 1.2, k => gate.setOpen(k));
       army2.forEach((p, i) => runTo(world, p, { x: (i - 2) * 1.2, z: -38 - (i % 2) }, 2.4, { lean: 0.1, speed: 1.4 }));
@@ -277,13 +255,13 @@ export function walkStage({ ctx, a, g, jeon }) { // (테스트가 싸움 장면�
       flags.forEach(f => { f.visible = true; });
     },
     async jipgang() { // 청·일본 군대가 들어온다 → 관리와 농민군이 화약을 맺고 집강소에서 고을 일을 본다
-      map?.to(2);
+      
       this.view = cam([4, 3.6, -43], [-1, 1.4, -54]); this.view();
       foreign.forEach(p => { p.visible = true; p.rotation.y = Math.atan2(-4 - p.position.x, -51 - p.position.z); }); // 농민군이 선 곳을 보며 그쪽으로 다가온다(2026-11-04 선생님)
       await wait(world, 1.4, (k, dt) => foreign.forEach(p => { p.position.x += Math.sin(p.rotation.y) * dt * 2; p.position.z += Math.cos(p.rotation.y) * dt * 2; }));
     },
     async rise() { // 양쪽 들판에서 농민군이 몰려와 길가에 서고, 깃발이 오른다
-      map?.to(3);
+      
       this.view = cam([0, 3.4, -58], [0, 1.6, -71]); this.view();
       rise.forEach(p => { p.visible = true; });
       await Promise.all([
@@ -292,7 +270,7 @@ export function walkStage({ ctx, a, g, jeon }) { // (테스트가 싸움 장면�
       ]);
     },
     async ugeumchi() {
-      map?.to(4); // 농민군이 고개로 올라가자 고개 위 일본군과 관군이 줄지어 총을 쏘고(불빛·연기), 몇이 쓰러진 뒤 농민군이 크게 져서 물러선다(D-65). 체포는 해설로만, 잡힌 곳은 보여 주지 않는다
+      // 농민군이 고개로 올라가자 고개 위 일본군과 관군이 줄지어 총을 쏘고(불빛·연기), 몇이 쓰러진 뒤 농민군이 크게 져서 물러선다(D-65). 체포는 해설로만, 잡힌 곳은 보여 주지 않는다
       this.view = cam([-13, 3.6, -90], [2, 2.6, -98]); this.view(); // 2026-11-06 선생님: 일본군이 총을 잡고 쏘는 게 보이게 비스듬한 옆에서
       ctx.audio?.play?.('boom');
       for (const [x, z] of heavy ? [[-4, -99.5], [2, -99], [6.5, -100]] : [[0, -99]]) fires.push(burning(world, { parent: g, x, y: ridge.top(x, z), z, size: heavy ? 0.9 : 0.6, level: 1 }));
@@ -303,7 +281,7 @@ export function walkStage({ ctx, a, g, jeon }) { // (테스트가 싸움 장면�
       await Promise.all(up);
       await Promise.all(army5.filter(p => !hit.includes(p)).map((p, i) => runTo(world, p, { x: (i % 2 ? 1 : -1) * (14 + i), z: p.position.z + 8 }, 2.2 + i * 0.1, { lean: 0.25 }).then(() => { p.visible = false; })));
     },
-    dispose() { fires.forEach(f => f.setLevel(0)); map?.remove(); },
+    dispose() { fires.forEach(f => f.setLevel(0)); },
   };
 }
 export function historyWalk(ctx) {

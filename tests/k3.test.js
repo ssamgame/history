@@ -139,3 +139,15 @@ test('k3: Japanese soldiers fire from the rifle in their hands (muzzle flash at 
   const flash = g.children[n0];
   ok(flash.position.distanceTo(g.worldToLocal(tip.clone())) < 0.35, 'flash at the muzzle');
 });
+
+// 2026-11-06 선생님: 동학 농민 운동이 퍼져 간 이동 경로 지도(오른쪽 위)를 뺀다
+test('k3: no route map while following 전봉준 through the fights', async () => {
+  const { touchSetup, touchBot } = await import('./bot.js');
+  const s = touchSetup(script.speakers), bot = touchBot(s, { answers: new Set() });
+  let seen = 0; const off = s.w.onUpdate(() => { if (s.ui.querySelector('.route-map') || document.querySelector('.route-map')) seen += 1; });
+  try {
+    k3.buildScene(s.w, s.ctx);
+    await k3.stories.fights(s.ctx);
+    eq(seen, 0);
+  } finally { off(); bot.stop(); s.done(); }
+}, { timeout: 120000 });
