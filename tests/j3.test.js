@@ -143,3 +143,24 @@ test('j3 fun: three gauges in different places, a walking time limit, then pick 
     eq(res, false); eq(fail.why, 'late');
   } finally { bot.stop(); s.done(); }
 }, { timeout: 120000 });
+
+// 2026-11-06 선생님: 측우기 앞에 가서 E(대화 버튼)를 눌러야 잰다. 걷는 시간은 1분쯤
+test('j3 fun: standing at the next gauge does nothing until the talk button is pressed', async () => {
+  const s = touchSetup(j3Script.speakers), bot = touchBot(s, { answers, holdStill: () => true, noTaps: () => false });
+  try {
+    const sc = j3.buildScene(s.w, s.ctx); j3.enterStage(s.ctx, 'minigame');
+    const { readGauges } = await import('../chapters/joseon/j3/chapter.js');
+    readGauges(s.ctx, false, {});
+    const tick = async n => { for (let i = 0; i < n; i++) { s.w.step(1 / 20, { x: 0, z: 0 }); if (i % 10 === 0) await new Promise(r => setTimeout(r, 1)); } };
+    for (let i = 0; i < 400 && s.ctx.testHooks.gaugeLevels?.length !== 1; i++) await tick(5);
+    for (let i = 0; i < 400 && !s.w.getGoal(); i++) await tick(5); // 서운관을 읽고 다음 측우기로 갈 차례
+    bot.stop();
+    const f = sc.gauges[1].front; s.w.player.position.set(f.x, 0, f.z);
+    await tick(40);
+    eq(s.ctx.testHooks.gaugeLevels.length, 1, 'not read just by standing there');
+    ok(!s.hud.talkBtn.disabled, 'talk button ready');
+    s.hud.talkBtn.click(); await tick(10);
+    for (let i = 0; i < 100 && s.ctx.testHooks.gaugeLevels.length < 2; i++) await tick(5);
+    eq(s.ctx.testHooks.gaugeLevels.length, 2, 'read after pressing');
+  } finally { bot.stop(); s.done(); }
+}, { timeout: 120000 });

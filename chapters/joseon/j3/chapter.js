@@ -26,7 +26,7 @@ export const hourLabel = k => ({ text: `${HOUR_ANIMALS[k][1]} ${HOUR_ANIMALS[k][
 export const DIAL_ROUNDS = [1, 4, 6];
 // 측우기에 고이는 빗물 높이(눈금). 소나기가 두 번 온다
 export const GAUGE_ROUNDS = [3, 5, 2]; // 서운관·서쪽 감영·동쪽 감영의 빗물 눈금(2026-11-05: 고을 돌며 재기)
-const WALK_LIMIT = { normal: 24, easy: 40 }; // 측우기 사이를 걷는 시간(초, 읽는 동안은 멈춘다)
+const WALK_LIMIT = { normal: 60, easy: 90 }; // 2026-11-06 선생님: 1분쯤 // 측우기 사이를 걷는 시간(초, 읽는 동안은 멈춘다)
 // 자격루 장면의 차례: 물 붓기 → 수수호에 물이 차오름 → 살대가 떠오름 → 구슬이 굴러 동판을 침 → 인형이 종·북·징을 침
 export const CLOCK_STEPS = ['pour', 'rise', 'rod', 'ball', 'strike'];
 
@@ -142,12 +142,15 @@ export async function readGauges(ctx, easy, fail = {}) {
     world.camMode = 'follow'; placePlayer(world, G[i].stand);
   };
   const walkTo = i => new Promise(resolve => { // 시간은 걷는 동안만 줄어든다
-    const f = G[i].front; world.setGoal(f); ctx.input.enabled = true;
+    const f = G[i].front, at = G[i].gauge.position; world.setGoal(f); ctx.input.enabled = true;
+    let near = false;
+    const end = ok => { off(); unbind(); hud.setPrompt(null); hud.setTalkEnabled(false); ctx.testHooks.pressing = null; ctx.input.enabled = false; world.setGoal(null); resolve(ok); };
+    const unbind = ctx.onAction(() => { if (near && !dialogue.isOpen()) end(true); }); // 측우기 앞에서 E(대화 버튼)를 눌러야 잰다(2026-11-06 선생님)
     const off = world.onUpdate(dt => {
       left -= dt; hud.setTimer(left);
-      const p = world.player.position;
-      if (Math.hypot(p.x - f.x, p.z - f.z) < 1.6) { off(); ctx.input.enabled = false; world.setGoal(null); resolve(true); }
-      else if (left <= 0) { off(); ctx.input.enabled = false; world.setGoal(null); resolve(false); }
+      const p = world.player.position, n = Math.hypot(p.x - f.x, p.z - f.z) < 1.8;
+      if (n !== near) { near = n; hud.setPrompt(n ? at : null, '측우기 살펴보기'); hud.setTalkEnabled(n); ctx.testHooks.pressing = n ? 'gauge' : null; }
+      if (left <= 0) end(false);
     });
   });
   try {
