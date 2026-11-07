@@ -8,6 +8,8 @@ import { roam } from '../../../core/flow.js';
 import { showHowTo } from '../../../core/minigame.js';
 import { waitInteract } from '../../../core/portal.js';
 import { LOOKS } from '../../../content/characters.js';
+import { makePerson, mat, gaitPose } from '../../../core/people.js';
+import { labelSprite, toast } from '../../kit/play.js';
 import { enterThroughGate, closeGate } from '../../kit/gate.js';
 import { sayAll, placePlayer, tryPart, sumParts, visitAny } from '../common.js';
 import { holdPress, dragStone } from './hold.js';
@@ -74,10 +76,43 @@ export async function tryPulleys(ctx, easy) {
 
 // 2) 거중기로 성 쌓기: 성벽을 정면에서 보며 물레를 길게 눌러 돌려 돌을 들고(J-05), 매단 돌을 끌거나 방향키로 옮겨
 // 빛나는 빈자리에 내려놓는다(J-06). 빈자리가 아닌 곳에서 내리면 성벽 위에 걸려 해설만 듣는다(틀림으로 셈, 다시 옮기면 된다)
+// 돌 쌓기 시합(2026-11-07 선생님): 일꾼 넷이 들것에 돌 하나를 얹고 성벽 앞을 천천히 가로질러 옮긴다.
+// 그들이 건너편에 닿기 전에 거중기로 빈자리 셋을 다 채워야 한다(거중기가 사람 손보다 얼마나 빠른지 몸으로 느낀다)
+export const RACE = { seconds: 80, easySeconds: 120, from: -12.5, to: 10.5, z: WALL_Z + 2.4 }; // 왼쪽(장안문 쪽)에서 출발해 성벽 바로 앞을 지나간다(오른쪽 아래 물레 버튼에 가리지 않게)
+export function litterTeam(world) {
+  const g = new THREE.Group(); g.position.set(RACE.from, 0, RACE.z); world.level.add(g);
+  const bar = (dz) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 3.4, 6), mat(0x7a5a3c, 'wood')); m.rotation.z = Math.PI / 2; m.position.set(0, 0.95, dz); m.castShadow = true; g.add(m); };
+  bar(-0.55); bar(0.55);
+  const stone = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.8, 0.8), mat(0xb3ada2, 'stone')); stone.position.y = 1.38; stone.castShadow = true; g.add(stone);
+  const people = [[-1.25, -0.55], [-1.25, 0.55], [1.25, -0.55], [1.25, 0.55]].map(([x, z]) => {
+    const p = makePerson(LOOKS.worker); p.position.set(x, 0, z); p.rotation.y = Math.PI / 2; p.userData.manual = true; p.userData.noWalk = true; g.add(p); return p;
+  });
+  const lab = labelSprite('맨손 일꾼들', { size: 0.9 }); lab.position.set(0, 3.0, 0); g.add(lab);
+  let ph = 0;
+  return {
+    group: g,
+    at(k) { // 0~1: 출발 자리에서 건너편까지
+      const x = RACE.from + (RACE.to - RACE.from) * k, dx = Math.abs(x - g.position.x); g.position.x = x;
+      ph += dx * Math.PI / 0.55; // 짧은 걸음(무거운 돌)
+      people.forEach((p, i) => {
+        const u = p.userData; u.walking = dx > 0;
+        p.position.y = gaitPose(p, ph + (i % 2) * Math.PI, 1, 0.5);
+        if (u.arms) u.arms.forEach((a, j) => a.rotation.set(-0.45, 0, (j ? -1 : 1) * 0.12)); // 두 손으로 들것 채를 쥔다
+      });
+    },
+    dispose() { g.removeFromParent(); },
+  };
+}
+
 export async function buildWall(ctx, easy) {
   const { world, dialogue, hud, audio } = ctx;
   const W = script.wall;
   GAPS.forEach((_, i) => scene.fill(i, false));
+  const team = litterTeam(world), raceSec = easy ? RACE.easySeconds : RACE.seconds;
+  let raceT = 0, lost = false;
+  const race = world.onUpdate(dt => { if (lost || dialogue.isOpen()) return; raceT += dt; const k = Math.min(1, raceT / raceSec); team.at(k); hud.setTimer(raceSec - raceT); if (k >= 1) lost = true; });
+  const abort = () => lost;
+  ctx.testHooks.race = { team, abort };
   scene.pulleys.forEach(r => { r.g.visible = false; }); // 도르래 틀과 나르는 백성은 성벽 앞을 가리니 이 놀이 동안 치운다
   scene.setCarriers(false);
   const f = scene.wallFit;
@@ -100,7 +135,7 @@ export async function buildWall(ctx, easy) {
       hud.setCounter(`채운 빈자리 ${filled.size}/${GAPS.length} · 물레를 돌리자`);
       if (!filled.size) { await dialogue.say(W.wind); dialogue.close(); }
       const a0 = scene.drum.rotation.x, h0 = scene.PICK_H;
-      await holdPress(ctx, { label: '물레 돌리기 — 길게 누르기', sec: HOLD_SEC.winch, onProgress: p => { scene.drum.rotation.x = a0 + p * Math.PI * 4; scene.setLift(h0 + (1 - h0) * p); } });
+      if (await holdPress(ctx, { label: '물레 돌리기 — 길게 누르기', sec: HOLD_SEC.winch, abort, onProgress: p => { scene.drum.rotation.x = a0 + p * Math.PI * 4; scene.setLift(h0 + (1 - h0) * p); } }) === 'abort') break;
       audio.play('tap');
       if (!filled.size) { await dialogue.say(W.up); dialogue.close(); }
       hud.setCounter(`채운 빈자리 ${filled.size}/${GAPS.length} · 돌을 빈자리로 옮기자`);
@@ -109,14 +144,18 @@ export async function buildWall(ctx, easy) {
         set: (x, h) => { scene.trolley.position.x = x; scene.setLift(h); },
         planeZ: WALL_Z, yOf: h => h * SPAN, hOf: y => y / SPAN,
         gaps: GAPS.map((g, i) => (filled.has(i) ? null : g)), track: TRACK,
-        topH: (WALL_H + 0.65) / SPAN, bottomH: scene.GAP_H,
+        topH: (WALL_H + 0.65) / SPAN, bottomH: scene.GAP_H, abort,
         onBump: async () => { missed = true; audio.play('wrong'); await dialogue.say({ who: 'guide', text: W.notGap }); dialogue.close(); },
       });
+      if (at < 0) break;
       audio.play('correct');
       await scene.placeAt(at); filled.add(at);
       ghosts[at].visible = false;
     }
+    if (lost) { audio.play('wrong'); toast(ctx, W.lost, 'bad'); await ctx.wait(900); return false; } // 일꾼들이 먼저 건너편에 닿았다
+    toast(ctx, W.won, 'good');
   } finally {
+    race(); team.dispose(); hud.setTimer(null); ctx.testHooks.race = null;
     glow(); ghosts.forEach(m => world.level.remove(m));
     scene.pulleys.forEach(r => { r.g.visible = true; });
     scene.setCarriers(true);
@@ -258,7 +297,7 @@ export default {
     const blockers = ['jeongyakyong', 'worker'].map(id => world.npcs.get(id));
     blockers.forEach(n => { n.mesh.visible = false; n.collider.r = 0; }); // 성벽 앞을 가리지 않게 잠시 비켜 둔다
     await showHowTo(ctx.ui, script.wall.howto);
-    parts.push(await tryPart(ctx, easy => buildWall(ctx, easy), script.wall.notGap));
+    parts.push(await tryPart(ctx, easy => buildWall(ctx, easy), script.wall.fail));
     blockers.forEach(n => { n.mesh.visible = true; n.collider.r = 0.5; });
     await sayAll(dialogue, script.wall.done); dialogue.close();
     // 3) 차일 아래의 정조에게 가서 말을 걸면 함께 화성을 둘러본다(C-05)

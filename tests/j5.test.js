@@ -54,6 +54,35 @@ test('j5: the two places are labelled only 척화 and 주화', () => {
   eq(j5Script.sort.bins.map(b => b.label), ['척화', '주화']);
 });
 
+// 꺼진 불을 모두 켠다: 둘 켤 때마다 장작더미에서 다시 든다(2026-11-07 한 묶음 = 불 둘)
+function lightAll(s, sc, fires = sc.fires) {
+  const step = () => s.w.step(0.05, { x: 0, z: 0 });
+  for (const [i, g] of fires.entries()) {
+    if (i % 2 === 0) { s.w.player.position.set(sc.wood.x, 0, sc.wood.z + 0.5); step(); s.hud.talkBtn.click(); step(); s.dialogue.close(); }
+    if (g.lit) continue;
+    s.w.player.position.set(g.x, 0, g.z + 1.3); step(); s.hud.talkBtn.click(); step();
+  }
+}
+
+test('j5 추위 하트: the cold grows while fires are out and eases when one is lit; all hearts gone fails the try', async () => {
+  const { COLD, heartText } = await import('../chapters/joseon/j5/chapter.js');
+  eq(heartText(0), '♥♥♥'); eq(heartText(0.5), '♥♥♡'); eq(heartText(1), '♡♡♡');
+  const s = touchSetup(j5Script.speakers);
+  try {
+    const sc = j5.buildScene(s.w, s.ctx);
+    let r = null; const run = j5.lightFires(s.ctx, false).then(v => { r = v; });
+    const step = () => s.w.step(0.05, { x: 0, z: 0 });
+    for (let i = 0; i < 100; i++) step();
+    const c0 = s.ctx.testHooks.cold; ok(c0 > 0.05 && c0 < 0.3, `cold grows ${c0}`);
+    s.w.player.position.set(sc.wood.x, 0, sc.wood.z + 0.5); step(); s.hud.talkBtn.click(); step(); s.dialogue.advance(); s.dialogue.advance(); s.dialogue.close();
+    s.w.player.position.set(sc.fires[0].x, 0, sc.fires[0].z + 1.3); step(); s.hud.talkBtn.click(); step();
+    ok(s.ctx.testHooks.cold < c0, 'lighting a fire eases the cold');
+    for (let i = 0; i < COLD.full * 20 * 1.5 && r === null; i++) { step(); await null; }
+    eq(r, false, 'all hearts gone → failed');
+    await run;
+  } finally { s.done(); }
+});
+
 test('j5: a brazier lights only when the action button is pressed next to it', async () => {
   const s = touchSetup(j5Script.speakers);
   try {
@@ -71,7 +100,13 @@ test('j5: a brazier lights only when the action button is pressed next to it', a
     s.hud.talkBtn.click();
     s.w.step(0.05, { x: 0, z: 0 });
     eq(f.lit, true, 'lit by the button');
-    for (const g of sc.fires) { s.w.player.position.set(g.x, 0, g.z + 1.3); s.w.step(0.05, { x: 0, z: 0 }); s.hud.talkBtn.click(); s.w.step(0.05, { x: 0, z: 0 }); }
+    eq(sc.fires.filter(f => f.lit).length, 1);
+    s.w.player.position.set(sc.fires[1].x, 0, sc.fires[1].z + 1.3); s.w.step(0.05, { x: 0, z: 0 }); s.hud.talkBtn.click(); s.w.step(0.05, { x: 0, z: 0 });
+    eq(sc.fires[1].lit, true, 'second fire from the same bundle');
+    s.w.player.position.set(sc.fires[2].x, 0, sc.fires[2].z + 1.3); s.w.step(0.05, { x: 0, z: 0 }); s.hud.talkBtn.click(); s.w.step(0.05, { x: 0, z: 0 });
+    eq(sc.fires[2].lit, false, 'the bundle is used up: a third fire needs new firewood');
+    lightAll(s, sc);
+    eq(sc.fires.map(f => (f.lit ? 1 : 0)).join(''), '111111', 'all lit after refilling the firewood');
     eq(await run, true);
   } finally { s.done(); }
 });
@@ -187,7 +222,9 @@ test('j5 N-02·N-03·N-04: names over the two ministers, a shivering 백성 star
     ok(folk && folk.mesh.visible, 'a cold 백성 in the fortress');
     ok(folk.mesh.userData.legs[0].userData.knee && folk.mesh.userData.legs[0].userData.knee.rotation.x > 1, 'crouching with bent knees');
     j5.enterStage(s.ctx, 'minigame');
+    const prev = new Map(); let maxHop = 0; // 데려간 신하가 대신 곁으로 순간이동하지 않고 걸어간다(2026-11-07)
     s.w.onUpdate(() => {
+      for (const id of ['official1', 'official2', 'official3', 'official4']) { const n = s.w.npcs.get(id); if (!n || !n.mesh.visible) { prev.delete(id); continue; } const q = n.mesh.position, o = prev.get(id); if (o) maxHop = Math.max(maxHop, Math.hypot(q.x - o.x, q.z - o.z)); prev.set(id, { x: q.x, z: q.z }); }
       frame += 1;
       const rz = folk.mesh.userData.arms[0].rotation.z; if (lastRz != null) shiver = Math.max(shiver, Math.abs(rz - lastRz)); lastRz = rz; // D-67: 몸을 떠는 대신 손을 비빈다
       if (frame % 5) return;
@@ -202,6 +239,7 @@ test('j5 N-02·N-03·N-04: names over the two ministers, a shivering 백성 star
     ok(lament.every(l => l.who === 'injo') && lament.filter(l => l.src).length >= 1, '인조 speaks, sourced');
     ok(iHow < iL && iL < iW && iW < iS, `lament ${iL} → walk ${iW} → 삼전도 ${iS}`);
     ok(s.ctx.testHooks.ledBy === 'injo', 'walked behind 인조 (leadWalk)');
+    ok(maxHop < 1.5, `escorted officials walk to their place, no teleport (max hop ${maxHop.toFixed(2)}m)`);
   } finally { bot.stop(); s.done(); }
 }, { timeout: 150000 });
 
@@ -212,7 +250,8 @@ test('j5 N-03: braziers can be lit in any order', async () => {
     const run = j5.lightFires(s.ctx, false);
     s.w.player.position.set(sc.wood.x, 0, sc.wood.z + 0.5); s.w.step(0.05, { x: 0, z: 0 });
     s.hud.talkBtn.click(); s.w.step(0.05, { x: 0, z: 0 }); s.dialogue.close();
-    for (const g of [...sc.fires].reverse()) { s.w.player.position.set(g.x, 0, g.z + 1.3); s.w.step(0.05, { x: 0, z: 0 }); s.hud.talkBtn.click(); s.w.step(0.05, { x: 0, z: 0 }); eq(g.lit, true); }
+    lightAll(s, sc, [...sc.fires].reverse());
+    ok(sc.fires.every(f => f.lit));
     eq(await run, true);
   } finally { s.done(); }
 });

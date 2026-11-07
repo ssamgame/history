@@ -7,7 +7,7 @@ import * as THREE from 'three';
 
 const HOLD_KEYS = new Set(['KeyE', 'Space', 'Enter']);
 
-export function holdPress(ctx, { label, sec, onProgress, decay = 0.35 }) {
+export function holdPress(ctx, { label, sec, onProgress, decay = 0.35, abort = null }) { // abort(): 참이 되면 'abort'로 끝난다(시합 시간이 다 됨)
   const { world, ui } = ctx;
   const btn = document.createElement('button');
   btn.type = 'button';
@@ -43,13 +43,14 @@ export function holdPress(ctx, { label, sec, onProgress, decay = 0.35 }) {
       btn.classList.toggle('held', on);
       fill.style.width = `${Math.round(p * 100)}%`;
       onProgress?.(p, on, dt);
-      if (p >= 1) {
+      if (p >= 1 || abort?.()) {
+        const done = p >= 1;
         off();
         removeEventListener('keydown', onKeyDown); removeEventListener('keyup', onKeyUp); removeEventListener('blur', onBlur);
         removeEventListener('pointerup', onUp); removeEventListener('pointercancel', onUp);
         btn.remove();
         if (ctx.testHooks.hold?.el === btn) ctx.testHooks.hold = null;
-        resolve();
+        resolve(done ? true : 'abort');
       }
     });
   });
@@ -60,7 +61,7 @@ export function holdPress(ctx, { label, sec, onProgress, decay = 0.35 }) {
 // 빈자리가 아닌 곳에서 내리면 성벽 위에 걸려 멈추고 onBump()를 부른다. 빈자리 바닥까지 내리거나, 빈자리 위에서 손을 떼면 끝.
 // get/set: 돌의 { x, h }(h는 들어 올린 정도), planeZ: 성벽 면, yOf(h)/hOf(y): 높이 바꾸기, gaps: 남은 빈자리 x, track: x 범위,
 // topH: 성벽 위를 지나는 가장 낮은 h, bottomH: 빈자리 바닥 h. 돌려주는 약속은 들어간 빈자리 번호(gaps의 순서)로 끝난다.
-export function dragStone(ctx, { get, set, planeZ, yOf, hOf, gaps, track, topH, bottomH, onBump, snap = 0.6 }) {
+export function dragStone(ctx, { get, set, planeZ, yOf, hOf, gaps, track, topH, bottomH, onBump, snap = 0.6, abort = null }) { // abort(): 참이 되면 -1로 끝난다
   const { world, ui } = ctx;
   const layer = document.createElement('div');
   layer.className = 'j6-drag';
@@ -124,6 +125,7 @@ export function dragStone(ctx, { get, set, planeZ, yOf, hOf, gaps, track, topH, 
   layer.addEventListener('pointerup', onUp);
   layer.addEventListener('pointercancel', onUp);
   const off = world.onUpdate(dt => {
+    if (!finishing && abort?.()) { finish(-1); return; }
     if (finishing || ctx.dialogue?.isOpen?.() || !keys.size) return;
     const s = get();
     const dx = ((keys.has('r') ? 1 : 0) - (keys.has('l') ? 1 : 0)) * 5 * dt, dh = ((keys.has('u') ? 1 : 0) - (keys.has('d') ? 1 : 0)) * 0.45 * dt;

@@ -228,10 +228,14 @@ async function inYard(ctx, play) {
 }
 
 // 3) 낱자 주워 모으기: 흩어진 낱자를 소리 나는 차례대로 찾아가 누르면 글자판에 낱말이 모인다(차례가 아니면 줍지 못한다)
+// 낱자는 바람에 날리듯 자리 둘레를 떠다니고(둘째 낱말은 더 빠르게, 모을수록 조금씩 빨라진다), 제한 시간 안에 다 모아야 한다
+export const WORD_SECONDS = [40, 50];
+export const letterDrift = (sp, t, next, k) => { const a = t * (0.35 + k * 0.2) * (1 + next * 0.12) + sp.i * 1.3; return { x: sp.x + Math.cos(a) * 1.3, z: sp.z + Math.sin(a * 1.7) * 0.9 }; };
 function gatherWord(ctx, w, k, easy) {
   let board = null;
   return PLAY.stops(ctx, {
-    arena: YARD, from: [0, 11], counter: `「${w.word}」 모은 낱자`, fail: script.wordsFail,
+    arena: YARD, from: [0, 11], counter: `「${w.word}」 모은 낱자`, fail: script.wordsFail, seconds: WORD_SECONDS[k],
+    move: (sp, t, next) => letterDrift(sp, t, next, k),
     spots: w.cards.map((label, i) => ({ label, ...LETTER_SPOTS[LETTER_ORDER[k][i]] })),
     act: (i, s) => {
       if (board) s.arena.group.remove(board);

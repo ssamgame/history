@@ -170,3 +170,14 @@ test('j2 K-02/K-03: each game starts by talking to 세종; vowel to make is on t
     ok(VOWEL_LABEL_Y.person > 3.8, 'label above the person model face');
   } finally { bot.stop(); s.done(); }
 }, { timeout: 150000 });
+
+test('j2 낱자 달리기: letters drift around their spots, faster for the second word, and each word has a time limit', async () => {
+  const { letterDrift, WORD_SECONDS } = await import('../chapters/joseon/j2/chapter.js');
+  const sp = { x: 2, z: -3, i: 1 };
+  const a = letterDrift(sp, 0, 0, 0), b = letterDrift(sp, 1, 0, 0);
+  ok(Math.hypot(a.x - b.x, a.z - b.z) > 0.2, 'moves'); ok(Math.hypot(a.x - sp.x, a.z - sp.z) < 1.5, 'stays near its spot');
+  const dist = (k, next) => { const p = letterDrift(sp, 0, next, k), q = letterDrift(sp, 0.3, next, k); return Math.hypot(p.x - q.x, p.z - q.z); };
+  ok(dist(1, 0) > dist(0, 0), 'second word drifts faster'); ok(dist(0, 2) > dist(0, 0), 'faster as letters are gathered');
+  eq(WORD_SECONDS.length, 2); ok(WORD_SECONDS.every(s => s >= 30), 'enough time');
+  ok(j2Script.wordsHowto.steps[0].includes('떠다니'), 'how-to says the letters drift');
+});

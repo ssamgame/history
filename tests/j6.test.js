@@ -355,3 +355,25 @@ test('j6 D-30 J-05: hold E or the big button to pull; letting go stops and slowl
     window.dispatchEvent(new PointerEvent('pointerup', { pointerId: 9 }));
   } finally { s.done(); }
 });
+
+test('j6 돌 쌓기 시합: four workers carry one stone across the wall front; if they arrive first the try fails', async () => {
+  const { buildWall, RACE, litterTeam } = await import('../chapters/joseon/j6/chapter.js');
+  const s = touchSetup(j6Script.speakers);
+  try {
+    const sc = j6.buildScene(s.w, s.ctx);
+    const team = litterTeam(s.w);
+    const people = []; team.group.traverse(o => { if (o.userData.legs) people.push(o); });
+    eq(people.length, 4, 'four workers');
+    team.at(0); const x0 = team.group.position.x; team.at(0.5);
+    ok(Math.abs(team.group.position.x - x0) > 5, 'they move across'); ok(people.every(p => p.userData.walking), 'walking');
+    team.dispose();
+    let r = null; const run = buildWall(s.ctx, false).then(v => { r = v; });
+    const step = () => s.w.step(0.05, { x: 0, z: 0 });
+    for (let i = 0; i < RACE.seconds * 20 + 400 && r === null; i++) { step(); if (s.dialogue.isOpen()) { s.dialogue.advance(); s.dialogue.advance(); } await null; } // 아무것도 하지 않는다
+    for (let i = 0; i < 80 && r === null; i++) await sleep(50); // 지는 알림 뒤 잠깐 기다렸다가 끝난다
+    eq(r, false, 'workers arrived first → failed');
+    ok(sc.fillers.every(f => !f.visible), 'nothing filled');
+    ok(!s.ctx.testHooks.race, 'race cleaned up');
+    await run;
+  } finally { s.done(); }
+});

@@ -138,8 +138,9 @@ export function buildJ4Scene(world) {
   const puffGeo = new THREE.SphereGeometry(1, 10, 8);
   const puff = (p, r, color = 0xe8e6e0) => { const m = new THREE.Mesh(puffGeo, new THREE.MeshLambertMaterial({ color, transparent: true, opacity: 0.85, depthWrite: false })); m.scale.setScalar(r); m.position.copy(p); fx.add(m); return m; };
   const BURN = 1.0, SINK = 3.4, DEPTH = 6.8; // 불이 붙은 뒤 가라앉기 시작할 때까지, 가라앉는 시간, 잠기는 깊이(돛대 끝까지 물 아래)
-  const playBattle = (audio = null) => new Promise(resolve => {
-    const shooters = [...fleet.children, leadTurtle], targets = [...enemy.children];
+  // 함대 포격: 아직 떠 있는 적선 모두를 우리 배들이 차례로 쏜다
+  const playBattle = (audio = null) => {
+    const shooters = [...fleet.children, leadTurtle], targets = enemy.children.filter(e => e.visible && !e.userData.sink); // 학생이 먼저 가라앉힌 배는 뺀다
     // D-67: 적을 멀리 둔 채 포격으로 친다. 첫 포탄 몇 발은 앞에 떨어져 물기둥만 솟고(빗나감), 다음 포탄이 맞힌다.
     // 판옥선은 적 쪽 옆구리 포혈에서, 거북선은 용머리에서 쏜다. 쏠 때마다 포구에 불꽃이 번쩍이고 흰 연기가 퍼지며 배가 반동으로 흔들린다
     const shots = [];
@@ -149,6 +150,11 @@ export function buildJ4Scene(world) {
       if (i % 3 === 0) shots.push({ at, from, to: tg, miss: true, state: 'wait' });
       shots.push({ at: at + 0.25, from, to: tg, state: 'wait' });
     });
+    return runShots(shots, audio).then(() => targets.length);
+  };
+  // 포탄 목록을 끝까지 돌린다(shots: { at, from, to, miss?, state: 'wait' }, 돌리는 동안 새로 넣어도 된다).
+  // until()이 있으면 그것이 참이 되고 모든 포탄이 끝난 뒤에 끝나고, abort()가 참이 되면 효과를 치우고 바로 끝난다(학생 포 쏘기)
+  const runShots = (shots, audio = null, { until = null, abort = null } = {}) => new Promise(resolve => {
     const effects = [];
     const wp = new THREE.Vector3(), tp = new THREE.Vector3(), sideA = new THREE.Vector3(), sideB = new THREE.Vector3();
     const muzzle = (from, target) => {
@@ -217,7 +223,8 @@ export function buildJ4Scene(world) {
         if (e.fly) { e.fly.y -= 9.8 * dt; e.m.position.addScaledVector(e.fly, dt); e.m.rotation.x += dt * 8; }
         if (e.k >= 1 && e.m.parent) { fx.remove(e.m); e.m.material.dispose(); }
       }
-      if (shots.every(s => s.state === 'sunk') && effects.every(e => e.k >= 1)) { off(); resolve(targets.length); }
+      if (abort?.()) { off(); for (const e of effects) if (e.m.parent) fx.remove(e.m); for (const sh of shots) { if (sh.ball?.parent) fx.remove(sh.ball); if (sh.trail?.parent) fx.remove(sh.trail); } resolve(0); return; }
+      if ((!until || until()) && shots.every(s => s.state === 'sunk') && effects.every(e => e.k >= 1)) { off(); resolve(shots.length); }
     });
   });
 
@@ -261,7 +268,7 @@ export function buildJ4Scene(world) {
   });
 
   const api = {
-    start: [0, 6.5], introFrom: [0, 19], gate, turtle, leadTurtle, FIRE_AT, setFormation, portShips, fx, flagship, lure, enemy, fleet, goalRing, myShip, setStage, setLure, setChase, setAdvance, playBattle,
+    start: [0, 6.5], introFrom: [0, 19], gate, turtle, leadTurtle, FIRE_AT, setFormation, portShips, fx, flagship, lure, enemy, fleet, goalRing, myShip, setStage, setLure, setChase, setAdvance, playBattle, runShots,
     slot: { x: wingSpots[SLOT][0], z: wingSpots[SLOT][1], ry: wingSpots[SLOT][2] * 0.35 - Math.sign(wingSpots[SLOT][0]) * Math.PI / 2 }, decoys: [], // 학익진 빈자리(D-30 I-02: 뒷줄의 틀린 자리 둘은 뺐다)
     seaBounds: { x0: -30, x1: 30, z0: STRAIT_Z - 4, z1: -10 }, // D-67: 넓힌 학익진 양 끝까지
     // 우리 배들이 한 줄로 오다가 학이 날개를 편 모양으로 펼쳐진다(seconds 동안)

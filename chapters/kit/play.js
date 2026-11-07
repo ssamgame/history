@@ -517,6 +517,8 @@ export function stops(ctx, part, easy) {
     world.setGoal((easy || s.missed) && n ? n.pos : null);
   };
   show();
+  // 떠다니는 자리(조선 3장 낱자): part.move(spot, t, next)가 그 순간의 자리를 돌려주면 표시·이름표·목표가 따라간다
+  if (part.move) s.update(() => { for (const sp of spots) { if (sp.done) continue; const q = part.move(sp, s.t(), next); sp.m.position.set(q.x, 0.1, q.z); sp.lab.position.set(q.x, 2.6, q.z); Object.assign(sp.pos, s.at(q.x, q.z)); } });
   pickWithButton(ctx, s, () => spots.filter(x => !x.done), sp => {
     if (sp.i === next) {
       audio.play('correct'); sp.done = true; sp.m.material.color.set(0x2f6b5e);
