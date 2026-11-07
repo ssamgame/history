@@ -46,17 +46,15 @@ function woodBundle() {
 
 // 화톳불 켜기 한 번: 시간 안에 여섯 개 모두 켜면 성공. 꺼진 불 가까이(2.2 안)에서 대화 버튼을 누르면 켜진다.
 // 화살표는 가장 가까운 꺼진 불을 가리킨다.
-// 2026-11-07 선생님: 장작 한 묶음으로는 불 둘만 켤 수 있어 장작더미를 오가야 하고, 눈보라 속 백성의 추위 하트(셋)가
-// 꺼진 불이 많을수록 빨리 줄며 불을 켤 때마다 조금 회복된다. 하트가 다 꺼지면 실패
-export const COLD = { per: 2, full: 48, warm: 0.2, hearts: 3 }; // per: 한 묶음으로 켜는 불 수, full: 여섯 다 꺼진 채 하트가 다 꺼지는 초, warm: 불 하나에 회복
-export const heartText = cold => { const n = Math.max(0, Math.ceil((1 - cold) * COLD.hearts - 1e-6)); return '♥'.repeat(n) + '♡'.repeat(COLD.hearts - n); };
+// 2026-11-07 선생님: 장작 한 묶음으로는 불 둘만 켤 수 있어 장작더미를 오가야 한다(추위 하트는 넣었다가 같은 날 뺌)
+export const WOOD_PER = 2; // 한 묶음으로 켜는 불 수
 function lightFires(ctx, easy, { stay = false } = {}) {
   const { world, hud, audio } = ctx;
-  const duration = easy ? 110 : 75, full = easy ? COLD.full * 1.5 : COLD.full;
+  const duration = easy ? 110 : 75;
   scene.resetFires();
   if (!stay) placePlayer(world, SPOT);
   ctx.input.enabled = true;
-  let t = 0, done = false, near = null, carrying = false, atWood = false, left = 0, cold = 0;
+  let t = 0, done = false, near = null, carrying = false, atWood = false, left = 0;
   const bundle = woodBundle();
   return new Promise(resolve => {
     const finish = ok => {
@@ -67,9 +65,9 @@ function lightFires(ctx, easy, { stay = false } = {}) {
     };
     const unbind = ctx.onAction(() => {
       if (done) return;
-      if (!carrying && atWood) { carrying = true; left = COLD.per; setCarry(world.player, bundle, 'shoulder'); audio.play('tap'); if (!scene.fires.some(f => f.lit)) ctx.dialogue.say(script.fires.pick).then(() => ctx.dialogue.close()); return; } // 장작을 어깨에 멘다(D-18 들기)
+      if (!carrying && atWood) { carrying = true; left = WOOD_PER; setCarry(world.player, bundle, 'shoulder'); audio.play('tap'); if (!scene.fires.some(f => f.lit)) ctx.dialogue.say(script.fires.pick).then(() => ctx.dialogue.close()); return; } // 장작을 어깨에 멘다(D-18 들기)
       if (!near) return;
-      scene.light(near); audio.play('correct'); near = null; cold = Math.max(0, cold - COLD.warm);
+      scene.light(near); audio.play('correct'); near = null;
       left -= 1; if (left <= 0) { carrying = false; setCarry(world.player, null); if (scene.fires.some(f => !f.lit)) toast(ctx, script.fires.more, ''); } // 묶음을 다 썼다
     });
     const off = world.onUpdate(dt => {
@@ -78,15 +76,11 @@ function lightFires(ctx, easy, { stay = false } = {}) {
       const p = world.player.position;
       let nearest = null, nd = Infinity;
       near = null;
-      const unlit = scene.fires.filter(f => !f.lit).length;
-      cold = Math.min(1, cold + dt * (unlit / scene.fires.length) / full); // 꺼진 불이 많을수록 빨리 추워진다
-      ctx.testHooks.cold = cold;
-      if (cold >= 1) { audio.play('wrong'); toast(ctx, script.fires.frozen, 'bad'); return finish(false); }
-      if (!unlit) return finish(true); // 마지막 불을 켜며 장작도 다 썼을 때(장작더미로 가라고 하지 않게)
+      if (scene.fires.every(f => f.lit)) return finish(true); // 마지막 불을 켜며 장작도 다 썼을 때(장작더미로 가라고 하지 않게)
       atWood = !carrying && Math.hypot(p.x - scene.wood.x, p.z - scene.wood.z) < 2.2;
       if (!carrying) { // 먼저 장작더미로
         hud.setTalkEnabled?.(atWood); hud.setPrompt?.(atWood ? new THREE.Vector3(scene.wood.x, 0, scene.wood.z) : null);
-        world.setGoal({ x: scene.wood.x, z: scene.wood.z }); hud.setTimer(duration - t); hud.setCounter(`장작을 들자 · 추위 ${heartText(cold)}`);
+        world.setGoal({ x: scene.wood.x, z: scene.wood.z }); hud.setTimer(duration - t); hud.setCounter('장작을 들자');
         if (t >= duration) finish(false);
         return;
       }
@@ -100,7 +94,7 @@ function lightFires(ctx, easy, { stay = false } = {}) {
       hud.setPrompt?.(near ? new THREE.Vector3(near.x, 0, near.z) : null);
       const lit = scene.fires.filter(f => f.lit).length;
       hud.setTimer(duration - t);
-      hud.setCounter(`켠 화톳불 ${lit}/${scene.fires.length} · 장작 ${left} · 추위 ${heartText(cold)}`);
+      hud.setCounter(`켠 화톳불 ${lit}/${scene.fires.length} · 장작 ${left}`);
       world.setGoal(nearest ? { x: nearest.x, z: nearest.z } : null);
       if (lit === scene.fires.length) return finish(true);
       if (t >= duration) finish(false);

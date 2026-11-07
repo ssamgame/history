@@ -64,23 +64,10 @@ function lightAll(s, sc, fires = sc.fires) {
   }
 }
 
-test('j5 추위 하트: the cold grows while fires are out and eases when one is lit; all hearts gone fails the try', async () => {
-  const { COLD, heartText } = await import('../chapters/joseon/j5/chapter.js');
-  eq(heartText(0), '♥♥♥'); eq(heartText(0.5), '♥♥♡'); eq(heartText(1), '♡♡♡');
-  const s = touchSetup(j5Script.speakers);
-  try {
-    const sc = j5.buildScene(s.w, s.ctx);
-    let r = null; const run = j5.lightFires(s.ctx, false).then(v => { r = v; });
-    const step = () => s.w.step(0.05, { x: 0, z: 0 });
-    for (let i = 0; i < 100; i++) step();
-    const c0 = s.ctx.testHooks.cold; ok(c0 > 0.05 && c0 < 0.3, `cold grows ${c0}`);
-    s.w.player.position.set(sc.wood.x, 0, sc.wood.z + 0.5); step(); s.hud.talkBtn.click(); step(); s.dialogue.advance(); s.dialogue.advance(); s.dialogue.close();
-    s.w.player.position.set(sc.fires[0].x, 0, sc.fires[0].z + 1.3); step(); s.hud.talkBtn.click(); step();
-    ok(s.ctx.testHooks.cold < c0, 'lighting a fire eases the cold');
-    for (let i = 0; i < COLD.full * 20 * 1.5 && r === null; i++) { step(); await null; }
-    eq(r, false, 'all hearts gone → failed');
-    await run;
-  } finally { s.done(); }
+test('j5 장작 둘: one bundle lights two braziers, then the student goes back for more; no cold meter', async () => {
+  const { WOOD_PER } = await import('../chapters/joseon/j5/chapter.js');
+  eq(WOOD_PER, 2);
+  ok(!JSON.stringify(j5Script.fires).includes('추위'), 'the fires text has no cold meter');
 });
 
 test('j5: a brazier lights only when the action button is pressed next to it', async () => {
