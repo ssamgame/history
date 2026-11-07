@@ -7,7 +7,7 @@ import { buildJ4Scene, STRAIT_Z } from '../chapters/joseon/j4/scene.js';
 import j4, { LURE, portTalk } from '../chapters/joseon/j4/chapter.js';
 import { runChapter } from '../core/flow.js';
 import { JOSEON } from '../chapters/index.js';
-import { testWorld, touchSetup, touchBot, memSave } from './bot.js';
+import { testWorld, touchSetup, touchBot, memSave, sleep } from './bot.js';
 
 const answers = new Set(j4Script.quizzes.map(q => q.options[q.answer]));
 
@@ -41,7 +41,7 @@ test('j4: completes with touch-only actions', async () => {
   try {
     const r = await runChapter(JOSEON[3], j4, s.ctx, memSave());
     eq(r.quizCorrect, 2);
-    eq(r.firstTryCorrect, 3, 'lure, wing, cannons');
+    eq(r.firstTryCorrect, 2, 'lure, wing');
     eq(r.stars, 3);
   } finally { bot.stop(); s.done(); }
 }, { timeout: 150000 });
@@ -58,8 +58,8 @@ test('j4 D-25: waiting at the strait mouth gets the ship caught; then sailing aw
     j4.enterStage(s.ctx, 'minigame');
     const r = await j4.minigame(s.ctx);
     ok(said.includes(j4Script.lure.fail), 'caught once');
-    eq(r.firstTryCorrect, 2, 'lure missed, wing and cannons right');
-    ok(s.ctx.testHooks.cannon.shots.length >= s.ctx.testHooks.cannon.need, `student fired ${s.ctx.testHooks.cannon.shots.length}`);
+    eq(r.firstTryCorrect, 1, 'lure missed, wing right');
+    ok(s.ctx.testHooks.volley.heldSec() > 1, 'the student held the button for the volley');
     ok(s.ctx.testHooks.sunk >= 24, `battle played ${s.ctx.testHooks.sunk}`); // D-67: 적선 30척
   } finally { off(); bot.stop(); s.done(); }
 }, { timeout: 150000 });
@@ -249,26 +249,31 @@ test('j4 D-30 C-05: after the lure the student sails to the flagship and talks t
   } finally { bot.stop(); s.done(); }
 }, { timeout: 150000 });
 
-test('j4 포 쏘기: pressing the action button fires at the nearest enemy in range; only one shot per reload; running out of time fails', async () => {
-  const { fireCannons, CANNON, fillWing, boardForTest } = await import('../chapters/joseon/j4/chapter.js');
+test('j4 포격 신호: the fleet fires only while the action button is held; releasing pauses the bombardment', async () => {
+  const { holdVolley } = await import('../chapters/joseon/j4/chapter.js');
   const s = touchSetup(j4Script.speakers);
   try {
     const sc = j4.buildScene(s.w, s.ctx);
     j4.enterStage(s.ctx, 'minigame');
-    boardForTest(s.ctx, [sc.slot.x, sc.slot.z]);
-    let r = null; const run = fireCannons(s.ctx, false).then(v => { r = v; });
+    sc.setStage('wing'); sc.setAdvance(sc.FIRE_AT);
+    let n = null; const run = holdVolley(s.ctx).then(v => { n = v; });
     const step = () => s.w.step(0.05, { x: 0, z: 0 });
     for (let i = 0; i < 40 && s.dialogue.isOpen(); i++) { s.dialogue.advance(); s.dialogue.advance(); step(); await null; }
-    let waited = 0; for (; waited < 600 && s.hud.talkBtn.disabled; waited++) step(); // 적선이 다가와 사정거리에 든다
-    ok(!s.hud.talkBtn.disabled, `a target is in range after ${waited / 20}s`); ok(waited < 20 * 20, 'within 20 seconds'); eq(s.ctx.testHooks.pressing, 'cannon');
-    s.hud.talkBtn.click(); step();
-    eq(s.ctx.testHooks.cannon.shots.length, 1, 'one shot');
-    s.hud.talkBtn.click(); step();
-    eq(s.ctx.testHooks.cannon.shots.length, 1, 'reloading: the second press does nothing');
+    for (let i = 0; i < 60 && s.ctx.testHooks.holding !== 'volley'; i++) { step(); await sleep(20); } // 신호(0.9초 뒤)
+    eq(s.ctx.testHooks.holding, 'volley', 'signal given, button offered'); ok(!s.hud.talkBtn.disabled);
+    for (let i = 0; i < 60; i++) step();
+    const flying = () => sc.fx.children.filter(c => c.name === 'cannonball').length, sunk = () => sc.enemy.children.filter(e => !e.visible).length;
+    eq(flying() + sunk(), 0, 'nothing happens until the button is held');
+    s.hud.talkBtn.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
     for (let i = 0; i < 40; i++) step();
-    ok(s.ctx.testHooks.cannon.shots[0].state !== 'wait' && s.ctx.testHooks.cannon.shots[0].state !== 'fly', 'the shot landed');
-    for (let i = 0; i < 1200 && r === null; i++) { step(); await null; } // 더 쏘지 않고 시간이 다 된다
-    eq(r, false, 'time ran out → failed');
+    ok(flying() > 0 || sunk() > 0, 'holding fires the fleet');
+    s.hud.talkBtn.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+    const before = sc.fx.children.map(c => c.position.x + c.position.z).join(',');
+    for (let i = 0; i < 20; i++) step();
+    eq(sc.fx.children.map(c => c.position.x + c.position.z).join(','), before, 'released: the shots freeze');
+    s.hud.talkBtn.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    for (let i = 0; i < 2400 && n === null; i++) { step(); if (i % 20 === 0) await null; }
+    eq(n, sc.enemy.children.length, 'all sunk while held');
     await run;
-  } finally { s.done(); }
-});
+  } finally { s.hud.talkBtn.dispatchEvent(new PointerEvent('pointerup', { bubbles: true })); s.done(); }
+}, { timeout: 60000 });

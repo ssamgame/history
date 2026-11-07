@@ -139,7 +139,7 @@ export function buildJ4Scene(world) {
   const puff = (p, r, color = 0xe8e6e0) => { const m = new THREE.Mesh(puffGeo, new THREE.MeshLambertMaterial({ color, transparent: true, opacity: 0.85, depthWrite: false })); m.scale.setScalar(r); m.position.copy(p); fx.add(m); return m; };
   const BURN = 1.0, SINK = 3.4, DEPTH = 6.8; // 불이 붙은 뒤 가라앉기 시작할 때까지, 가라앉는 시간, 잠기는 깊이(돛대 끝까지 물 아래)
   // 함대 포격: 아직 떠 있는 적선 모두를 우리 배들이 차례로 쏜다
-  const playBattle = (audio = null) => {
+  const playBattle = (audio = null, opts = {}) => {
     const shooters = [...fleet.children, leadTurtle], targets = enemy.children.filter(e => e.visible && !e.userData.sink); // 학생이 먼저 가라앉힌 배는 뺀다
     // D-67: 적을 멀리 둔 채 포격으로 친다. 첫 포탄 몇 발은 앞에 떨어져 물기둥만 솟고(빗나감), 다음 포탄이 맞힌다.
     // 판옥선은 적 쪽 옆구리 포혈에서, 거북선은 용머리에서 쏜다. 쏠 때마다 포구에 불꽃이 번쩍이고 흰 연기가 퍼지며 배가 반동으로 흔들린다
@@ -150,11 +150,11 @@ export function buildJ4Scene(world) {
       if (i % 3 === 0) shots.push({ at, from, to: tg, miss: true, state: 'wait' });
       shots.push({ at: at + 0.25, from, to: tg, state: 'wait' });
     });
-    return runShots(shots, audio).then(() => targets.length);
+    return runShots(shots, audio, opts).then(() => targets.length);
   };
   // 포탄 목록을 끝까지 돌린다(shots: { at, from, to, miss?, state: 'wait' }, 돌리는 동안 새로 넣어도 된다).
   // until()이 있으면 그것이 참이 되고 모든 포탄이 끝난 뒤에 끝나고, abort()가 참이 되면 효과를 치우고 바로 끝난다(학생 포 쏘기)
-  const runShots = (shots, audio = null, { until = null, abort = null } = {}) => new Promise(resolve => {
+  const runShots = (shots, audio = null, { until = null, abort = null, paused = null } = {}) => new Promise(resolve => { // paused(): 참인 동안 포격이 멈춘다(학생이 대화 버튼을 떼면)
     const effects = [];
     const wp = new THREE.Vector3(), tp = new THREE.Vector3(), sideA = new THREE.Vector3(), sideB = new THREE.Vector3();
     const muzzle = (from, target) => {
@@ -165,6 +165,7 @@ export function buildJ4Scene(world) {
     const flashMat = new THREE.MeshBasicMaterial({ color: 0xffb040, transparent: true, opacity: 1, depthWrite: false });
     let t = 0;
     const off = world.onUpdate(dt => {
+      if (paused?.()) return;
       t += dt;
       for (const sh of shots) {
         if (sh.state === 'wait' && t >= sh.at) {

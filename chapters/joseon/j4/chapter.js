@@ -8,7 +8,8 @@ export { STRAIT_Z };
 import { roam } from '../../../core/flow.js';
 import { showHowTo } from '../../../core/minigame.js';
 import { LOOKS } from '../../../content/characters.js';
-import { makePerson, markerSprite } from '../../../core/people.js';
+import { makePerson } from '../../../core/people.js';
+import { toast } from '../../kit/play.js';
 import { waitInteract } from '../../../core/portal.js';
 import { enterThroughGate, closeGate } from '../../kit/gate.js';
 import { sayAll, placePlayer, tryPart, sumParts } from '../common.js';
@@ -147,49 +148,26 @@ export async function fillWing(ctx, easy) {
   return missed ? 'missed' : true;
 }
 
-// 3) 포 쏘기(2026-11-07 선생님): 적선이 날개 안으로 밀려 들어오는 동안 내 판옥선 옆구리 포로 가까운 적선부터 쏜다.
-// 사정거리 안의 가장 가까운 적선 밑에 붉은 원이 뜨고, 대화 버튼(E)을 누르면 그 배를 맞힌다. 한 발 쏘면 장전하는 동안 못 쏜다.
-// 시간 안에 need척을 맞히면 성공, 적선이 날개 안쪽 끝까지 들어오면(시간이 다 되면) 실패
-export const CANNON = { need: 5, range: 30, reload: 1.3, seconds: 45 };
-export async function fireCannons(ctx, easy) {
+// 3) 포격 신호(2026-11-07 선생님: 한 척씩 쏘는 놀이는 길고 지루해서 뺌): 적이 날개 안에 들어오면 이순신의 신호와 함께 대화 버튼이 켜지고,
+// 학생이 그 버튼(E)을 꾹 누르고 있는 동안만 모든 함선이 한꺼번에 포격한다. 손을 떼면 포격이 멈춘다. 점수에는 넣지 않는다
+export async function holdVolley(ctx) {
   const { world, dialogue, hud, audio } = ctx;
-  const need = easy ? 4 : CANNON.need, sec = easy ? 65 : CANNON.seconds;
-  scene.setStage('wing'); scene.setAdvance(scene.FIRE_AT); // 다시 할 때 적선을 되살려 처음 자리로
-  scene.myShip.visible = true; world.player.visible = false;
-  const me = scene.myShip.position;
-  world.setFixedCamera([me.x + 3, 15, me.z + 13], [me.x * 0.4, 0, scene.enemy.position.z]); // 내 배 뒤 높은 곳에서 적 함대를 내려다본다(내 배가 앞에 보인다)
-  const ring = new THREE.Mesh(new THREE.RingGeometry(4.2, 5.2, 28), new THREE.MeshBasicMaterial({ color: 0xe04a2a, transparent: true, opacity: 0.9, side: THREE.DoubleSide, depthWrite: false }));
-  ring.rotation.x = -Math.PI / 2; ring.visible = false; world.level.add(ring);
-  const mark = markerSprite('!'); mark.scale.setScalar(1.6); mark.visible = false; world.level.add(mark); // 목표 적선 돛대 위 느낌표
-  const shots = [], hitSet = new Set(), wp = new THREE.Vector3();
-  let t = 0, reload = 0, target = null, failed = false, hits = 0;
-  const unbind = ctx.onAction(() => {
-    if (!target || reload > 0 || dialogue.isOpen()) return;
-    shots.push({ at: 0, from: scene.myShip, to: target, state: 'wait' }); hitSet.add(target); reload = CANNON.reload;
-    audio.play('tap');
-  });
-  await dialogue.say(script.cannon.go); dialogue.close();
+  const V = script.volley;
+  await sayAll(dialogue, V.ready); dialogue.close();
+  await ctx.wait(900);
+  toast(ctx, V.signal, 'good'); audio.play('correct'); // 신호
+  hud.setPrompt?.(null, V.label); hud.setTalkEnabled?.(true); ctx.testHooks.holding = 'volley';
+  const held = () => !!ctx.input?.actionHeld?.() && !dialogue.isOpen();
+  let heldSec = 0;
   const off = world.onUpdate(dt => {
-    if (dialogue.isOpen()) return;
-    t += dt; reload = Math.max(0, reload - dt);
-    scene.setAdvance(scene.FIRE_AT + (1 - scene.FIRE_AT) * Math.min(1, t / sec));
-    hits = shots.filter(sh => sh.state === 'hit' || sh.state === 'sunk').length;
-    hud.setTimer(sec - t); hud.setCounter(`맞힌 적선 ${hits}/${need}${reload > 0 ? ' · 장전 중…' : ''}`);
-    let best = null, bd = CANNON.range;
-    for (const e of scene.enemy.children) { if (!e.visible || hitSet.has(e)) continue; e.getWorldPosition(wp); const d = Math.hypot(wp.x - me.x, wp.z - me.z); if (d < bd) { bd = d; best = e; } }
-    target = best; ring.visible = mark.visible = !!best;
-    if (best) { best.getWorldPosition(wp); ring.position.set(wp.x, 0.05, wp.z); mark.position.set(wp.x, 7.5 + Math.sin(t * 4) * 0.3, wp.z); }
-    const can = !!best && reload <= 0 && hitSet.size < need;
-    hud.setTalkEnabled?.(can); hud.setPrompt?.(can ? ring.position : null, '포 쏘기'); ctx.testHooks.pressing = can ? 'cannon' : null;
-    if (t >= sec && hits < need) failed = true;
+    if (held()) heldSec += dt;
+    const sunk = scene.enemy.children.filter(e => !e.visible).length;
+    hud.setCounter(held() ? `포격 중! 가라앉힌 적선 ${sunk}/${scene.enemy.children.length}` : `대화 버튼을 꾹 누르면 포격! 가라앉힌 적선 ${sunk}/${scene.enemy.children.length}`);
   });
-  ctx.testHooks.cannon = { shots, need };
-  ctx.input.enabled = false;
-  await scene.runShots(shots, audio, { until: () => hits >= need, abort: () => failed });
-  off(); unbind(); ring.removeFromParent(); mark.removeFromParent(); hud.setTimer(null); hud.setCounter(null); hud.setTalkEnabled?.(false); hud.setPrompt?.(null); ctx.testHooks.pressing = null;
-  if (failed) { audio.play('wrong'); return false; }
-  audio.play('correct');
-  return true;
+  ctx.testHooks.volley = { heldSec: () => heldSec };
+  const n = await scene.playBattle(audio, { paused: () => !held() });
+  off(); hud.setCounter(null); hud.setPrompt?.(null); hud.setTalkEnabled?.(false); ctx.testHooks.holding = null;
+  return n;
 }
 
 // 4) 거북선을 앞세우고 공격: 거북선을 따라 낮게 비추는 큰 장면(S43), 적이 날개 안으로 들어오면 한꺼번에 포를 쏜다
@@ -210,13 +188,8 @@ export async function turtleAndBattle(ctx) {
   follow();
   await new Promise(resolve => { let k = 0; const off = world.onUpdate(dt => { k = Math.min(1, k + dt / 2.5); scene.setAdvance(k * scene.FIRE_AT); if (k >= 1) { off(); resolve(); } }); }); // 적이 날개 안으로
   ctx.setGoal(script.goals[5]);
-  await showHowTo(ctx.ui, script.cannon.howto);
-  const part = await tryPart(ctx, easy => fireCannons(ctx, easy), script.cannon.fail);
-  await sayAll(dialogue, script.cannon.done); dialogue.close();
-  const mine = scene.enemy.children.filter(e => !e.visible).length;
   world.fitFixedCamera([0, 0, -42], [0.9, 1.25, 0.45], [[-28, 0, -30], [28, 0, -30], [-6, 0, -60], [6, 0, -64]], 0.9); // 멀리 떨어진 두 함대가 함께 보이게(D-67)
-  ctx.testHooks.sunk = mine + await scene.playBattle(ctx.audio);
-  return part;
+  ctx.testHooks.sunk = await holdVolley(ctx); // 학생이 대화 버튼을 꾹 누르는 동안 모든 함선이 포격한다
   scene.setStage('won');
 }
 
@@ -342,7 +315,7 @@ export default {
     // 3) 거북선을 앞세우고 공격(큰 장면)
     unboard(ctx);
     scene.myShip.visible = true; // 학생 배는 날개 자리에 그대로 남는다
-    parts.push(await turtleAndBattle(ctx)); // 거북선 돌격 뒤 학생이 포를 쏘는 부분이 셋째 점수
+    await turtleAndBattle(ctx);
     scene.myShip.visible = false;
     await ctx.wait(600);
     await victoryScene(ctx); // 끝 해설 장면(D-58): 돌아오는 수군과 포구 사람들, 해 질 녘 판옥선
