@@ -52,6 +52,9 @@ export const ICE = { edge: { style: 'snow', seed: 104 },
   origin: [400, 0], ground: 'earth', groundColor: 0xd2d8de, bounds: { x0: -12, x1: 12, z0: -14, z1: 12 },
   props: [{ type: 'tree', x: -10, z: 9, kind: 'bare' }, { type: 'tree', x: 10, z: -12, kind: 'bare' }],
   ice: [0, -2, 60, 12],
+  // 2026-11-08 선생님: 학생이 가족을 이끌고 직접 건넌다. 금 간 얇은 얼음(cracks)을 피해 빛나는 자리(path)를 차례로 지나 남쪽 기슭(z 5)으로
+  cracks: [[3.2, -1.5], [1.4, -3.6], [-4.4, 0], [1.8, 2.2], [0.2, 1.4], [4.6, 3.4], [-4.2, -3]], // 빛나는 자리 사이 곧은 길에서 1.5m 넘게 떨어져 있다
+  path: [[-1.2, -1.2], [-3.2, 2.4], [2.2, 5.2]],
 };
 // 휴전선 긋기: 동서로 구불구불한 전선을 사이에 두고 남쪽에 국군·유엔군, 북쪽에 북한군·중국군. 남쪽 끝에 판문점 천막
 export const FRONT = { edge: { style: 'forest', seed: 1953 },
@@ -195,17 +198,40 @@ export async function packPlay(ctx) {
     const fam = [person(g, 'woman', 3.6, -7, 0), person(g, 'kidModern', 4.6, -6.4, 0), person(g, 'schoolgirl', 2.6, -6.2, 0)];
     fam.slice(1).forEach(k => k.scale.setScalar(0.8)); headLoad(fam[0], 0x8a5a6a);
     hook.family = fam.length;
-    const S = a.at(3.4, -5.4); placePlayer(world, [S.x, S.z], 0);
-    const C = a.at(0.6, 10), T = a.at(0, -3);
-    const front = () => world.setFixedCamera([C.x, 2.4, C.z], [T.x, 1.2, T.z]); // 남쪽 기슭에서 건너오는 행렬의 얼굴을 본다
+    const S = a.at(0.4, -5.4); placePlayer(world, [S.x, S.z], 0);
+    const C = a.at(0.6, 11), T = a.at(0, -2);
+    const front = () => world.setFixedCamera([C.x, 3.2, C.z], [T.x, 1.0, T.z]); // 남쪽 기슭에서 건너오는 행렬의 얼굴을 본다
     front();
+    // 금 간 얇은 얼음: 밟으면 얼음이 갈라지는 소리와 함께 북쪽 기슭에서 다시 건넌다(가족은 따라온다)
+    const cracks = ICE.cracks.map(([x, z]) => { const m = new THREE.Mesh(new THREE.CircleGeometry(1.1, 18).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x6f8aa0, transparent: true, opacity: 0.85 })); m.position.set(x, 0.07, z); g.add(m); for (let k = 0; k < 3; k++) { const c = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.06).rotateX(-Math.PI / 2), mat(0x33414d)); c.position.set(x, 0.08, z); c.rotation.y = k * 1.05 + x; g.add(c); } return { x, z, pos: a.at(x, z) }; });
+    const rings = ICE.path.map(([x, z]) => ({ m: ring(g, x, z, 1.0), pos: a.at(x, z) }));
+    hook.cracked = 0;
     await ctx.fade?.(false);
     const all = [...line, ...fam], z0 = all.map(p => p.position.z);
-    const pz0 = world.player.position.z;
-    const go = wait(world, 7, k => { all.forEach((p, i) => { p.position.z = z0[i] + 9 * k; }); world.player.position.z = pz0 + 9 * k; });
-    await dialogue.say(P.crossing[0]);
+    const go = wait(world, 9, k => { line.forEach((p, i) => { p.position.z = z0[i] + 9 * k; }); }); // 다른 피란민 행렬은 제 걸음으로 건넌다
+    await dialogue.say(P.crossing[0]); dialogue.close();
+    toast(ctx, P.iceHow || '금 간 얼음을 피해 빛나는 자리를 따라 건너요', '');
+    world.camMode = 'follow'; world.snapCamera(); // 건너는 동안은 학생 뒤에서(따라오는 가족이 보인다), 다 건너면 남쪽 기슭에서 얼굴을 본다
+    let next = 0;
+    rings[0].m.visible = true; world.setGoal(rings[0].pos); ctx.testHooks.walkTo = rings[0].pos;
+    ctx.input.enabled = true;
+    await new Promise(resolve => {
+      const off = world.onUpdate(dt => {
+        const p = world.player.position;
+        let lead = p; // 가족이 학생 뒤를 줄지어 따라온다
+        for (const f of fam) { const dx = lead.x - f.position.x, dz = lead.z - f.position.z, d = Math.hypot(dx, dz); if (d > 1.2) { const st = Math.min(d - 1.2, dt * 5); f.position.x += dx / d * st; f.position.z += dz / d * st; f.rotation.y = Math.atan2(dx, dz); } lead = f.position; }
+        const hit = cracks.find(c => Math.hypot(p.x - c.pos.x, p.z - c.pos.z) < 1.0);
+        if (hit) { hook.cracked += 1; audio.play('wrong'); toast(ctx, P.crack || '얼음이 갈라져요! 북쪽 기슭에서 다시 건너요.', 'bad'); placePlayer(world, [S.x, S.z], 0); return; }
+        const r = rings[next];
+        if (r && Math.hypot(p.x - r.pos.x, p.z - r.pos.z) < 1.3) { r.m.visible = false; audio.play('correct'); next += 1; if (rings[next]) { rings[next].m.visible = true; world.setGoal(rings[next].pos); ctx.testHooks.walkTo = rings[next].pos; } }
+        if (next >= rings.length) { off(); resolve(); }
+      });
+    });
+    ctx.input.enabled = false; world.setGoal(null); ctx.testHooks.walkTo = null;
+    front(); world.player.rotation.y = 0;
     await go;
     hook.crossed = true;
+    fam.forEach(f => { f.rotation.y = 0; });
     hook.facing = facingShare(world, all);
     await say(P.crossing[1], fam[0]);
     dialogue.close();

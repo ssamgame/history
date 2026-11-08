@@ -181,6 +181,7 @@ export async function votePlay(ctx) {
   const say = sayer(ctx);
   try {
     await ctx.fade?.(false);
+    await standInLine(ctx, a, g, spots.paper, hook); // 2026-11-08 선생님: 투표소 줄 서기
     for (const [i, st] of P.steps.entries()) {
       hud.setCounter(`${P.counter} ${i}/${P.steps.length}`);
       marks[st.id].visible = true;
@@ -226,6 +227,43 @@ export async function votePlay(ctx) {
     await leaveArena(ctx, a);
   }
   return true;
+}
+
+// 줄 서기(2026-11-08): 투표용지 책상 앞에 줄 선 사람들 뒤(빛나는 자리)에 서서 기다린다. 서 있는 동안 앞사람이 하나씩 책상을 거쳐 떠나고,
+// 줄이 줄어들면 따라 앞으로 간다. 줄보다 앞으로 나가면(새치기) 맨 뒤로 돌아간다. 줄을 벗어나 있으면 줄이 줄지 않는다
+export const LINE = { n: 3, each: 2.4, gap: 1.3, looks: ['grandma', 'gentleman', 'woman'] };
+async function standInLine(ctx, a, g, deskSpot, hook) {
+  const { world, hud, audio } = ctx;
+  const P = script.parts.vote;
+  const [dx, dz] = deskSpot;
+  const liners = LINE.looks.slice(0, LINE.n).map((look, i) => person(g, look, dx, dz + LINE.gap * (i + 1), Math.PI));
+  const tailLocal = () => [dx, dz + LINE.gap * (liners.length + 1)];
+  const mark = ring(g, ...tailLocal()); mark.visible = true;
+  hook.line = { cutIn: 0, waited: 0 };
+  let held = 0;
+  const show = () => { const t = a.at(...tailLocal()); mark.position.set(tailLocal()[0], 0.08, tailLocal()[1]); world.setGoal(t); ctx.testHooks.walkTo = t; hud.setCounter(`${P.lineCounter || '줄 서기 · 내 앞'} ${liners.length}명`); };
+  show();
+  ctx.input.enabled = true;
+  await new Promise(resolve => {
+    const off = world.onUpdate(dt => {
+      if (!liners.length) { off(); resolve(); return; }
+      const p = world.player.position, t = a.at(...tailLocal()), front = a.at(dx, dz + LINE.gap);
+      liners.forEach((q, i) => { const want = dz + LINE.gap * (i + 1); q.position.z += (want - q.position.z) * Math.min(1, dt * 4); }); // 줄이 줄면 한 칸씩 앞으로
+      if (p.z < front.z - 0.3 && Math.abs(p.x - front.x) < 2.5) { // 줄보다 앞으로 나갔다(새치기)
+        hook.line.cutIn += 1; audio.play('wrong'); toast(ctx, P.cutIn || '새치기는 안 돼요! 줄 맨 뒤로 가요.', 'bad');
+        placePlayer(world, [t.x, t.z + 0.6], Math.PI); held = 0; return;
+      }
+      if (Math.hypot(p.x - t.x, p.z - t.z) < 1.7) { held += dt; hook.line.waited += dt; hud.setWait?.(`내 차례까지 ${Math.max(1, Math.ceil(LINE.each - held))}초`); }
+      else { held = 0; hud.setWait?.(null); }
+      if (held >= LINE.each) { // 맨 앞사람이 책상을 거쳐 떠난다
+        held = 0; const q = liners.shift(); audio.play('tap');
+        wait(world, 1.4, k => { q.position.x = dx + 7 * ease(k); q.rotation.y = Math.PI / 2; }).then(() => q.removeFromParent());
+        show();
+      }
+    });
+  });
+  hud.setWait?.(null); hud.setCounter(null); world.setGoal(null); ctx.testHooks.walkTo = null; mark.removeFromParent();
+  toast(ctx, P.myTurn || '내 차례예요!', 'good');
 }
 
 // ── 놀이 ②: 제헌 헌법 완성하기. 손 든 의원에게 가서 빈칸을 함께 정하면 헌법 판에 글이 채워진다 ──

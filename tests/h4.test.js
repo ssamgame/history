@@ -99,6 +99,7 @@ test('h4 D-51: 피란 보따리 꾸리기 — 꼭 필요한 것만 넣고, 등�
     eq(h.taken, it.filter(x => x.take).map(x => x.id));
     eq(h.left, it.filter(x => !x.take).map(x => x.id));
     ok(h.crossed && h.family === 3, '가족과 함께 강을 건넘');
+    eq(h.cracked, 0, '빛나는 자리를 따라가면 금 간 얼음을 밟지 않는다(2026-11-08)');
     ok(h.facing >= 0.8, `얼굴이 보인다 ${h.facing}`);
     eq(s.w.level.children.length, n0, '무대를 치웠다');
     eq(s.w.bounds, b0);
@@ -122,3 +123,20 @@ test('h4 D-51: 휴전선 긋기 — 말뚝 셋으로 선을 잇고, 양쪽이 �
     eq(s.w.bounds, b0);
   } finally { bot.stop(); s.done(); }
 }, { timeout: 120000 });
+
+test('h4 얼어붙은 강: stepping on cracked ice sends the family back to the north bank (2026-11-08)', async () => {
+  const s = touchSetup(script.speakers);
+  const bot = touchBot(s, { answers: new Set() });
+  const { ICE } = await import('../chapters/present/h4/chapter.js');
+  let pushed = false;
+  const off = s.w.onUpdate(() => { // 첫 빛나는 자리로 가는 길에 한 번 금 간 얼음 위로 밀어 넣는다
+    const h = s.ctx.testHooks.pack; if (!h || h.cracked == null || pushed || h.cracked > 0) return;
+    const c = ICE.cracks[1]; s.w.player.position.set(ICE.origin[0] + c[0], 0, ICE.origin[1] + c[1]); pushed = true;
+  });
+  try {
+    h4.buildScene(s.w);
+    const r = await packPlay(s.ctx);
+    ok(r === true); ok(pushed && s.ctx.testHooks.pack.cracked >= 1, `금 간 얼음에 한 번 빠졌다 ${s.ctx.testHooks.pack.cracked}`);
+    ok(s.ctx.testHooks.pack.crossed, '그래도 끝까지 건넌다');
+  } finally { off(); bot.stop(); s.done(); }
+}, { timeout: 150000 });

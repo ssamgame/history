@@ -98,7 +98,7 @@ test('h6 D-53: 수출 공장 — 박음질해서 상자 셋을 수출 트럭에 
     ok(r === true, `끝냄 ${r}`);
     const h = s.ctx.testHooks.factory, P = script.parts.factory;
     eq(h.stitches, P.boxes * P.stitches); eq(h.shirts, P.boxes); eq(h.loaded, P.boxes);
-    ok(h.drove, '트럭이 떠남');
+    ok(h.drove, '트럭이 떠남'); ok(!h.late(), '트럭이 떠나기 전에 다 실었다(2026-11-08)');
     eq(s.w.level.children.length, n0, '무대를 치웠다');
     eq(s.w.bounds, b0);
     ok(!s.w.player.userData.carry, '돌아오면 빈손');

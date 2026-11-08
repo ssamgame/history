@@ -116,6 +116,7 @@ test('h2 D-48: 내 손으로 투표하기 — 명부 → 투표용지 → 기표
     ok(h.booth.w >= 2.8 && h.booth.door > 0.9, `큰 기표소, 입구를 텄다 ${JSON.stringify(h.booth)}`);
     ok(h.stamped >= 0 && h.stamped < 3, `도장 ${h.stamped}`);
     ok(h.inBox, '투표함에 넣었다');
+    ok(h.line && h.line.waited > 2 && h.line.cutIn === 0, `줄 서서 기다렸다(2026-11-08) ${JSON.stringify(h.line)}`);
     eq(s.w.level.children.length, n0, '무대를 치웠다');
     eq(s.w.bounds, b0, '걷는 곳도 마을로');
   } finally { bot.stop(); s.done(); }

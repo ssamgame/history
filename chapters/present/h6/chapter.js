@@ -142,9 +142,10 @@ function sewingDesk(g, x, z) {
 }
 
 // ── 놀이 ①: 수출 공장에서 옷 만들기. 재봉틀에서 박음질 → 상자 싸는 책상 → 수출 트럭, 상자 셋 ──
-export async function factoryPlay(ctx) {
+export async function factoryPlay(ctx, scene = null, easy = false) {
   const { world, dialogue, hud, audio } = ctx;
   const P = script.parts.factory, A = FACTORY;
+  const truckSec = (P.truckSec || 90) * (easy ? 1.5 : 1); // 2026-11-08 선생님: 트럭이 떠나기 전에 상자 셋을 실어야 한다
   world.closeView = true;
   await ctx.fade?.(true);
   const a = buildArena(world, A), g = a.group;
@@ -173,9 +174,13 @@ export async function factoryPlay(ctx) {
   const truck = new THREE.Group(); truck.position.set(tx, 0, tz); truck.rotation.y = Math.PI; g.add(truck); BUILD.truck(truck, { color: 0x3f6a8a }); // 앞이 떠나는 쪽(남쪽)
   const say = sayer(ctx);
   const p0 = a.at(...A.from); placePlayer(world, [p0.x, p0.z], Math.PI);
+  let left = truckSec, late = false;
+  const clock = world.onUpdate(dt => { if (late || dialogue.isOpen()) return; left -= dt; hud.setTimer(left); if (left <= 0) late = true; });
+  hook.late = () => late;
   try {
     await ctx.fade?.(false);
-    for (let b = 0; b < P.boxes; b++) {
+    toast(ctx, P.truckHow || `트럭이 ${Math.round(truckSec)}초 뒤 떠나요. 그 전에 상자 ${P.boxes}개를 실어요!`, '');
+    for (let b = 0; b < P.boxes && !late; b++) {
       hud.setCounter(`${P.counter} ${b}/${P.boxes}`);
       // 박음질
       drawStitch(0);
@@ -220,17 +225,24 @@ export async function factoryPlay(ctx) {
       toast(ctx, `○ 수출 상자 ${b + 1}`, 'good');
       ctx.input.enabled = true;
     }
-    ctx.input.enabled = false;
+    ctx.input.enabled = false; clock(); hud.setTimer(null);
+    const T = a.at(tx, tz); world.setFixedCamera([T.x + 5, 2.6, T.z + 7], [T.x, 1, T.z + 2]);
+    const z0 = truck.position.z;
+    if (late) { // 시간 안에 다 싣지 못했다: 트럭이 먼저 떠나고 다시 한다
+      setCarry(world.player, null); world.player.visible = true; world.camMode = 'fixed';
+      audio.play('wrong'); toast(ctx, P.truckGone || '트럭이 떠났어요! 다음 트럭에는 시간 안에 실어요.', 'bad');
+      await wait(world, 2.2, k => { truck.position.z = z0 + 14 * ease(k); });
+      return false;
+    }
     hud.setCounter(`${P.counter} ${P.boxes}/${P.boxes}`);
     // 트럭이 고속도로로 떠난다
-    const T = a.at(tx, tz); world.setFixedCamera([T.x + 5, 2.6, T.z + 7], [T.x, 1, T.z + 2]);
     await dialogue.say(P.done[0]);
-    const z0 = truck.position.z;
     await wait(world, 2.2, k => { truck.position.z = z0 + 14 * ease(k); });
     hook.drove = true;
     await dialogue.say(P.done[1]);
     dialogue.close();
   } finally {
+    clock(); hud.setTimer(null);
     await leaveArena(ctx, a);
   }
   return true;
@@ -380,7 +392,7 @@ const base = makeKitChapter({
       { id: 'signOlympic', title: '올림픽 안내소', x: 12, z: -9.4, ry: 0, plaque: { y: 2.55, back: 0.45 } }],
   },
   parts: [
-    { ...script.parts.factory, ownDone: true, goal: script.goals[3], play: ctx => factoryPlay(ctx) },
+    { ...script.parts.factory, ownDone: true, goal: script.goals[3], play: (ctx, scene, easy) => factoryPlay(ctx, scene, easy) },
     { ...script.parts.hoop, goal: script.goals[4], intro: meet('citizen', '시민과 이야기하기', script.parts.hoop.intro), play: ctx => hoopPlay(ctx) },
   ],
   decorate(world) {
