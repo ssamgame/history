@@ -133,8 +133,9 @@ export function setupDam(ctx) {
   const { world } = ctx;
   scene.damWall.visible = true;
   for (const h of scene.hides) { h.taken = true; h.mesh.visible = false; }
-  const gc = world.npcs.get('gangamchan'); gc.collider.r = 0;
+  const gc = world.npcs.get('gangamchan');
   world.moveNpc('gangamchan', scene.gangOnBank[0], scene.gangOnBank[1], Math.PI); // 냇물 건너 거란군을 바라본다
+  gc.collider.r = 0.45; // 둑 위에서는 학생이 몸을 지나가지 않게
   gc.mesh.position.y = BANK_TOP;
   world.bounds = BANK_BOUNDS;
   placePlayer(world, [scene.stand.x, scene.stand.z]);
@@ -293,6 +294,7 @@ export function playGujuBattle(ctx) {
   const rf = scene.reinforcements.position.clone();
   const CHARGE = go[0].z - kh[0].z - 2.8; // 언덕 아래 고려군이 들판을 가로질러 짝이 된 거란군 바로 앞까지 몰아친다(D-12: 두 군대가 멀리 떨어져 대치)
   const hook = ctx.testHooks.gujuBattle = { goryeoStrikes: 0, khitanStrikes: 0, blocks: 0, reinforceStrikes: 0 };
+  world.setFixedCamera([17, 10, Z + 13], [1, 1, Z - 9]); // 언덕 옆 높은 곳에서 두 군대가 맞붙는 들판을 본다(2026-11-08: 북 앞만 비추던 것)
   // 짝마다 조금씩 다른 때에(한꺼번에 똑같이 움직이지 않게): [때, 누가, 무엇]
   const plan = [];
   G.forEach((g, i) => {

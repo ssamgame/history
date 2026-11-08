@@ -322,3 +322,10 @@ test('title D-11-2: one short controls line (walk and talk) on the first screen'
   ok(t.includes('말 걸기') && t.includes('대화') && t.includes('스페이스'), t);
   ui.remove();
 });
+
+test('screens: the action button shows what it does, not always 대화 (2026-11-08)', async () => {
+  const { buttonWord } = await import('../core/screens.js');
+  eq(buttonWord(null), '대화'); eq(buttonWord('세종과 이야기하기'), '대화');
+  eq(buttonWord('백성 구하기'), '구하기'); eq(buttonWord('봉화 올리기'), '올리기'); eq(buttonWord('포격'), '포격');
+  eq(buttonWord('물레 돌리기 — 길게 누르기'), '돌리기'); eq(buttonWord('줍기'), '줍기');
+});

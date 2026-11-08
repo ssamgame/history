@@ -177,10 +177,10 @@ export default {
   async explore(ctx) {
     const { world, dialogue } = ctx;
     world.closeView = true; // 낮은 카메라·정면 대화(D-5)
-    await introWalk(ctx);
     const heard = new Set();
     let step = 0;
-    setStep(ctx, 0, heard);
+    setStep(ctx, 0, heard); // 문을 들어서는 동안에도 퀘스트 상자가 비어 있지 않게(2026-11-08)
+    await introWalk(ctx);
     await sayAll(dialogue, script.start);
     dialogue.close();
     ctx.input.enabled = true;

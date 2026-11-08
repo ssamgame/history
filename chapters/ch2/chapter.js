@@ -397,7 +397,7 @@ function rescue(ctx, easy) {
       if (done) return;
       t += dt;
       hud.setTimer(duration - t);
-      hud.setCounter(`구한 백성 ${rescued.length}/${need}무리`);
+      hud.setCounter(rescued.length >= need ? `구한 백성 ${rescued.length}무리 · 성공!` : `구한 백성 ${rescued.length}/${need}무리`); // 목표를 넘겨 구해도 '5/4'로 보이지 않게
       const p = world.player.position;
       let nearest = null, nd = Infinity;
       for (const g of groups) {
@@ -433,8 +433,8 @@ function rescue(ctx, easy) {
       allies.forEach((a, i) => {
         if (a.userData.job) return;
         const tx = p.x + (i ? 1.5 : -1.5), tz = p.z + 1.8;
-        if (Math.hypot(tx - a.position.x, tz - a.position.z) > 16) { a.position.set(tx, 0, tz + 4); }
-        moveTo(a, tx, tz, Math.min(ALLY_SPEED, 1 + Math.hypot(tx - a.position.x, tz - a.position.z) * 2.5), dt);
+        const far = Math.hypot(tx - a.position.x, tz - a.position.z);
+        moveTo(a, tx, tz, Math.min(far > 10 ? ALLY_SPEED * 1.6 : ALLY_SPEED, 1 + far * 2.5), dt); // 멀리 떨어지면 서둘러 달려온다(예전엔 순간이동, 2026-11-08 점검)
       });
       followChain(world, dt);
       const ng = nearGroup();

@@ -280,7 +280,7 @@ function session(ctx, part, easy) {
 }
 
 // 대화 버튼(E)으로 '여기!'를 고르는 부품들이 함께 쓰는 것: 가까운 후보를 찾아 버튼을 켜고, 누르면 pick(후보)
-function pickWithButton(ctx, s, candidates, pick, reach = 1.9) {
+function pickWithButton(ctx, s, candidates, pick, reach = 1.9, label = '고르기') {
   const { world, hud } = ctx;
   let cur = null;
   s.update(() => {
@@ -289,7 +289,7 @@ function pickWithButton(ctx, s, candidates, pick, reach = 1.9) {
     for (const c of candidates()) { const d = Math.hypot(p.x - c.pos.x, p.z - c.pos.z); if (d < bd) { bd = d; best = c; } }
     cur = best;
     hud.setTalkEnabled?.(!!cur);
-    hud.setPrompt?.(cur ? new THREE.Vector3(cur.pos.x, 0, cur.pos.z) : null);
+    hud.setPrompt?.(cur ? new THREE.Vector3(cur.pos.x, 0, cur.pos.z) : null, label);
   });
   const off = ctx.onAction(() => { if (cur && !s.done && !s.busy) { const c = cur; cur = null; pick(c); } });
   s.cleanup(off);
@@ -556,7 +556,7 @@ export function stops(ctx, part, easy) {
   show();
   // 떠다니는 자리(조선 3장 낱자): part.move(spot, t, next)가 그 순간의 자리를 돌려주면 표시·이름표·목표가 따라간다
   if (part.move) s.update(() => { for (const sp of spots) { if (sp.done) continue; const q = part.move(sp, s.t(), next); sp.m.position.set(q.x, 0.1, q.z); sp.lab.position.set(q.x, 2.6, q.z); Object.assign(sp.pos, s.at(q.x, q.z)); } });
-  pickWithButton(ctx, s, () => spots.filter(x => !x.done), sp => {
+  pickWithButton(ctx, s, () => spots.filter(x => !x.done), sp => { // 버튼 글자는 아래 part.actLabel
     if (sp.i === next) {
       audio.play('correct'); sp.done = true; sp.m.material.color.set(0x2f6b5e);
       sp.lab.material.opacity = 0.55;
@@ -569,7 +569,7 @@ export function stops(ctx, part, easy) {
       s.wrong(`「${sp.label}」은(는) 아직 차례가 아니에요. 바로 앞의 일 다음에 무엇이 일어났는지 떠올려 봐요. 이제 화살표가 맞는 곳을 알려 줄게요.`);
       show();
     }
-  });
+  }, 1.9, part.actLabel || '여기!');
   return s.promise;
 }
 
@@ -654,7 +654,7 @@ export function deliver(ctx, part, easy) {
     ctx.testHooks.guards = patrol.guards;
     s.update((dt, el) => { caught = Math.max(0, caught - dt); if (patrol.step(dt, el, world.player.position, caught || !part.cards[i])) { caught = 1.5; audio.play('wrong'); toast(ctx, part.caught || '순라군에게 들켰어요! 방을 떨어뜨렸어요. 다시 가져와요.', 'bad'); home(); hold(); } });
   }
-  if (part.press) pickWithButton(ctx, s, () => (part.cards[i] ? bins : []), b => drop(part.cards[i], b), 2.1);
+  if (part.press) pickWithButton(ctx, s, () => (part.cards[i] ? bins : []), b => drop(part.cards[i], b), 2.1, part.actLabel || '놓기');
   else s.update(dt => {
     const moved = world.player.position.distanceTo(last) / Math.max(dt, 1e-3); last.copy(world.player.position);
     const c = part.cards[i];

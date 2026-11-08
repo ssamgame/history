@@ -234,7 +234,7 @@ export const letterDrift = (sp, t, next, k) => { const a = t * (0.35 + k * 0.2) 
 function gatherWord(ctx, w, k, easy) {
   let board = null;
   return PLAY.stops(ctx, {
-    arena: YARD, from: [0, 11], counter: `「${w.word}」 모은 낱자`, fail: script.wordsFail, seconds: WORD_SECONDS[k],
+    arena: YARD, from: [0, 11], counter: `「${w.word}」 모은 낱자`, fail: script.wordsFail, seconds: WORD_SECONDS[k], actLabel: '줍기',
     move: (sp, t, next) => letterDrift(sp, t, next, k),
     spots: w.cards.map((label, i) => ({ label, ...LETTER_SPOTS[LETTER_ORDER[k][i]] })),
     act: (i, s) => {

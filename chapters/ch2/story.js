@@ -64,7 +64,9 @@ export function gwakjuScene(ctx) {
     // 성문으로만 들어간다: 문길(앞면~뒷면) 안에서 성문 너비 밖으로 나간 사람을 센다(테스트)
     const marchers = [yg, ...army]; hook.throughWall = 0;
     const off = world.onUpdate(() => { for (const p of marchers) if (p.visible && p.position.z < front + 0.2 && p.position.z > back - 0.2 && Math.abs(p.position.x) > GATE_HALF - 0.35) hook.throughWall++; });
-    await march(world, marchers, 0, -(Math.max(...marchers.map(p => p.position.z)) - back + 1.5), 7);
+    const going = march(world, marchers, 0, -(Math.max(...marchers.map(p => p.position.z)) - back + 1.5), 7);
+    await say(L.lines[4], yg); ctx.dialogue.close();
+    await going;
     off();
     marchers.forEach(p => { p.visible = false; }); // 성안으로 들어갔다
     recolor(0x8a2f24); hook.flag = 'goryeo';

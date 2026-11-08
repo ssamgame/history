@@ -20,6 +20,13 @@ function screen(root, cls, ...kids) {
   return el;
 }
 
+// 행동 버튼에 쓸 짧은 낱말: 말풍선 글의 마지막 낱말('백성 구하기' → '구하기'). '— 꾹 누르기' 같은 덧말은 뗀다. 이야기하기·말 걸기는 '대화'
+export function buttonWord(label) {
+  if (!label) return '대화';
+  const w = String(label).split('—')[0].trim().split(/\s+/).pop();
+  return /(이야기하기|대화하기|말걸기|걸기)$/.test(w) || !w ? '대화' : w;
+}
+
 // 첫 화면: 왼쪽은 소개, 오른쪽은 시대 고르기(마친 장·별), 맨 아래는 처음부터/이어하기.
 // 하던 시대가 있어도 다른 시대를 골라 바로 넘어갈 수 있다. { action: 'new'|'continue', course }로 끝난다.
 export function showTitle(root, { savedName, hasProgress, storageOk, courses = [], save = null, course = null }) {
@@ -262,6 +269,8 @@ export function createHud(root, { touch }) {
   const talkBtn = h('button', { class: 'talkbtn', type: 'button', hidden: true, disabled: true }, '대화');
   const fade = h('div', { class: 'fade' });
   root.append(box, menuBtn, prompt, joyZone, talkBtn, fade, notice, bigTimer, bigWait);
+  // 행동 버튼 글자(2026-11-08 선생님): 늘 '대화'가 아니라 지금 하는 일(구하기·줍기·올리기…)을 보인다. 사람과 이야기할 때만 '대화'
+  const setActionLabel = label => { const t = buttonWord(label); if (talkBtn.textContent !== t) { talkBtn.textContent = t; talkBtn.classList.toggle('long', t.length > 3); } };
   let noticeTimer = null;
   let camera = null;
   let lastList = null, lastIdx = -1; // 퀘스트 목록에서 마지막으로 보인 차례
@@ -298,8 +307,9 @@ export function createHud(root, { touch }) {
     setTouchVisible(b) { joyZone.hidden = talkBtn.hidden = !(touch && b); },
     // label: 말풍선 글(없으면 'E 대화하기'). 문·물건 앞에서는 '문으로 들어가기' 등으로 바꾼다
     setPrompt(pos, label = null) {
+      setActionLabel(pos ? label : null);
       if (!pos || !camera) { prompt.hidden = true; return; }
-      prompt.textContent = label ? (touch ? `${label} (대화 버튼)` : `E ${label}`) : (touch ? '대화 버튼을 눌러요' : 'E 대화하기');
+      prompt.textContent = label ? (touch ? label : `E ${label}`) : (touch ? '말 걸기' : 'E 대화하기');
       const v = pos.clone().setY(3.3).project(camera);
       prompt.style.left = `${((v.x + 1) / 2) * 100}%`;
       prompt.style.top = `${((1 - v.y) / 2) * 100}%`;

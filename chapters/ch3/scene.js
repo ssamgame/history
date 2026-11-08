@@ -279,7 +279,7 @@ export function buildCh3Scene(world) {
   let flagDir = -Math.PI / 2;
   const scene = {
     gate, campEdge, damX: DAM_X, plug: { ...plugAt, r: 1.3, ring: plugRing }, drum,
-    stand: { x: DAM_X + 6, z: -3.6 }, gangOnBank: [DAM_X + 5, -4.2], // 강감찬은 학생 서쪽(마개 쪽)에 서서 거란군 쪽 화면을 가리지 않는다
+    stand: { x: DAM_X + 6, z: -3.6 }, gangOnBank: [DAM_X + 7.6, -4.1], // 강감찬은 학생 동쪽(마개 반대쪽)에 선다: 마개로 가는 길에 몸이 겹치지 않게(2026-11-08)
     gujuStand: [-2.5, GUJU_Z + 11], gangAtGuju: [-4, GUJU_Z + 11],
     // 둑으로 가는 길(쇠가죽을 둔 곳 옆에서 둑 위로), 귀주로 가는 길(남문을 나가 거란군 줄의 서쪽으로 돌아 고려군 뒤로)
     bankPath: [[DAM_X + 3, -1.6], [DAM_X + 3.6, -3.6], [DAM_X + 5, -4.2]],

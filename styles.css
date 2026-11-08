@@ -59,6 +59,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
   width: 88px; height: 88px; border-radius: 50%; border: 3px solid var(--hanji); background: var(--dan-red); color: var(--hanji);
   font-size: 19px; font-weight: 700; box-shadow: 0 6px 16px rgba(0,0,0,.4);
 }
+.talkbtn.long { font-size: 15px; letter-spacing: -0.5px; } /* 네 글자 넘는 행동(살펴보기·들어가기) */
 .talkbtn:disabled { background: rgba(42,48,45,.7); border-color: rgba(242,234,217,.35); color: rgba(242,234,217,.5); }
 .talkbtn[hidden], .joyzone[hidden] { display: none; }
 

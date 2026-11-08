@@ -66,7 +66,7 @@ export default {
   volley: {
     ready: [{ who: 'yisunsin', expr: 'tension', text: '적이 날개 안으로 들어왔다. 내 신호에 맞춰 대화 버튼을 꾹 누르고 있어라. 모든 배가 한꺼번에 포를 쏜다!' }],
     signal: '발사! 대화 버튼을 꾹 누르고 있어!',
-    label: '포격 — 꾹 누르기',
+    label: '포격',
   },
   turtle: [
     { who: 'yisunsin', text: '거북선을 앞세워라!' },

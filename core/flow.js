@@ -108,7 +108,7 @@ export function roam(ctx, { onTalk, zones = [], faceBack = false }) {
   const off = world.onUpdate(() => {
     if (stopped || busy) { hud.setPrompt(null); hud.setTalkEnabled(false); return; }
     const npc = world.nearestNpc(2.8);
-    hud.setPrompt(npc ? npc.mesh.position : null);
+    hud.setPrompt(npc ? npc.mesh.position : null, npc?.spot ? '읽기' : null); // 안내판은 '읽기', 사람은 '대화'
     hud.setTalkEnabled(!!npc);
     const p = world.player.position;
     for (const n of spots) {
