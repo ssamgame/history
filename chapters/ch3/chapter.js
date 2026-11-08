@@ -294,7 +294,7 @@ export function playGujuBattle(ctx) {
   const rf = scene.reinforcements.position.clone();
   const CHARGE = go[0].z - kh[0].z - 2.8; // 언덕 아래 고려군이 들판을 가로질러 짝이 된 거란군 바로 앞까지 몰아친다(D-12: 두 군대가 멀리 떨어져 대치)
   const hook = ctx.testHooks.gujuBattle = { goryeoStrikes: 0, khitanStrikes: 0, blocks: 0, reinforceStrikes: 0 };
-  world.setFixedCamera([17, 10, Z + 13], [1, 1, Z - 9]); // 언덕 옆 높은 곳에서 두 군대가 맞붙는 들판을 본다(2026-11-08: 북 앞만 비추던 것)
+  world.storyOn = true; world.setFixedCamera([17, 10, Z + 13], [1, 1, Z - 9]); // 보기만 하는 장면: 언덕 옆 높은 곳에서 두 군대가 맞붙는 들판을 본다(2026-11-08: 북 앞만 비추던 것)
   // 짝마다 조금씩 다른 때에(한꺼번에 똑같이 움직이지 않게): [때, 누가, 무엇]
   const plan = [];
   G.forEach((g, i) => {
@@ -484,6 +484,7 @@ export default {
     });
     await sayAll(dialogue, script.guju.charge); dialogue.close();
     await playGujuBattle(ctx); // 깃발이 북쪽으로 휘날리자 고려군이 몰아쳐 이긴다
+    world.storyOn = false; world.camMode = 'follow';
     for (const k of scene.gujuKhitan) k.visible = false;
     await sayAll(dialogue, script.guju.done);
     dialogue.close();
