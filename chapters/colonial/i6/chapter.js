@@ -293,7 +293,7 @@ const base = makeKitChapter({
       { id: 'signGov', title: '대한민국 임시 정부', x: -11, z: -8.5, ry: 0, plaque: { y: 2.55, back: 0.45 } }],
   },
   parts: [
-    { ...script.parts.shoot, goal: script.goals[3], arena: RANGE, camera: { pos: [0.5, 4.2, 16.5], target: [0, 1.4, -14] }, popup: { lanes: LANES, need: 7, up: 2.6 }, shooters: SHOOTERS }, // 엎드린 대원들 등 뒤에서 거리별 과녁을 본다
+    { ...script.parts.shoot, goal: script.goals[3], arena: RANGE, camera: { pos: [0.5, 4.2, 16.5], target: [0, 1.4, -14] }, popup: { lanes: LANES, need: 7, up: 2.6, faster: true }, shooters: SHOOTERS }, // 엎드린 대원들 등 뒤에서 거리별 과녁을 본다
     { ...script.parts.road, goal: script.goals[4], intro: meet('kimgu', '김구와 이야기하기', script.parts.road.intro), play: ctx => roadWalk(ctx) },
   ],
   // 훈련장 문과 「한국광복군 훈련장」 이름판은 굳히기에 합쳐지지 않게 돌려준다

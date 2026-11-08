@@ -292,3 +292,79 @@ test('play drive: ringing the bell makes the cart ahead step aside so the tram p
     eq(await p, true);
   } finally { s.done(); }
 });
+
+// ── 2026-11-08 일제 강점기편 더 재밌게 ──
+test('play sneak: when caught the book drops where the student stood and must be picked up before the next ring counts', async () => {
+  const s = touchSetup(script.speakers);
+  try {
+    const p = PLAY.sneak(s.ctx, { arena, from: [0, 3], seconds: 60, dropOnCatch: true, caught: '들킴', needBook: '책 먼저', waypoints: [{ x: 0, z: -15 }], hides: [{ x: 0, z: 3, r: 2 }],
+      guards: [{ path: [[0, 8.1], [0, 8]], speed: 0.01, range: 8 }] }, false);
+    ok(s.w.player.userData.carry, 'carries the book');
+    s.w.player.position.set(300, 0, 5.5); stepN(s, 4); // 덤불 밖, 불빛 안
+    eq(toastText(s), '들킴'); ok(s.ctx.testHooks.sneakDrop(), 'book dropped'); ok(!s.w.player.userData.carry, 'hands empty');
+    s.w.player.position.set(300, 0, -15); stepN(s, 3);
+    eq(toastText(s), '책 먼저'); ok(s.ctx.testHooks.sneakDrop(), 'the ring does not count without the book');
+    const d = s.ctx.testHooks.sneakDrop(); s.w.player.position.set(d.x, 0, d.z); stepN(s, 2);
+    ok(!s.ctx.testHooks.sneakDrop() && s.w.player.userData.carry, 'picked up again');
+    s.w.player.position.set(300, 0, -15); stepN(s, 3);
+    eq(await p, true);
+  } finally { s.done(); }
+});
+
+test('play sneak: a recipient hides while a guard is near the ring and the ring waits until the guard is gone', async () => {
+  const s = touchSetup(script.speakers);
+  try {
+    const p = PLAY.sneak(s.ctx, { arena, from: [0, 15], seconds: 60, hideR: 6, waitHide: '기다려', waypoints: [{ x: 0, z: 0, look: 'citizen' }],
+      guards: [{ path: [[-20, 2], [20, 2]], speed: 0.4, range: 3 }] }, false); // 경찰이 고리 곁을 지나간다
+    const guard = s.ctx.testHooks.sneak.guards[0];
+    let hid = false, shown = false;
+    for (let i = 0; i < 400; i++) {
+      stepN(s, 1);
+      const nearG = Math.abs(guard.body.position.x - 0) < 6;
+      s.w.player.position.set(300, 0, 14); // 멀리서 지켜본다
+      if (nearG) hid = true; else shown = true;
+    }
+    ok(hid && shown, 'the guard both came near and went far');
+    // 경찰이 가까울 때 고리에 서면 기다리라는 말만 나온다
+    for (let i = 0; i < 600 && Math.abs(guard.body.position.x) > 4; i++) stepN(s, 1);
+    s.w.player.position.set(300, 0, 0); stepN(s, 2);
+    eq(toastText(s), '기다려');
+    let r = null; p.then(v => { r = v; }); await sleep(20); eq(r, null, 'not finished yet');
+    for (let i = 0; i < 800 && r === null; i++) { stepN(s, 1); s.w.player.position.set(300, 0, 0); if (i % 40 === 0) await sleep(30); }
+    await sleep(600);
+    eq(r, true, 'counts once the guard has moved away');
+  } finally { s.done(); }
+});
+
+test('play drive: shouting 만세 several times at a blocking gendarme crowd pushes it aside', async () => {
+  const s = touchSetup(script.speakers);
+  try {
+    const p = PLAY.drive(s.ctx, { arena, from: [0, 10], seconds: 60, push: { taps: 3, label: '만세!', say: '물러남' }, bump: '쾅', route: [{ x: 0, z: -10 }],
+      hazards: [{ x: 0, z: 4, to: [0.01, 4], kind: 'crowd', r: 1.6, speed: 0.01 }] }, false);
+    s.w.player.position.set(300, 0, 9); stepN(s, 3);
+    ok(!s.hud.talkBtn.disabled && s.ctx.testHooks.pressing === 'push', 'shout offered near the crowd');
+    s.hud.talkBtn.click(); stepN(s, 1); eq(toastText(s), '만세! 1/3');
+    s.hud.talkBtn.click(); stepN(s, 1); s.hud.talkBtn.click(); stepN(s, 12);
+    eq(toastText(s), '물러남');
+    s.w.player.position.set(300, 0, 4); stepN(s, 2); ok(toastText(s) !== '쾅', 'the crowd has moved aside');
+    s.w.player.position.set(300, 0, -10); stepN(s, 3);
+    eq(await p, true);
+  } finally { s.done(); }
+});
+
+test('play popup: targets stay up for less time as hits grow (faster) and a combo is counted', async () => {
+  const s = touchSetup(script.speakers);
+  try {
+    const lanes = [{ m: 10, x: -3, z: -2 }, { m: 25, x: 3, z: -6 }];
+    let r = null; PLAY.ambush(s.ctx, { arena, camera: { pos: [0, 4, 12], target: [0, 1, -4] }, popup: { lanes, need: 4, up: 2, faster: true } }, false).then(v => { r = v; });
+    const upTicks = () => { let t = 0; while (!s.ctx.testHooks.ready && t < 200) { stepN(s, 1); t += 1; } const t0 = t; while (s.ctx.testHooks.ready && t < 400) { stepN(s, 1); t += 1; } return t - t0; }; // 누르지 않고 눕기까지 센다
+    const before = upTicks();
+    for (let k = 0; k < 3; k++) { // 세 번 잇따라 맞힌다
+      let t = 0; while (!s.ctx.testHooks.ready && t < 200) { stepN(s, 1); t += 1; }
+      const btn = [...s.ui.querySelectorAll('.tap-target')].find(b => !b.hidden); btn.click(); stepN(s, 2);
+    }
+    const after = upTicks();
+    ok(before > 0 && after < before - 3, `up time shrinks: ${before} → ${after} ticks`);
+    eq(s.ctx.testHooks.ambush.bestCombo, 3, 'three in a row');
+  } finally { s.done(); }
+});

@@ -91,17 +91,18 @@ export default {
     },
     letters: {
       type: 'sneak', title: '일본 경찰의 눈을 피해 비밀 편지를 전해요', counter: '지난 숨을 곳', seconds: 150,
-      howto: '불빛을 피해 파란 고리를 지나가요.',
+      howto: '불빛을 피해 파란 고리를 지나가요. 고리 곁 사람은 경찰이 가까우면 숨으니, 멀어져서 나올 때 가요.',
+      hideR: 6.5, waitHide: '경찰이 가까워요. 멀어져서 사람이 나올 때까지 기다려요.', // 2026-11-08 선생님
       intro: [ // 연락원에게 말을 걸면(C-05)
         { who: 'messenger', text: '이 편지를 골목 끝 연락원에게 전해 주세요. 나라 안 독립운동 단체로 갈 편지예요.' },
         { who: 'messenger', text: '상하이 골목에도 일본 경찰이 돌아다녀요. 불빛에 들어가면 안 돼요!' },
       ],
       waypoints: [
-        { label: '골목 담 뒤' },
-        { label: '쌀가게 뒤', talk: [{ who: 'messenger', text: '잘했어요. 저 앞 경찰은 왔다 갔다 해요. 불빛이 멀어지면 가요.' }] },
-        { label: '창고 옆' },
-        { label: '찻집 앞', talk: [{ who: 'messenger', text: '거의 다 왔어요. 마지막 골목만 지나면 돼요.' }] },
-        { label: '연락원', talk: [{ who: 'messenger', text: '편지를 무사히 받았어요! 이 소식은 나라 안 동포들에게 전해질 거예요.' }] },
+        { label: '골목 담 뒤', look: 'commoner' },
+        { label: '쌀가게 뒤', look: 'citizen', talk: [{ who: 'messenger', text: '잘했어요. 저 앞 경찰은 왔다 갔다 해요. 불빛이 멀어지면 가요.' }] },
+        { label: '창고 옆', look: 'commoner' },
+        { label: '찻집 앞', look: 'gentleman', talk: [{ who: 'messenger', text: '거의 다 왔어요. 마지막 골목만 지나면 돼요.' }] },
+        { label: '연락원', look: 'citizen', talk: [{ who: 'messenger', text: '편지를 무사히 받았어요! 이 소식은 나라 안 동포들에게 전해질 거예요.' }] },
       ],
       caught: '들켰어요! 앞의 숨을 곳에서 다시 가요.',
       fail: '시간 안에 전하지 못했어요. 불빛이 지나간 뒤에, 짐 더미 뒤를 따라 움직여 봐요.',

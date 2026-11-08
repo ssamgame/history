@@ -446,6 +446,13 @@ export function drive(ctx, part, easy) {
   const unbindAction = ctx.onAction(() => {
     if (s.done || s.busy) return;
     if (pressAt) { const r = pressAt; pressAt = null; reach(r); return; }
+    if (bellAt && part.push) { // 만세 외치기(일제 2장): 여러 번 외쳐야 헌병이 물러난다. 뒤따르는 사람이 많을수록 적게 외쳐도 된다
+      const h = bellAt, need = Math.max(2, part.push.taps - Math.floor(followers.length / 4));
+      h.shouts = (h.shouts || 0) + 1; audio.play('tap');
+      if (h.shouts >= need) { h.shouts = 0; h.aside = 5; bellAt = null; audio.play('correct'); toast(ctx, part.push.say || '헌병이 물러났어요!', 'good'); }
+      else toast(ctx, `${part.push.label || '만세!'} ${h.shouts}/${need}`, 'good');
+      return;
+    }
     if (bellAt) { bellAt.aside = 4; bellAt = null; audio.play('correct'); toast(ctx, part.bellSay || '땡땡! 길을 비켜요.', 'good'); }
   });
   s.cleanup(() => { unbindAction(); ctx.testHooks.pressing = null; });
@@ -467,7 +474,7 @@ export function drive(ctx, part, easy) {
         if (h.aside > 0) { h.aside -= dt; const e = Math.min(1, (4 - h.aside) / 0.5), back = h.aside < 0.6 ? h.aside / 0.6 : 1; h.hg.position.x += Math.sign(h.to[0] - h.x) * (Math.cos(w) < 0 ? -1 : 1) * 5 * e * back; } // 종소리에 가던 쪽으로 서둘러 비킨다
       }
       const hp = s.at(h.hg.position.x, h.hg.position.z), hd = Math.hypot(p.x - hp.x, p.z - hp.z);
-      if (part.bell && !(h.aside > 0) && hd < 8 && (!bellAt || hd < bellD)) { bellAt = h; bellD = hd; } // 가장 가까운 수레에 종을 울린다
+      if ((part.bell || part.push) && !(h.aside > 0) && hd < (part.push ? 5.5 : 8) && (!bellAt || hd < bellD)) { bellAt = h; bellD = hd; } // 가장 가까운 수레(종)·헌병 무리(만세)
       if (!safe && hd < (h.r || 1.4) + 0.9) {
         audio.play('wrong'); safe = 1.5; held = 0;
         toast(ctx, part.bump || '부딪혔어요! 앞 지점에서 다시 가요.', 'bad');
@@ -477,7 +484,7 @@ export function drive(ctx, part, easy) {
         } else { const back = s.at(...last); p.set(back.x, 0, back.z); world.snapCamera(); }
       }
     }
-    if (part.bell) { const on = !!bellAt, bp = on && s.at(bellAt.hg.position.x, bellAt.hg.position.z); ctx.hud.setTalkEnabled?.(on); ctx.hud.setPrompt?.(on ? new THREE.Vector3(bp.x, 0, bp.z) : null, part.bellLabel || '종 울리기'); ctx.testHooks.pressing = on ? 'bell' : null; }
+    if (part.bell || part.push) { const on = !!bellAt, bp = on && s.at(bellAt.hg.position.x, bellAt.hg.position.z); ctx.hud.setTalkEnabled?.(on); ctx.hud.setPrompt?.(on ? new THREE.Vector3(bp.x, 0, bp.z) : null, part.push ? (part.push.label || '만세!') : (part.bellLabel || '종 울리기')); ctx.testHooks.pressing = on ? (part.push ? 'push' : 'bell') : null; }
     for (const pk of pickups) {
       if (pk.got) continue;
       if (pk.flag) pk.item.rotation.y = Math.sin(el * 1.5 + pk.x) * 0.5; else if (!pk.follow) pk.item.rotation.y += dt * 2; else pk.item.rotation.y = Math.atan2(p.x - pk.pos.x, p.z - pk.pos.z); // 사람은 학생 쪽을 본다
@@ -802,7 +809,7 @@ function popupRange(ctx, part, easy) {
     const aim = new THREE.Object3D(); aim.position.set(0, 1.45, 0); board.add(aim); // 버튼은 과녁 판 가운데 위에
     lane.tap = taps.add(aim, { label: part.label || '쏴라!', onTap: () => {
       if (lane.state !== 'up') return;
-      lane.state = 'hit'; lane.t = 0; hits += 1; hook.targets += 1; hook.shots += 1;
+      lane.state = 'hit'; lane.t = 0; hits += 1; combo += 1; hook.bestCombo = Math.max(hook.bestCombo, combo); hook.targets += 1; hook.shots += 1;
       const near = shooters.map(sh => ({ sh, d: Math.abs(sh.group.position.x - L.x) })).sort((a, b) => a.d - b.d)[0];
       if (near) { muzzleFire(g, near.sh, ctx); hook.flashes += 1; }
       audio.play('shot'); audio.play('correct'); count();
@@ -811,13 +818,15 @@ function popupRange(ctx, part, easy) {
     lane.tap.btn.hidden = true;
     return lane;
   });
-  let hits = 0, wait = 0.8, last = -1;
-  const count = () => ctx.hud.setCounter(`${part.counter || '맞힌 과녁'} ${hits}/${need}`);
+  let hits = 0, wait = 0.8, last = -1, combo = 0;
+  hook.bestCombo = 0;
+  const upNow = () => (P.faster && !easy ? upFor * Math.max(0.5, 1 - hits * 0.07) : upFor); // 맞힐수록 과녁이 빨리 눕는다(쉬운 모드는 그대로)
+  const count = () => ctx.hud.setCounter(`${part.counter || '맞힌 과녁'} ${hits}/${need}${combo >= 2 ? ` · 연속 ${combo}!` : ''}`);
   count();
   s.update(dt => {
     let busy = false;
     for (const L of lanes) {
-      if (L.state === 'up') { busy = true; L.t += dt; L.rise = Math.min(1, L.rise + dt / 0.25); if (L.t > upFor) { L.state = 'drop'; toast(ctx, part.miss || '과녁이 내려갔어요! 다음 과녁을 기다려요.', 'bad'); } }
+      if (L.state === 'up') { busy = true; L.t += dt; L.rise = Math.min(1, L.rise + dt / 0.25); if (L.t > upNow()) { L.state = 'drop'; combo = 0; count(); toast(ctx, part.miss || '과녁이 내려갔어요! 다음 과녁을 기다려요.', 'bad'); } }
       else if (L.state === 'hit' || L.state === 'drop') { busy = true; L.rise = Math.max(0, L.rise - dt / 0.3); if (!L.rise) L.state = 'down'; }
       L.board.rotation.x = -Math.PI / 2 * (1 - L.rise);
       L.tap.used = L.state !== 'up'; // 서 있는 과녁에만 버튼(누르면 꺼지고, 다시 서면 또 누를 수 있다)
@@ -983,8 +992,15 @@ export function sneak(ctx, part, easy) {
   const wps = part.waypoints.map((w, i) => {
     const m = ring(0x7fb3c8, 1.1, 1.5); m.position.set(w.x, 0.1, w.z); m.visible = i === 0; g.add(m);
     let lab = null; if (w.label) { lab = labelSprite(w.label, { size: 0.8 }); lab.position.set(w.x, 2.6, w.z); lab.visible = i === 0; g.add(lab); }
-    return { ...w, m, lab, pos: s.at(w.x, w.z) };
+    const person = w.look ? standPerson(g, w.look, w.x, w.z - 1.4) : null; // 받는 사람(일제 3장): 경찰이 가까우면 숨고 멀어지면 나온다
+    return { ...w, m, lab, person, pos: s.at(w.x, w.z), hiding: false };
   });
+  // 들고 가는 것(dropOnCatch, 일제 1장): 들키면 그 자리에 떨어뜨리고, 다시 주워야 다음 고리로 갈 수 있다
+  let dropped = null;
+  const book = part.dropOnCatch ? (() => { const b = new THREE.Group(); add(b, box(0.34, 0.06, 0.46), 0x6b3a2a, 0, 0.03, 0); add(b, box(0.3, 0.02, 0.42), 0xf2ede0, 0, 0.07, 0); return b; })() : null;
+  const dropRing = book && ring(0xd9a441, 0.6, 0.85);
+  if (book) { setCarry(world.player, book, 'arms'); s.cleanup(() => setCarry(world.player, null)); }
+  ctx.testHooks.sneakDrop = () => dropped;
   const patrol = patrolGuards(g, s, part, easy), { guards } = patrol;
   ctx.testHooks.sneak = { guards };
   // 숨을 곳(덤불·짐더미): 안에 들어가 있으면 감시원 불빛에 들키지 않는다
@@ -1003,10 +1019,23 @@ export function sneak(ctx, part, easy) {
     if (patrol.step(dt, el, p, caught || hidden(p))) {
       audio.play('wrong'); caught = 1.5;
       toast(ctx, part.caught || '들켰어요! 앞의 숨을 곳에서 다시 가요.', 'bad');
+      if (book && !dropped) { // 책을 떨어뜨린다: 들킨 자리에 놓이고, 주울 때까지 화살표가 책을 가리킨다
+        setCarry(world.player, null); const lp = g.worldToLocal(new THREE.Vector3(p.x, 0, p.z)); book.position.set(lp.x, 0, lp.z); g.add(book);
+        dropRing.position.set(lp.x, 0.09, lp.z); g.add(dropRing); dropped = { x: p.x, z: p.z };
+      }
       const back = s.at(...last); p.set(back.x, 0, back.z); world.snapCamera();
+      if (dropped) world.setGoal(dropped);
+    }
+    if (dropped && near(p, dropped, 1.2)) { dropped = null; g.remove(dropRing); setCarry(world.player, book, 'arms'); audio.play('tap'); toast(ctx, part.pickedUp || '책을 다시 주웠어요!', 'good'); show(); }
+    for (const w of wps) { // 받는 사람은 경찰이 가까이(hideR 안) 오면 숨는다
+      if (!w.person) continue;
+      const nearGuard = patrol.guards.some(gd => Math.hypot(gd.body.position.x - w.x, gd.body.position.z - w.z) < (part.hideR || 6));
+      if (nearGuard !== w.hiding) { w.hiding = nearGuard; w.person.visible = !nearGuard; w.m.material.opacity = nearGuard ? 0.3 : 0.85; }
     }
     const w = wps[next];
-    if (w && near(p, w.pos, 1.6)) {
+    if (w && near(p, w.pos, 1.6) && dropped) { if (!w.warnedDrop) { w.warnedDrop = true; toast(ctx, part.needBook || '먼저 떨어뜨린 책을 주워 와요.', 'bad'); } }
+    else if (w && near(p, w.pos, 1.6) && w.hiding) { if (!w.warnedHide) { w.warnedHide = true; toast(ctx, part.waitHide || '경찰이 가까워요. 멀어져서 사람이 나올 때까지 기다려요.', 'bad'); } }
+    else if (w && near(p, w.pos, 1.6)) {
       audio.play('correct'); w.m.visible = false; if (w.lab) w.lab.visible = false;
       if (w.say) toast(ctx, w.say, 'good');
       last = [w.x, w.z]; next += 1;
@@ -1014,6 +1043,7 @@ export function sneak(ctx, part, easy) {
       show();
       s.say(w.talk, () => { if (next === wps.length) setTimeout(() => s.finish(true), 400); });
     }
+    if (w && !near(p, w.pos, 1.6)) w.warnedDrop = w.warnedHide = false;
   });
   return s.promise;
 }
