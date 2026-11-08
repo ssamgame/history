@@ -87,7 +87,8 @@ test('map: 장 고르기 지도 뒤에 학생 병사가 보이지 않는다', as
     const w = await wait(() => frame.contentWindow.__world);
     ok(w, 'world');
     (await wait(() => find('고려를 지켜라'))).click();
-    (await wait(() => find('처음부터'))).click();
+    const next = await wait(() => d().querySelector('input') || find('처음부터')); // 처음이면 바로 이름 입력, 저장된 진행이 있으면 '처음부터'가 먼저 나온다
+    if (next.tagName === 'BUTTON') next.click();
     (await wait(() => d().querySelector('input'))).value = '시험';
     (await wait(() => find('시작'))).click();
     ok(await wait(() => d().body.textContent.includes('어디로 갈까요')), '장 고르기 지도');
