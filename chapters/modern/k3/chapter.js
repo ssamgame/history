@@ -337,6 +337,7 @@ const base = makeKitChapter({
     { ...gather, goal: script.goals[2], arena: FARMS, from: [0, 23], followers: { looks: ['peasant', 'commoner'], per: 2 },
       route: xy(gather.route, [{ x: -3, z: 15 }, { x: 3, z: 5 }, { x: -3, z: -5 }, { x: 0, z: -17 }]).map(r => ({ ...r, labelSize: 1.4 })),
       pickups: xy(gather.pickups, [{ x: 16, z: 18 }, { x: -17, z: 4 }, { x: 15, z: -10 }]),
+      hazards: [{ x: -9, z: 10, to: [9, 10], kind: 'constable', r: 1.1, speed: 0.45 }, { x: 9, z: 0, to: [-9, 0], kind: 'constable', r: 1.1, speed: 0.55 }, { x: -9, z: -11, to: [9, -11], kind: 'constable', r: 1.1, speed: 0.5 }], // 마을 길을 도는 관아 포졸
       before: ctx => { followOff = equipFollowers(ctx.world); }, after: () => { followOff?.(); followOff = null; } },
     { type: 'scene', title: script.march.title, goal: script.goals[3], mood: NIGHT_MOOD, intro: meet('jeonbongjun', '전봉준과 이야기하기', script.march.intro), play: ctx => torchMarch(ctx) },
     { ...script.parts.gobu, goal: script.goals[3], play: ctx => gobuScene(ctx) },

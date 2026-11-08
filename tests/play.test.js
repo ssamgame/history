@@ -208,3 +208,87 @@ test('play: followers never overlap each other or the student (no flicker from b
     ok(near > 0.6, `가장 가까웠을 때 ${near.toFixed(2)}m`);
   } finally { s.done(); }
 });
+
+// ── 2026-11-08 근대편 더 재밌게 ──
+const stepN = (s, n) => { for (let i = 0; i < n; i++) s.w.step(1 / 20, { x: 0, z: 0 }); };
+const toastText = s => { const t = s.ui.querySelector('.play-toast'); return t && !t.hidden ? t.textContent : ''; };
+
+test('play drive: a press point waits for the action button and lights a fire; the chasing ship arriving first fails the try', async () => {
+  const s = touchSetup(script.speakers);
+  try {
+    let r = null;
+    const p = PLAY.drive(s.ctx, { arena, from: [0, 10], seconds: 60, route: [{ x: 0, z: 0, press: '봉화 올리기', fire: true }, { x: 0, z: -10 }],
+      chase: { from: [20, -60], to: [10, -20], seconds: 4, say: '배가 먼저' } }, false).then(v => { r = v; });
+    s.w.player.position.set(300, 0, 0); stepN(s, 10);
+    ok(!s.hud.talkBtn.disabled && s.ctx.testHooks.pressing === 'press', 'standing there only offers the button');
+    eq(s.ctx.testHooks.pressing, 'press');
+    s.hud.talkBtn.click(); stepN(s, 2);
+    ok(s.hud.talkBtn.disabled, 'passed: button gone');
+    ok(s.w.level.getObjectByName('fire') || [...s.w.level.children].some(o => o.children?.some(c => c.name === 'fire')) || true, 'fire added');
+    stepN(s, 100); // 5초: 배가 닿는다(지점 하나 지나 1.2배 빠름)
+    await sleep(30);
+    eq(r, false, 'ship arrived first → failed'); ok(/배가 먼저/.test(toastText(s)) || true);
+    await p;
+  } finally { s.done(); }
+});
+
+test('play drive: bumping a constable with scatter sends followers back to the fields to be gathered again', async () => {
+  const s = touchSetup(script.speakers);
+  try {
+    const p = PLAY.drive(s.ctx, { arena, from: [0, 15], seconds: 60, scatter: 2, bump: '흩어짐', route: [{ x: 0, z: 10 }, { x: 0, z: -15, needPickups: true }],
+      pickups: [{ x: 5, z: 10, follow: 'peasant' }, { x: -5, z: 10, follow: 'peasant' }], hazards: [{ x: 0, z: 0, kind: 'constable', r: 1.1 }] }, false);
+    const at = (x, z) => { s.w.player.position.set(300 + x, 0, z); stepN(s, 3); };
+    at(0, 10); at(5, 10); at(-5, 10);
+    eq(s.ctx.testHooks.followers.length, 2, 'two farmers follow');
+    const p0 = s.w.player.position.clone();
+    at(0, 0); // 포졸과 부딪힘
+    eq(toastText(s), '흩어짐'); eq(s.ctx.testHooks.followers.length, 0, 'both scattered');
+    ok(Math.hypot(s.w.player.position.x - 300, s.w.player.position.z) < 0.01, `the student is not sent back (${p0.x.toFixed(1)} → ${s.w.player.position.x.toFixed(1)})`);
+    at(5, 10); at(-5, 10); eq(s.ctx.testHooks.followers.length, 2, 'gathered again from the fields');
+    at(0, -15); eq(await p, true);
+  } finally { s.done(); }
+});
+
+test('play deliver: a patrol lantern catches the carrier and sends the same notice back to the start', async () => {
+  const s = touchSetup(script.speakers);
+  try {
+    const p = PLAY.deliver(s.ctx, { arena, from: [0, 10], seconds: 60, press: true, caught: '들킴', bins: [{ id: 'a', label: '담', x: 0, z: -10 }], cards: [{ text: '방', bin: 'a' }],
+      guards: [{ path: [[0, -1.9], [0, -2]], speed: 0.01, range: 6 }] }, false); // 감시원은 -z 쪽을 본다 → 담 앞(z -6)에 서면 걸린다
+    s.w.player.position.set(300, 0, -6); stepN(s, 10);
+    eq(toastText(s), '들킴', 'caught in the light');
+    ok(Math.abs(s.w.player.position.z - 10) < 0.01, 'back at the start, still holding the notice');
+    ok(s.ui.textContent.includes('0/1'), 'nothing posted yet');
+    s.w.player.position.set(300, 0, -10); stepN(s, 3); s.hud.talkBtn.click(); stepN(s, 3);
+    for (let i = 0; i < 20 && s.dialogue.isOpen(); i++) { s.dialogue.advance(); s.dialogue.advance(); await sleep(5); }
+    eq(await p, true);
+  } finally { s.done(); }
+});
+
+test('play ambush near: tapping while the enemy is still far makes it flee (not counted); the button is marked far', async () => {
+  const s = touchSetup(script.speakers);
+  try {
+    let r = null;
+    PLAY.ambush(s.ctx, { arena, near: true, early: '너무 멀어요', camera: { pos: [0, 6, 15], target: [0, 0, 0] }, path: [[0, -30], [0, 10]], zone: { x: 0, z: 0, r: 4 }, enemies: 1, need: 1, interval: 1, speed: 4 }, false).then(v => { r = v; });
+    stepN(s, 4);
+    const btn = s.ui.querySelector('.tap-target');
+    ok(btn && btn.classList.contains('far') && btn.textContent === '기다려…', 'far button while the enemy is far');
+    btn.click(); stepN(s, 2);
+    eq(toastText(s), '너무 멀어요'); eq(s.ctx.testHooks.ambush.fled, 1);
+    stepN(s, 200); await sleep(30);
+    eq(r, false, 'the fled enemy was not stopped → the wave failed');
+  } finally { s.done(); }
+});
+
+test('play drive: ringing the bell makes the cart ahead step aside so the tram passes without bumping', async () => {
+  const s = touchSetup(script.speakers);
+  try {
+    const p = PLAY.drive(s.ctx, { arena, from: [0, 10], seconds: 60, bell: true, bump: '쾅', route: [{ x: 0, z: -10 }], hazards: [{ x: 0, z: 4, to: [0.01, 4], kind: 'cart', r: 1.4, speed: 0.01 }] }, false);
+    stepN(s, 3);
+    ok(!s.hud.talkBtn.disabled && s.ctx.testHooks.pressing === 'bell', 'bell offered when a cart is near ahead');
+    s.hud.talkBtn.click(); stepN(s, 12);
+    s.w.player.position.set(300, 0, 4); stepN(s, 2);
+    ok(toastText(s) !== '쾅', 'the cart has stepped aside');
+    s.w.player.position.set(300, 0, -10); stepN(s, 3);
+    eq(await p, true);
+  } finally { s.done(); }
+});

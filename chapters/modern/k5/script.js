@@ -78,7 +78,8 @@ export default {
   parts: {
     tram: {
       type: 'drive', src: ['S51'], title: '전차를 몰아 서대문에서 청량리까지 가요', vehicle: 'tram', counter: '지난 정류장', seconds: 110, speed: 1.3,
-      howto: '전차를 몰아 정류장마다 멈춰요.',
+      howto: '전차를 몰아 정류장마다 멈춰요. 선로에 수레가 들어오면 대화 버튼을 눌러 종을 울려 비키게 해요.',
+      bell: true, bellLabel: '종 울리기', bellSay: '땡땡! 수레가 길을 비켜요.', // 2026-11-08 선생님: 종 울리기
       intro: [ // 밤 장면 끝에서 이어진다(가져가기 놀이를 빼서 첫 놀이가 되었다)
         { who: 'driver', text: '나는 서대문에서 청량리까지 다니는 전차를 몬단다. 1899년부터 다니기 시작했지.', src: ['S51'] },
         { who: 'driver', text: '오늘은 네가 한번 몰아 보거라. 아주머니도 타실 거란다.' },

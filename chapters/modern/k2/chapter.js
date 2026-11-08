@@ -349,7 +349,8 @@ const base = makeKitChapter({
   parts: [
     { type: 'scene', title: script.night.title, goal: script.goals[2], mood: NIGHT_MOOD, play: ctx => nightWalk(ctx) },
     { ...reform, goal: script.goals[3], arena: STREETS, from: [0, 8], intro: meet('kimokgyun', '김옥균과 이야기하기', reform.intro),
-      bins: reform.bins.map(b => ({ ...b, ...PLACES[b.id] })) },
+      bins: reform.bins.map(b => ({ ...b, ...PLACES[b.id] })),
+      guards: [{ path: [[-13, -2], [13, -2]], speed: 0.35, range: 4.5, look: 'joseonSoldier' }, { path: [[0, -3], [0, -15]], speed: 0.45, range: 4, look: 'joseonSoldier' }] }, // 등불을 든 순라군 둘(큰길·우물 골목)
     { type: 'scene', title: '청의 군대가 몰려와요', goal: script.goals[4], intro: meet('kimokgyun', '김옥균과 이야기하기', script.parts.palace.intro), play: async ctx => { await qingWalk(ctx); await qingStreetScene(ctx); } }, // 끝에 이야기 장면(D-58): 갑신정변 뒤 한성 큰길의 청 군사
   ],
   decorate(world) { // 큰길 어귀 나무 문과 「우정총국 앞 큰길」 이름판(S51). 문짝은 굳히기에 합쳐지지 않게 돌려준다

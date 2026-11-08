@@ -62,7 +62,7 @@ function tick() {
     return;
   }
   seenDlg = 0;
-  const tapTarget = [...ui.querySelectorAll('.tap-target, .big-action')].find(b => vis(b) && !b.disabled);
+  const tapTarget = [...ui.querySelectorAll('.tap-target, .big-action')].find(b => vis(b) && !b.disabled && !b.classList.contains('far'));
   if (tapTarget && /길게/.test(tapTarget.textContent)) { // 길게 누르기: 1.6초 동안 누르고 있다가 뗀다
     if (!E.holding) { E.holding = performance.now(); const r = tapTarget.getBoundingClientRect(); E.holdXY = [r.left + r.width / 2, r.top + r.height / 2]; tapTarget.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 9, bubbles: true, clientX: E.holdXY[0], clientY: E.holdXY[1] })); }
     else if (performance.now() - E.holding > 1600) { tapTarget.dispatchEvent(new PointerEvent('pointerup', { pointerId: 9, bubbles: true, clientX: E.holdXY[0], clientY: E.holdXY[1] })); E.holding = 0; }

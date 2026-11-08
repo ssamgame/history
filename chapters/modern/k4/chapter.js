@@ -218,7 +218,7 @@ const base = makeKitChapter({
   },
   parts: [
     { ...script.parts.paper, goal: script.goals[3], arena: HANSEONG, from: [0, 19],
-      route: xy(script.parts.paper.route, [{ x: -11, z: 10 }, { x: 4, z: 4 }, { x: -6, z: -10 }, { x: 6, z: -4 }, { x: 0, z: 14 }]) },
+      route: xy(script.parts.paper.route, [{ x: -11, z: 10 }, { x: 4, z: 4 }, { x: -6, z: -10 }, { x: 6, z: -4 }, { x: -11, z: 10 }, { x: 12, z: -12 }, { x: -14, z: -2 }, { x: 0, z: 14 }]) }, // 세 부씩 두 번 왕복(2026-11-08)
     { ...script.parts.speech, goal: script.goals[4], intro: meet('citizen', '한성 시민과 이야기하기', script.parts.speech.intro), play: ctx => speechScene(ctx) },
     { ...script.parts.forum, goal: script.goals[4], arena: JONGNO, from: JONGNO.from, mark: '!', items: xy(script.parts.forum.items, JUDGE_SPOTS),
       before: ctx => { ctx.fade?.(false); } }, // 연설 장면이 어둡게 끝난 채로 같은 종로 무대를 밝힌다

@@ -27,6 +27,7 @@ import { BUILD, addFootprint, taegukgiTexture, addNature, ROAD_STEP, flagMesh } 
 import { bakeStatic } from './buildings.js';
 import { terrainField, terrainMesh, hillColorFor } from './terrain.js';
 import { mat, makePerson, setCarry, playAction } from '../../core/people.js';
+import { makeFire } from '../../core/fire.js';
 import { turnTo } from '../../core/interact.js';
 import { createTapTargets } from '../../core/minigame.js';
 import { MAP_OUTLINE } from '../../core/screens.js';
@@ -322,6 +323,7 @@ export function drive(ctx, part, easy) {
     else if (hz.kind === 'mine') { add(hg, new THREE.SphereGeometry(0.6, 10, 8), 0x2b2b2b, 0, 0.3, 0); }
     else if (hz.kind === 'crowd') { for (let i = 0; i < 3; i++) { const p = makePerson(LOOKS.gendarme); p.position.set(i - 1, 0, 0); hg.add(p); } }
     else if (hz.kind === 'police') hg.add(makePerson(LOOKS.gendarme)); // 혼자 순찰하는 경찰
+    else if (hz.kind === 'constable') hg.add(makePerson(LOOKS.joseonSoldier)); // 조선 관아 포졸(근대 3장)
     else if (hz.kind === 'car') { BUILD.truck(hg, { color: 0x8a2f24 }); }
     else if (hz.kind === 'cart') { const c = new THREE.Group(); c.rotation.y = Math.PI / 2; hg.add(c); BUILD.cart(c, { load: true }); } // 소달구지·손수레(1890년대 길)
     else if (hz.kind === 'truck') { BUILD.truck(hg, { color: 0x55603f }); } // 군용 트럭(전쟁 장면)
@@ -345,13 +347,18 @@ export function drive(ctx, part, easy) {
   });
   const left = () => pickups.filter(x => !x.got);
   const followers = ctx.testHooks.followers = [];
-  let next = 0, last = part.from, safe = 0, held = 0;
+  let next = 0, last = part.from, safe = 0, held = 0, chaseK = 0, pressAt = null, bellAt = null;
   const total = route.length;
+  // 쫓아오는 배(근대 1장 이양선): from에서 to로 seconds 동안 다가온다. 지점을 지날수록 조금씩 빨라지고, 다 오기 전에 끝내지 못하면 실패
+  const chase = part.chase && (() => { const sh = new THREE.Group(); BUILD.steamship(sh, { old: true, flag: 'japan' }); sh.position.set(part.chase.from[0], 0.3, part.chase.from[1]); sh.rotation.y = Math.atan2(part.chase.to[0] - part.chase.from[0], part.chase.to[1] - part.chase.from[1]); g.add(sh); return sh; })();
+  const fires = [], usesPress = route.some(r => r.press);
+  s.update((dt, el) => { for (const f of fires) f.update(dt, el); });
   const show = () => {
     const pk = pickups.length ? ` · ${part.pickupCounter || '모은 것'} ${pickups.length - left().length}/${pickups.length}` : '';
     const r = route[next];
     const wait = r && r.hold && held > 0 ? ` · ${r.holdLabel || '기다리는 중'} ${Math.min(r.hold, held).toFixed(1)}/${r.hold}초` : '';
-    ctx.hud.setCounter(`${part.counter || '지난 곳'} ${next}/${total}${pk}${wait}`);
+    const ch = chase ? ` · ${part.chase.label || '배 접근'} ${Math.round(chaseK * 100)}%` : '';
+    ctx.hud.setCounter(`${part.counter || '지난 곳'} ${next}/${total}${pk}${wait}${ch}`);
     // 다 모아야 하는 지점인데 아직 남았으면, 화살표는 가장 가까운 것을 가리킨다
     if (r && r.needPickups && left().length) {
       const p = world.player.position;
@@ -420,8 +427,9 @@ export function drive(ctx, part, easy) {
       o.rotation.set(0, 0, 0); o.scale.setScalar(1); o.position.set(r.x + (r.drop[0] ?? 1.2), log ? 1.3 : 0.02, r.z + (r.drop[1] ?? -1.4)); g.add(o);
     }
     r.m.visible = false; if (r.lab) r.lab.visible = false;
+    if (r.fire) { const fx = makeFire({ size: 1.3, detail: world.quality?.particles ?? 1 }); fx.group.position.set(r.x + 1.6, 1.0, r.z - 1.2); g.add(fx.group); fx.setLit(true); fires.push(fx); } // 봉화가 타오른다
     if (r.say) toast(ctx, r.say, 'good');
-    last = [r.x, r.z]; next += 1; held = 0;
+    last = [r.x, r.z]; next += 1; held = 0; pressAt = null;
     const p = world.player.position;
     if (part.followers) for (let i = 0; i < part.followers.per; i++) {
       const looks = part.followers.looks, f = new THREE.Group(); // 따라오는 사람(flags면 태극기를 든다)
@@ -434,22 +442,42 @@ export function drive(ctx, part, easy) {
     if (r.scene) s.run(() => r.scene(ctx, s, g)).then(() => { if (!s.done) talk(); }); // 그 자리에서 보는 짧은 장면(시간은 멈춘다), 그 뒤 대사
     else talk();
   };
+  // 대화 버튼(E): 지점의 press(봉화 올리기)와 part.bell(종 울리기)
+  const unbindAction = ctx.onAction(() => {
+    if (s.done || s.busy) return;
+    if (pressAt) { const r = pressAt; pressAt = null; reach(r); return; }
+    if (bellAt) { bellAt.aside = 4; bellAt = null; audio.play('correct'); toast(ctx, part.bellSay || '땡땡! 길을 비켜요.', 'good'); }
+  });
+  s.cleanup(() => { unbindAction(); ctx.testHooks.pressing = null; });
   s.update((dt, el) => {
     const p = world.player.position;
     safe = Math.max(0, safe - dt);
+    if (chase) { // 쫓아오는 배: 지점을 지날수록 빨라진다
+      chaseK = Math.min(1, chaseK + dt / (part.chase.seconds * (easy ? 1.5 : 1)) * (1 + 0.2 * next));
+      chase.position.set(part.chase.from[0] + (part.chase.to[0] - part.chase.from[0]) * chaseK, 0.3 + Math.sin(el * 1.2) * 0.1, part.chase.from[1] + (part.chase.to[1] - part.chase.from[1]) * chaseK);
+      if (chaseK >= 1) { audio.play('wrong'); toast(ctx, part.chase.say || '배가 먼저 닿았어요!', 'bad'); s.finish(false); return; }
+      show();
+    }
+    bellAt = null; let bellD = 0;
     for (const h of hazards) {
       if (h.to) { // 두 점 사이를 오간다
         const w = (el + h.ph) * (h.speed || 0.6) * (easy ? 0.5 : 1), k = (Math.sin(w) + 1) / 2;
         h.hg.position.set(h.x + (h.to[0] - h.x) * k, 0, h.z + (h.to[1] - h.z) * k);
         h.hg.rotation.y = Math.atan2(h.to[0] - h.x, h.to[1] - h.z) + (Math.cos(w) < 0 ? Math.PI : 0); // 돌아올 때는 돌아서서 걷는다(2026-11-04 선생님: 뒷걸음질하던 것)
+        if (h.aside > 0) { h.aside -= dt; const e = Math.min(1, (4 - h.aside) / 0.5), back = h.aside < 0.6 ? h.aside / 0.6 : 1; h.hg.position.x += Math.sign(h.to[0] - h.x) * (Math.cos(w) < 0 ? -1 : 1) * 5 * e * back; } // 종소리에 가던 쪽으로 서둘러 비킨다
       }
-      const hp = s.at(h.hg.position.x, h.hg.position.z);
-      if (!safe && Math.hypot(p.x - hp.x, p.z - hp.z) < (h.r || 1.4) + 0.9) {
+      const hp = s.at(h.hg.position.x, h.hg.position.z), hd = Math.hypot(p.x - hp.x, p.z - hp.z);
+      if (part.bell && !(h.aside > 0) && hd < 8 && (!bellAt || hd < bellD)) { bellAt = h; bellD = hd; } // 가장 가까운 수레에 종을 울린다
+      if (!safe && hd < (h.r || 1.4) + 0.9) {
         audio.play('wrong'); safe = 1.5; held = 0;
         toast(ctx, part.bump || '부딪혔어요! 앞 지점에서 다시 가요.', 'bad');
-        const back = s.at(...last); p.set(back.x, 0, back.z); world.snapCamera();
+        if (part.scatter && followers.length) { // 뒤따르던 사람들이 흩어진다: 뒷사람부터 사라지고, 모았던 사람이 제자리로 돌아가 다시 모아야 한다
+          for (let i = 0; i < part.scatter && followers.length; i++) { const f = followers.pop(); f.parent?.remove(f); const pk = pickups.filter(x => x.got).pop(); if (pk) { pk.got = false; pk.pg.visible = true; } }
+          show();
+        } else { const back = s.at(...last); p.set(back.x, 0, back.z); world.snapCamera(); }
       }
     }
+    if (part.bell) { const on = !!bellAt, bp = on && s.at(bellAt.hg.position.x, bellAt.hg.position.z); ctx.hud.setTalkEnabled?.(on); ctx.hud.setPrompt?.(on ? new THREE.Vector3(bp.x, 0, bp.z) : null, part.bellLabel || '종 울리기'); ctx.testHooks.pressing = on ? 'bell' : null; }
     for (const pk of pickups) {
       if (pk.got) continue;
       if (pk.flag) pk.item.rotation.y = Math.sin(el * 1.5 + pk.x) * 0.5; else if (!pk.follow) pk.item.rotation.y += dt * 2; else pk.item.rotation.y = Math.atan2(p.x - pk.pos.x, p.z - pk.pos.z); // 사람은 학생 쪽을 본다
@@ -468,10 +496,12 @@ export function drive(ctx, part, easy) {
         held += dt; show();
         ctx.hud.setWait?.(`${r.holdLabel || '기다리는 중'} ${Math.max(1, Math.ceil(r.hold - held))}초`, r.holdCenter ? { center: true } : undefined); // 남은 초를 가운데 크게(holdCenter: 화면 한가운데에 더 크게, 근대 1장 망루)
         if (held >= r.hold) { ctx.hud.setWait?.(null); reach(r); }
-      } else if (inside) reach(r);
+      } else if (inside && r.press) pressAt = r; // 그 자리에서 대화 버튼(E)을 눌러야 지나간다(봉화 올리기)
+      else if (inside) reach(r);
       else if (held) { held = 0; ctx.hud.setWait?.(null); toast(ctx, r.holdLeave || '빛나는 곳을 벗어나면 처음부터 다시 기다려요.', 'bad'); show(); }
-      if (!inside) r.warned = false;
+      if (!inside) { r.warned = false; if (pressAt === r) pressAt = null; }
     }
+    if (usesPress) { const on = !!pressAt; ctx.hud.setTalkEnabled?.(on); ctx.hud.setPrompt?.(on ? new THREE.Vector3(pressAt.pos.x, 0, pressAt.pos.z) : null, pressAt?.press); ctx.testHooks.pressing = on ? 'press' : null; }
     // 정류장 손님: 내리는 사람은 전차 옆에서 길가로 걸어 나가고, 타는 사람은 길가에서 걸어와 전차에 오른다
     for (const rd of riders) {
       if (!rd.p.visible) continue;
@@ -612,6 +642,11 @@ export function deliver(ctx, part, easy) {
   const DWELL = 0.7;
   let inside = null, stay = 0;
   const last = world.player.position.clone();
+  if (part.guards) { // 몰래 붙이기(근대 2장): 순라군의 등불에 걸리면 들고 있던 방을 떨어뜨리고 처음 자리로 돌아가 다시 가져온다
+    const patrol = patrolGuards(g, s, part, easy); let caught = 0;
+    ctx.testHooks.guards = patrol.guards;
+    s.update((dt, el) => { caught = Math.max(0, caught - dt); if (patrol.step(dt, el, world.player.position, caught || !part.cards[i])) { caught = 1.5; audio.play('wrong'); toast(ctx, part.caught || '순라군에게 들켰어요! 방을 떨어뜨렸어요. 다시 가져와요.', 'bad'); home(); hold(); } });
+  }
   if (part.press) pickWithButton(ctx, s, () => (part.cards[i] ? bins : []), b => drop(part.cards[i], b), 2.1);
   else s.update(dt => {
     const moved = world.player.position.distanceTo(last) / Math.max(dt, 1e-3); last.copy(world.player.position);
@@ -849,6 +884,7 @@ export function ambush(ctx, part, easy) {
     const unit = { u, board: unit0, k: 0, state: 'come', t: null, smoke: null, a: [ax, az], b: [bx, bz], len: Math.hypot(bx - ax, bz - az), speed: (W.speed || part.speed || 2.2) * (easy ? 0.7 : 1) };
     unit.t = taps.add(u, { label: part.label || '공격!', onTap: () => {
       if (unit.state !== 'come') return;
+      if (part.near && !unit.inZone) { unit.state = 'flee'; hook.fled = (hook.fled || 0) + 1; unit.u.rotation.y += Math.PI; audio.play('wrong'); toast(ctx, part.early || '너무 멀어요! 적이 흩어져 달아났어요.', 'bad'); return; } // 가까이 오기 전에 쏘면 적이 흩어져 달아난다(막은 수에 들지 않는다)
       unit.state = part.unit === 'ship' ? 'back' : part.unit === 'target' ? 'hit' : 'down'; unit.down = 0; if (unit.state === 'hit') hook.targets += 1; hits += 1; waveHits += 1; if (shooters.length) fire(u); audio.play('correct'); count(); // 맞은 병사는 뒤로 쓰러진다(D-45, 배는 물러난다)
       if (unit.state === 'down') hook.fallen += u.children.filter(c => c.userData?.arms).length;
       const puff = new THREE.Mesh(new THREE.SphereGeometry(1.4, 10, 8), new THREE.MeshBasicMaterial({ color: 0xdedad2, transparent: true, opacity: 0.7 }));
@@ -866,6 +902,7 @@ export function ambush(ctx, part, easy) {
       const [ax, az] = unit.a, [bx, bz] = unit.b, len = unit.len;
       if (unit.state === 'come') unit.k += (unit.speed * dt) / len;
       else if (unit.state === 'back') { unit.k -= (unit.speed * 1.6 * dt) / len; unit.u.rotation.y = Math.atan2(ax - bx, az - bz); }
+      else if (unit.state === 'flee') { unit.k -= (unit.speed * 2.2 * dt) / len; if (unit.k <= -0.1) { unit.state = 'away'; unit.u.visible = false; } }
       else if (unit.state === 'hit') { // 맞은 과녁 판은 뒤로 넘어가고 썰매는 그대로 지나간다
         unit.down += dt; unit.k += (unit.speed * dt) / len;
         const k = Math.min(1, unit.down / 0.4); unit.board.rotation.x = -Math.PI / 2 * k * k;
@@ -886,13 +923,16 @@ export function ambush(ctx, part, easy) {
       unit.u.position.set(x, 0, z);
       if (unit.smoke) { unit.smoke.scale.multiplyScalar(1 + dt * 0.6); unit.smoke.material.opacity = Math.max(0, unit.smoke.material.opacity - dt * 0.4); }
       const inZone = zones.some(zn => Math.hypot(x - zn.x, z - zn.z) < zn.r);
-      unit.t.used = !(unit.state === 'come' && inZone); // 골짜기 안에 있을 때만 누를 수 있다
+      unit.inZone = inZone;
+      if (part.near) { unit.t.used = unit.state !== 'come'; unit.t.btn.classList.toggle('far', !inZone); unit.t.btn.textContent = inZone ? (part.label || '공격!') : (part.waitLabel || '기다려…'); } // 다가올 때까지 기다리기: 멀 때도 누를 수는 있지만 적이 달아난다
+      else unit.t.used = !(unit.state === 'come' && inZone); // 골짜기 안에 있을 때만 누를 수 있다
       if (unit.state === 'come' && unit.k >= 1) { unit.state = 'gone'; audio.play('wrong'); toast(ctx, part.miss || '놓쳤어요! 다음을 기다려요.', 'bad'); }
       if (unit.state === 'back' && unit.k <= -0.2) { unit.state = 'away'; unit.u.visible = false; }
+      if (part.near && unit.state === 'come') { const zn = zones[0], dz = Math.max(0, Math.hypot(x - zn.x, z - zn.z) - zn.r); ctx.hud.setCounter(`${part.counter || '물리친 적'} ${hits}/${totalNeed}${waves.length > 1 ? ` · ${wi + 1}/${waves.length}차` : ''} · 빛나는 곳까지 ${Math.ceil(dz)}m`); }
       if (unit.state === 'gone') unit.u.visible = false;
     }
     // 이번 차례가 끝났는지: 다 나왔고 다가오는 적이 없을 때
-    if (spawned === W.enemies && units.every(u => u.state !== 'come')) {
+    if (spawned === W.enemies && units.every(u => u.state !== 'come' && u.state !== 'flee')) { // 달아나는 적이 다 사라진 뒤에 차례를 매듭짓는다(안내 글이 보이게)
       if (waveHits < needOf(W)) { s.finish(false); return; }
       if (wi === waves.length - 1) { setTimeout(() => s.finish(true), 900); between = true; return; }
       between = true;
@@ -905,6 +945,36 @@ export function ambush(ctx, part, easy) {
   return s.promise;
 }
 
+// 순찰하는 감시원(sneak·deliver가 함께 쓴다): 두 점 사이를 오가며 앞쪽 부채꼴 불빛을 비춘다. step(dt, el, p)는 불빛에 걸린 감시원을 돌려준다
+function patrolGuards(g, s, part, easy) {
+  const guards = part.guards.map(gd => {
+    const body = makePerson(LOOKS[gd.look || 'gendarme']); g.add(body);
+    const range = (gd.range || 5) * (easy ? 0.75 : 1);
+    const cone = new THREE.Mesh(new THREE.CircleGeometry(range, 24, -0.55, 1.1).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xffe08a, transparent: true, opacity: 0.32, depthWrite: false }));
+    cone.rotation.y = -Math.PI / 2; // 원 조각의 가운데(+x)가 헌병의 앞(+z)을 보게(D-40: 예전에는 뒤를 비췄다)
+    cone.position.y = 0.06; body.add(cone);
+    return { ...gd, body, range, ph: Math.random() * 6, cone };
+  });
+  const step = (dt, el, p, skip) => {
+    let hit = null;
+    for (const gd of guards) {
+      const [[ax, az], [bx, bz]] = gd.path;
+      const k = (Math.sin((el + gd.ph) * (gd.speed || 0.5)) + 1) / 2, dk = Math.cos((el + gd.ph) * (gd.speed || 0.5));
+      gd.body.position.set(ax + (bx - ax) * k, 0, az + (bz - az) * k);
+      const want = dk >= 0 ? Math.atan2(bx - ax, bz - az) : Math.atan2(ax - bx, az - bz); // 걷는 쪽으로 천천히 돌아선다(불빛도 함께 돈다)
+      if (gd.ry === undefined) gd.ry = want;
+      gd.ry += Math.atan2(Math.sin(want - gd.ry), Math.cos(want - gd.ry)) * Math.min(1, dt * 5);
+      gd.body.rotation.y = gd.ry;
+      if (skip || hit) continue;
+      const gp = s.at(gd.body.position.x, gd.body.position.z), dx = p.x - gp.x, dz = p.z - gp.z, d = Math.hypot(dx, dz);
+      let diff = Math.atan2(dx, dz) - gd.body.rotation.y; diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+      if (d < gd.range && Math.abs(diff) < 0.55) hit = gd;
+    }
+    return hit;
+  };
+  return { guards, step };
+}
+
 // ── sneak ─────────────────────────────────────────────
 export function sneak(ctx, part, easy) {
   const { world, audio } = ctx;
@@ -915,14 +985,7 @@ export function sneak(ctx, part, easy) {
     let lab = null; if (w.label) { lab = labelSprite(w.label, { size: 0.8 }); lab.position.set(w.x, 2.6, w.z); lab.visible = i === 0; g.add(lab); }
     return { ...w, m, lab, pos: s.at(w.x, w.z) };
   });
-  const guards = part.guards.map(gd => {
-    const body = makePerson(LOOKS[gd.look || 'gendarme']); g.add(body);
-    const range = (gd.range || 5) * (easy ? 0.75 : 1);
-    const cone = new THREE.Mesh(new THREE.CircleGeometry(range, 24, -0.55, 1.1).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xffe08a, transparent: true, opacity: 0.32, depthWrite: false }));
-    cone.rotation.y = -Math.PI / 2; // 원 조각의 가운데(+x)가 헌병의 앞(+z)을 보게(D-40: 예전에는 뒤를 비췄다)
-    cone.position.y = 0.06; body.add(cone);
-    return { ...gd, body, range, ph: Math.random() * 6, cone };
-  });
+  const patrol = patrolGuards(g, s, part, easy), { guards } = patrol;
   ctx.testHooks.sneak = { guards };
   // 숨을 곳(덤불·짐더미): 안에 들어가 있으면 감시원 불빛에 들키지 않는다
   const hides = (part.hides || []).map(hd => {
@@ -937,22 +1000,10 @@ export function sneak(ctx, part, easy) {
   s.update((dt, el) => {
     const p = world.player.position;
     caught = Math.max(0, caught - dt);
-    for (const gd of guards) {
-      const [[ax, az], [bx, bz]] = gd.path;
-      const k = (Math.sin((el + gd.ph) * (gd.speed || 0.5)) + 1) / 2, dk = Math.cos((el + gd.ph) * (gd.speed || 0.5));
-      gd.body.position.set(ax + (bx - ax) * k, 0, az + (bz - az) * k);
-      const want = dk >= 0 ? Math.atan2(bx - ax, bz - az) : Math.atan2(ax - bx, az - bz); // 걷는 쪽으로 천천히 돌아선다(불빛도 함께 돈다)
-      if (gd.ry === undefined) gd.ry = want;
-      gd.ry += Math.atan2(Math.sin(want - gd.ry), Math.cos(want - gd.ry)) * Math.min(1, dt * 5);
-      gd.body.rotation.y = gd.ry;
-      if (caught || hidden(p)) continue;
-      const gp = s.at(gd.body.position.x, gd.body.position.z), dx = p.x - gp.x, dz = p.z - gp.z, d = Math.hypot(dx, dz);
-      let diff = Math.atan2(dx, dz) - gd.body.rotation.y; diff = Math.atan2(Math.sin(diff), Math.cos(diff));
-      if (d < gd.range && Math.abs(diff) < 0.55) {
-        audio.play('wrong'); caught = 1.5;
-        toast(ctx, part.caught || '들켰어요! 앞의 숨을 곳에서 다시 가요.', 'bad');
-        const back = s.at(...last); p.set(back.x, 0, back.z); world.snapCamera();
-      }
+    if (patrol.step(dt, el, p, caught || hidden(p))) {
+      audio.play('wrong'); caught = 1.5;
+      toast(ctx, part.caught || '들켰어요! 앞의 숨을 곳에서 다시 가요.', 'bad');
+      const back = s.at(...last); p.set(back.x, 0, back.z); world.snapCamera();
     }
     const w = wps[next];
     if (w && near(p, w.pos, 1.6)) {

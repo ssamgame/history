@@ -67,14 +67,17 @@ export default {
   },
   parts: {
     paper: {
-      type: 'drive', src: ['S53'], title: '독립신문을 받아 한성 거리에 배달해요', counter: '배달한 곳', seconds: 150,
-      howto: '신문을 받아 빛나는 곳에 차례로 건네요.',
+      type: 'drive', src: ['S53'], title: '독립신문을 세 부씩 받아 한성 거리에 배달해요', counter: '배달한 곳', seconds: 120,
+      howto: '신문사에서 신문을 세 부 받아 빛나는 곳에 차례로 건네요. 다 건네면 신문사로 돌아와 다시 받아요.', // 2026-11-08 선생님: 세 부씩 왕복
       intro: [{ who: 'narr', text: '독립신문은 1896년에 창간한 우리나라 최초의 민간 신문이에요.', src: ['S53'] }, { who: 'seojaepil', text: '오늘 신문이 나왔습니다. 한성 사람들에게 나라 안팎의 소식을 전해 주세요!' }],
       route: [
         { label: '독립신문사', hold: 3, holdLabel: '신문을 받는 중', holdCenter: true, holdSay: '신문사에서 갓 찍은 신문을 받는 중이에요.', look: 'seojaepil', give: true },
         { label: '종로 가게', hold: 2, holdLabel: '신문 건네는 중', hand: true, talk: [{ who: 'citizen', text: '한글로 쓰여 있어서 누구나 읽을 수 있네요!' }] },
         { label: '궁궐 앞 거리', hold: 2, holdLabel: '신문 건네는 중', hand: true, talk: [{ who: 'citizen', text: '신문 덕분에 나라 사정을 알 수 있어 좋아요.' }] },
         { label: '시장', hold: 2, holdLabel: '신문 건네는 중', hand: true, say: '시장 사람들도 신문을 돌려 읽어요.' },
+        { label: '독립신문사', hold: 2, holdLabel: '신문을 받는 중', holdSay: '신문이 다 떨어졌어요. 세 부를 더 받아요.', give: true },
+        { label: '학교 앞', hold: 2, holdLabel: '신문 건네는 중', hand: true, talk: [{ who: 'student', text: '학교에서도 신문으로 세상 소식을 배워요!' }] },
+        { label: '우물가', hold: 2, holdLabel: '신문 건네는 중', hand: true, say: '우물가 아주머니들도 신문을 받았어요.' },
         { label: '서재필 선생', talk: [{ who: 'seojaepil', text: '수고했어요. 한성 곳곳에 신문이 잘 전해졌어요.' }] },
       ],
       fail: '화살표를 따라 빛나는 곳으로 가요. 시간 안에 모두 배달해요.',

@@ -181,6 +181,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .howto-controls p { font-size: 16px; color: var(--muted); }
 .tap-target { position: fixed; z-index: 12; transform: translate(-50%, -50%); width: 76px; height: 76px; padding: 0; border-radius: 50%; border: 3px solid var(--hanji); background: rgba(184, 69, 47, .92); color: var(--hanji); font-size: 16px; font-weight: 700; box-shadow: 0 4px 12px rgba(0,0,0,.4); touch-action: manipulation; }
 .tap-target[hidden] { display: none; }
+.tap-target.far { opacity: .5; font-size: 13px; z-index: 11; } /* 매복: 적이 아직 멀어 기다리는 중. 빛나는 곳에 든 적의 「발사!」가 위에 오게 */
 .big-action { position: fixed; z-index: 12; left: 50%; transform: translateX(-50%); bottom: calc(28px + env(safe-area-inset-bottom, 0px)); min-height: 68px; min-width: 240px; padding: 0 28px; font-size: 22px; font-weight: 700; border-radius: 6px; border: 3px solid var(--hanji); background: var(--dan-red); color: var(--hanji); box-shadow: 0 6px 16px rgba(0,0,0,.45); touch-action: manipulation; }
 .big-action.in-card { position: static; transform: none; display: block; margin: 18px auto 0; z-index: auto; }
 /* 밀기 버튼: 병사가 올라온 만큼(--p) 테두리가 금색으로 차오른다 */

@@ -145,7 +145,7 @@ export function touchBot(s, { answers, wrongFirst = new Set(), noTaps = () => fa
         seenAt.delete(key);
       } else ui.querySelector('.dlg').click();
     } else {
-      const target = !noTaps() && [...ui.querySelectorAll('.tap-target')].find(b => !b.hidden);
+      const target = !noTaps() && [...ui.querySelectorAll('.tap-target')].find(b => !b.hidden && !b.classList.contains('far'));
       if (target) tap(target);
       const big = ui.querySelector('.big-action');
       if (big && (ctx.testHooks.ready || (!earlyPressed && ctx.testHooks.armed !== false))) { earlyPressed = true; tap(big); }
