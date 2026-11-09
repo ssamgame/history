@@ -156,7 +156,7 @@ function shelve() {
   scene.library.add(pl);
   pl.visible = true; pl.scale.setScalar(1);
   pl.position.set(...scene.shelf.slot);
-  pl.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3(0, 1, 0), new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 0, -1)));
+  pl.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3(0, -1, 0), new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 0, 1))); // 첫 글자 大가 위
 }
 
 export default {

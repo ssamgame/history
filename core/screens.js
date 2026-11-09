@@ -23,7 +23,7 @@ function screen(root, cls, ...kids) {
 // 행동 버튼에 쓸 짧은 낱말: 말풍선 글의 마지막 낱말('백성 구하기' → '구하기'). '— 꾹 누르기' 같은 덧말은 뗀다. 이야기하기·말 걸기는 '대화'
 export function buttonWord(label) {
   if (!label) return '대화';
-  const w = String(label).split('—')[0].trim().split(/\s+/).pop();
+  const w = String(label).replace(/\([^)]*\)/g, ' ').split('—')[0].trim().split(/\s+/).pop() || ''; // 괄호 속 설명·'(3/4)' 같은 셈은 뺀다
   return /(이야기하기|대화하기|말걸기|걸기)$/.test(w) || !w ? '대화' : w;
 }
 

@@ -244,8 +244,8 @@ export async function shelveFirstPerson(ctx, scene, hook = {}) {
   // 1인칭 동안은 학생을 제 크기(1배)로 그린다: 몸은 숨고 두 팔만 보이므로, 서가의 다른 경판과 같은 크기인 경판을 두 손이 알맞게 붙든다. 끝나면 되돌린다
   const scale0 = player.scale.x; player.scale.setScalar(1); player.updateMatrixWorld(true);
   // 서가에 꽂힌 다른 경판과 같은 자세: 긴 쪽이 위아래, 글자 면은 옆
-  const q = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(V(0, 1, 0), V(1, 0, 0), V(0, 0, -1)));
-  const qShow = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(V(0, 1, 0), V(0, 0, 1), V(1, 0, 0))); // 글자 면을 학생 쪽으로 세워 든 자세
+  const q = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(V(0, -1, 0), V(1, 0, 0), V(0, 0, 1))); // 첫 글자 大가 위(2026-11-09: 거꾸로 꽂혔다)
+  const qShow = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(V(0, -1, 0), V(0, 0, 1), V(-1, 0, 0))); // 글자 면을 학생 쪽으로 세워 든 자세
   const cam = world.camera, near0 = cam.near, head = player.userData.head;
   head.updateWorldMatrix(true, false); const eye0 = head.localToWorld(V(0, 0.5, -0.4));
   const eye = () => eye0; // 학생 눈 자리(몸을 숙여도 카메라는 그 자리에: 흔들리거나 서가 속으로 들어가지 않게) // 눈보다 조금 위·뒤: 두 손과 경판, 빈자리와 옆 경판이 함께 보인다
@@ -261,7 +261,7 @@ export async function shelveFirstPerson(ctx, scene, hook = {}) {
   const follow = world.onUpdate(() => world.setFixedCamera(eye().toArray(), entry.clone().add(V(0, -0.2, 0)).toArray())); // 1인칭 동안 눈을 따라간다(경판과 두 손이 화면 가운데)
   // ② 경판을 세워 빈자리 앞에 댄다(두 손이 경판 양옆을 붙든다)
   let edgeOn = false; // 세워 든 동안은 양옆 가장자리, 모로 돌린 뒤에는 학생 쪽 가장자리의 두 면을 붙든다
-  const grip = s => plank.localToWorld(edgeOn ? V(0.05, s * 0.07, -0.24) : V(-0.1, 0, s * 0.27));
+  const grip = s => plank.localToWorld(edgeOn ? V(-0.05, s * 0.07, 0.24) : V(0.1, 0, s * 0.27)); // 경판 방향을 뒤집었으니(大가 위) 학생 쪽 가장자리는 +z, 조금 아래는 +x
   let measure = false; const hold = () => { plank.updateMatrixWorld(true); const R = reach(player, [{ i: 0, at: grip(-1) }, { i: 1, at: grip(1) }], { leanMin: -0.2, leanMax: 0.8 }); if (measure) { hook.gap = Math.max(hook.gap || 0, R.err); } return { upper: [R.lean, 0, 0], arms: R.arms, head: [0, 0] }; };
   const p0 = plank.position.clone(), q0 = plank.quaternion.clone();
   await playAction(player, { dur: 0.9, fadeIn: 0.15, fadeOut: 0.01, name: 'raise', pose: t => { const e = ss(0, 0.9, t); plank.position.lerpVectors(p0, entry, e); plank.quaternion.slerpQuaternions(q0, qShow, e); return hold(); } });

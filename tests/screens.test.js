@@ -328,4 +328,5 @@ test('screens: the action button shows what it does, not always 대화 (2026-11-
   eq(buttonWord(null), '대화'); eq(buttonWord('세종과 이야기하기'), '대화');
   eq(buttonWord('백성 구하기'), '구하기'); eq(buttonWord('봉화 올리기'), '올리기'); eq(buttonWord('포격'), '포격');
   eq(buttonWord('물레 돌리기 — 길게 누르기'), '돌리기'); eq(buttonWord('줍기'), '줍기');
+  eq(buttonWord('글자 새기기 (3/4)'), '새기기'); eq(buttonWord('마구리(판 양 끝에 나무 덧대기)'), '마구리'); eq(buttonWord('문으로 들어가 복습 퀴즈 풀기'), '풀기');
 });
