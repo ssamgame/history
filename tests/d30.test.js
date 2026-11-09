@@ -80,24 +80,23 @@ test('C-03/D-32: 도입 장면은 해설을 자막으로 띄우고, 건너뛸 �
   } finally { s.done(); }
 });
 
-test('C-04: 퀴즈 정답 해설은 보통 대화창 색(연두 없음), 오답은 분홍 바탕', async () => {
+test('C-04: 퀴즈 판은 답 뒤에도 색이 그대로, 고른 띠에 ×(빨강)·○(초록)가 붙는다(2026-11-09 띠 모양)', async () => {
   const ui = document.createElement('div'); document.body.appendChild(ui);
   const d = createDialogue(ui, {}, { typeMs: 0 });
   try {
     const q = { question: '?', options: ['맞음', '틀림'], answer: 0, explain: '해설' };
     const run = d.quiz(q);
     await sleep(300); d.pick(1); await sleep(20);
-    const box = ui.querySelector('.dlg');
-    ok(box.classList.contains('dlg-wrong'));
-    const bg = getComputedStyle(box).backgroundColor; ok(bg === 'rgb(255, 217, 228)', bg);
+    const box = ui.querySelector('.dlg'), band = i => ui.querySelectorAll('.dlg-choices button')[i];
+    ok(box.classList.contains('mode-quiz') && box.classList.contains('dlg-wrong'));
+    ok(band(1).classList.contains('wrong') && !band(0).classList.contains('right'), '틀린 띠만 × (정답은 아직 알려 주지 않는다)');
+    const dark = getComputedStyle(box).backgroundColor; ok(!/255, 217, 228|220, 245, 192/.test(dark), `판 색은 그대로 ${dark}`);
     d.advance(); await sleep(300);
     ok(!box.classList.contains('dlg-wrong'), 'reset while choosing again');
     d.pick(0); await sleep(20);
     ok(box.classList.contains('dlg-right'));
-    const plain = getComputedStyle(document.documentElement).getPropertyValue('--hanji').trim();
-    ok(getComputedStyle(box).backgroundColor !== 'rgb(220, 245, 192)', 'no green');
-    ok(!/220, 245, 192|106, 168, 79/.test(getComputedStyle(box).borderColor), 'no green border');
-    ok(plain, 'hanji token');
+    ok(band(0).classList.contains('right') && band(1).classList.contains('dim'), '맞은 띠는 ○, 나머지는 흐리게');
+    ok(getComputedStyle(box).backgroundColor === dark, '맞아도 판 색은 그대로(연두 없음)');
     d.advance(); await run;
   } finally { d.dispose(); ui.remove(); }
 });
