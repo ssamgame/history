@@ -109,31 +109,34 @@ export function lastStandScene(ctx) {
     const gflag = new THREE.Group(); gflag.position.set(2, 0, 11.8); BLD.banner(gflag, { color: 0x8a2f24, h: 3.6 }); g.add(gflag);
     cam([5, 7.5, 22], [0, 1.2, -6]); // 고려군 너머로 거란 대군 전체가 보이게
     await fadeIn();
-    await say(L[0]);
-    ctx.dialogue.close();
-    // 대군이 돌아서(고려군 반대쪽) 북쪽으로 물러간다. 카메라는 높이 올라 대열 전체를 담는다.
+    await wait(world, 1.2); // 마주 선 두 군대를 잠깐 보여 준 뒤
+    // 해설과 장면을 같이(2026-11-09 선생님: 말이 먼저 나오고 장면이 멈춰 있던 것): 「현종이 약속하자 거란군은 물러갔어요」가 뜨는 동안 대군이 돌아서 북쪽으로 물러간다. 카메라는 높이 올라 대열 전체를 담는다.
     // 맨 뒤(고려군 쪽) 보병 다섯은 뒤를 지키느라 남는다: 양규와 군사들이 따라잡아 짝지어 맞붙는다(D-65, 2026-11-03 선생님)
     const yg0 = yg.position.clone();
     const guard = K.units.filter(u => u.userData.arms).sort((p, q) => q.position.z - p.position.z).slice(0, 5).sort((p, q) => p.position.x - q.position.x);
     const goers = K.units.filter(u => !guard.includes(u));
     const c0 = goers.map(u => u.position.clone());
+    const said0 = say(L[0]);
+    await wait(world, 0.8);
     const away = advance(world, goers, 0, -30, 10, { stagger: 0.35 });
     await glide([5, 7.5, 22], [0, 1.2, -6], [-4, 13, 20], [0, 0, -18], 5);
+    await said0; ctx.dialogue.close();
     // 양규와 군사들이 물러가는 거란군 뒤를 쫓아가 뒤를 지키던 거란군과 짝지어 맞붙는다(창으로 찌르고 막고 되받아친다)
     guard.forEach(u => { u.rotation.y = 0; });
     const fighters = [yg, ...few.slice(0, 4)].sort((p, q) => p.position.x - q.position.x);
     const fight = melee(world, fighters.map((a, i) => ({ a, b: guard[i] })), { approach: 2.6, lose: 0.5, flee: [0, -1], seed: 3 });
     march(world, [gflag], 0, -6, 2.6);
     hook.melee = fight.hook;
+    const said1 = say(script.lastScene.chase); // 뒤쫓아 싸우는 동안 해설
     await glide([-4, 13, 20], [0, 0, -18], [7, 3.2, 4], [0, 1.4, -6], 2.6);
-    await Promise.all([away, fight.done]);
+    await Promise.all([away, fight.done, said1]);
+    ctx.dialogue.close();
     hook.feet = K.units.filter(u => u.visible).map(u => [u.position.x, u.position.z]); // 물러난 자리(발이 언덕에 묻히지 않는지 테스트가 본다)
     const mv = goers.reduce((a, u, i) => a.add(u.position.clone().sub(c0[i])), new THREE.Vector3()).normalize();
     const toK = new THREE.Vector3(0, 0, -6).sub(yg0).setY(0).normalize();
     hook.away = mv.dot(toK); // 1이면 고려군에서 멀어지는 쪽으로 곧게
     hook.retreated = goers.filter(u => u.userData.person || u.userData.legs).length;
-    await lastStand(ctx, { g, hook, cam, glide, fadeIn, yg, few, hide: [...K.units, gflag] });
-    await say(L[1]);
+    await lastStand(ctx, { g, hook, cam, glide, fadeIn, say, yg, few, hide: [...K.units, gflag], last: L[1] });
     hook.flag = true;
   } });
 }
@@ -141,7 +144,7 @@ export function lastStandScene(ctx) {
 // 양규의 마지막 싸움(2026-11-05 선생님): 물러가는 거란군을 쫓다 거란 대군에 둘러싸인다. 화면을 바꿔(어두워졌다 밝아짐)
 // 눈밭 한가운데 양규와 군사 둘을 거란군이 둥글게 에워싸고, 양규는 앞의 적을 쓰러뜨리며 버티다 무릎을 꿇고 쓰러진다(피 없음, 쓰러진 채 남는다).
 const STAND = [0, -16]; // 무대 안 평평한 곳
-async function lastStand(ctx, { g, hook, cam, glide, fadeIn, yg, few, hide }) {
+async function lastStand(ctx, { g, hook, cam, glide, fadeIn, say, yg, few, hide, last }) {
   const { world } = ctx, [cx, cz] = STAND;
   await ctx.fade?.(true);
   for (const u of [...hide, ...few]) u.visible = false;
@@ -161,15 +164,19 @@ async function lastStand(ctx, { g, hook, cam, glide, fadeIn, yg, few, hide }) {
   const foeY = near(cx - 1.2, cz - 4), foeA = near(cx - 4, cz - 1), foeB = near(cx + 4, cz - 1);
   cam([cx + 3.2, 2.6, cz + 8], [cx, 1.3, cz - 1]);
   await fadeIn();
+  const said2 = say(script.lastScene.surrounded); // 둘러싸인 장면이 보이는 동안 해설
   const fight = melee(world, [{ a: yg, b: foeY }, { a: mates[0], b: foeA }, { a: mates[1], b: foeB }], { approach: 1.4, lose: 1, flee: false, chase: 0, counter: 1, seed: 7 });
   const tighten = wait(world, 3.2, k => { for (const p of ring) if (p !== foeY && p !== foeA && p !== foeB) { const d = Math.hypot(p.position.x - cx, p.position.z - cz); if (d > 3.6) { p.position.x += (cx - p.position.x) / d * 0.012; p.position.z += (cz - p.position.z) / d * 0.012; } } });
   await glide([cx + 3.2, 2.6, cz + 8], [cx, 1.3, cz - 1], [cx + 1.6, 2, cz + 5.5], [cx, 1.2, cz - 1], 3.4);
-  await Promise.all([fight.done, tighten]);
+  await Promise.all([fight.done, tighten, said2]);
   hook.last = fight.hook;
-  // 무릎을 꿇었다가 옆으로 쓰러진다(사라지지 않는다)
+  ctx.dialogue.close();
+  // 무릎을 꿇었다가 옆으로 쓰러진다(사라지지 않는다). 「끝까지 싸우다 전사했어요」는 무릎을 꿇을 때 함께 나온다
   yg.userData.manual = true; yg.rotation.y = 0.3;
   await wait(world, 1.4, k => { yg.position.y = -0.35 * Math.min(1, k * 2); yg.rotation.x = 0.35 * Math.min(1, k * 2); });
+  const said3 = say(last);
   await wait(world, 1, k => { const e = k * k * (3 - 2 * k); yg.rotation.z = -Math.PI / 2 * e; yg.position.y = -0.35 * (1 - e); yg.rotation.x = 0.35 * (1 - e); });
   await wait(world, 1.2);
   hook.fallen = Math.abs(yg.rotation.z) > 1.4; hook.fallenVisible = yg.visible;
+  await said3;
 }
