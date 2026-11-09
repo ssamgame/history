@@ -201,7 +201,7 @@ export function buildJ6Scene(world) {
   world.addCollider({ x: WINCH_AT.x, z: WINCH_AT.z, r: 0.8 });
 
   world.addNpc('official', LOOKS.joseonOfficial, -6, 7, Math.PI);
-  world.addNpc('worker', LOOKS.worker, 7, 4.5, -Math.PI / 2);
+  world.addNpc('worker', LOOKS.worker, 7.4, 7.4, -Math.PI * 0.75); // 수레(4,5)·차일(9,2) 사이에 끼어 다가가기 어려웠다(2026-11-09 점검) → 남쪽 빈터로
   world.addNpc('jeongyakyong', LOOKS.jeongyakyong, -6.6, -4.6, Math.PI * 0.3); // 도르래 틀 곁
   world.addNpc('jeongjo', LOOKS.jeongjo, -10, -3, 0);
 
