@@ -261,6 +261,7 @@ test('j4 포격 신호: the fleet fires only while the action button is held; re
     for (let i = 0; i < 40 && s.dialogue.isOpen(); i++) { s.dialogue.advance(); s.dialogue.advance(); step(); await null; }
     for (let i = 0; i < 60 && s.ctx.testHooks.holding !== 'volley'; i++) { step(); await sleep(20); } // 신호(0.9초 뒤)
     eq(s.ctx.testHooks.holding, 'volley', 'signal given, button offered'); ok(!s.hud.talkBtn.disabled);
+    eq(s.hud.talkBtn.textContent, '포격', '버튼 글자가 대화가 아니라 포격(2026-11-09 선생님)');
     for (let i = 0; i < 60; i++) step();
     const flying = () => sc.fx.children.filter(c => c.name === 'cannonball').length, sunk = () => sc.enemy.children.filter(e => !e.visible).length;
     eq(flying() + sunk(), 0, 'nothing happens until the button is held');

@@ -307,7 +307,7 @@ export function createHud(root, { touch }) {
     setTouchVisible(b) { joyZone.hidden = talkBtn.hidden = !(touch && b); },
     // label: 말풍선 글(없으면 'E 대화하기'). 문·물건 앞에서는 '문으로 들어가기' 등으로 바꾼다
     setPrompt(pos, label = null) {
-      setActionLabel(pos ? label : null);
+      setActionLabel(label); // 말풍선 자리가 없어도(조선 4장 포격) 버튼 글자는 하는 일로
       if (!pos || !camera) { prompt.hidden = true; return; }
       prompt.textContent = label ? (touch ? label : `E ${label}`) : (touch ? '말 걸기' : 'E 대화하기');
       const v = pos.clone().setY(3.3).project(camera);
