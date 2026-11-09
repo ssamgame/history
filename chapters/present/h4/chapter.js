@@ -158,7 +158,9 @@ export async function packPlay(ctx) {
       await waitInteract(ctx, { pos, label: `${o.it.label} 살펴보기`, r: 1.5 });
       ctx.input.enabled = false;
       o.ring.visible = false;
-      const M = a.at(o.m.position.x, o.m.position.z); world.setFixedCamera([M.x + 1.6, 2.4, M.z + 4.2], [M.x, 0.8, M.z]);
+      const M = a.at(o.m.position.x, o.m.position.z), pp = world.player.position; let dx = pp.x - M.x, dz = pp.z - M.z; const d = Math.hypot(dx, dz) || 1; dx /= d; dz /= d;
+      const bb = new THREE.Box3().setFromObject(o.m), big = Math.max(bb.max.y - bb.min.y, bb.max.x - bb.min.x, bb.max.z - bb.min.z), far = 2.2 + big * 1.6; // 물건 크기만큼 물러선다(장독·장롱은 크다)
+      world.setFixedCamera([M.x + (dx * 0.4 + dz * 0.92) * far, 1.2 + big * 0.6, M.z + (dz * 0.4 - dx * 0.92) * far], [M.x, big * 0.5 - 0.6, M.z]); // 물건이 화면 위쪽에 오게(아래쪽은 고르기 창이 덮는다) // 학생이 선 쪽의 옆에서(학생 바로 뒤에서 보면 머리가 물건을 가린다)
       for (;;) {
         ctx.testHooks.choice = o.it.take ? 0 : 1; // 테스트 봇이 고를 답
         const k = await dialogue.choose({ who: 'guide', text: `${o.it.label}, 어떻게 할까?` }, ['보따리에 넣는다', '두고 간다']);
