@@ -73,7 +73,7 @@ test('play: 틀린 곳을 고르면 놀이가 끝나지 않고 해설을 들은 
       let ended = false; p.then(() => { ended = true; });
       await sleep(50);
       eq(ended, false, `${kind}: 틀려도 처음부터 다시 하지 않는다`);
-      ok(s.dialogue.isShowing(), `${kind}: 해설을 들려준다`); // 안내 칩(걸음을 막지 않음)으로 보인다
+      ok(s.dialogue.isOpen(), `${kind}: 해설을 들려준다`);
     } finally { s.done(); }
   }
 });

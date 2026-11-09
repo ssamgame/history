@@ -129,13 +129,13 @@ export function waitInteract(ctx, { pos, quest = null, label = '시작하기', r
     const off = world.onUpdate((dt, t) => {
       if (done) return;
       if (sprite) sprite.position.y = markY + Math.sin(t * 3) * 0.12;
-      const busy = ctx.dialogue?.isOpen?.();
+      const busy = ctx.dialogue?.isBlocking?.() ?? ctx.dialogue?.isOpen?.();
       const ok = near() && !busy;
       hud.setPrompt(ok ? new THREE.Vector3(pos.x, 0, pos.z) : null, label);
       hud.setTalkEnabled(ok);
     });
     const unbind = ctx.onAction(() => {
-      if (done || !near() || ctx.dialogue?.isOpen?.()) return;
+      if (done || !near() || (ctx.dialogue?.isBlocking?.() ?? ctx.dialogue?.isOpen?.())) return;
       done = true; off(); unbind();
       hud.setPrompt(null); hud.setTalkEnabled(false); world.setGoal(null);
       if (sprite) sprite.removeFromParent();

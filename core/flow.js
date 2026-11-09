@@ -122,7 +122,7 @@ export function roam(ctx, { onTalk, zones = [], faceBack = false }) {
     }
   });
   const unbind = ctx.onAction(async () => {
-    if (stopped || busy || dialogue.isOpen()) return;
+    if (stopped || busy || dialogue.isBlocking()) return;
     const npc = world.nearestNpc(2.8);
     if (!npc) return;
     busy = true; input.enabled = false;

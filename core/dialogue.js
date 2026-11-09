@@ -168,8 +168,8 @@ export function createDialogue(root, speakers, { typeMs = 26, reduceMotion = fal
     say, choose, ask, quiz,
     advance() { if (advanceFn) advanceFn(); },
     pick(i) { if (pickFn && !choicesEl.children[i]?.disabled) pickFn(i); }, // 막아 둔(이미 틀린) 답은 고를 수 없다
-    isOpen() { return !el.hidden && !el.classList.contains('mode-chip'); },
-    isShowing() { return !el.hidden; }, // 안내 칩까지 포함해 무엇이든 보이는지(테스트·봇이 넘길 때) // 안내 칩은 '열린 대화'로 치지 않는다(걷기·말 걸기를 막지 않게)
+    isOpen() { return !el.hidden; }, // 무엇이든(안내 칩 포함) 보이는지: 놀이 시계·테스트는 이것으로 멈추고 넘긴다
+    isBlocking() { return !el.hidden && !el.classList.contains('mode-chip'); }, // 학생의 걷기·말 걸기를 막는 대화인지(안내 칩은 막지 않는다, 2026-11-09)
     isChoosing() { return !!pickFn; },
     close() { clearInterval(timer); timer = null; clearTimeout(autoT); autoT = null; advanceFn = pickFn = null; el.hidden = true; if (onClose) onClose(); },
     dispose() { dialogue.close(); window.removeEventListener('keydown', onKey); el.remove(); },

@@ -62,7 +62,7 @@ function boot() {
   let role = null; // 지금 장에서 학생이 맡은 역할(content/roles.js)
   let curMeta = null, curGoals = []; // 이 장의 목표 목록(미션 진행 표시)
   input.onAction(() => {
-    if (dialogue && dialogue.isOpen()) { if (!dialogue.isChoosing()) dialogue.advance(); return; }
+    if (dialogue && dialogue.isBlocking()) { if (!dialogue.isChoosing()) dialogue.advance(); return; } // 안내 칩이 떠 있어도 E는 말 걸기·행동으로 간다
     actionHandlers.forEach(f => f());
   });
 
@@ -97,7 +97,7 @@ function boot() {
     const raw = (now - last) / 1000; last = now;
     if (inChapter && world.level.children.length) quality.sample(raw); // 장면이 있을 때만 잰다
     const dt = Math.min(raw, 0.1);
-    const talking = dialogue && dialogue.isOpen();
+    const talking = dialogue && dialogue.isBlocking(); // 안내 칩은 걸음을 멈추지 않는다
     if (talking && !wasTalking) input.releaseJoystick(); // 대화가 열리면 조이스틱을 놓는다
     wasTalking = talking;
     hud.setTouchVisible(inChapter && !talking);
