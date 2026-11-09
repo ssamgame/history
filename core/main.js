@@ -130,7 +130,7 @@ function boot() {
     role = ROLES[meta.id] ? { ...ROLES[meta.id], lookOpts: myLook } : null;
     world.setPlayerLook(myLook, role ? role.scale : 1);
     const sameCourse = courseOfChapter(meta.id).chapters.some(c => c.id !== meta.id && save.chapterResult(c.id)); // 같은 편을 이미 다녀왔으면 짧은 도착 인사
-    ctx.arrival = m => playArrival(ctx, { meta: m, role: ROLES[meta.id], roleLook: myLook, scale: role ? role.scale : 1, avatar: save.data.avatar, short: sameCourse }); // 장마다 학생 역할(고려 병사, 궁궐 심부름하는 아이 등): 생김새와 키
+    ctx.arrival = (m, ch) => playArrival(ctx, { meta: m, chapter: ch, role: ROLES[meta.id], roleLook: myLook, scale: role ? role.scale : 1, avatar: save.data.avatar, short: sameCourse }); // 장마다 학생 역할(고려 병사, 궁궐 심부름하는 아이 등): 생김새와 키
     curMeta = meta; curGoals = Array.isArray(mod.script.goals) ? mod.script.goals : [];
     ctx.spotState = { found: new Set(), read: new Set() }; // 새 장: 발견·읽은 안내판을 새로 센다
     // 대사에 expr(놀람·걱정·분노·기쁨·긴장·말하기)이 있으면 말하는 사람의 3D 얼굴도 그 표정으로, 다음 대사·대화창이 닫히면 평소 얼굴로(D-57)

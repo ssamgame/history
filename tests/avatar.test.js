@@ -70,3 +70,12 @@ test('avatar: 도착 안내는 장의 연도·장소와 역할 이름으로 만�
   ok(arrivalLine(CHAPTERS[2], ROLES.ch3, true).startsWith('1018년 귀주(으)로 옮겨 왔어.'), '같은 편 안에서는 짧게');
   for (const c of CHAPTERS) ok(arrivalLine(c, ROLES[c.id]).includes('차림으로 변장하자'), c.id);
 });
+
+test('avatar: 모든 장에 도착 자리(spawn)가 있고 탐험 시작 자리와 맞다', async () => {
+  const { ALL_CHAPTERS } = await import('../chapters/index.js');
+  const { ARRIVAL_SEC, SWAP_AT } = await import('../core/arrival.js');
+  ok(ARRIVAL_SEC >= 3 && SWAP_AT > 1.5 && SWAP_AT < ARRIVAL_SEC, `도착 연출 ${ARRIVAL_SEC}초, 변장 ${SWAP_AT}초`);
+  let n = 0;
+  for (const c of ALL_CHAPTERS.filter(c => c.load)) { const mod = (await c.load()).default; if (mod.spawn) n += 1; else ok(false, `${c.id}: spawn 없음`); }
+  ok(n >= 30, `spawn 있는 장 ${n}`);
+});

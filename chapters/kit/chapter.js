@@ -138,6 +138,7 @@ export function makeKitChapter(def) {
       if (stage === 'quiz') { restoreEnd(ctx); ctx.setGoal(script.goals[script.goals.length - 1]); }
     },
     explore(ctx) { return talkInOrder(ctx, script, def.order, def.layout.start); },
+    spawn: () => ({ at: def.layout.start, ry: Math.PI }), // 도착 연출 자리: 탐험 시작 자리와 같게(placePlayer 기본 방향)
     async minigame(ctx) {
       const { world, dialogue, input } = ctx;
       input.enabled = false;
