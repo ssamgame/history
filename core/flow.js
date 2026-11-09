@@ -78,7 +78,7 @@ export async function runChapter(meta, chapter, ctx, save, { resumeStage = 'intr
     const quizzes = [...chapter.quizzes].sort((a, b) => (a.year ?? 0) - (b.year ?? 0));
     for (const [k, q] of quizzes.entries()) {
       const hide = ctx.world && ctx.ui ? showQuizView(ctx, chapter, q, k) : () => {}; // 3D 장면이 없는 시험용 ctx에서는 배경 없이
-      const { correct } = await ctx.dialogue.quiz(q).finally(hide);
+      const { correct } = await ctx.dialogue.quiz(q, { index: k + 1, total: quizzes.length }).finally(hide);
       result.quizTotal += 1;
       if (correct) result.quizCorrect += 1;
       else result.wrongQuizzes.push({ question: q.question, answer: q.options[q.answer], explain: q.explain });

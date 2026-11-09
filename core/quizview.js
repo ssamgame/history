@@ -66,7 +66,7 @@ export function showQuizView(ctx, chapter, q, k) {
   }
   const label = [q.year && `${q.year}년`, subject && subject.name].filter(Boolean).join(' · ');
   const plate = label ? Object.assign(document.createElement('div'), { className: 'quiz-plate', textContent: label }) : null;
-  if (plate) (ui.querySelector('.dlg') || ui).append(plate); // 문제 창 바로 위에 붙인다(인물 얼굴을 가리지 않게)
+  if (plate) (ui.querySelector('.dlg .dlg-meta') || ui.querySelector('.dlg') || ui).append(plate); // 질문 위 칩 줄에 붙인다(연도·인물 이름)
   ctx.testHooks.quizView = { subject: subject && subject.id, label, cam: cam.position.clone() };
   return () => { if (orbit) orbit(); if (plate) plate.remove(); if (guest) world.level.remove(guest); };
 }

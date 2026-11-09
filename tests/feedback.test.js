@@ -55,16 +55,17 @@ test('feedback: 퀴즈를 틀리면 해설을 듣고 같은 문제에서 맞는 
     const buttons = () => [...root.querySelectorAll('.dlg-choices button')];
     await until(() => buttons().length === 3 && !root.querySelector('.dlg-choices').hidden);
     await sleep(300); d.pick(0);
-    await until(() => root.querySelector('.dlg-text').textContent.includes('해설') || root.querySelector('.dlg-text').textContent.includes('1876'));
-    ok(root.querySelector('.dlg-text').textContent.includes('강화도 조약은 1876년'), '틀리면 해설을 보여 준다');
+    const why = () => root.querySelector('.dlg-why .txt').textContent; // 답 뒤 해설은 아래 자막(2026-11-09)
+    await until(() => why().includes('해설') || why().includes('1876'));
+    ok(why().includes('강화도 조약은 1876년'), '틀리면 해설을 보여 준다');
     d.advance();
-    await until(() => !root.querySelector('.dlg-choices').hidden);
+    await until(() => buttons().some(b => !b.disabled));
     ok(root.querySelector('.dlg-text').textContent.includes('다시 골라'), '같은 문제를 다시 낸다');
     ok(buttons()[0].disabled, '틀린 답은 막아 둔다');
     d.pick(0); // 막힌 답은 골라지지 않는다
     ok(!root.querySelector('.dlg-choices').hidden);
     d.pick(1);
-    await until(() => root.querySelector('.dlg-text').textContent.includes('맞았어요'));
+    await until(() => why().includes('맞았어요'));
     d.advance();
     const r = await p;
     eq(r.correct, false, '처음에 틀렸으면 점수에는 틀린 것으로');

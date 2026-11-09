@@ -48,7 +48,8 @@ test('faces: dialogue shows the speaker face, and the narrator keeps its mark', 
   eq(pic.textContent, '');
   d.advance();
   d.say({ who: 'narr', text: '나' });
-  eq(pic.textContent, '史');
+  eq(pic.textContent, ''); // 史 글자는 뺐다(2026-11-09), 해설은 자막으로 보인다
+  ok(root.querySelector('.dlg').classList.contains('mode-cap'), '해설은 자막 모양');
   eq(pic.style.backgroundImage, '');
   d.dispose(); root.remove();
 });

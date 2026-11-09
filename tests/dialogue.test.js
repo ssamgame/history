@@ -1,7 +1,7 @@
 import { test, eq, ok } from './harness.js';
 import { createDialogue } from '../core/dialogue.js';
 
-const speakers = { sonn: { name: '소손녕', mark: '蕭', color: '#5b4a36' }, seohui: { name: '서희', mark: '徐', color: '#2b4c7e' } };
+const speakers = { sonn: { name: '소손녕', mark: '蕭', color: '#5b4a36' }, seohui: { name: '서희', mark: '徐', color: '#2b4c7e', look: 'seohui' } };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 async function until(fn, ms = 2000) {
   const t0 = performance.now();
@@ -97,19 +97,24 @@ test('dialogue: ask right first time reports firstTry=true', async () => {
 
 test('dialogue: quiz marks correct with ○ and wrong with ×', async () => {
   const { d, q, done } = setup();
-  const quiz = { kind: 'quiz', question: '강동 6주를 얻은 사람은?', options: ['양규', '서희', '강감찬'], answer: 1, explain: '서희의 담판이에요.', src: ['S1'] };
-  let p = d.quiz(quiz); await sleep(5); d.pick(0);
-  await until(() => q('.dlg-text').textContent.includes('×'));
+  const quiz = { kind: 'quiz', question: '강동 6주를 얻은 사람은?', options: ['양규', '서희', '강감찬'], answer: 1, explain: '서희의 담판이에요.', src: ['S1'], year: 993 };
+  const why = () => q('.dlg-why .txt').textContent, open = () => [...q('.dlg-choices').children].some(b => !b.disabled);
+  let p = d.quiz(quiz, { index: 2, total: 3 }); await sleep(5);
+  ok(q('.dlg').classList.contains('mode-quiz'), '퀴즈는 가운데 질문 + 보기 띠'); eq(q('.dlg-count').textContent, '문제 2/3'); eq(q('.dlg-year').textContent, '993년');
+  d.pick(0);
+  await until(() => why().includes('×'));
+  ok(q('.dlg-choices button').classList.contains('wrong') && !q('.dlg-choices').hidden, '고른 띠에 × 표시, 띠는 남아 있다');
   d.advance();
-  ok(q('.dlg-text').textContent.includes('서희의 담판'), 'explains (the explanation names the right answer)');
+  ok(why().includes('서희의 담판'), 'explains (the explanation names the right answer)');
   d.advance();
-  await until(() => !q('.dlg-choices').hidden); // 틀리면 같은 문제를 다시 낸다
+  await until(open); // 틀리면 같은 문제를 다시 낸다
   d.pick(1);
-  await until(() => q('.dlg-text').textContent.includes('○'));
+  await until(() => why().includes('○'));
+  ok(q('.dlg-choices').children[1].classList.contains('right') && q('.dlg-choices').children[2].classList.contains('dim'), '맞은 띠는 ○, 나머지는 흐리게');
   d.advance(); d.advance();
   eq(await p, { correct: false, tries: 2 });
   p = d.quiz(quiz); await sleep(5); d.pick(1);
-  await until(() => q('.dlg-text').textContent.includes('○'));
+  await until(() => why().includes('○'));
   d.advance(); d.advance();
   eq(await p, { correct: true, tries: 1 });
   done();
@@ -130,4 +135,22 @@ test('dialogue: a tap that started before the choices opened is ignored even aft
   await until(() => picked !== null);
   eq(picked, 0);
   } finally { done(); }
+});
+
+test('dialogue: 해설은 자막, 안내는 칩, 사람 말은 한지 대화창(2026-11-09)', async () => {
+  const { d, q, done } = setup();
+  d.say({ who: 'narr', text: '해설' }); await sleep(5);
+  ok(q('.dlg').classList.contains('mode-cap') && !q('.dlg').classList.contains('mode-chip'), '해설은 자막');
+  eq(q('.dlg-portrait').textContent, '', '史 글자 없음');
+  d.advance();
+  d.say({ who: 'guide', text: '안내' }); await sleep(5);
+  ok(q('.dlg').classList.contains('mode-chip'), '안내는 칩');
+  d.advance();
+  d.say({ who: 'seohui', text: '말' }); await sleep(5);
+  ok(!q('.dlg').classList.contains('mode-cap') && !q('.dlg').classList.contains('mode-chip') && !q('.dlg').classList.contains('mode-quiz'), '사람은 대화창');
+  d.advance();
+  const p = d.choose({ who: 'guide', text: '어느 쪽?' }, ['가', '나']); await sleep(5);
+  ok(q('.dlg').classList.contains('mode-quiz'), '안내가 묻는 고르기도 띠 모양');
+  d.pick(1); eq(await p, 1);
+  done();
 });

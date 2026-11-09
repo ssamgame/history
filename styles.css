@@ -469,3 +469,54 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .nego-bar.win { border-color: #9cc3ea; box-shadow: 0 0 18px #6aa6dc; }
 @keyframes nego-hit { 50% { transform: scale(1.06); } }
 @keyframes nego-miss { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+
+/* ── 해설·안내·퀴즈 표시(2026-11-09 선생님): 사람 말만 한지 대화창, 해설은 아래 자막, 안내는 할 일 상자 아래 칩, 퀴즈는 가운데 밝은 질문 + 어두운 보기 띠 ── */
+.dlg-head { display: contents; }
+.dlg-meta { display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.dlg-meta[hidden], .dlg-count[hidden], .dlg-year[hidden], .dlg-why[hidden] { display: none !important; } /* 모양별 규칙보다 우선 */
+.dlg-count { background: var(--dan-red); color: #fff; border-radius: 4px; padding: 1px 8px; font-size: 13px; font-weight: 800; }
+.dlg-year { background: rgba(27,31,29,.88); border: 1px solid var(--gold); color: var(--hanji); border-radius: 999px; padding: 2px 12px; font-size: 15px; letter-spacing: .04em; }
+.dlg-meta .quiz-plate { position: static; max-width: 100%; font-size: 15px; padding: 2px 12px; }
+.dlg-meta:has(.quiz-plate) > .dlg-year { display: none; } /* 배경 이름표가 연도를 이미 보여 준다 */
+.dlg-text, .dlg-why .txt, .dlg-choices .txt { word-break: keep-all; overflow-wrap: anywhere; text-wrap: balance; } /* 낱말 가운데에서 줄이 꺾이지 않게 */
+.dlg-why { display: none; }
+/* 자막(해설) */
+.dlg.mode-cap { display: block; width: min(780px, calc(100% - 32px)); padding: 8px 18px 6px; border: none; border-radius: 0; box-shadow: none; color: #fff; text-align: center;
+  background: linear-gradient(90deg, transparent, rgba(0,0,0,.6) 12%, rgba(0,0,0,.6) 88%, transparent); }
+.dlg.mode-cap .dlg-portrait, .dlg.mode-cap .dlg-name, .dlg.mode-cap .dlg-tag { display: none; }
+.dlg.mode-cap .dlg-head { display: flex; flex-direction: column-reverse; align-items: center; }
+.dlg.mode-cap .dlg-meta { margin: 4px 0 0; }
+.dlg.mode-cap .dlg-year { background: none; color: #f3d58a; font-size: 13px; padding: 0 9px; }
+.dlg.mode-cap .dlg-text { min-height: 0; font-size: 19px; line-height: 1.5; text-shadow: 0 2px 6px rgba(0,0,0,.9), 0 0 2px #000; }
+.dlg.mode-cap .dlg-next { display: block; text-align: center; font-size: 12px; color: #ccc; margin-top: 2px; }
+.dlg.mode-cap.dlg-wrong { background: linear-gradient(90deg, transparent, rgba(120,30,40,.7) 12%, rgba(120,30,40,.7) 88%, transparent); }
+/* 칩(안내): 할 일 상자 바로 아래(top은 dialogue.js가 상자 높이를 재서 정한다) */
+.dlg.mode-chip { display: block; left: max(16px, env(safe-area-inset-left, 0px)); transform: none; bottom: auto; top: calc(140px + env(safe-area-inset-top, 0px)); width: min(380px, calc(50% - 40px));
+  padding: 8px 12px; border: none; border-radius: 6px; background: rgba(47,107,94,.94); color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,.4); }
+.dlg.mode-chip .dlg-portrait, .dlg.mode-chip .dlg-tag, .dlg.mode-chip .dlg-meta { display: none; }
+.dlg.mode-chip .dlg-head { display: inline; }
+.dlg.mode-chip .dlg-name { display: inline-block; background: #fff; color: var(--dan-green); font-size: 11px; font-weight: 800; border-radius: 3px; padding: 0 5px; margin-right: 6px; vertical-align: 2px; }
+.dlg.mode-chip .dlg-text { display: inline; min-height: 0; font-size: 15px; line-height: 1.45; }
+.dlg.mode-chip .dlg-next { display: block; text-align: right; font-size: 11px; color: rgba(255,255,255,.75); margin-top: 2px; }
+/* 가운데 질문 + 보기 띠(해설·안내가 묻는 고르기, 장 끝 퀴즈) */
+.dlg.mode-quiz { display: flex; flex-direction: column; align-items: stretch; left: max(16px, calc(50% - 350px)); transform: none; bottom: auto; top: 24%; width: min(700px, calc(100% - 32px)); max-height: calc(76% - 96px);
+  padding: 0; overflow: hidden; border-radius: 10px; border: 2px solid #3b2f22; background: rgba(27,31,29,.9); color: var(--hanji); }
+.dlg.mode-quiz .dlg-portrait, .dlg.mode-quiz .dlg-name, .dlg.mode-quiz .dlg-tag, .dlg.mode-quiz .dlg-next { display: none; }
+.dlg.mode-quiz .dlg-head { display: block; flex: none; background: var(--hanji); color: var(--text-ink); padding: 12px 20px 14px; text-align: center; }
+.dlg.mode-quiz .dlg-text { min-height: 0; font-size: 22px; font-weight: 800; line-height: 1.4; }
+.dlg.mode-quiz .dlg-choices { gap: 0; margin: 0; overflow: auto; }
+.dlg.mode-quiz .dlg-choices button { border-radius: 0; border: none; border-top: 1px solid rgba(255,255,255,.08); background: transparent; min-height: 54px; padding: 8px 22px; align-items: center; font-size: 19px; color: var(--hanji); }
+.dlg.mode-quiz .dlg-choices button:hover:not(:disabled) { background: rgba(255,255,255,.08); }
+.dlg.mode-quiz .dlg-choices .num { width: 30px; height: 30px; border-radius: 50%; background: var(--gold); color: var(--ink); display: grid; place-items: center; font-size: 15px; }
+.dlg.mode-quiz .dlg-choices button.right { background: rgba(47,107,94,.96); } .dlg.mode-quiz .dlg-choices button.right .num { background: #fff; color: var(--dan-green); }
+.dlg.mode-quiz .dlg-choices button.wrong { background: rgba(184,69,47,.94); } .dlg.mode-quiz .dlg-choices button.wrong .num { background: #fff; color: var(--dan-red); }
+.dlg.mode-quiz .dlg-choices button.dim, .dlg.mode-quiz .dlg-choices button.off { opacity: .45; text-decoration: none; }
+.dlg.mode-quiz .dlg-choices button.off .num { background: #777; color: #ddd; }
+.dlg.mode-quiz.dlg-right, .dlg.mode-quiz.dlg-wrong { background: rgba(27,31,29,.9); border-color: #3b2f22; } /* 답 뒤에도 판 색은 그대로, ○×는 띠와 자막이 말한다 */
+.dlg.mode-quiz .dlg-why { display: block; position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); width: min(780px, calc(100% - 32px)); box-sizing: border-box;
+  padding: 8px 18px 6px; text-align: center; color: #fff; font-size: 19px; line-height: 1.5; text-shadow: 0 2px 6px rgba(0,0,0,.9), 0 0 2px #000;
+  background: linear-gradient(90deg, transparent, rgba(0,0,0,.6) 12%, rgba(0,0,0,.6) 88%, transparent); }
+.dlg.mode-quiz .dlg-why .dlg-year { display: inline-block; background: none; color: #f3d58a; font-size: 13px; padding: 0 9px; margin-left: 8px; vertical-align: 2px; }
+.dlg.mode-quiz .dlg-why .nx { display: block; font-size: 12px; color: #ccc; text-shadow: none; margin-top: 2px; }
+@media (max-width: 600px) { .dlg.mode-quiz .dlg-text { font-size: 18px; } .dlg.mode-quiz .dlg-choices button { font-size: 17px; min-height: 48px; padding: 6px 14px; } .dlg.mode-cap .dlg-text, .dlg.mode-quiz .dlg-why { font-size: 16px; } .dlg.mode-chip { width: calc(100% - 32px); } }
+@media (max-height: 520px) { .dlg.mode-quiz { top: 6%; max-height: calc(94% - 78px); } .dlg.mode-quiz .dlg-head { padding: 8px 16px 10px; } .dlg.mode-quiz .dlg-text { font-size: 19px; } .dlg.mode-quiz .dlg-choices button { min-height: 46px; padding: 4px 18px; font-size: 17px; } .dlg.mode-quiz .dlg-why, .dlg.mode-cap .dlg-text { font-size: 16px; } } /* 낮은 화면: 판을 위로 올리고 작게(자막과 겹치지 않게) */
