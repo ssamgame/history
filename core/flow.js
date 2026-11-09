@@ -58,6 +58,7 @@ export async function runChapter(meta, chapter, ctx, save, { resumeStage = 'intr
     if (perf) { perf.time('장면 짓기', t2 - t1, meta.id); perf.time('장면 굳히기', performance.now() - t2, meta.id); }
     if (from > 0) chapter.enterStage?.(ctx, STAGES[from]);
     if (from === 0 && film) await playIntro(ctx, meta, chapter.script.intro, chapter.introScene(ctx));
+    if (from === 0 && ctx.arrival) await ctx.arrival(meta); // 도착 연출(타임머신 틀, 2026-11-09): 빛기둥·시간지기·변장
 
     if (from <= 1) {
       checkpoint('explore'); perf?.segment(`${meta.id} 탐험`);

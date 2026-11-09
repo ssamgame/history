@@ -1,6 +1,6 @@
 // 진행 상황 저장. 기기 안(localStorage)에만 두고 밖으로 보내지 않는다.
 const KEY = 'goryeo-game:v1';
-const empty = () => ({ name: '', chapters: {}, current: null, course: null }); // course: 마지막으로 고른 편(goryeo·joseon)
+const empty = () => ({ name: '', chapters: {}, current: null, course: null, avatar: null }); // avatar: 내 캐릭터(content/avatar.js) // course: 마지막으로 고른 편(goryeo·joseon)
 
 // ★★★ 퀴즈 2개 정답 + 쉬운 모드 안 씀 + 미니게임 절반 이상 첫 시도 성공, ★★☆ 퀴즈 1개 이상 또는 미니게임을 잘함, ★☆☆ 완료
 export function computeStars({ quizCorrect, easyModeUsed, firstTryCorrect = 0, firstTryTotal = 0 }) {
@@ -18,12 +18,13 @@ export function createSave(storage) {
       const valid = d && typeof d === 'object' && typeof d.name === 'string' && d.chapters && typeof d.chapters === 'object';
       // 편이 생기기 전의 옛 기록: 고려편 장을 하나라도 했으면 고려편으로 본다(이어하기가 고려편 지도로 바로 간다)
       const oldGoryeo = valid && (Object.keys(d.chapters).some(id => /^ch\d$/.test(id)) || /^ch\d$/.test(d.current?.id || ''));
-      save.data = valid ? { name: d.name, chapters: d.chapters, current: d.current || null, course: typeof d.course === 'string' ? d.course : oldGoryeo ? 'goryeo' : null, reviews: d.reviews && typeof d.reviews === 'object' ? d.reviews : {} } : empty(); // 옛 기록의 역사 수첩(notes)은 버린다(D-9)
+      save.data = valid ? { name: d.name, chapters: d.chapters, current: d.current || null, avatar: d.avatar && typeof d.avatar === 'object' ? d.avatar : null, course: typeof d.course === 'string' ? d.course : oldGoryeo ? 'goryeo' : null, reviews: d.reviews && typeof d.reviews === 'object' ? d.reviews : {} } : empty(); // 옛 기록의 역사 수첩(notes)은 버린다(D-9)
       return save.data;
     },
     persist() { return storage.set(KEY, save.data); },
     reset() { save.data = empty(); storage.remove(KEY); },
     setName(name) { save.data.name = name; save.persist(); },
+    setAvatar(a) { save.data.avatar = a; save.persist(); },
     setCourse(id) { save.data.course = id; save.persist(); },
     startChapter(id) { save.checkpoint(id, 'intro'); },
     // carry: 다음 단계로 넘겨 줄 점수(예: 미니게임에서 쉬운 모드를 썼는지). 이어하기 때 되살린다.

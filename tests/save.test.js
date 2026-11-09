@@ -69,7 +69,7 @@ test('save: reset clears name, chapters, current', () => {
   save.setName('a'); save.checkpoint('ch1', 'quiz');
   save.finishChapter('ch1', { stars: 2 });
   save.reset();
-  eq(save.data, { name: '', chapters: {}, current: null, course: null });
+  eq(save.data, { name: '', chapters: {}, current: null, course: null, avatar: null });
   const again = createSave(createStorage(backend)); again.load();
   eq(again.data.name, '');
 });
@@ -78,7 +78,7 @@ test('save: corrupt stored data falls back to empty', () => {
   const backend = memoryBackend();
   backend.setItem('goryeo-game:v1', '{not json');
   const save = createSave(createStorage(backend)); save.load();
-  eq(save.data, { name: '', chapters: {}, current: null, course: null });
+  eq(save.data, { name: '', chapters: {}, current: null, course: null, avatar: null });
   ok(true);
 });
 

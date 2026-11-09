@@ -35,7 +35,7 @@ export function createDialogue(root, speakers, { typeMs = 26, reduceMotion = fal
     setMode(s.look ? null : who === 'guide' ? 'mode-chip' : 'mode-cap');
     setMeta(null, line?.year);
     whyEl.hidden = true;
-    $('.dlg-name').textContent = s.name;
+    $('.dlg-name').textContent = who === 'guide' ? '시간지기' : s.name; // 안내는 타임머신의 안내 목소리 「시간지기」(2026-11-09)
     const tag = $('.dlg-tag');
     tag.hidden = !(s.look && line && line.quote);
     tag.textContent = '기록에 남은 말';

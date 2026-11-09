@@ -35,7 +35,7 @@ test('one session: title has no 2차시 button and the map has one result button
     save.chapterResult = id => save.data.chapters[id] || null;
     showMap(el2, CHAPTERS, save);
     const labels = [...el2.querySelectorAll('.row button')].map(b => b.textContent);
-    eq(labels, ['결과 카드']);
+    eq(labels, ['시간 여행 일지']); // 결과 카드 → 시간 여행 일지(타임머신 틀, 2026-11-09)
   } finally { el.remove(); el2.remove(); }
 });
 
@@ -216,7 +216,7 @@ test('map: 다른 시대 버튼과 편 이름 줄', async () => {
   const p = showMap(el, JOSEON.map(c => ({ ...c, load: null })), save, { onCourses: true, heading: '조선을 걷다' });
   ok(el.textContent.includes('조선을 걷다'));
   ok([...el.querySelectorAll('[data-chapter]')].every(b => b.disabled), '준비 중은 눌리지 않음');
-  ok(!btn(el, '결과 카드'), '마친 장이 없으면 결과 카드 없음');
+  ok(!btn(el, '시간 여행 일지'), '마친 장이 없으면 시간 여행 일지 없음');
   btn(el, '다른 시대').click();
   eq(await p, 'courses');
   el.remove();

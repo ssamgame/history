@@ -532,3 +532,32 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .dlg.mode-quiz .dlg-why .nx { display: block; font-size: 12px; color: #ccc; text-shadow: none; margin-top: 2px; }
 @media (max-width: 600px) { .dlg.mode-quiz .dlg-text { font-size: 18px; } .dlg.mode-quiz .dlg-choices button { font-size: 17px; min-height: 48px; padding: 6px 14px; } .dlg.mode-cap .dlg-text, .dlg.mode-quiz .dlg-why { font-size: 16px; } .dlg.mode-chip { width: calc(100% - 32px); } }
 @media (max-height: 520px) { .dlg.mode-quiz { top: 6%; max-height: calc(94% - 78px); } .dlg.mode-quiz .dlg-head { padding: 8px 16px 10px; } .dlg.mode-quiz .dlg-text { font-size: 19px; } .dlg.mode-quiz .dlg-choices button { min-height: 46px; padding: 4px 18px; font-size: 17px; } .dlg.mode-quiz .dlg-why, .dlg.mode-cap .dlg-text { font-size: 16px; } } /* 낮은 화면: 판을 위로 올리고 작게(자막과 겹치지 않게) */
+
+/* ── 시간 여행자 등록(캐릭터 만들기, 2026-11-09): 왼쪽 3D 미리보기 · 가운데 부위 고르기 · 오른쪽 탐험대원증 ── */
+.avatar-maker { background: radial-gradient(ellipse at 35% 50%, #2a3340, #0f1316 70%); align-items: stretch; }
+.av-inner { width: 100%; height: 100%; display: grid; grid-template-columns: minmax(200px, 300px) minmax(260px, 1fr) minmax(200px, 230px); grid-template-rows: auto 1fr auto; grid-template-areas: "head head head" "stage rows card" "stage acts card"; gap: 10px 22px; box-sizing: border-box; }
+.av-head { grid-area: head; } .av-head .eyebrow { color: var(--gold); font-size: 13px; letter-spacing: .12em; } .av-head h2 { font-size: clamp(22px, 3vw, 30px); margin-top: 2px; }
+.av-stage { grid-area: stage; position: relative; border-radius: 14px; overflow: hidden; background: radial-gradient(ellipse at 50% 85%, rgba(217,164,65,.25), transparent 60%), rgba(0,0,0,.25); border: 1px solid rgba(255,255,255,.12); min-height: 240px; }
+.av-canvas { width: 100%; height: 100%; display: block; object-fit: cover; }
+.av-turn { position: absolute; right: 10px; top: 10px; background: rgba(0,0,0,.5); border-radius: 999px; padding: 4px 10px; font-size: 12px; }
+.av-cap { position: absolute; left: 0; right: 0; bottom: 8px; text-align: center; font-size: 12px; color: #aaa; }
+.av-rows { grid-area: rows; display: grid; gap: 6px; align-content: start; }
+.av-row { display: grid; grid-template-columns: 64px 40px 1fr 40px; align-items: center; gap: 6px; background: rgba(27,31,29,.75); border: 1px solid rgba(255,255,255,.1); border-radius: 8px; padding: 3px 8px; min-height: 40px; box-sizing: border-box; }
+.av-key { font-size: 13px; color: var(--gold); } .av-val { text-align: center; font-size: 15px; word-break: keep-all; }
+.av-arrow { width: 40px; height: 34px; border-radius: 6px; border: none; background: var(--hanji); color: var(--text-ink); font-weight: 800; font-size: 14px; touch-action: manipulation; }
+.av-seg { display: flex; gap: 6px; justify-content: center; } .av-seg-btn { border: none; background: rgba(255,255,255,.08); color: var(--hanji); border-radius: 999px; padding: 5px 14px; font-size: 14px; min-height: 32px; } .av-seg-btn.on { background: var(--hanji); color: var(--text-ink); font-weight: 700; }
+.av-swatch { display: flex; gap: 10px; justify-content: center; } .av-dot { width: 30px; height: 30px; border-radius: 50%; border: 3px solid transparent; padding: 0; } .av-dot.on { border-color: #fff; box-shadow: 0 0 0 2px var(--gold); }
+.av-acts { grid-area: acts; display: flex; gap: 10px; align-items: end; } .av-acts .btn { min-height: 52px; border-radius: 8px; font-size: 17px; } .av-go { flex: 1; }
+.av-card { grid-area: card; position: relative; align-self: start; border-radius: 12px; background: linear-gradient(#f6efdd, #e8dcc0); color: var(--text-ink); box-shadow: 0 12px 30px rgba(0,0,0,.5); padding: 14px; box-sizing: border-box; border: 2px solid #3b2f22; }
+.av-card-title { font-size: 11px; letter-spacing: .2em; color: var(--dan-red); font-weight: 800; text-align: center; }
+.av-portrait { width: 104px; height: 104px; border-radius: 50%; margin: 10px auto 6px; background: #dcd3c0 center/cover; border: 3px solid #3b2f22; }
+.av-card-name { display: block; text-align: center; } .av-card-name input { width: 90%; font: inherit; font-size: 16px; font-weight: 700; text-align: center; border: none; border-bottom: 2px solid #8a7556; background: transparent; color: var(--text-ink); padding: 4px 0; }
+.av-card-line { font-size: 12px; color: #6b5a44; margin-top: 8px; display: flex; justify-content: space-between; } .av-card-line b { color: var(--text-ink); }
+.av-stamps { display: flex; gap: 6px; justify-content: center; margin-top: 10px; } .av-stamps i { width: 24px; height: 24px; border-radius: 50%; border: 2px dashed #b9ad96; }
+.av-card-hint { text-align: center; font-size: 11px; color: var(--muted); margin-top: 8px; }
+.av-seal { position: absolute; right: 12px; bottom: 10px; width: 38px; height: 38px; border: 2px solid var(--dan-red); color: var(--dan-red); font-size: 12px; display: grid; place-items: center; border-radius: 4px; font-weight: 800; transform: rotate(-8deg); }
+@media (max-width: 760px) { .av-inner { grid-template-columns: 1fr 1fr; grid-template-areas: "head head" "stage card" "rows rows" "acts acts"; } .av-stage { min-height: 220px; } }
+@media (max-height: 600px) { .av-row { min-height: 34px; padding: 1px 8px; } .av-arrow { height: 30px; } .av-rows { gap: 4px; } .av-portrait { width: 80px; height: 80px; } .av-inner { gap: 6px 16px; } .av-acts .btn { min-height: 46px; font-size: 16px; } }
+/* 시간 여행 일지의 도장 */
+.stamps { display: flex; gap: 8px; flex-wrap: wrap; } .stamps i { width: 44px; height: 44px; border-radius: 50%; border: 2px dashed #b9ad96; display: grid; place-items: center; font-style: normal; font-size: 12px; color: var(--muted); letter-spacing: -1px; }
+.stamps i.done { border: 2px solid var(--dan-red); color: var(--dan-red); font-weight: 800; transform: rotate(-8deg); }

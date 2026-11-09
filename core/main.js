@@ -14,6 +14,9 @@ import { ALL_CHAPTERS, COURSES, courseById, courseOfChapter, isSessionDone } fro
 import { LOOKS } from '../content/characters.js';
 import { setExpression, setTalking } from './people.js';
 import { ROLES, roleLook } from '../content/roles.js';
+import { applyAvatar } from '../content/avatar.js';
+import { showAvatarMaker } from './avatar-ui.js';
+import { playArrival } from './arrival.js';
 
 const PREF_QUALITY = 'goryeo-game:quality';
 const PREF_MUTED = 'goryeo-game:muted';
@@ -77,6 +80,14 @@ function boot() {
       if (change.quality) { quality.set(change.quality); storage.set(PREF_QUALITY, change.quality); }
     });
     world.paused = false;
+    if (choice === 'avatar') { // 내 캐릭터 바꾸기: 얼굴만 바꾸고 지금 장의 역할 옷에 바로 입힌다
+      world.paused = true;
+      const r = await showAvatarMaker(ui, { avatar: save.data.avatar, name: save.data.name, title: '내 캐릭터 바꾸기' });
+      world.paused = false;
+      save.setAvatar(r.avatar); if (r.name) save.setName(r.name);
+      if (curMeta && role) { const mod = (await curMeta.load()).default; const lk = applyAvatar(roleLook(curMeta.id, mod.player), r.avatar); role.lookOpts = lk; world.setPlayerLook(lk, role.scale); }
+      return;
+    }
     if (choice === 'map') { const c = curMeta ? courseOfChapter(curMeta.id).id : save.data.course; save.abandonCurrent(); location.hash = `map=${c || ''}`; location.reload(); } // 하던 장을 버리고 다시 열어 첫 화면 없이 그 편의 장 선택 지도로(#map, 2026-11-05 플레이 점검: 첫 화면으로 갔다)
   };
   input.onMenu(openMenu);
@@ -115,8 +126,11 @@ function boot() {
     quality.restart();
     world.camMode = 'follow';
     world.setMood(mod.mood);
-    role = ROLES[meta.id] ? { ...ROLES[meta.id], lookOpts: roleLook(meta.id, mod.player) } : null;
-    world.setPlayerLook(roleLook(meta.id, mod.player), role ? role.scale : 1); // 장마다 학생 역할(고려 병사, 궁궐 심부름하는 아이 등): 생김새와 키
+    const myLook = applyAvatar(roleLook(meta.id, mod.player), save.data.avatar); // 역할 옷에 내 얼굴(content/avatar.js)
+    role = ROLES[meta.id] ? { ...ROLES[meta.id], lookOpts: myLook } : null;
+    world.setPlayerLook(myLook, role ? role.scale : 1);
+    const sameCourse = courseOfChapter(meta.id).chapters.some(c => c.id !== meta.id && save.chapterResult(c.id)); // 같은 편을 이미 다녀왔으면 짧은 도착 인사
+    ctx.arrival = m => playArrival(ctx, { meta: m, role: ROLES[meta.id], roleLook: myLook, scale: role ? role.scale : 1, avatar: save.data.avatar, short: sameCourse }); // 장마다 학생 역할(고려 병사, 궁궐 심부름하는 아이 등): 생김새와 키
     curMeta = meta; curGoals = Array.isArray(mod.script.goals) ? mod.script.goals : [];
     ctx.spotState = { found: new Set(), read: new Set() }; // 새 장: 발견·읽은 안내판을 새로 센다
     // 대사에 expr(놀람·걱정·분노·기쁨·긴장·말하기)이 있으면 말하는 사람의 3D 얼굴도 그 표정으로, 다음 대사·대화창이 닫히면 평소 얼굴로(D-57)
@@ -134,7 +148,7 @@ function boot() {
       }
     };
     // '나'(학생)의 대화창 그림은 글자(我) 대신 이 장에서 맡은 인물의 얼굴(2026-11-05 선생님)
-    const speakers = { ...mod.script.speakers, me: { name: '나', ...(mod.script.speakers?.me || {}), look: roleLook(meta.id, mod.player) } };
+    const speakers = { ...mod.script.speakers, me: { name: '나', ...(mod.script.speakers?.me || {}), look: myLook } };
     dialogue = createDialogue(ui, speakers, { reduceMotion, onSay, onClose: calm });
     hud.show(meta);
     hud.setTouchVisible(true);
@@ -255,7 +269,9 @@ function boot() {
     const { action, course, name } = await showTitle(ui, { savedName: save.data.name, hasProgress, storageOk: storage.available, courses: COURSES, save, course: cur || save.data.course, onCourse: showBackdrop });
     if (action === 'new') {
       save.reset();
-      save.setName(name || ''); // 이름 칸은 첫 화면 안에(2026-11-09 선생님; 캐릭터 만들기 화면은 따로 만들 예정)
+      const first = courseById(course)?.chapters[0];
+      const r = await showAvatarMaker(ui, { avatar: null, name: name || '', firstStop: first ? `${String(first.years).split(/[~·]/)[0]}년 ${courseById(course).era}` : '993년 고려' }); // 시간 여행자 등록(2026-11-09)
+      save.setAvatar(r.avatar); save.setName(r.name || name || '');
     } else if (cur && cur !== course) save.abandonCurrent(); // 다른 시대로 넘어가면 하다 만 장만 내려놓는다(마친 장과 별은 그대로)
     save.setCourse(course);
     await mapLoop();

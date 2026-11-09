@@ -139,7 +139,7 @@ export function showMap(root, chapters, save, { onSessionCard, onCourses, headin
     });
     // 이 편의 장을 하나라도 마쳤으면 결과 카드를 다시 볼 수 있다 (한 편의 1~6장이 한 장의 결과 카드)
     const sessionButtons = chapters.some(c => save.chapterResult(c.id))
-      ? [h('button', { class: 'btn', type: 'button', onclick: () => onSessionCard && onSessionCard() }, '결과 카드')] : [];
+      ? [h('button', { class: 'btn', type: 'button', onclick: () => onSessionCard && onSessionCard() }, '시간 여행 일지')] : [];
     const courseButton = onCourses ? h('button', { class: 'btn', type: 'button', onclick: () => { el.remove(); resolve('courses'); } }, '다른 시대') : null;
     const el = screen(root, 'mapscreen',
       h('div', { class: 'board-wrap' },
@@ -218,8 +218,9 @@ export function showSessionCard(root, session, save, chapters) {
     const today = new Date();
     const el = screen(root, 'session',
       h('div', { class: 'card wide' },
-        h('div', { class: 'eyebrow' }, `결과 카드 · ${SESSIONS[session].title}`),
+        h('div', { class: 'eyebrow' }, `시간 여행 일지 · ${SESSIONS[session].title}`),
         h('h2', {}, save.data.name || '이름 없음'),
+        h('div', { class: 'stamps' }, list.map(c => { const r = save.chapterResult(c.id); return h('i', { class: r ? 'done' : '', title: `${c.no}장` }, r ? '★'.repeat(r.stars || 0) || '✓' : String(c.no)); })), // 다녀온 장마다 도장(타임머신 틀, 2026-11-09)
         h('p', { class: 'date' }, `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`),
         h('ul', { class: 'chapter-list' }, list.map(c => {
           const r = save.chapterResult(c.id);
@@ -257,6 +258,7 @@ export function showMenu(root, { muted, music = null, quality, storageOk = true 
         h('p', {}, '화질'),
         h('div', { class: 'row' }, qb('low', '낮음'), qb('medium', '보통'), qb('high', '높음')),
         h('div', { class: 'row' },
+          h('button', { class: 'btn', type: 'button', onclick: () => close('avatar') }, '내 캐릭터 바꾸기'),
           h('button', { class: 'btn', type: 'button', onclick: () => (storageOk ? close('map') : (leave.hidden = false)) }, '장 선택으로'),
           h('button', { class: 'btn primary', type: 'button', onclick: () => close('close') }, '닫기')),
         leave));
