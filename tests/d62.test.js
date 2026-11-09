@@ -177,11 +177,11 @@ test('d62 고려2-8: 포승줄에 묶여 끌려가는 백성은 다가가 E를 �
     const c = sc.captives[0];
     ok(c.rope.visible, '처음엔 묶여 있다');
     s.w.player.position.set(c.group.position.x, 0, c.group.position.z + 1.5);
-    for (let i = 0; i < 10; i++) s.w.step(1 / 30, { x: 0, z: 0 });
+    for (let i = 0; i < 45; i++) s.w.step(1 / 30, { x: 0, z: 0 }); // 고려군이 달려와 따라붙을 시간(순간이동을 뺐다, 2026-11-08)
     ok(c.escort.visible && c.rope.visible && !s.ctx.testHooks.rescue.saved, '가까이 가기만 해서는 구하지 않는다');
     ok(!s.hud.talkBtn.disabled, 'E(행동) 단추가 켜진다');
     s.hud.talkBtn.click();
-    for (let i = 0; i < 90 && c.rope.visible; i++) s.w.step(1 / 30, { x: 0, z: 0 });
+    for (let i = 0; i < 150 && c.rope.visible; i++) s.w.step(1 / 30, { x: 0, z: 0 });
     ok(s.ctx.testHooks.rescue.struck >= 1, '고려군이 거란군을 쳤다');
     ok(c.escort.userData.down || !c.escort.visible, '거란군이 쓰러졌다');
     ok(!c.rope.visible, '포승줄을 풀었다');
