@@ -131,6 +131,7 @@ export function touchBot(s, { answers, wrongFirst = new Set(), noTaps = () => fa
       tracing = false;
       return;
     }
+    if (!dialogue.isOpen() && dialogue.isShowing?.()) ui.querySelector('.dlg').click(); // 안내 칩은 눌러 바로 넘긴다(기다리지 않게)
     if (dialogue.isOpen()) {
       release();
       if (dialogue.isChoosing()) {

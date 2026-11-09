@@ -154,3 +154,21 @@ test('dialogue: 해설은 자막, 안내는 칩, 사람 말은 한지 대화창(
   d.pick(1); eq(await p, 1);
   done();
 });
+
+test('dialogue: 안내 칩은 걸음을 막지 않고, 읽을 시간이 지나면 저절로 넘어간다(2026-11-09)', async () => {
+  const { d, q, done } = setup();
+  const t0 = performance.now(), p = d.say({ who: 'guide', text: '앞으로 가요' });
+  await sleep(5);
+  ok(!q('.dlg').hidden && q('.dlg').classList.contains('mode-chip'), '칩이 보인다');
+  ok(!d.isOpen(), '열린 대화로 치지 않는다(걷기·말 걸기 가능)');
+  await p; // 누르지 않아도 끝난다
+  ok(performance.now() - t0 >= 1400, '읽을 시간은 준다');
+  ok(q('.dlg').hidden, '끝나면 칩이 사라진다');
+  const p2 = d.say({ who: 'guide', text: '둘째 안내' }); await sleep(5);
+  d.say({ who: 'seohui', text: '말' }); await sleep(5); // 사람이 말을 걸면 칩은 바로 바뀌고 시계는 멈춘다
+  ok(d.isOpen() && !q('.dlg').classList.contains('mode-chip'));
+  await sleep(1800); ok(!q('.dlg').hidden, '옛 안내 시계가 사람 대화를 닫지 않는다');
+  d.advance(); await sleep(5);
+  d.close(); await Promise.race([p2, sleep(10)]);
+  done();
+}, { timeout: 15000 });

@@ -16,7 +16,7 @@ const arena = { origin: [300, 0], ground: 'earth', bounds: { x0: -20, x1: 20, z0
 const until = async (fn, ms = 3000) => { const t0 = performance.now(); while (!fn()) { if (performance.now() - t0 > ms) throw new Error('until timeout'); await sleep(5); } };
 const step = (w, n = 1) => { for (let i = 0; i < n; i++) w.step(1 / 20, { x: 0, z: 0 }); };
 // 대화창이 열려 있으면 끝까지 넘긴다
-const drain = async s => { for (let i = 0; i < 40 && s.dialogue.isOpen(); i++) { s.dialogue.advance(); s.dialogue.advance(); await sleep(5); } };
+const drain = async s => { for (let i = 0; i < 40 && s.dialogue.isShowing(); i++) { s.dialogue.advance(); s.dialogue.advance(); await sleep(5); } };
 
 // 1. 걷기
 test('feedback: 움직이는 인물(따라오는 사람·감시원)도 다리를 흔들며 걷는다', () => {

@@ -278,7 +278,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 /* 상황 놀이 알림: 화면 위쪽 가운데에 잠깐 뜬다 */
 .play-toast { position: fixed; z-index: 13; left: 0; right: 0; margin: 0 auto; width: fit-content; top: calc(118px + env(safe-area-inset-top, 0px)); max-width: min(560px, calc(100vw - 32px)); box-sizing: border-box; /* 가운데 정렬(left 50%로 하면 좁은 화면에서 폭이 반으로 줄어 길게 늘어진다) */ padding: 10px 18px; border-radius: 6px; background: rgba(27,31,29,.88); color: var(--hanji); border: 2px solid var(--gold); font-size: 18px; line-height: 1.45; text-align: center; word-break: keep-all; pointer-events: none; }
 .play-toast.good { border-color: #6fae8f; }
-.dlg:not([hidden]) ~ .play-toast { display: none; } /* 대화창이 열려 있으면 놀이 알림은 잠깐 숨는다(대화가 더 중요) */
+.dlg:not([hidden]):not(.mode-chip) ~ .play-toast { display: none; } /* 대화창이 열려 있으면 놀이 알림은 잠깐 숨는다(대화가 더 중요) */
 .play-toast.bad { border-color: var(--dan-red); }
 /* 저작권 표시: 첫 화면 맨 밑 */
 .copyright { margin: 2px 0 0; font-size: 13px; color: #a89f8c; letter-spacing: .02em; text-align: center; }
@@ -432,7 +432,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 }
 /* 좁거나 낮은 화면에서 대화하는 동안은 목표 상자를 목표 한 줄로 줄인다(대화창과 겹치지 않게) */
 @media (max-width: 640px), (max-height: 520px) {
-  .hud:has(~ .dlg:not([hidden])) :is(.hud-chapter, .hud-found, .hud-row) { display: none; }
+  .hud:has(~ .dlg:not([hidden]):not(.mode-chip)) :is(.hud-chapter, .hud-found, .hud-row) { display: none; } /* 안내 칩은 상자 아래 붙으므로 상자를 줄이지 않는다 */
 }
 
 /* 편 복습 퀴즈(D-21) */
@@ -497,7 +497,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .dlg.mode-chip .dlg-head { display: inline; }
 .dlg.mode-chip .dlg-name { display: inline-block; background: #fff; color: var(--dan-green); font-size: 11px; font-weight: 800; border-radius: 3px; padding: 0 5px; margin-right: 6px; vertical-align: 2px; }
 .dlg.mode-chip .dlg-text { display: inline; min-height: 0; font-size: 15px; line-height: 1.45; }
-.dlg.mode-chip .dlg-next { display: block; text-align: right; font-size: 11px; color: rgba(255,255,255,.75); margin-top: 2px; }
+.dlg.mode-chip .dlg-next { display: none; } /* 안내는 저절로 사라지므로 '눌러서 계속'을 보이지 않는다 */
 /* 가운데 질문 + 보기 띠(해설·안내가 묻는 고르기, 장 끝 퀴즈) */
 .dlg.mode-quiz { display: flex; flex-direction: column; align-items: stretch; left: max(16px, calc(50% - 350px)); transform: none; bottom: auto; top: 24%; width: min(700px, calc(100% - 32px)); max-height: calc(76% - 96px);
   padding: 0; overflow: hidden; border-radius: 10px; border: 2px solid #3b2f22; background: rgba(27,31,29,.9); color: var(--hanji); }

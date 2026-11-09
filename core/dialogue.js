@@ -24,11 +24,13 @@ export function createDialogue(root, speakers, { typeMs = 26, reduceMotion = fal
     metaEl.hidden = !count && !year;
   }
 
-  let advanceFn = null, pickFn = null, timer = null, openedAt = 0;
+  let advanceFn = null, pickFn = null, timer = null, openedAt = 0, autoT = null; // autoT: 안내 칩이 읽을 시간 뒤에 저절로 넘어가는 시계
+  const GUIDE_MS = n => Math.min(6000, 1400 + 45 * n); // 안내를 읽을 시간(글자 수에 따라 1.4~6초)
 
   // 실제 기록에 남은 말(대사에 quote: true)에만 '기록에 남은 말' 표시를 단다. 보통 대사에는 아무 표시도 없다
   function show(who, line = null) {
     const s = all[who] || NARR;
+    clearTimeout(autoT); autoT = null;
     setMode(s.look ? null : who === 'guide' ? 'mode-chip' : 'mode-cap');
     setMeta(null, line?.year);
     whyEl.hidden = true;
@@ -71,8 +73,13 @@ export function createDialogue(root, speakers, { typeMs = 26, reduceMotion = fal
       }
       advanceFn = () => {
         if (timer) { clearInterval(timer); timer = null; out.textContent = line.text; return; }
-        advanceFn = null; resolve();
+        advanceFn = null; clearTimeout(autoT); autoT = null; resolve();
       };
+      // 안내 칩은 걸음을 멈추지 않는다(2026-11-09 선생님): 글이 다 나온 뒤 읽을 시간이 지나면 저절로 사라지고 넘어간다(눌러도 넘어간다)
+      if (el.classList.contains('mode-chip') && !feedback) {
+        const me = advanceFn, typing = (reduceMotion || typeMs <= 0) ? 0 : chars.length * typeMs;
+        autoT = setTimeout(() => { autoT = null; if (advanceFn !== me) return; advanceFn = null; el.hidden = true; if (onClose) onClose(); resolve(); }, typing + GUIDE_MS(chars.length));
+      }
     });
   }
 
@@ -161,9 +168,10 @@ export function createDialogue(root, speakers, { typeMs = 26, reduceMotion = fal
     say, choose, ask, quiz,
     advance() { if (advanceFn) advanceFn(); },
     pick(i) { if (pickFn && !choicesEl.children[i]?.disabled) pickFn(i); }, // 막아 둔(이미 틀린) 답은 고를 수 없다
-    isOpen() { return !el.hidden; },
+    isOpen() { return !el.hidden && !el.classList.contains('mode-chip'); },
+    isShowing() { return !el.hidden; }, // 안내 칩까지 포함해 무엇이든 보이는지(테스트·봇이 넘길 때) // 안내 칩은 '열린 대화'로 치지 않는다(걷기·말 걸기를 막지 않게)
     isChoosing() { return !!pickFn; },
-    close() { clearInterval(timer); timer = null; advanceFn = pickFn = null; el.hidden = true; if (onClose) onClose(); },
+    close() { clearInterval(timer); timer = null; clearTimeout(autoT); autoT = null; advanceFn = pickFn = null; el.hidden = true; if (onClose) onClose(); },
     dispose() { dialogue.close(); window.removeEventListener('keydown', onKey); el.remove(); },
   };
   return dialogue;
