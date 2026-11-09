@@ -83,39 +83,40 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .card label { font-size: 15px; }
 .card input { font: inherit; font-size: 19px; padding: 10px 12px; border: 1px solid #8f8068; border-radius: 4px; background: #fffaf0; color: var(--text-ink); }
 
-.title { background: radial-gradient(ellipse at 50% 30%, rgba(27,31,29,.45), rgba(27,31,29,.92)); }
-/* 첫 화면: 왼쪽 소개 · 오른쪽 시대 고르기 · 아래 처음부터/이어하기 (좁으면 위아래로) */
-.title-inner { width: min(1160px, 100%); display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); grid-template-areas: "intro courses" "actions actions"; column-gap: 56px; row-gap: 22px; align-items: center; }
-.title-intro { grid-area: intro; display: grid; gap: 16px; align-content: center; }
-.title-courses { grid-area: courses; display: grid; gap: 8px; }
-.title-courses-head { font-size: 14px; letter-spacing: .08em; color: var(--gold); }
-.title-actions { grid-area: actions; display: grid; gap: 10px; justify-items: center; padding-top: 14px; border-top: 1px solid rgba(217,164,65,.3); }
-.title-actions .row { justify-content: center; }
-.title-actions .btn { min-width: 200px; min-height: 56px; font-size: 19px; }
-.title-course { display: grid; grid-template-columns: 7em minmax(0, 1fr) auto; align-items: center; gap: 12px; text-align: left; min-height: 58px; padding: 8px 16px; border-radius: 6px; border: 2px solid rgba(217,164,65,.4); background: rgba(27,31,29,.6); color: var(--hanji); font: inherit; cursor: pointer; touch-action: manipulation; }
-.title-course[aria-pressed="true"] { border-color: var(--gold); background: var(--hanji); color: var(--text-ink); box-shadow: 0 0 0 3px rgba(217,164,65,.35); }
-.title-course-era { font-size: 14px; font-weight: 700; color: var(--gold); white-space: nowrap; }
-.title-course[aria-pressed="true"] .title-course-era { color: var(--dan-red); }
-.title-course-name { font-family: var(--font-display); font-size: 21px; word-break: keep-all; }
-.title-course-progress { font-size: 14px; opacity: .85; white-space: nowrap; }
-@media (max-width: 760px) { .title-inner { grid-template-columns: 1fr; grid-template-areas: "intro" "courses" "actions"; } }
-@media (max-height: 620px) and (min-width: 761px) {
-  .title-inner { row-gap: 12px; }
-  .title h1 { font-size: 46px; }
-  .title .lead { font-size: 16px; line-height: 1.55; }
-  .title-course { min-height: 48px; padding: 4px 14px; }
-  .title-course-name { font-size: 18px; }
-  .title-actions { padding-top: 10px; }
-  .title-actions .btn { min-height: 50px; }
-}
-.title h1 { font-size: clamp(44px, 6.4vw, 76px); line-height: 1.1; word-break: keep-all; }
+/* 첫 화면(2026-11-09 선생님 시안 C): 뒤의 3D 장면이 보이게 왼쪽만 어둡게, 왼쪽 유리 판 + 아래 시대 탭 */
+.title { background: linear-gradient(90deg, rgba(10,12,11,.86) 0 38%, rgba(10,12,11,.3) 68%, rgba(10,12,11,.15)); align-items: stretch; padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
+.title-inner { width: 100%; height: 100%; display: grid; grid-template-rows: 1fr auto auto; gap: 12px; box-sizing: border-box; }
+.title-intro { align-self: center; width: min(440px, 100%); display: grid; gap: 12px; margin-left: clamp(0px, 3vw, 40px); }
+.title h1 { font-size: clamp(40px, 5.6vw, 64px); line-height: 1.08; word-break: keep-all; }
 .title h1 span { color: var(--dan-red); }
-.title .lead { margin: 0; line-height: 1.7; color: #ddd5c4; max-width: 60ch; font-size: 18px; }
+.title .eyebrow { font-size: 13px; letter-spacing: .14em; color: var(--gold); }
+.title .lead { margin: 0; line-height: 1.6; color: #ddd5c4; max-width: 44ch; font-size: 16px; }
+.title-actions { display: grid; gap: 10px; }
+.title-name-row { display: flex; align-items: center; gap: 10px; font-size: 14px; color: #c9c1b0; }
+.title-name { flex: 1; min-width: 0; font: inherit; font-size: 16px; padding: 9px 12px; border-radius: 6px; border: 1px solid rgba(242,234,217,.4); background: rgba(27,31,29,.6); color: var(--hanji); }
+.title-name::placeholder { color: #8a8172; }
+.title-actions .btn { min-height: 52px; font-size: 18px; border-radius: 8px; }
+.title-courses { display: flex; gap: 8px; }
+.title-course { flex: 1; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; text-align: left; min-height: 60px; padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,.18); background: rgba(27,31,29,.62); color: var(--hanji); backdrop-filter: blur(6px); }
+.title-course[aria-pressed="true"] { border-color: var(--gold); background: rgba(242,234,217,.95); color: var(--text-ink); }
+.title-course-era { font-size: 12px; font-weight: 700; color: var(--gold); white-space: nowrap; }
+.title-course[aria-pressed="true"] .title-course-era { color: var(--dan-red); }
+.title-course-name { font-family: var(--font-display); font-size: 16px; line-height: 1.25; word-break: keep-all; }
+.title-course-progress { font-size: 12px; opacity: .8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.title .copyright { margin: 0; }
+.title .controls { font-size: 13px; color: #a89f8c; margin: 0; line-height: 1.5; }
+@media (max-width: 760px) {
+  .title { background: linear-gradient(rgba(10,12,11,.7), rgba(10,12,11,.9)); }
+  .title-intro { margin: 0; }
+  .title-courses { flex-wrap: wrap; }
+  .title-course { flex: 1 1 45%; }
+  .title-course-progress { white-space: normal; }
+}
+@media (max-height: 620px) { .title-inner { gap: 8px; } .title-intro { gap: 8px; } .title h1 { font-size: 40px; } .title .lead { font-size: 14px; line-height: 1.5; } .title-actions .btn { min-height: 46px; font-size: 16px; } .title-course { min-height: 50px; padding: 5px 10px; } .title-course-name { font-size: 14px; } .title .controls { display: none; } }
 .confirm { background: var(--ink-2); border: 1px solid var(--gold); border-radius: 4px; padding: 14px; display: grid; gap: 10px; }
 .confirm[hidden] { display: none; }
 .confirm p { margin: 0; }
 .warn { color: var(--gold); margin: 0; }
-.controls { font-size: 15px; color: #c9c1b0; margin: 0; line-height: 1.6; }
 
 /* 편 고르기: 편마다 한지 카드, 넓으면 나란히, 좁으면 위아래 */
 .courses-inner { width: min(900px, 100%); display: grid; gap: 16px; }
@@ -127,20 +128,32 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .course-progress { font-size: 16px; font-weight: 700; }
 .course-note { font-size: 14px; color: #6b6152; }
 
-.map-wrap { width: min(900px, 100%); display: flex; flex-wrap: wrap; gap: 20px; align-items: center; justify-content: center; }
-.map { position: relative; flex: 0 1 300px; width: min(300px, 70vw); max-height: 75vh; aspect-ratio: 3 / 4; }
-.map-side { flex: 1 1 320px; min-width: 0; display: grid; gap: 12px; }
-.chapter-pick { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-.pick { width: 100%; min-height: 52px; display: grid; grid-template-columns: 3em 1fr auto; align-items: center; gap: 8px; text-align: left; padding: 8px 12px; border-radius: 4px; border: 2px solid var(--gold); background: var(--hanji); color: var(--text-ink); font-size: 17px; }
-.pick b { color: var(--dan-red); font-family: var(--font-display); }
-.pick small { font-size: 14px; color: #6b6152; white-space: nowrap; }
-.pick.done { background: #e9dcb8; }
-.pick:disabled { opacity: .5; border-color: #6b6152; cursor: default; }
-.dot { position: absolute; transform: translate(-50%, -50%); width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 14px; font-weight: 700; background: #6b6152; color: var(--hanji); border: 2px solid var(--hanji); }
-.dot.open { background: var(--dan-red); }
-.dot.done { background: var(--gold); color: var(--ink); }
-.map svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.map .land { fill: #3c4a3f; stroke: var(--gold); stroke-width: 1.5; }
+/* 장 고르기(2026-11-09 선생님 시안 E): 1장~6장이 점선 길로 이어진 보드게임 길 */
+.mapscreen { background: rgba(10,12,11,.72); }
+.board-wrap { width: min(1100px, 100%); display: grid; gap: 8px; }
+.board-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.board-head .eyebrow { color: var(--gold); font-size: 13px; letter-spacing: .1em; }
+.board-head h2 { font-size: clamp(24px, 3.4vw, 34px); }
+.board { position: relative; width: 100%; aspect-ratio: 5 / 2; max-height: 60vh; }
+.board-path { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.board-path path { fill: none; stroke: var(--gold); stroke-width: 7; stroke-dasharray: 14 12; stroke-linecap: round; opacity: .75; }
+.board-path.tall { display: none; }
+.stop { position: absolute; left: var(--x); top: var(--y); transform: translate(-50%, -50%); width: 150px; padding: 0; border: none; background: none; color: var(--hanji); text-align: center; display: grid; justify-items: center; gap: 4px; cursor: pointer; }
+.stop i { width: 58px; height: 58px; border-radius: 50%; background: var(--ink-2); border: 4px solid var(--gold); font-style: normal; font-size: 22px; font-weight: 800; display: grid; place-items: center; box-shadow: 0 6px 14px rgba(0,0,0,.5); }
+.stop b { font-size: 14px; line-height: 1.3; word-break: keep-all; text-shadow: 0 2px 4px #000; }
+.stop small { font-size: 11px; color: #ccc; white-space: nowrap; }
+.stop.done i { background: var(--dan-green); border-color: #9fdcc6; }
+.stop.done small { color: var(--gold); letter-spacing: 2px; font-size: 13px; }
+.stop.now i { background: var(--dan-red); border-color: #fff; transform: scale(1.15); }
+.stop.now small { color: #f3d58a; }
+.stop:disabled { opacity: .45; cursor: default; }
+.board-go { justify-self: center; min-width: 220px; min-height: 56px; font-size: 19px; border-radius: 8px; }
+@media (max-aspect-ratio: 1/1) {
+  .board { aspect-ratio: 2 / 3; max-height: 60vh; margin-bottom: 34px; } /* 맨 아래 자리의 글이 시작 단추를 덮지 않게 */
+  .board-path.wide { display: none; } .board-path.tall { display: block; }
+  .stop { left: var(--y); top: var(--x); width: 130px; }
+}
+@media (max-height: 560px) { .stop i { width: 46px; height: 46px; font-size: 18px; } .stop b { font-size: 13px; } .board-go { min-height: 48px; font-size: 17px; } }
 
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; text-align: center; }
 .stats div { border: 1px solid var(--hanji-edge); border-radius: 4px; padding: 8px 4px; display: grid; gap: 2px; }
@@ -291,9 +304,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
   .title .controls { font-size: 12px; line-height: 1.4; }
   .title .eyebrow { font-size: 12px; }
   .title-intro { gap: 8px; }
-  .title-course { min-height: 46px; padding: 3px 12px; grid-template-columns: 6.4em minmax(0, 1fr); row-gap: 0; }
-  .title-course-progress { grid-column: 2; font-size: 12px; }
-  .title-course-name { font-size: 17px; }
+  .title-course { min-height: 46px; padding: 5px 10px; }
+  .title-course-name { font-size: 15px; }
   .title-actions .btn { min-width: 0; flex: 1; min-height: 50px; font-size: 17px; }
   .title-actions .row { width: 100%; flex-wrap: nowrap; }
 }

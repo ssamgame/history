@@ -27,26 +27,33 @@ export function buttonWord(label) {
   return /(이야기하기|대화하기|말걸기|걸기)$/.test(w) || !w ? '대화' : w;
 }
 
-// 첫 화면: 왼쪽은 소개, 오른쪽은 시대 고르기(마친 장·별), 맨 아래는 처음부터/이어하기.
-// 하던 시대가 있어도 다른 시대를 골라 바로 넘어갈 수 있다. { action: 'new'|'continue', course }로 끝난다.
-export function showTitle(root, { savedName, hasProgress, storageOk, courses = [], save = null, course = null }) {
+// 첫 화면(2026-11-09 선생님 시안 C): 뒤에는 고른 시대의 3D 장면(main.js가 띄움), 왼쪽 유리 판에 제목·소개·이름 칸·시작 단추, 아래에 시대 탭 다섯.
+// 탭을 누르면 고른 시대만 바뀌고(onCourse로 배경 장면을 바꾼다), 시작 단추로 들어간다. { action: 'new'|'continue', course, name? }로 끝난다(new일 때 name).
+export function showTitle(root, { savedName, hasProgress, storageOk, courses = [], save = null, course = null, onCourse = null }) {
   return new Promise(resolve => {
     let picked = (courses.find(c => c.id === course) || courses[0] || { id: 'goryeo' }).id;
-    const done = action => { el.remove(); resolve({ action, course: picked }); };
+    const eraOf = id => courses.find(c => c.id === id)?.era || '고려';
+    const input = h('input', { id: 'student-name', class: 'title-name', type: 'text', placeholder: '이름 또는 번호 (비워도 돼요)', autocomplete: 'off', maxlength: '30' });
+    input.value = savedName || '';
+    const done = action => { el.remove(); resolve(action === 'new' ? { action, course: picked, name: input.value.trim() } : { action, course: picked }); };
     const confirm = h('div', { class: 'confirm', hidden: true },
       h('p', {}, `${savedName || '앞 친구'}의 기록이 지워져요. 지울까요?`),
       h('div', { class: 'row' },
         h('button', { class: 'btn danger', type: 'button', onclick: () => done('new') }, '지우기'),
         h('button', { class: 'btn', type: 'button', onclick: () => { confirm.hidden = true; } }, '취소')));
+    const startBtn = h('button', { class: `btn ${hasProgress ? '' : 'primary'} title-start`, type: 'button', onclick: () => (hasProgress ? (confirm.hidden = false) : done('new')) }, '');
+    const label = () => { startBtn.textContent = hasProgress ? '처음부터' : `${eraOf(picked)}편 처음부터 시작 ▸`; };
     const cards = courses.map(c => {
       const results = save ? c.chapters.map(ch => save.chapterResult(ch.id)).filter(Boolean) : [];
       const stars = results.reduce((a, r) => a + (r.stars || 0), 0);
       return h('button', { class: 'title-course', type: 'button', 'data-course': c.id, 'aria-pressed': String(c.id === picked),
-        onclick: () => { picked = c.id; cards.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.course === picked))); done(hasProgress ? 'continue' : 'new'); } }, // 시대를 누르면 바로 그 편 장 선택으로(2026-11-05 플레이 점검: 선택 표시만 되어 헷갈렸다)
+        onclick: () => { picked = c.id; cards.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.course === picked))); label(); onCourse?.(c.id); } },
         h('span', { class: 'title-course-era' }, `${c.era}편`),
         h('b', { class: 'title-course-name' }, c.title),
         h('span', { class: 'title-course-progress' }, results.length ? `마친 장 ${results.length}/${c.chapters.length} · ★${stars}` : '아직 시작 전'));
     });
+    label();
+    input.addEventListener('keydown', e => { if (e.key === 'Enter' && !hasProgress) done('new'); });
     const el = screen(root, 'title',
       h('div', { class: 'title-inner' },
         h('div', { class: 'title-intro' },
@@ -54,14 +61,15 @@ export function showTitle(root, { savedName, hasProgress, storageOk, courses = [
           h('h1', {}, '역사 속으로 ', h('span', {}, '걸어가기')),
           h('p', { class: 'lead' }, '시대를 골라 그때 사람이 되어 보세요. 직접 걷고, 이야기를 듣고, 역사의 현장을 겪어 봐요.'),
           !storageOk && h('p', { class: 'warn' }, '이 기기에서는 저장되지 않아요. 끝까지 한 번에 해 주세요.'),
+          h('div', { class: 'title-actions' },
+            h('label', { class: 'title-name-row', for: 'student-name' }, h('span', {}, '이름'), input),
+            h('div', { class: 'row' },
+              hasProgress && h('button', { class: 'btn primary title-start', type: 'button', onclick: () => done('continue') }, `이어하기 (${savedName || '저장된 기록'})`),
+              startBtn),
+            confirm),
           h('p', { class: 'controls' }, '걷기: 방향키·WASD 또는 화면 왼쪽을 손가락으로 끌기 · 말 걸기: 가까이 가서 스페이스·E 또는 「대화」 단추')),
-        cards.length > 0 && h('div', { class: 'title-courses' }, h('div', { class: 'title-courses-head' }, '시대 고르기'), cards),
-        h('div', { class: 'title-actions' },
-          h('div', { class: 'row' },
-            h('button', { class: `btn ${hasProgress ? '' : 'primary'}`, type: 'button', onclick: () => (hasProgress ? (confirm.hidden = false) : done('new')) }, '처음부터'),
-            hasProgress && h('button', { class: 'btn primary', type: 'button', onclick: () => done('continue') }, `이어하기 (${savedName || '저장된 기록'})`)),
-          confirm,
-          h('p', { class: 'copyright' }, '© 2026 Jang ssam. All rights reserved.'))));
+        cards.length > 0 && h('div', { class: 'title-courses' }, cards),
+        h('p', { class: 'copyright' }, '© 2026 Jang ssam. All rights reserved.')));
   });
 }
 
@@ -102,31 +110,44 @@ export function showCourses(root, courses, save) {
   });
 }
 
-// heading: 지도 위 작은 줄(편 이름). onCourses가 있으면 '다른 시대' 버튼이 생기고 'courses'로 끝난다.
+// 장 고르기(2026-11-09 선생님 시안 E): 1장부터 6장까지 점선 길로 이어진 보드게임 길. 마친 장은 초록, 지금 할 장은 빨강(크게), 아직 못 가는 장은 흐리게.
+// heading: 위 작은 줄(편 이름). onCourses가 있으면 '다른 시대' 버튼이 생기고 'courses'로 끝난다.
+const STOPS = [[9, 72], [26, 30], [42, 66], [58, 28], [75, 64], [91, 30]]; // 길 위 여섯 자리(%)
+// 자리들을 지나는 구불구불한 길(가로 화면은 위아래로, 세로 화면(tall)은 좌우로 휜다)
+const pathD = (pts, tall = false) => pts.map(([x, y], i) => {
+  if (!i) return `M ${x} ${y}`;
+  const [px, py] = pts[i - 1], out = i % 2 ? -14 : 14;
+  return tall ? ` Q ${(out < 0 ? Math.min(px, x) : Math.max(px, x)) + out} ${(py + y) / 2} ${x} ${y}` : ` Q ${(px + x) / 2} ${(out < 0 ? Math.min(py, y) : Math.max(py, y)) + out} ${x} ${y}`;
+}).join('');
 export function showMap(root, chapters, save, { onSessionCard, onCourses, heading } = {}) {
   return new Promise(resolve => {
-    const svg = `<svg viewBox="0 0 300 400" aria-hidden="true"><polygon points="${MAP_OUTLINE}" class="land"/><ellipse cx="120" cy="388" rx="16" ry="8" class="land"/></svg>`;
-    const map = h('div', { class: 'map' });
-    map.innerHTML = svg;
-    const list = h('ol', { class: 'chapter-pick' });
-    for (const c of chapters) {
+    const board = h('div', { class: 'board' });
+    const wide = STOPS, tall = STOPS.map(([x, y]) => [y, x]); // 세로 화면에서는 위에서 아래로
+    board.innerHTML = `<svg class="board-path wide" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="${pathD(wide)}" vector-effect="non-scaling-stroke"/></svg>` +
+      `<svg class="board-path tall" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="${pathD(tall, true)}" vector-effect="non-scaling-stroke"/></svg>`;
+    let next = null;
+    chapters.forEach((c, i) => {
       const r = save.chapterResult(c.id);
-      const open = isUnlocked(c, save);
-      map.appendChild(h('span', { class: `dot ${open ? 'open' : ''} ${r ? 'done' : ''}`, style: `left:${c.mapXY[0]}%;top:${c.mapXY[1]}%` }, String(c.no)));
-      list.appendChild(h('li', {}, h('button', {
-        class: `pick ${r ? 'done' : ''}`, type: 'button', 'data-chapter': c.id, disabled: !open,
+      const open = isUnlocked(c, save), now = open && !r && !next && c.load;
+      if (now) next = c;
+      const [x, y] = STOPS[i] || [50, 50];
+      board.appendChild(h('button', {
+        class: `pick stop ${r ? 'done' : ''} ${now ? 'now' : ''}`, type: 'button', 'data-chapter': c.id, disabled: !open, style: `--x:${x}%;--y:${y}%`,
         onclick: () => { el.remove(); resolve(c.id); },
-      }, h('b', {}, `${c.no}장`), h('span', { class: 'pick-title' }, c.title),
-      h('small', {}, r ? starText(r.stars) : c.load ? `${c.years} · ${c.place}` : '준비 중'))));
-    }
+      }, h('i', {}, String(c.no)), h('b', {}, c.title),
+      h('small', {}, r ? starText(r.stars) : c.load ? (now ? `${c.years} · ▶ 지금 여기` : c.years) : '준비 중')));
+    });
     // 이 편의 장을 하나라도 마쳤으면 결과 카드를 다시 볼 수 있다 (한 편의 1~6장이 한 장의 결과 카드)
     const sessionButtons = chapters.some(c => save.chapterResult(c.id))
       ? [h('button', { class: 'btn', type: 'button', onclick: () => onSessionCard && onSessionCard() }, '결과 카드')] : [];
     const courseButton = onCourses ? h('button', { class: 'btn', type: 'button', onclick: () => { el.remove(); resolve('courses'); } }, '다른 시대') : null;
     const el = screen(root, 'mapscreen',
-      h('div', { class: 'map-wrap' },
-        map,
-        h('div', { class: 'map-side' }, heading && h('div', { class: 'eyebrow' }, heading), h('h2', {}, '어디로 갈까요?'), list, h('div', { class: 'row' }, sessionButtons, courseButton))));
+      h('div', { class: 'board-wrap' },
+        h('div', { class: 'board-head' },
+          h('div', {}, heading && h('div', { class: 'eyebrow' }, heading), h('h2', {}, '어디로 갈까요?')),
+          h('div', { class: 'row' }, sessionButtons, courseButton)),
+        board,
+        next && h('button', { class: 'btn primary board-go', type: 'button', onclick: () => { el.remove(); resolve(next.id); } }, `${next.no}장 시작하기 ▸`)));
   });
 }
 

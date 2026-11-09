@@ -8,7 +8,7 @@ import { createDialogue } from './dialogue.js';
 import { createQualityController, guessInitialQuality } from './quality.js';
 import { runChapter } from './flow.js';
 import { createMusic } from './music.js';
-import { showTitle, askName, showCourses, showMap, showIntroCard, showChapterResult, showSessionCard, showMenu, showMessage, createHud } from './screens.js';
+import { showTitle, showCourses, showMap, showIntroCard, showChapterResult, showSessionCard, showMenu, showMessage, createHud } from './screens.js';
 import { perfEnabled, createPerfStats, createPerfPanel } from './perf.js';
 import { ALL_CHAPTERS, COURSES, courseById, courseOfChapter, isSessionDone } from '../chapters/index.js';
 import { LOOKS } from '../content/characters.js';
@@ -110,7 +110,7 @@ function boot() {
 
   async function playChapter(meta, stage) {
     const mod = (await meta.load()).default;
-    world.clearLevel();
+    clearBackdrop(); world.clearLevel();
     world.player.visible = true;
     quality.restart();
     world.camMode = 'follow';
@@ -167,6 +167,27 @@ function boot() {
     return COURSES[ci + 1] ? { course: COURSES[ci + 1] } : null;
   }
 
+  // 첫 화면·장 고르기 뒤에 보이는 3D 배경(2026-11-09 선생님 시안 C): 고른 시대 1장의 마을을 짓고 카메라가 천천히 돈다
+  let backdrop = null, backdropSeq = 0;
+  async function showBackdrop(courseId) {
+    const course = courseById(courseId), meta = course?.chapters.find(c => c.load);
+    if (!meta || backdrop?.course === courseId) return;
+    const seq = ++backdropSeq;
+    const mod = (await meta.load()).default;
+    if (seq !== backdropSeq || inChapter) return;
+    clearBackdrop(); world.clearLevel();
+    world.setMood(mod.mood); world.player.visible = false;
+    try { mod.buildScene(world, ctx); } catch (e) { console.warn('배경 장면', e); return; }
+    world.applyDecor?.();
+    const b = world.bounds || { x0: -20, x1: 20, z0: -20, z1: 20 }, cx = (b.x0 + b.x1) / 2, cz = (b.z0 + b.z1) / 2;
+    const r = Math.max(16, Math.min(30, Math.max(b.x1 - b.x0, b.z1 - b.z0) * 0.6));
+    let a = 0.7;
+    const place = () => world.setFixedCamera([cx + Math.sin(a) * r, r * 0.42, cz + Math.cos(a) * r], [cx, 1.5, cz]);
+    place();
+    backdrop = { course: courseId, off: world.onUpdate(dt => { a += dt * 0.035; place(); }) };
+  }
+  function clearBackdrop() { backdropSeq += 1; if (backdrop) { backdrop.off(); backdrop = null; } }
+
   // 편 고르기 → 그 편의 지도 → 장. 고른 편은 저장해 두어 다음에 열면 그 편 지도부터 보인다.
   const pickCourse = async () => { save.setCourse(await showCourses(ui, COURSES, save)); };
 
@@ -187,6 +208,7 @@ function boot() {
       world.player.visible = false; // 시대 고르기·장 고르기 지도 뒤에 학생 병사가 비쳐 보이지 않게(장을 시작하면 다시 보인다)
       if (!save.data.course) await pickCourse();
       const course = courseById(save.data.course);
+      showBackdrop(course.id); // 장 고르기 뒤에도 그 시대 마을이 돈다
       music.play(`map:${course.id}`); // 시대 지도에서는 그 시대의 잔잔한 음악
       const id = await showMap(ui, course.chapters, save, {
         heading: `${course.era}편 · ${course.title}`, onCourses: true,
@@ -229,10 +251,11 @@ function boot() {
     const hasProgress = !!(save.data.name || Object.keys(save.data.chapters).length || save.data.current);
     const cur = save.data.current && courseOfChapter(save.data.current.id).id; // 하다 만 장이 있는 시대
     world.player.visible = false; // 첫 화면 글 뒤에 사람이 겹쳐 보이지 않게
-    const { action, course } = await showTitle(ui, { savedName: save.data.name, hasProgress, storageOk: storage.available, courses: COURSES, save, course: cur || save.data.course });
+    showBackdrop(cur || save.data.course || COURSES[0].id); // 첫 화면 뒤 3D 장면(기다리지 않는다)
+    const { action, course, name } = await showTitle(ui, { savedName: save.data.name, hasProgress, storageOk: storage.available, courses: COURSES, save, course: cur || save.data.course, onCourse: showBackdrop });
     if (action === 'new') {
       save.reset();
-      save.setName(await askName(ui, ''));
+      save.setName(name || ''); // 이름 칸은 첫 화면 안에(2026-11-09 선생님; 캐릭터 만들기 화면은 따로 만들 예정)
     } else if (cur && cur !== course) save.abandonCurrent(); // 다른 시대로 넘어가면 하다 만 장만 내려놓는다(마친 장과 별은 그대로)
     save.setCourse(course);
     await mapLoop();

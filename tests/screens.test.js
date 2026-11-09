@@ -54,7 +54,7 @@ test('title: shows saved name and confirms reset', async () => {
   btn(el, '처음부터').click();
   btn(el, '지우기').click();
   await sleep(10);
-  eq(result, { action: 'new', course: 'goryeo' });
+  eq(result, { action: 'new', course: 'goryeo', name: '5-3 12번' }); // 이름 칸은 첫 화면 안(2026-11-09): 지우기 전 이름이 채워져 있다
   el.remove();
 });
 
@@ -71,7 +71,7 @@ test('title: without progress, start needs no confirmation', async () => {
   const p = showTitle(el, { savedName: '', hasProgress: false, storageOk: true });
   ok(!btn(el, '이어하기'), 'no continue button');
   btn(el, '처음부터').click();
-  eq(await p, { action: 'new', course: 'goryeo' });
+  eq(await p, { action: 'new', course: 'goryeo', name: '' });
   el.remove();
 });
 
@@ -232,21 +232,26 @@ test('title: 오른쪽에 다섯 시대가 진행과 함께 있고, 고른 시�
   eq(cards.map(c => c.dataset.course), ['goryeo', 'joseon', 'modern', 'colonial', 'present']);
   ok(cards[0].textContent.includes('2/6') && cards[0].textContent.includes('★5'), cards[0].textContent);
   eq(cards[0].getAttribute('aria-pressed'), 'true', '하던 시대가 처음부터 골라져 있다');
-  cards[1].click(); // 시대를 누르면 바로 그 편으로(이어하기)
+  cards[1].click(); // 시대 탭은 고르기만(배경 장면이 바뀐다, 2026-11-09), 이어하기로 들어간다
+  eq(cards[1].getAttribute('aria-pressed'), 'true');
+  btn(el, '이어하기').click();
   eq(await p, { action: 'continue', course: 'joseon' });
   el.remove();
 });
 
-test('title: 기록이 없으면 시대를 누르자마자 그 시대로 처음부터 시작한다', async () => {
+test('title: 기록이 없으면 시대 탭을 고르고 이름을 적은 뒤 처음부터 시작한다', async () => {
   const { COURSES } = await import('../chapters/index.js');
   const el = root();
   const p = showTitle(el, { savedName: '', hasProgress: false, storageOk: true, courses: COURSES, save: titleSave({}) });
   el.querySelector('[data-course="present"]').click();
-  eq(await p, { action: 'new', course: 'present' });
+  ok(btn(el, '처음부터').textContent.includes('현대편'), '시작 단추에 고른 시대 이름');
+  el.querySelector('#student-name').value = '김현대';
+  btn(el, '처음부터').click();
+  eq(await p, { action: 'new', course: 'present', name: '김현대' });
   el.remove();
 });
 
-test('title: 태블릿 가로와 휴대폰 세로 화면에서 소개·시대·버튼이 다 보이고, 맨 밑에 저작권 표시', async () => {
+test('title: 태블릿 가로와 휴대폰 세로 화면에서 소개 판·시대 탭·버튼이 다 보이고, 맨 밑에 저작권 표시', async () => {
   for (const [w, h] of [[1000, 530], [1280, 800], [1366, 650], [390, 844], [360, 740]]) {
     const frame = document.createElement('iframe');
     frame.src = './fit.html?kind=title'; frame.style.cssText = `width:${w}px;height:${h}px;position:fixed;left:-3000px;top:0;border:0`;
@@ -257,12 +262,11 @@ test('title: 태블릿 가로와 휴대폰 세로 화면에서 소개·시대·�
       for (let i = 0; i < 100 && !d.querySelector('.title-course'); i++) await sleep(20);
       await sleep(80);
       const intro = d.querySelector('.title-intro').getBoundingClientRect(), list = d.querySelector('.title-courses').getBoundingClientRect(), acts = d.querySelector('.title-actions').getBoundingClientRect();
-      if (w > h) ok(intro.right <= list.left + 1, `${w}x${h}: 소개가 시대 목록 왼쪽`);
-      else ok(intro.bottom <= list.top + 1, `${w}x${h}: 세로 화면에서는 소개가 시대 목록 위`);
-      ok(acts.top >= Math.max(intro.bottom, list.bottom) - 1, `${w}x${h}: 버튼이 맨 아래`);
+      ok(intro.bottom <= list.top + 1, `${w}x${h}: 소개 판이 시대 탭 위에`); // 2026-11-09 시안 C: 왼쪽 판 + 아래 탭
+      ok(acts.top >= intro.top - 1 && acts.bottom <= intro.bottom + 1, `${w}x${h}: 이름 칸·시작 단추는 소개 판 안`);
       const cr = d.querySelector('.copyright');
       ok(cr && cr.textContent.includes('©') && cr.textContent.includes('Jang ssam'), `${w}x${h}: 저작권 표시`);
-      ok(cr && cr.getBoundingClientRect().top >= acts.top - 1 && cr.getBoundingClientRect().bottom <= h, `${w}x${h}: 저작권 표시가 맨 밑, 화면 안`);
+      ok(cr && cr.getBoundingClientRect().top >= list.bottom - 1 && cr.getBoundingClientRect().bottom <= h + 1, `${w}x${h}: 저작권 표시가 맨 밑, 화면 안`);
       for (const b of d.querySelectorAll('button')) {
         if (b.closest('[hidden]')) continue;
         const r = b.getBoundingClientRect();
