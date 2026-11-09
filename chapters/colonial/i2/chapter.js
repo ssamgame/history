@@ -78,9 +78,9 @@ export async function declarationScene(ctx) {
   const reader = person(g, 'student', 0, -5.7, 0); reader.position.y = 0.6; // 팔각정 위(앞 기둥 둘 사이 안쪽: 기둥에 겹치지 않게)
   const paper = new THREE.Mesh(new THREE.BoxGeometry(0.64, 0.42, 0.015), new THREE.MeshLambertMaterial({ color: 0xf2ecd8 })); paper.rotation.x = -0.3; setCarry(reader, paper, 'read'); hook.reader = true; // 선언서를 두 손으로 펼쳐 들고 읽는다(2026-11-04 선생님: 몸에 붙어 있던 것)
   const looks = ['student', 'schoolgirl', 'commoner', 'woman', 'gentleman', 'peasant', 'student', 'citizen', 'schoolgirl', 'worker', 'commoner', 'student'];
-  const crowd = looks.map((look, i) => { const r = i < 6 ? 0 : 1, c = i % 6; const p = person(g, look, -4.2 + c * 1.7 + r * 0.8, 0.4 + r * 1.5); face(p, 0, -5); return p; }); // 팔각정 앞을 조금 띄워 마주 보는 카메라 자리를 둔다(D-43)
+  const crowd = looks.map((look, i) => { const r = i < 6 ? 0 : 1, c = i % 6; const p = person(g, look, -4.2 + c * 1.7 + r * 0.8, 2.0 + r * 1.5); face(p, 0, -5); return p; }); // 앞줄을 팔각정에서 5m 남짓 띄운다(가까우면 만세 카메라에 얼굴이 화면을 채운다) // 팔각정 앞을 조금 띄워 마주 보는 카메라 자리를 둔다(D-43)
   const flags = []; // 낭독이 끝나면 품속 태극기를 꺼내 든다
-  placePlayer(world, [5.2, 3.2], Math.PI * 0.95);
+  placePlayer(world, [6.4, 4.8], Math.PI * 0.95);
   try {
     world.setFixedCamera([6.6, 3.4, -4.6], [-1, 1.4, -1.2]); // 팔각정 옆 앞쪽에서 읽는 학생과 모인 사람들의 얼굴을 함께(D-43)
     await ctx.fade?.(false);

@@ -175,7 +175,7 @@ const ACT = {
     const { world } = ctx;
     const T = a.at(...ERAS.truck);
     world.player.rotation.y = Math.PI / 2;
-    world.setFixedCamera([T.x - 1.5, 3.0, T.z + 8.5], [T.x - 4.5, 1.3, T.z + 2]); // 트럭 옆 앞쪽에서 끌려오는 사람들의 얼굴이 보이게(뒤에서 보면 등만 보였다)
+    world.setFixedCamera([T.x + 3, 3.2, T.z + 9], [T.x - 3.5, 1.3, T.z + 3.5]); // 트럭 옆 앞쪽에서 끌려오는 사람들의 얼굴이 보이게(뒤에서 보면 등만 보였다)
     set.forced.forEach(p => { p.visible = true; });
     const from = set.forced.map(p => p.position.clone());
     hook.forced = set.forced.length - 2; // 앞뒤의 헌병 둘은 빼고 센다

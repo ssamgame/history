@@ -126,7 +126,8 @@ function poemThings(g) {
 async function readPoem(ctx, a, st, hook) {
   const { world, dialogue } = ctx;
   const at = { yun: CULTURE.desk, yuksa: CULTURE.stone, manhae: CULTURE.scroll }[st.id], O = a.at(...at), pp = world.player.position;
-  world.setFixedCamera([pp.x + (pp.x - O.x) * 0.6, 2.3, pp.z + 2.4], [O.x, 1.3, O.z]);
+  let dx = pp.x - O.x, dz = pp.z - O.z; const d = Math.hypot(dx, dz) || 1; dx /= d; dz /= d;
+  world.setFixedCamera([pp.x + dx * 1.4 + dz * 1.8, 2.3, pp.z + dz * 1.4 - dx * 1.8], [O.x, 1.3, O.z]); // 학생 뒤가 아니라 옆에서(바로 뒤면 머리가 원고·두루마리를 가린다)
   for (const l of st.before || []) await dialogue.say(l);
   dialogue.close();
   await showDocument(ctx, { title: `${st.poet} 「${st.title}」`, heading: `「${st.title}」${st.year ? ` (${st.year})` : ''}`, items: st.lines.map(text => ({ text })), src: st.src, scroll: true, poem: true, button: '다 읽었어요' });
