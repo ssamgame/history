@@ -91,7 +91,7 @@ export async function declarationScene(ctx) {
     await dialogue.say(L[2]);
     dialogue.close();
     crowd.forEach(p => flags.push(holdFlag(p))); hook.flags = flags.length; hook.held = crowd.every(p => p.userData.carry?.style === 'flag'); // 모두 품속 태극기를 꺼내 가슴 앞에 든다
-    world.setFixedCamera([1.2, 2.8, -2.6], [-0.2, 1.4, 2.4]); // 팔각정 계단 앞에서 마주 보며 태극기를 든 사람들의 얼굴(D-43)
+    world.setFixedCamera([1.2, 3.0, -3.4], [-0.2, 1.4, 2.4]); // 팔각정 계단 앞에서(앞줄과 3.8m: 더 가까우면 얼굴이 화면을 채운다) 마주 보며 태극기를 든 사람들의 얼굴(D-43)
     for (let n = 0; n < 3; n++) { // 대한 독립 만세! 세 번
       ctx.audio?.play?.('correct');
       await wait(world, 0.9, k => { crowd.forEach((p, i) => cheerPose(p, Math.min(1, Math.max(0, k * 1.15 - (i % 4) * 0.04)))); hook.raisedY = Math.max(hook.raisedY, ...flags.map(f => f.getWorldPosition(new THREE.Vector3()).y)); }); // 깃발(손에 쥔 깃대) 높이

@@ -180,7 +180,7 @@ const ACT = {
       const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.03, 10), mat(0xc9a441, 'stone')); coin.position.set(bx + 0.1 - i * 0.2, 0.88, bz - 0.2); g.add(coin);
       ctx.audio?.play?.('tap'); hook.coins += 1;
       await wait(world, 0.5);
-      const p0 = p.position.clone(), away = new THREE.Vector3(bx + 4.5 + i * 0.9, 0, bz - 3.6 - i * 0.6);
+      const p0 = p.position.clone(), away = new THREE.Vector3(bx - 3 - i * 0.9, 0, bz - 6 - i * 0.6); // 북서쪽으로 비킨다(동쪽은 카메라 바로 밑이라 머리가 화면을 가렸다)
       face(p, away.x, away.z);
       const rest = set.donors.slice(i + 1), r0 = rest.map(q => q.position.clone());
       await wait(world, 0.9, k => { p.position.lerpVectors(p0, away, ease(k)); rest.forEach((q, j) => q.position.lerpVectors(r0[j], slot(j), ease(k))); });
