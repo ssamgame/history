@@ -70,7 +70,7 @@ export default {
     howto: { title: '전봉준을 따라 걷기', steps: ['전봉준 뒤를 따라 걸어요. 너무 멀어지면 전봉준이 멈춰 기다려요.', '전봉준이 멈춘 곳의 빛나는 원에 서면 그곳에서 일어난 일을 봐요.'] },
     stops: [
       { label: '황토현', talk: [
-        { who: 'jeonbongjun', text: '관군이 몰려오오! 물러서지 마시오!' },
+        { who: 'jeonbongjun', text: '저 언덕 위에 관군이 진을 쳤소! 물러서지 마시오!' },
         { who: 'narr', text: '다시 일어난 농민군은 황토현에서 관군을 크게 물리쳤어요.', src: ['S64'] },
       ] },
       { label: '전주성', talk: [{ who: 'narr', text: '농민군은 기세를 몰아 전라도의 중심인 전주성을 차지했어요.', src: ['S64'] }] },
