@@ -49,7 +49,7 @@ export function press(ctx, label, at) {
   return new Promise(resolve => {
     hud.setPrompt(at, label); hud.setTalkEnabled(true); ctx.testHooks.pressing = label; // 테스트 봇이 누를 때를 안다(학생 화면에는 영향 없음)
     const off = ctx.onAction(() => {
-      if (ctx.dialogue?.isOpen?.()) return;
+      if (ctx.dialogue?.isBlocking?.()) return;
       off(); hud.setPrompt(null); hud.setTalkEnabled(false); ctx.testHooks.pressing = null; resolve();
     });
   });
@@ -62,7 +62,7 @@ export function holdPress(ctx, label, at, sec, onProgress) {
     let k = 0, total = 0;
     hud.setPrompt(at, label); hud.setTalkEnabled(true); ctx.testHooks.holding = label;
     const off = world.onUpdate(dt => {
-      const on = ctx.input?.actionHeld?.() && !ctx.dialogue?.isOpen?.();
+      const on = ctx.input?.actionHeld?.() && !ctx.dialogue?.isBlocking?.();
       k = Math.max(0, Math.min(1, k + (on ? dt / sec : -dt / (sec * 2))));
       if (on) total += dt;
       hud.setCounter(`${label} ${Math.round(k * 100)}%`);

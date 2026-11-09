@@ -37,7 +37,7 @@ export function holdPress(ctx, { label, sec, onProgress, decay = 0.35, abort = n
   ctx.testHooks.hold = { el: btn, sec };
   return new Promise(resolve => {
     const off = world.onUpdate(dt => {
-      if (ctx.dialogue?.isOpen?.()) return;
+      if (ctx.dialogue?.isBlocking?.()) return;
       const on = holding();
       p = on ? Math.min(1, p + dt / sec) : Math.max(0, p - (dt / sec) * decay);
       btn.classList.toggle('held', on);
@@ -103,14 +103,14 @@ export function dragStone(ctx, { get, set, planeZ, yOf, hOf, gaps, track, topH, 
   };
   const finish = i => { if (finishing) return; finishing = true; cleanup(); resolveFn(i); };
   const onDown = e => {
-    if (ctx.dialogue?.isOpen?.() || finishing) return;
+    if (ctx.dialogue?.isBlocking?.() || finishing) return;
     const p = toPlane(e.clientX, e.clientY); if (!p) return;
     drag = { id: e.pointerId, p0: p, s0: get() };
     try { layer.setPointerCapture(e.pointerId); } catch { /* 합성 이벤트 */ }
     layer.style.cursor = 'grabbing';
   };
   const onMove = e => {
-    if (!drag || e.pointerId !== drag.id || ctx.dialogue?.isOpen?.()) return;
+    if (!drag || e.pointerId !== drag.id || ctx.dialogue?.isBlocking?.()) return;
     const p = toPlane(e.clientX, e.clientY); if (!p) return;
     moveTo(drag.s0.x + (p.x - drag.p0.x), drag.s0.h + (hOf(p.y) - hOf(drag.p0.y)));
   };
@@ -126,7 +126,7 @@ export function dragStone(ctx, { get, set, planeZ, yOf, hOf, gaps, track, topH, 
   layer.addEventListener('pointercancel', onUp);
   const off = world.onUpdate(dt => {
     if (!finishing && abort?.()) { finish(-1); return; }
-    if (finishing || ctx.dialogue?.isOpen?.() || !keys.size) return;
+    if (finishing || ctx.dialogue?.isBlocking?.() || !keys.size) return;
     const s = get();
     const dx = ((keys.has('r') ? 1 : 0) - (keys.has('l') ? 1 : 0)) * 5 * dt, dh = ((keys.has('u') ? 1 : 0) - (keys.has('d') ? 1 : 0)) * 0.45 * dt;
     if (dx || dh) moveTo(s.x + dx, s.h + dh);

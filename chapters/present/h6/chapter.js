@@ -175,7 +175,7 @@ export async function factoryPlay(ctx, scene = null, easy = false) {
   const say = sayer(ctx);
   const p0 = a.at(...A.from); placePlayer(world, [p0.x, p0.z], Math.PI);
   let left = truckSec, late = false;
-  const clock = world.onUpdate(dt => { if (late || dialogue.isOpen()) return; left -= dt; hud.setTimer(left); if (left <= 0) late = true; });
+  const clock = world.onUpdate(dt => { if (late || dialogue.isBlocking()) return; left -= dt; hud.setTimer(left); if (left <= 0) late = true; });
   hook.late = () => late;
   try {
     await ctx.fade?.(false);

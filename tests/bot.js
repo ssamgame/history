@@ -31,7 +31,7 @@ export function touchSetup(speakers) {
   const input = createInput({ target: window, joyZone: hud.joyZone, actionButton: hud.talkBtn });
   const dialogue = createDialogue(ui, speakers, { typeMs: 1 });
   const actions = new Set();
-  input.onAction(() => { if (dialogue.isOpen()) { if (!dialogue.isChoosing()) dialogue.advance(); return; } actions.forEach(f => f()); });
+  input.onAction(() => { if (dialogue.isBlocking()) { if (!dialogue.isChoosing()) dialogue.advance(); return; } actions.forEach(f => f()); }); // 안내 칩은 E를 가로채지 않는다(main.js와 같게)
   const ctx = {
     world: w, input, hud, dialogue, ui, testHooks: {}, audio: { play() {} },
     setGoal: t => hud.setGoal(t), wait: ms => sleep(Math.min(ms, 30)), fade: async () => {},
@@ -164,7 +164,7 @@ export function touchBot(s, { answers, wrongFirst = new Set(), noTaps = () => fa
         }
       } else release();
     }
-    w.step(1 / 20, dialogue.isOpen() ? { x: 0, z: 0 } : input.move());
+    w.step(1 / 20, dialogue.isBlocking() ? { x: 0, z: 0 } : input.move());
   };
   const timer = setInterval(tick, 15);
   return { stop() { stopped = true; clearInterval(timer); release(); if (covered.length) throw new Error(`buttons a finger could not reach: ${covered.join('; ')}`); }, get taps() { return taps; }, covered };

@@ -309,7 +309,7 @@ async function escortOfficials(ctx, easy) {
       resolve(missed ? 'missed' : true);
     };
     const unbind = ctx.onAction(async () => {
-      if (cur || !near || dialogue.isOpen()) return;
+      if (cur || !near || dialogue.isBlocking()) return;
       const o = near; near = null;
       ctx.input.enabled = false;
       await dialogue.say({ who: 'official', text: o.card.text }); await dialogue.say(S.follow); dialogue.close();
@@ -337,7 +337,7 @@ async function escortOfficials(ctx, easy) {
       if (!cur) { // 말을 걸 신하 찾기
         near = null; let bd = 2.6; // 걷는 신하에게 말 걸기 쉽게(D-67: 2.2 → 2.6)
         for (const o of officials) { if (o.done) continue; const m = o.n.mesh.position, d = Math.hypot(p.x - m.x, p.z - m.z); if (d < bd) { bd = d; near = o; } }
-        hud.setTalkEnabled?.(!!near && !dialogue.isOpen()); hud.setPrompt?.(near ? near.n.mesh.position : null);
+        hud.setTalkEnabled?.(!!near && !dialogue.isBlocking()); hud.setPrompt?.(near ? near.n.mesh.position : null);
         return;
       }
       hud.setTalkEnabled?.(false); hud.setPrompt?.(null);
@@ -354,7 +354,7 @@ async function escortOfficials(ctx, easy) {
           o.n.mesh.visible = true;
           show(); return; // 모두 데려갔으면 마지막 신하가 자리에 선 뒤 끝난다(아래)
         }
-        if (told === bin || dialogue.isOpen()) continue;
+        if (told === bin || dialogue.isBlocking()) continue;
         told = bin; missed = true; audio.play('wrong'); show();
         dialogue.say(S.wrong).then(() => dialogue.close());
       }

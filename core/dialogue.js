@@ -24,7 +24,8 @@ export function createDialogue(root, speakers, { typeMs = 26, reduceMotion = fal
     metaEl.hidden = !count && !year;
   }
 
-  let advanceFn = null, pickFn = null, timer = null, openedAt = 0, autoT = null; // autoT: 안내 칩이 읽을 시간 뒤에 저절로 넘어가는 시계
+  let advanceFn = null, pickFn = null, timer = null, openedAt = 0, autoT = null, chipUntil = 0; // autoT: 안내 칩이 저절로 사라지는 시계, chipUntil: 칩이 적어도 이때까지는 보인 뒤에야 다른 대사가 덮는다
+  const chipWait = () => { const d = chipUntil - performance.now(); return d > 0 ? new Promise(r => setTimeout(r, d)) : null; };
   const GUIDE_MS = n => Math.min(6000, 1400 + 45 * n); // 안내를 읽을 시간(글자 수에 따라 1.4~6초)
 
   // 실제 기록에 남은 말(대사에 quote: true)에만 '기록에 남은 말' 표시를 단다. 보통 대사에는 아무 표시도 없다
@@ -51,7 +52,30 @@ export function createDialogue(root, speakers, { typeMs = 26, reduceMotion = fal
     el.hidden = false;
   }
 
+  // 안내(guide)는 기다리지 않는다(2026-11-09 선생님: 안내가 나올 때 캐릭터가 멈추지 않게): 칩을 띄우고 바로 끝나며, 칩은 읽을 시간 뒤 저절로 사라진다.
+  // 그 사이 사람 말·해설·고르기가 오면 칩이 적어도 1.2~2.5초는 보인 뒤에 덮는다
   function say(line) {
+    const s = all[line.who] || NARR;
+    if (line.who === 'guide' && !s.look && !line.mood) { sayChip(line); return Promise.resolve(); }
+    const w = chipWait();
+    return w ? w.then(() => sayNow(line)) : sayNow(line);
+  }
+  function sayChip(line) {
+    show(line.who, line);
+    el.classList.remove('dlg-right', 'dlg-wrong');
+    if (onSay) onSay(line);
+    choicesEl.hidden = true; nextEl.hidden = true;
+    const chars = [...line.text];
+    clearInterval(timer); timer = null;
+    if (reduceMotion || typeMs <= 0) textEl.textContent = line.text;
+    else { let i = 0; textEl.textContent = ''; timer = setInterval(() => { i += 1; textEl.textContent = chars.slice(0, i).join(''); if (i >= chars.length) { clearInterval(timer); timer = null; } }, typeMs); }
+    const typing = (reduceMotion || typeMs <= 0) ? 0 : chars.length * typeMs, stay = typing + GUIDE_MS(chars.length);
+    chipUntil = performance.now() + Math.min(2500, Math.max(1200, stay * 0.6));
+    const hide = () => { clearTimeout(autoT); autoT = null; clearInterval(timer); timer = null; chipUntil = 0; advanceFn = null; el.hidden = true; if (onClose) onClose(); };
+    advanceFn = hide; // 눌러도 바로 사라진다
+    autoT = setTimeout(hide, stay);
+  }
+  function sayNow(line) {
     return new Promise(resolve => {
       const feedback = !!line.mood && el.classList.contains('mode-quiz') && !choicesEl.hidden; // 퀴즈 답 뒤 해설: 질문·보기 띠는 그대로 두고 아래 자막에 쓴다
       if (feedback) { const y = whyEl.querySelector('.dlg-year'); y.hidden = !line.year; y.textContent = line.year ? `${line.year}년` : ''; whyEl.hidden = false; el.hidden = false; }
@@ -73,19 +97,15 @@ export function createDialogue(root, speakers, { typeMs = 26, reduceMotion = fal
       }
       advanceFn = () => {
         if (timer) { clearInterval(timer); timer = null; out.textContent = line.text; return; }
-        advanceFn = null; clearTimeout(autoT); autoT = null; resolve();
+        advanceFn = null; resolve();
       };
-      // 안내 칩은 걸음을 멈추지 않는다(2026-11-09 선생님): 글이 다 나온 뒤 읽을 시간이 지나면 저절로 사라지고 넘어간다(눌러도 넘어간다)
-      if (el.classList.contains('mode-chip') && !feedback) {
-        const me = advanceFn, typing = (reduceMotion || typeMs <= 0) ? 0 : chars.length * typeMs;
-        autoT = setTimeout(() => { autoT = null; if (advanceFn !== me) return; advanceFn = null; el.hidden = true; if (onClose) onClose(); resolve(); }, typing + GUIDE_MS(chars.length));
-      }
     });
   }
 
   // off: 고를 수 없게 흐리게 막아 둘 선택지 번호(퀴즈에서 이미 틀린 답)
   // meta: { count: '문제 2/3', year } 질문 위에 붙는 칩(퀴즈)
-  function choose(prompt, options, { off = [], meta = null } = {}) {
+  function choose(prompt, options, opts = {}) { const w = chipWait(); return w ? w.then(() => chooseNow(prompt, options, opts)) : chooseNow(prompt, options, opts); }
+  function chooseNow(prompt, options, { off = [], meta = null } = {}) {
     return new Promise(resolve => {
       clearInterval(timer); timer = null; advanceFn = null;
       show(prompt.who);
@@ -171,8 +191,8 @@ export function createDialogue(root, speakers, { typeMs = 26, reduceMotion = fal
     isOpen() { return !el.hidden; }, // 무엇이든(안내 칩 포함) 보이는지: 놀이 시계·테스트는 이것으로 멈추고 넘긴다
     isBlocking() { return !el.hidden && !el.classList.contains('mode-chip'); }, // 학생의 걷기·말 걸기를 막는 대화인지(안내 칩은 막지 않는다, 2026-11-09)
     isChoosing() { return !!pickFn; },
-    close() { clearInterval(timer); timer = null; clearTimeout(autoT); autoT = null; advanceFn = pickFn = null; el.hidden = true; if (onClose) onClose(); },
-    dispose() { dialogue.close(); window.removeEventListener('keydown', onKey); el.remove(); },
+    close() { if (autoT && el.classList.contains('mode-chip')) return; clearInterval(timer); timer = null; advanceFn = pickFn = null; el.hidden = true; if (onClose) onClose(); }, // 저절로 사라질 안내 칩은 close로 지우지 않는다(대사 뒤 정리용 close가 칩을 바로 없애지 않게)
+    dispose() { clearTimeout(autoT); autoT = null; dialogue.close(); window.removeEventListener('keydown', onKey); el.remove(); },
   };
   return dialogue;
 }

@@ -101,7 +101,7 @@ export async function makeBlock(ctx) {
       const t = (stay.get(i) || 0) + dt; stay.set(i, t);
       if (t < WRONG_STAY || told.has(i)) return;
       told.add(i);
-      if (!dialogue.isOpen()) { first = false; dialogue.say(script.making.failHint).then(() => dialogue.close()); }
+      if (!dialogue.isBlocking()) { first = false; dialogue.say(script.making.failHint).then(() => dialogue.close()); }
     });
     for (const i of told) if (!stay.has(i)) told.delete(i);
   });

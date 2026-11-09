@@ -110,7 +110,7 @@ export async function buildWall(ctx, easy) {
   GAPS.forEach((_, i) => scene.fill(i, false));
   const team = litterTeam(world), raceSec = easy ? RACE.easySeconds : RACE.seconds;
   let raceT = 0, lost = false;
-  const race = world.onUpdate(dt => { if (lost || dialogue.isOpen()) return; raceT += dt; const k = Math.min(1, raceT / raceSec); team.at(k); hud.setTimer(raceSec - raceT); if (k >= 1) lost = true; });
+  const race = world.onUpdate(dt => { if (lost || dialogue.isBlocking()) return; raceT += dt; const k = Math.min(1, raceT / raceSec); team.at(k); hud.setTimer(raceSec - raceT); if (k >= 1) lost = true; });
   const abort = () => lost;
   ctx.testHooks.race = { team, abort };
   scene.pulleys.forEach(r => { r.g.visible = false; }); // 도르래 틀과 나르는 백성은 성벽 앞을 가리니 이 놀이 동안 치운다

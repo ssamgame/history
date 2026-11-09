@@ -155,20 +155,20 @@ test('dialogue: 해설은 자막, 안내는 칩, 사람 말은 한지 대화창(
   done();
 });
 
-test('dialogue: 안내 칩은 걸음을 막지 않고, 읽을 시간이 지나면 저절로 넘어간다(2026-11-09)', async () => {
+test('dialogue: 안내 칩은 기다리지 않고 바로 넘어가며, 걸음을 막지 않고, 읽을 시간 뒤 저절로 사라진다(2026-11-09)', async () => {
   const { d, q, done } = setup();
   const t0 = performance.now(), p = d.say({ who: 'guide', text: '앞으로 가요' });
-  await sleep(5);
+  await p; // 바로 끝난다(캐릭터가 멈추지 않게)
+  ok(performance.now() - t0 < 300, '안내는 기다리지 않는다');
   ok(!q('.dlg').hidden && q('.dlg').classList.contains('mode-chip'), '칩이 보인다');
   ok(d.isOpen() && !d.isBlocking(), '보이지만 걷기·말 걸기를 막지 않는다');
-  await p; // 누르지 않아도 끝난다
-  ok(performance.now() - t0 >= 1400, '읽을 시간은 준다');
-  ok(q('.dlg').hidden, '끝나면 칩이 사라진다');
-  const p2 = d.say({ who: 'guide', text: '둘째 안내' }); await sleep(5);
-  d.say({ who: 'seohui', text: '말' }); await sleep(5); // 사람이 말을 걸면 칩은 바로 바뀌고 시계는 멈춘다
-  ok(d.isBlocking() && !q('.dlg').classList.contains('mode-chip'));
-  await sleep(1800); ok(!q('.dlg').hidden, '옛 안내 시계가 사람 대화를 닫지 않는다');
-  d.advance(); await sleep(5);
-  d.close(); await Promise.race([p2, sleep(10)]);
+  d.close(); ok(!q('.dlg').hidden, '대사 뒤 정리용 close()는 칩을 지우지 않는다');
+  await until(() => q('.dlg').hidden, 8000); ok(performance.now() - t0 >= 1400, '읽을 시간 뒤 저절로 사라진다');
+  // 사람 말이 바로 이어지면 칩이 적어도 1.2초는 보인 뒤에 덮는다
+  const t1 = performance.now(); d.say({ who: 'guide', text: '둘째 안내' });
+  const p2 = d.say({ who: 'seohui', text: '말' }); await sleep(50);
+  ok(q('.dlg').classList.contains('mode-chip'), '아직 칩');
+  await until(() => d.isBlocking(), 4000); ok(performance.now() - t1 >= 1100, `사람 말은 ${Math.round(performance.now() - t1)}ms 뒤에`);
+  d.advance(); d.advance(); await p2; // 한 번은 글자 다 보이기, 한 번은 넘기기
   done();
-}, { timeout: 15000 });
+}, { timeout: 20000 });

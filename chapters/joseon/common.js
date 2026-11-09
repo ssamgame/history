@@ -127,11 +127,11 @@ export function standPick(ctx, tiles, answer, { easy, hint }) {
       const p = world.player.position;
       cur = null; let bd = REACH;
       for (const t of tiles) { const d = Math.hypot(p.x - t.x, p.z - t.z); if (d < bd) { bd = d; cur = t; } }
-      hud.setTalkEnabled?.(!!cur && !dialogue.isOpen());
+      hud.setTalkEnabled?.(!!cur && !dialogue.isBlocking());
       hud.setPrompt?.(cur ? new THREE.Vector3(cur.x, 0, cur.z) : null);
     });
     const unbind = ctx.onAction(async () => {
-      if (done || !cur || dialogue.isOpen()) return;
+      if (done || !cur || dialogue.isBlocking()) return;
       const t = cur;
       if (t === target) {
         done = true; off(); unbind(); audio.play('correct');
@@ -173,11 +173,11 @@ export function visitAny(ctx, spots, onPick, { onNext = null } = {}) { // onNext
       const p = world.player.position;
       cur = null; let bd = REACH;
       if (!busy) for (const t of left) { const d = Math.hypot(p.x - t.x, p.z - t.z); if (d < bd) { bd = d; cur = t; } }
-      hud.setTalkEnabled?.(!!cur && !dialogue.isOpen());
+      hud.setTalkEnabled?.(!!cur && !dialogue.isBlocking());
       hud.setPrompt?.(cur ? new THREE.Vector3(cur.x, 0, cur.z) : null);
     });
     const unbind = ctx.onAction(async () => {
-      if (busy || !cur || dialogue.isOpen()) return;
+      if (busy || !cur || dialogue.isBlocking()) return;
       const t = cur; busy = true; ctx.input.enabled = false;
       await onPick(t);
       left.delete(t); busy = false; ctx.input.enabled = true; next();

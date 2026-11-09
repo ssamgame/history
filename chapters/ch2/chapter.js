@@ -386,7 +386,7 @@ function rescue(ctx, easy) {
       resolve(ok);
     };
     const unbind = ctx.onAction(() => {
-      if (done || ctx.dialogue?.isOpen?.()) return;
+      if (done || ctx.dialogue?.isBlocking?.()) return;
       const g = nearGroup(); if (!g) return;
       g.state = 'freeing'; g.t = 0;
       const free = allies.filter(a => !a.userData.job), e = escortAt(g);
@@ -438,7 +438,7 @@ function rescue(ctx, easy) {
       });
       followChain(world, dt);
       const ng = nearGroup();
-      hud.setPrompt(ng && !ctx.dialogue?.isOpen?.() ? new THREE.Vector3(ng.c.group.position.x, 0, ng.c.group.position.z) : null, '백성 구하기');
+      hud.setPrompt(ng && !ctx.dialogue?.isBlocking?.() ? new THREE.Vector3(ng.c.group.position.x, 0, ng.c.group.position.z) : null, '백성 구하기');
       hud.setTalkEnabled(!!ng);
       world.setGoal(nearest ? { x: nearest.x, z: nearest.z + 0.8 } : null);
       if (rescued.length >= need && !groups.some(g => g.state === 'freeing')) return finish(true);

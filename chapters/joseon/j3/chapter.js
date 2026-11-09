@@ -145,7 +145,7 @@ export async function readGauges(ctx, easy, fail = {}) {
     const f = G[i].front, at = G[i].gauge.position; world.setGoal(f); ctx.input.enabled = true;
     let near = false;
     const end = ok => { off(); unbind(); hud.setPrompt(null); hud.setTalkEnabled(false); ctx.testHooks.pressing = null; ctx.input.enabled = false; world.setGoal(null); resolve(ok); };
-    const unbind = ctx.onAction(() => { if (near && !dialogue.isOpen()) end(true); }); // 측우기 앞에서 E(대화 버튼)를 눌러야 잰다(2026-11-06 선생님)
+    const unbind = ctx.onAction(() => { if (near && !dialogue.isBlocking()) end(true); }); // 측우기 앞에서 E(대화 버튼)를 눌러야 잰다(2026-11-06 선생님)
     const off = world.onUpdate(dt => {
       left -= dt; hud.setTimer(left);
       const p = world.player.position, n = Math.hypot(p.x - f.x, p.z - f.z) < 1.8;
