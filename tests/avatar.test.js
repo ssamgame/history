@@ -91,3 +91,16 @@ test('avatar: 모든 장에 도착 자리(spawn)가 있고 탐험 시작 자리�
   pos.z = 7; world.f(0.1); ok(pos.y > 0.2 && pos.y < 0.4, `걸으며 땅 높이로 내려온다 ${pos.y}`);
   pos.z = 1.9; world.f(0.1); await done; eq([pos.y, pos.z], [0, 2]);
 });
+
+test('avatar: 타임머신 — 다음 여행지 이름, 이동 장면의 연도, 모형(불꽃·시곗바늘)', async () => {
+  const { machineLabel } = await import('../core/portal.js');
+  const { yearOf } = await import('../core/travel.js');
+  const { makeTimeMachine } = await import('../core/timemachine.js');
+  eq(machineLabel({ title: '귀주 대첩' }), '다음 여행지: 귀주 대첩'); eq(machineLabel({ era: '조선' }), '다음 여행지: 조선 시대'); eq(machineLabel(null), '2026년으로 돌아가기');
+  eq(yearOf({ years: '1018~1019' }), 1018); eq(yearOf({ years: '1880~1900년대' }), 1880);
+  const tm = makeTimeMachine();
+  ok(tm.group.name === 'timeMachine' && tm.group.userData.dynamic, '굳히기에 합쳐지지 않는다');
+  const flames = () => { let n = 0; tm.group.traverse(o => { if (o.isMesh && o.visible && o.material.type === 'MeshBasicMaterial' && o.geometry.type === 'ConeGeometry') n += 1; }); return n; };
+  eq(flames(), 0, '세워 두면 불꽃이 없다'); tm.setFlame(1); tm.tick(1); eq(flames(), 3, '날 때는 불꽃 셋');
+  tm.dispose();
+});
