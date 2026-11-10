@@ -229,9 +229,10 @@ function boot() {
       showBackdrop(course.id); // 장 고르기 뒤에도 그 시대 마을이 돈다
       music.play(`map:${course.id}`); // 시대 지도에서는 그 시대의 잔잔한 음악
       const id = await showMap(ui, course.chapters, save, {
-        heading: `${course.era}편 · ${course.title}`, onCourses: true,
+        heading: `${course.era}편 · ${course.title}`, onCourses: true, onBack: true,
         onSessionCard: () => showSessionCard(ui, course.session, save, ALL_CHAPTERS),
       });
+      if (id === 'back') return; // 「◀ 뒤로」: 첫 화면으로
       if (id === 'courses') { await pickCourse(); continue; }
       let nx = await playChapter(ALL_CHAPTERS.find(c => c.id === id), 'intro');
       while (nx && nx.load) nx = await playChapter(nx, 'intro');
@@ -264,21 +265,23 @@ function boot() {
     if (toMap && courseById(toMap[1] || save.data.course)) {
       history.replaceState(null, '', location.pathname + location.search);
       save.setCourse(toMap[1] || save.data.course);
-      world.player.visible = false; await mapLoop(); return;
+      world.player.visible = false; await mapLoop(); // 「뒤로」를 누르면 아래 첫 화면으로
     }
-    const hasProgress = !!(save.data.name || Object.keys(save.data.chapters).length || save.data.current);
-    const cur = save.data.current && courseOfChapter(save.data.current.id).id; // 하다 만 장이 있는 시대
-    world.player.visible = false; // 첫 화면 글 뒤에 사람이 겹쳐 보이지 않게
-    showBackdrop(cur || save.data.course || COURSES[0].id); // 첫 화면 뒤 3D 장면(기다리지 않는다)
-    const { action, course, name } = await showTitle(ui, { savedName: save.data.name, hasProgress, storageOk: storage.available, courses: COURSES, save, course: cur || save.data.course, onCourse: showBackdrop });
-    if (action === 'new') {
-      save.reset();
-      const first = courseById(course)?.chapters[0];
-      const r = await showAvatarMaker(ui, { avatar: null, name: name || '', firstStop: first ? `${String(first.years).split(/[~·]/)[0]}년 ${courseById(course).era}` : '993년 고려' }); // 시간 여행자 등록(2026-11-09)
-      save.setAvatar(r.avatar); save.setName(r.name || name || '');
-    } else if (cur && cur !== course) save.abandonCurrent(); // 다른 시대로 넘어가면 하다 만 장만 내려놓는다(마친 장과 별은 그대로)
-    save.setCourse(course);
-    await mapLoop();
+    for (;;) { // 장 고르기에서 「뒤로」를 누르면 첫 화면부터 다시
+      const hasProgress = !!(save.data.name || save.data.avatar || Object.keys(save.data.chapters).length || save.data.current); // 캐릭터만 만들고 「뒤로」 온 경우도 이어하기
+      const cur = save.data.current && courseOfChapter(save.data.current.id).id; // 하다 만 장이 있는 시대
+      world.player.visible = false; // 첫 화면 글 뒤에 사람이 겹쳐 보이지 않게
+      showBackdrop(cur || save.data.course || COURSES[0].id); // 첫 화면 뒤 3D 장면(기다리지 않는다)
+      const { action, course, name } = await showTitle(ui, { savedName: save.data.name, hasProgress, storageOk: storage.available, courses: COURSES, save, course: cur || save.data.course, onCourse: showBackdrop });
+      if (action === 'new') {
+        save.reset();
+        const first = courseById(course)?.chapters[0];
+        const r = await showAvatarMaker(ui, { avatar: null, name: name || '', firstStop: first ? `${String(first.years).split(/[~·]/)[0]}년 ${courseById(course).era}` : '993년 고려' }); // 시간 여행자 등록(2026-11-09)
+        save.setAvatar(r.avatar); save.setName(r.name || name || '');
+      } else if (cur && cur !== course) save.abandonCurrent(); // 다른 시대로 넘어가면 하다 만 장만 내려놓는다(마친 장과 별은 그대로)
+      save.setCourse(course);
+      await mapLoop();
+    }
   }
   main();
 }

@@ -345,3 +345,16 @@ test('title: 첫 화면에 학생 주소로 가는 QR코드가 크게 보인다(
     if (innerWidth > 760) { const r = q.getBoundingClientRect(); ok(r.width >= 140 && r.height >= 140, `크게 ${Math.round(r.width)}px`); }
   } finally { el.remove(); }
 });
+
+test('map: 장 고르기에 「◀ 뒤로」 단추 — 누르면 back으로 끝난다(첫 화면으로, 2026-11-10 선생님)', async () => {
+  const { CHAPTERS } = await import('../chapters/index.js');
+  const el = document.createElement('div'); el.id = 'ui'; document.body.appendChild(el);
+  try {
+    const save = { chapterResult: () => null, data: { chapters: {} } };
+    const p = showMap(el, CHAPTERS, save, { onCourses: true, onBack: true, heading: '고려편' });
+    const b = el.querySelector('.board-back'); ok(b && b.textContent.includes('뒤로'));
+    const r = b.getBoundingClientRect(); ok(r.width >= 44 && r.height >= 40, '손가락 크기');
+    b.click(); eq(await p, 'back'); ok(!el.querySelector('.mapscreen'), '화면이 닫힌다');
+    const p2 = showMap(el, CHAPTERS, save, { onCourses: true }); ok(!el.querySelector('.board-back'), 'onBack이 없으면 단추도 없다'); el.querySelector('.screen')?.remove(); void p2;
+  } finally { el.remove(); }
+});

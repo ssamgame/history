@@ -87,12 +87,17 @@ test('map: 장 고르기 지도 뒤에 학생 병사가 보이지 않는다', as
     const w = await wait(() => frame.contentWindow.__world);
     ok(w, 'world');
     (await wait(() => find('고려를 지켜라'))).click();
-    const next = await wait(() => d().querySelector('input') || find('처음부터')); // 처음이면 바로 이름 입력, 저장된 진행이 있으면 '처음부터'가 먼저 나온다
-    if (next.tagName === 'BUTTON') next.click();
-    (await wait(() => d().querySelector('input'))).value = '시험';
-    (await wait(() => find('시작'))).click();
+    (await wait(() => find('처음부터'))).click(); // 「고려편 처음부터 시작」(저장된 진행이 있으면 지울지 묻는다)
+    const next = await wait(() => find('지우기') || find('대원증 받고 출발'));
+    if (next.textContent.includes('지우기')) next.click();
+    (await wait(() => find('대원증 받고 출발'))).click(); // 캐릭터 만들기(2026-11-09)를 그대로 넘긴다
     ok(await wait(() => d().body.textContent.includes('어디로 갈까요')), '장 고르기 지도');
     await sleep(300);
     ok(!w.player.visible, '지도 뒤 학생 병사는 숨긴다');
+    // 「◀ 뒤로」: 첫 화면으로 돌아가고, 다시 「이어하기」로 지도에 올 수 있다(2026-11-10 선생님)
+    (await wait(() => find('뒤로'))).click();
+    ok(await wait(() => d().querySelector('.title')), '첫 화면으로');
+    (await wait(() => find('이어하기'))).click();
+    ok(await wait(() => d().body.textContent.includes('어디로 갈까요')), '이어하기로 다시 지도');
   } finally { frame.remove(); }
-}, { timeout: 40000 });
+}, { timeout: 90000 });

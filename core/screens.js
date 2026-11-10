@@ -121,7 +121,7 @@ export function showCourses(root, courses, save) {
 }
 
 // 장 고르기(2026-11-09 선생님 시안 E): 1장부터 6장까지 점선 길로 이어진 보드게임 길. 마친 장은 초록, 지금 할 장은 빨강(크게), 아직 못 가는 장은 흐리게.
-// heading: 위 작은 줄(편 이름). onCourses가 있으면 '다른 시대' 버튼이 생기고 'courses'로 끝난다.
+// heading: 위 작은 줄(편 이름). onCourses가 있으면 '다른 시대' 버튼이 생기고 'courses'로 끝난다. onBack이 있으면 '◀ 뒤로' 버튼이 생기고 'back'으로 끝난다(첫 화면으로).
 const STOPS = [[9, 72], [26, 30], [42, 66], [58, 28], [75, 64], [91, 30]]; // 길 위 여섯 자리(%)
 // 자리들을 지나는 구불구불한 길(가로 화면은 위아래로, 세로 화면(tall)은 좌우로 휜다)
 const pathD = (pts, tall = false) => pts.map(([x, y], i) => {
@@ -129,7 +129,7 @@ const pathD = (pts, tall = false) => pts.map(([x, y], i) => {
   const [px, py] = pts[i - 1], out = i % 2 ? -14 : 14;
   return tall ? ` Q ${(out < 0 ? Math.min(px, x) : Math.max(px, x)) + out} ${(py + y) / 2} ${x} ${y}` : ` Q ${(px + x) / 2} ${(out < 0 ? Math.min(py, y) : Math.max(py, y)) + out} ${x} ${y}`;
 }).join('');
-export function showMap(root, chapters, save, { onSessionCard, onCourses, heading } = {}) {
+export function showMap(root, chapters, save, { onSessionCard, onCourses, onBack, heading } = {}) {
   return new Promise(resolve => {
     const board = h('div', { class: 'board' });
     const wide = STOPS, tall = STOPS.map(([x, y]) => [y, x]); // 세로 화면에서는 위에서 아래로
@@ -151,11 +151,12 @@ export function showMap(root, chapters, save, { onSessionCard, onCourses, headin
     const sessionButtons = chapters.some(c => save.chapterResult(c.id))
       ? [h('button', { class: 'btn', type: 'button', onclick: () => onSessionCard && onSessionCard() }, '시간 여행 일지')] : [];
     const courseButton = onCourses ? h('button', { class: 'btn', type: 'button', onclick: () => { el.remove(); resolve('courses'); } }, '다른 시대') : null;
+    const backButton = onBack ? h('button', { class: 'btn board-back', type: 'button', onclick: () => { el.remove(); resolve('back'); } }, '◀ 뒤로') : null; // 첫 화면으로(2026-11-10 선생님)
     const el = screen(root, 'mapscreen',
       h('div', { class: 'board-wrap' },
         h('div', { class: 'board-head' },
           h('div', {}, heading && h('div', { class: 'eyebrow' }, heading), h('h2', {}, '어디로 갈까요?')),
-          h('div', { class: 'row' }, sessionButtons, courseButton)),
+          h('div', { class: 'row' }, backButton, sessionButtons, courseButton)),
         board,
         next && h('button', { class: 'btn primary board-go', type: 'button', onclick: () => { el.remove(); resolve(next.id); } }, `${next.no}장 시작하기 ▸`)));
   });
