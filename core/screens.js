@@ -1,5 +1,6 @@
 // 게임 화면들: 첫 화면, 이름, 편 고르기, 장 선택 지도, 해설 카드, 장 결과, 결과 카드, 메뉴, HUD.
 import { SESSIONS, isUnlocked } from '../chapters/index.js';
+import { QR_URL, QR_SIZE, QR_PATH } from '../content/qr.js';
 
 const h = (tag, attrs = {}, ...kids) => {
   const el = document.createElement(tag);
@@ -29,6 +30,14 @@ export function buttonWord(label) {
 
 // 첫 화면(2026-11-09 선생님 시안 C): 뒤에는 고른 시대의 3D 장면(main.js가 띄움), 왼쪽 유리 판에 제목·소개·이름 칸·시작 단추, 아래에 시대 탭 다섯.
 // 탭을 누르면 고른 시대만 바뀌고(onCourse로 배경 장면을 바꾼다), 시작 단추로 들어간다. { action: 'new'|'continue', course, name? }로 끝난다(new일 때 name).
+// 첫 화면 오른쪽 위의 큰 QR코드(2026-11-10 선생님: 설명·테두리 없이 게임 그림 위에): 학생 주소로 바로 들어온다. 그림 파일 없이 SVG로 그린다(content/qr.js)
+function qrBox() {
+  const NS = 'http://www.w3.org/2000/svg', svg = document.createElementNS(NS, 'svg'), path = document.createElementNS(NS, 'path');
+  svg.setAttribute('viewBox', `-4 -4 ${QR_SIZE + 8} ${QR_SIZE + 8}`); svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', `이 사이트로 오는 QR코드 ${QR_URL}`); svg.setAttribute('shape-rendering', 'crispEdges');
+  path.setAttribute('d', QR_PATH); path.setAttribute('fill', '#1b1714'); svg.append(path);
+  return h('div', { class: 'title-qr' }, svg); // 글·테두리 없이 장면 위에 바로 얹는다
+}
+
 export function showTitle(root, { savedName, hasProgress, storageOk, courses = [], save = null, course = null, onCourse = null }) {
   return new Promise(resolve => {
     let picked = (courses.find(c => c.id === course) || courses[0] || { id: 'goryeo' }).id;
@@ -68,6 +77,7 @@ export function showTitle(root, { savedName, hasProgress, storageOk, courses = [
               startBtn),
             confirm),
           h('p', { class: 'controls' }, '걷기: 방향키·WASD 또는 화면 왼쪽을 손가락으로 끌기 · 말 걸기: 가까이 가서 스페이스·E 또는 「대화」 단추')),
+        qrBox(),
         cards.length > 0 && h('div', { class: 'title-courses' }, cards),
         h('p', { class: 'copyright' }, '© 2026 Jang ssam. All rights reserved.')));
   });

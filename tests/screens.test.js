@@ -334,3 +334,14 @@ test('screens: the action button shows what it does, not always 대화 (2026-11-
   eq(buttonWord('물레 돌리기 — 길게 누르기'), '돌리기'); eq(buttonWord('줍기'), '줍기');
   eq(buttonWord('글자 새기기 (3/4)'), '새기기'); eq(buttonWord('마구리(판 양 끝에 나무 덧대기)'), '마구리'); eq(buttonWord('문으로 들어가 복습 퀴즈 풀기'), '풀기');
 });
+
+test('title: 첫 화면에 학생 주소로 가는 QR코드가 크게 보인다(2026-11-10 선생님)', async () => {
+  const { QR_URL, QR_SIZE, QR_PATH } = await import('../content/qr.js');
+  eq(QR_URL, 'https://ssamgame.github.io/history/'); ok(QR_SIZE >= 25 && QR_PATH.split('M').length > 300, 'QR 칸');
+  const el = document.createElement('div'); el.id = 'ui'; document.body.appendChild(el);
+  try {
+    showTitle(el, { hasProgress: false, savedName: '', storageOk: true });
+    const q = el.querySelector('.title-qr svg'); ok(q, 'QR 그림'); ok(q.getAttribute('aria-label').includes(QR_URL));
+    if (innerWidth > 760) { const r = q.getBoundingClientRect(); ok(r.width >= 140 && r.height >= 140, `크게 ${Math.round(r.width)}px`); }
+  } finally { el.remove(); }
+});

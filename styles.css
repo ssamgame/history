@@ -587,3 +587,10 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .av-row[hidden] { display: none; }
 .av-row-swatch { grid-template-columns: 64px 0 1fr 0; min-height: 46px; }
 .av-swatch { gap: 6px; } .av-dot { width: 34px; height: 34px; flex: none; }
+
+/* 첫 화면 오른쪽 아래 큰 QR코드 */
+.title-inner { position: relative; }
+.title-qr { grid-row: 1; grid-column: 1; align-self: start; justify-self: end; margin: clamp(4px, 2vh, 18px) clamp(0px, 2vw, 24px) 0 0; }
+.title-qr svg { width: clamp(150px, 28vh, 240px); height: clamp(150px, 28vh, 240px); display: block; background: rgba(242, 234, 217, .93); border-radius: 6px; } /* 한지빛 바탕(카메라가 읽을 만큼만 밝게) */
+.title-intro { grid-row: 1; grid-column: 1; }
+@media (max-width: 760px) { .title-qr { display: none; } } /* 휴대폰 세로: 자리가 없어 시작 단추를 가린다(휴대폰은 이미 들어와 있다) */

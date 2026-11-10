@@ -3,7 +3,7 @@ export const CACHE = 'goryeo-v95'; // 배포할 때마다 올린다 (학생 기�
 
 export const PRECACHE = [
   'index.html', 'styles.css', 'vendor/three.module.min.js', 'content/sources.js', 'content/review.js',
-  'core/main.js', 'core/avatar-ui.js', 'core/arrival.js', 'core/timemachine.js', 'core/travel.js', 'content/avatar.js', 'core/bake.js', 'core/perf.js', 'core/fire.js', 'core/storage.js', 'core/save.js', 'core/content.js', 'core/dialogue.js', 'core/input.js',
+  'core/main.js', 'core/avatar-ui.js', 'core/arrival.js', 'core/timemachine.js', 'core/travel.js', 'content/avatar.js', 'content/qr.js', 'core/bake.js', 'core/perf.js', 'core/fire.js', 'core/storage.js', 'core/save.js', 'core/content.js', 'core/dialogue.js', 'core/input.js',
   'core/quality.js', 'core/audio.js', 'core/world.js', 'core/people.js', 'core/screens.js', 'core/flow.js', 'core/portal.js', 'core/intro.js',
   'core/precache.js', 'core/facebuild.js', 'core/hairstyle.js', 'core/motion.js', 'core/horse.js', 'core/interact.js', 'chapters/kit/story.js',
   'core/minigame.js', 'core/weather.js', 'core/faces.js', 'core/music.js', 'core/textures.js', 'core/props.js', 'core/sea.js', 'core/body.js', 'core/gait.js', 'vendor/jsm/loaders/GLTFLoader.js', 'vendor/jsm/utils/BufferGeometryUtils.js', 'vendor/jsm/utils/SkeletonUtils.js', 'assets/models/body.glb', 'content/characters.js', 'content/glyphs.js',
