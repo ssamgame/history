@@ -56,8 +56,8 @@ export function showAvatarMaker(root, { avatar = null, name = '', firstStop = '9
     const done = () => { cancelAnimationFrame(raf); renderer?.dispose(); el.remove(); resolve({ avatar: a, name: input.value.trim() }); };
     const el = h('section', { class: 'screen avatar-maker' },
       h('div', { class: 'av-inner' },
-        h('div', { class: 'av-head' }, h('div', { class: 'eyebrow' }, '출발 2026년 · 시간 여행자 등록'), h('h2', {}, title)),
-        h('div', { class: 'av-stage' }, canvas, h('div', { class: 'av-turn' }, '↻ 천천히 돌아요'), h('div', { class: 'av-cap' }, '2026년 차림 · 시대에 도착하면 그 시대 옷으로 변장해요')),
+        h('div', { class: 'av-head' }, h('h2', {}, title)),
+        h('div', { class: 'av-stage' }, canvas), // 작은 설명 글은 모두 뺐다(2026-11-10 선생님)
         h('div', { class: 'av-rows' }, h('div', { class: 'av-tabs' }, tabs), rows),
         h('div', { class: 'av-acts' },
           h('button', { type: 'button', class: 'btn av-random', onclick: () => set(randomAvatar()) }, '🎲 무작위'),
@@ -69,7 +69,6 @@ export function showAvatarMaker(root, { avatar = null, name = '', firstStop = '9
           h('div', { class: 'av-card-line' }, h('span', {}, '출발'), h('b', {}, '2026년')),
           h('div', { class: 'av-card-line' }, h('span', {}, '첫 도착'), h('b', {}, firstStop)),
           h('div', { class: 'av-stamps' }, [1, 2, 3, 4, 5, 6].map(() => h('i'))),
-          h('div', { class: 'av-card-hint' }, '장을 마칠 때마다 도장이 찍혀요'),
           h('div', { class: 'av-seal' }, '발급'))));
     root.appendChild(el);
     input.addEventListener('keydown', e => { if (e.key === 'Enter') done(); });
