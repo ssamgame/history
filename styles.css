@@ -573,3 +573,4 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .travel-title.on { opacity: 1; transform: none; }
 .travel-sub { position: absolute; left: 0; right: 0; bottom: 6%; font-size: clamp(15px, 2.4vw, 22px); opacity: .9; }
 .travel-skip { position: absolute; right: 18px; bottom: 14px; font-size: 14px; opacity: .7; }
+.dlg[hidden] { display: none !important; } /* 모드 규칙(display: flex)이 hidden을 덮어 퀴즈 창이 닫힌 뒤에도 남던 것(타임머신 타는 장면을 가렸다) */

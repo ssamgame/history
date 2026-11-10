@@ -191,10 +191,17 @@ export async function portalStage(ctx, chapter, next) {
     world.camMode = 'follow'; pl.visible = true;
     pl.position.set(front.x, 0, front.z); pl.rotation.y = Math.atan2(at[0] - front.x, at[1] - front.z); world.snapCamera?.();
     label.visible = false;
-    const b0 = world.bounds; // 타임머신이 걷는 곳 가장자리에 있어도 다가갈 수 있게
-    world.autoMove = { x: Math.sin(pl.rotation.y), z: Math.cos(pl.rotation.y) };
-    await ctx.wait(450);
-    world.autoMove = null; world.bounds = b0; pl.visible = false;
+    // 문이 열리고, 문 안으로 걸어 들어가 보이지 않게 된 뒤 문이 닫힌다(부딪힘·걷는 곳 테두리는 잠깐 푼다)
+    const i = world.colliders.indexOf(tm.collider); if (i >= 0) world.colliders.splice(i, 1);
+    const b0 = world.bounds, s0 = world.speedScale;
+    world.bounds = { x0: Math.min(b0.x0, at[0] - 2), x1: Math.max(b0.x1, at[0] + 2), z0: Math.min(b0.z0, at[1] - 2), z1: Math.max(b0.z1, at[1] + 2) };
+    tm.setDoor(true);
+    await ctx.wait(350);
+    world.speedScale = 0.7; world.autoMove = { x: Math.sin(pl.rotation.y), z: Math.cos(pl.rotation.y) };
+    await new Promise(resolve => { let t = 0; const off = world.onUpdate(dt => { t += dt; if (Math.hypot(pl.position.x - at[0], pl.position.z - at[1]) < 0.9 || t > 3) { off(); resolve(); } }); });
+    world.autoMove = null; world.speedScale = s0; world.bounds = b0; pl.visible = false;
+    tm.setDoor(false);
+    await ctx.wait(300);
     await new Promise(resolve => { let t = 0; const off = world.onUpdate(dt => { t += dt; tm.setFlame(Math.min(1.3, 0.4 + t)); if (t > 0.5) g.position.y = 20 * ((t - 0.5) / 1.4) ** 2; if (t >= 1.9) { off(); resolve(); } }); });
     await ctx.fade(true);
     world.testLift = g.position.y;

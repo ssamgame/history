@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { TRAVELER_LOOK, applyAvatar, arrivalLine } from '../content/avatar.js';
 import { makeTimeMachine, TM_R } from './timemachine.js';
 
-export const ARRIVAL_SEC = 4.6, LAND_AT = 1.5, SWAP_AT = 3.1, BACK = 4.5; // 내려앉기 → 내려서기 → 변장
+export const ARRIVAL_SEC = 5.2, LAND_AT = 1.5, SWAP_AT = 3.7, BACK = 4.5; // 내려앉기 → 내려서기 → 변장
 
 // 문짝 두 개(gateLeaves)의 가운데 자리(장면 좌표)
 function gateAt(gate) {
@@ -41,7 +41,6 @@ export async function playArrival(ctx, { meta, chapter = null, role, roleLook: l
     p.position.set(at[0], 0, at[1]); p.rotation.y = ry;
   }
   const b0 = world.bounds; // 도착 자리가 걷는 곳 밖(문 밖 길)이어도 밀려나지 않게
-  if (b0) world.bounds = { x0: Math.min(b0.x0, p.position.x - 1), x1: Math.max(b0.x1, p.position.x + 1), z0: Math.min(b0.z0, p.position.z - 1), z1: Math.max(b0.z1, p.position.z + 1) };
   p.position.y = groundY(world, p.position.x, p.position.z, [p]);
   p.visible = true; world.camMode = 'follow'; world.snapCamera?.(); // 따라가기 카메라 그대로(앞쪽에 세우면 성문·나무에 가린다)
   world.setPlayerLook(applyAvatar(TRAVELER_LOOK, avatar), scale); // 2026년 옷차림으로 내려선다
@@ -52,18 +51,26 @@ export async function playArrival(ctx, { meta, chapter = null, role, roleLook: l
   const mx = p.position.x + side.x * 3.4 * sd, mz = p.position.z + side.z * 3.4 * sd;
   ctx.timeMachine?.dispose?.();
   let tm = null, my = 0;
-  try { tm = makeTimeMachine(); my = groundY(world, mx, mz, [p]); tm.group.position.set(mx, my + 16, mz); tm.group.rotation.y = Math.atan2(-side.x * sd, -side.z * sd) + 0.5 * sd; world.level.add(tm.group); tm.setFlame(1); } catch (e) { console.warn('타임머신', e); }
+  try { tm = makeTimeMachine(); my = groundY(world, mx, mz, [p]); tm.group.position.set(mx, my + 16, mz); tm.group.rotation.y = Math.atan2(-side.x * sd, -side.z * sd); world.level.add(tm.group); tm.setFlame(1); } catch (e) { console.warn('타임머신', e); }
   p.visible = !tm;
+  const home = p.position.clone(); // 변장할 자리(문 밖 길). 학생은 타임머신 문에서 나와 여기까지 걸어온다
+  if (b0) world.bounds = { x0: Math.min(b0.x0, home.x, mx) - 2, x1: Math.max(b0.x1, home.x, mx) + 2, z0: Math.min(b0.z0, home.z, mz) - 2, z1: Math.max(b0.z1, home.z, mz) + 2 }; // 걷는 곳 밖이어도 밀려나지 않게
   const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 1.1, 7, 18, 1, true), new THREE.MeshBasicMaterial({ color: 0xffe9b0, transparent: true, opacity: 0.55, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending }));
   beam.position.set(p.position.x, p.position.y + 3.5, p.position.z); beam.name = 'timeBeam'; world.level.add(beam);
   beam.visible = false;
+  const s0 = world.speedScale;
   let t = 0, swapped = false, said = false, out = !tm;
   await new Promise(resolve => {
     const off = world.onUpdate(dt => {
       t += dt;
       if (tm) { const k = Math.min(1, t / LAND_AT), e = 1 - (1 - k) * (1 - k); tm.group.position.y = my + 16 * (1 - e); tm.setFlame(k < 1 ? 1 - e * 0.6 : Math.max(0, 0.4 - (t - LAND_AT) * 1.5)); tm.tick(t); }
-      if (!out && t >= LAND_AT) { out = true; p.visible = true; beam.visible = true; } // 내려앉으면 학생이 옆에 내려선다
-      if (!said && t >= LAND_AT + 0.3) { said = true; dialogue?.say({ who: 'guide', text: arrivalLine(meta, role, short) }); } // 기다리지 않는 안내 칩
+      if (!out && t >= LAND_AT + 0.25) { // 내려앉으면 문이 열리고 학생이 안에서 걸어 나온다
+        out = true; tm.setDoor(true);
+        const ux = (home.x - mx) / 3.4, uz = (home.z - mz) / 3.4;
+        p.position.set(mx + ux * 1.0, my, mz + uz * 1.0); p.rotation.y = Math.atan2(ux, uz); p.visible = true; world.autoMove = { x: ux, z: uz }; world.speedScale = 0.7;
+      }
+      if (world.autoMove && out && tm) { const left = (home.x - p.position.x) * world.autoMove.x + (home.z - p.position.z) * world.autoMove.z; p.position.y = home.y; if (left <= 0.05) { world.autoMove = null; world.speedScale = s0; p.position.copy(home); p.rotation.y = ry; beam.visible = true; tm.setDoor(false); } }
+      if (!said && t >= LAND_AT + 1.3) { said = true; dialogue?.say({ who: 'guide', text: arrivalLine(meta, role, short) }); } // 기다리지 않는 안내 칩
       const flash = Math.max(0, 1 - Math.abs(t - SWAP_AT) / 0.35); // 변장 순간 번쩍
       beam.material.opacity = (t < SWAP_AT ? 0.5 : Math.max(0, 0.5 * (1 - (t - SWAP_AT) / 1.1))) + flash * 0.4;
       beam.scale.x = beam.scale.z = 1 + Math.sin(t * 6) * 0.08 + flash * 0.5;
@@ -71,6 +78,7 @@ export async function playArrival(ctx, { meta, chapter = null, role, roleLook: l
       if (t >= ARRIVAL_SEC) { off(); world.level.remove(beam); beam.geometry.dispose(); beam.material.dispose(); resolve(); }
     });
   });
+  world.autoMove = null; world.speedScale = s0; p.position.copy(home); if (tm) tm.setDoor(false); // 건너뛰거나 늦어도 제자리에
   if (tm) { // 세워 둔 타임머신: 부딪히고, 시곗바늘은 천천히 돈다
     tm.setFlame(0); tm.x = mx; tm.z = mz;
     tm.collider = world.addCollider({ x: mx, z: mz, r: TM_R });

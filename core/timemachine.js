@@ -26,13 +26,18 @@ export function makeTimeMachine({ scale = TM_SCALE } = {}) {
   }
   for (const [x, z] of [[1, 1], [-1, 1], [1, -1], [-1, -1]]) { add(new C(0.07, 0.07, 1.3, 6), wood, x * 1.05, 0.6, z * 1.05, z * -0.3, 0, x * 0.3); add(new C(0.24, 0.24, 0.08, 10), dark, x * 1.22, 0.04, z * 1.22); } // 다리
   add(new C(0.6, 0.4, 0.4, 12), dark, 0, 0.8, 0); flame(0, 0.6, 0.4, 1.5);
-  const clock = new THREE.Group(); clock.position.set(0, 2.0, 1.42); clock.rotation.x = 0.25; g.add(clock);              // 앞 시계
+  // 앞문(2026-11-10 선생님: 타임머신 안에서 내리고 안으로 탄다): 닫히면 쪽빛 문짝, 열리면 안쪽 불빛이 보인다. 시계는 문 위(창 위)로 올렸다
+  add(new B(1.05, 1.75, 0.1), gold, 0, 1.6, 1.3, -0.12);
+  const door = add(new B(0.85, 1.55, 0.14), navy, 0, 1.6, 1.33, -0.12), inside = add(new B(0.85, 1.55, 0.12), glowMat(0xffe9b0), 0, 1.6, 1.33, -0.12); inside.visible = false; inside.castShadow = false;
+  add(new B(1.1, 0.12, 0.7), wood, 0, 0.72, 1.55); add(new B(1.1, 0.12, 0.5), wood, 0, 0.36, 1.95); // 디딤판 두 단
+  const clock = new THREE.Group(); clock.position.set(0, 4.32, 0.95); clock.rotation.x = -0.8; clock.scale.setScalar(0.85); g.add(clock);              // 앞 시계
   add(new C(0.45, 0.45, 0.08, 24), mat(0xf6f1e2), 0, 0, 0, Math.PI / 2, 0, 0, clock); add(new T(0.45, 0.06, 8, 24), gold, 0, 0, 0, 0, 0, 0, clock);
   const hour = add(new B(0.06, 0.22, 0.04), dark, 0, 0, 0.07, 0, 0, 0, clock), min = add(new B(0.05, 0.34, 0.04), dark, 0, 0, 0.08, 0, 0, 0, clock);
   hour.geometry.translate(0, 0.1, 0); min.geometry.translate(0, 0.15, 0);
   let power = 0;
   return {
     group: g, H: 5.6 * scale,
+    setDoor(open) { door.visible = !open; inside.visible = open; },
     setFlame(k) { power = Math.max(0, k); for (const f of flames) f.visible = power > 0.02; },
     // t: 흐른 시간(초). 시곗바늘이 돌고(불꽃이 셀수록 빨리) 불꽃이 떨린다
     tick(t) {
