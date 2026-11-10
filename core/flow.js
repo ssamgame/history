@@ -73,7 +73,7 @@ export async function runChapter(meta, chapter, ctx, save, { resumeStage = 'intr
 
     level('calm'); perf?.segment(`${meta.id} 퀴즈`);
     checkpoint('quiz', { firstTryCorrect: result.firstTryCorrect, firstTryTotal: result.firstTryTotal, easyModeUsed: result.easyModeUsed });
-    // 퀴즈는 저절로 시작하지 않는다: 마을의 빛나는 문 앞에서 E를 눌러야 시작(C-02)
+    // 퀴즈는 저절로 시작하지 않는다: 마을에 내려앉은 타임머신 앞에서 E를 눌러야 시작(C-02, 2026-11-10 타임머신)
     if (chapter.portal && ctx.world && ctx.ui) await portalStage(ctx, chapter, next);
     // 배운 내용 확인: 일어난 차례(year)대로 묻고, 문제마다 관련된 장면을 뒤에 비춘다. 틀리면 해설을 듣고 다시 고른다.
     const quizzes = [...chapter.quizzes].sort((a, b) => (a.year ?? 0) - (b.year ?? 0));
@@ -86,6 +86,7 @@ export async function runChapter(meta, chapter, ctx, save, { resumeStage = 'intr
     }
     ctx.dialogue.close();
     if (ctx.world) endQuizView(ctx);
+    if (ctx.boardMachine) { const board = ctx.boardMachine; ctx.boardMachine = null; await board(); } // 타임머신에 올라 날아오른다(core/portal.js)
   } finally { clearInterval(tick); removeEventListener('pagehide', stamp); document.removeEventListener('visibilitychange', onHide); }
 
   result.seconds = Math.round(spent());

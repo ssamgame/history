@@ -4,6 +4,7 @@
 //   편의 마지막 장(6장)에서는 다음 편으로 가는 큰 문(돌기둥·금빛 소용돌이·빛기둥)이 선다.
 import * as THREE from 'three';
 import { markerSprite } from './people.js';
+import { makeTimeMachine, TM_R } from './timemachine.js';
 
 // 받침 '로/으로': 받침이 없거나 ㄹ이면 '로', 아니면 '으로'
 export function withRo(word) {
@@ -19,7 +20,7 @@ export function portalName(next) {
   return `${withRo(next.era || next.title)} 가는 문`;
 }
 
-function textSprite(text, { size = 1, color = '#fff6d8', bg = 'rgba(60,20,10,0.88)', border = '#f2c45a' } = {}) {
+export function textSprite(text, { size = 1, color = '#fff6d8', bg = 'rgba(60,20,10,0.88)', border = '#f2c45a' } = {}) {
   const cv = document.createElement('canvas'), c = cv.getContext('2d');
   const font = 'bold 46px "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif';
   c.font = font;
@@ -145,31 +146,59 @@ export function waitInteract(ctx, { pos, quest = null, label = '시작하기', r
   });
 }
 
-// 미니게임이 끝난 뒤: 마을 가운데(chapter.portal 또는 학생 앞)에 문을 세우고, 학생이 문 앞에서 E를 누르면 문으로 걸어 들어간다.
-// next: { title } 다음 장 또는 { era } 다음 편. next가 없으면(마지막 편 6장) '배운 내용 확인의 문'.
+// 미니게임이 끝난 뒤(2026-11-10 선생님: 빛나는 문 대신 타임머신): 문 밖에 세워 둔 타임머신이 날아올라 마을 가운데(chapter.portal 또는 학생 앞)에
+// 내려앉는다. 학생이 다가가 E를 누르면 복습 퀴즈를 풀고, 다 풀면 타임머신에 올라 날아오른다(ctx.boardMachine, core/flow.js가 퀴즈 뒤에 부른다).
+// next: { title } 다음 장 또는 { era } 다음 편. next가 없으면(마지막 편 6장) 2026년으로 돌아간다.
+export const machineLabel = next => (next ? `다음 여행지: ${next.title || `${next.era} 시대`}` : '2026년으로 돌아가기');
 export async function portalStage(ctx, chapter, next) {
   const { world } = ctx;
   const p = world.player.position;
   const spec = typeof chapter.portal === 'function' ? chapter.portal(ctx) : chapter.portal;
   const at = spec?.at || [p.x, p.z - 7];
   const ry = spec?.ry ?? 0;
-  const grand = !!next?.era || !next;
-  const name = next ? portalName(next) : '역사 여행을 마치는 문';
-  const gate = makePortal(world, { x: at[0], z: at[1], ry, name, grand });
-  ctx.portal = gate; // 퀴즈 배경·테스트용
-  world.player.visible = true;
-  world.closeView = true;
-  world.camMode = 'follow';
-  const front = { x: at[0] + Math.sin(ry) * 1.2, z: at[1] + Math.cos(ry) * 1.2 };
+  let tm = ctx.timeMachine;
+  if (tm?.collider) { const i = world.colliders.indexOf(tm.collider); if (i >= 0) world.colliders.splice(i, 1); tm.collider = null; }
+  const parked = !!tm?.group.parent;
+  if (!parked) { tm = makeTimeMachine(); world.level.add(tm.group); tm.offTick = world.onUpdate((dt, t) => tm.tick(t)); }
+  world.player.visible = true; world.closeView = true; world.camMode = 'follow';
+  ctx.dialogue?.say?.({ who: 'guide', text: '타임머신을 불렀어. 다가가서 복습 퀴즈를 풀면 탈 수 있어!' });
+  // 세워 둔 자리에서 솟아올랐다가(0.7초) 마을에 내려앉는다(1.3초). 이어하기로 퀴즈부터 시작하면 바로 내려앉는다
+  const g = tm.group, y0 = g.position.y;
+  await new Promise(resolve => {
+    let t = parked ? 0 : 0.7;
+    const off = world.onUpdate(dt => {
+      t += dt;
+      if (t < 0.7) { g.position.y = y0 + 18 * (t / 0.7) ** 2; tm.setFlame(1); return; }
+      const k = Math.min(1, (t - 0.7) / 1.3), e = 1 - (1 - k) * (1 - k);
+      g.position.set(at[0], 16 * (1 - e), at[1]); g.rotation.y = ry; tm.setFlame(1 - e * 0.7);
+      if (k >= 1) { off(); tm.setFlame(0); resolve(); }
+    });
+  });
+  tm.x = at[0]; tm.z = at[1]; tm.collider = world.addCollider({ x: at[0], z: at[1], r: TM_R });
+  const name = machineLabel(next);
+  const label = textSprite(name, { size: 0.6 }); label.position.y = 5.6 + 0.9; g.add(label); label.scale.multiplyScalar(1 / g.scale.x);
+  const gate = { group: g, x: at[0], z: at[1], ry, H: tm.H, machine: tm, dispose() { tm.offTick?.(); tm.dispose(); } };
+  ctx.portal = gate; ctx.timeMachine = tm; // 퀴즈 배경·테스트용
+  const front = { x: at[0] + Math.sin(ry) * (TM_R + 1.1), z: at[1] + Math.cos(ry) * (TM_R + 1.1) };
   ctx.testHooks.portalAt = front;
-  await waitInteract(ctx, { pos: front, quest: `빛나는 「${name}」으로 가자`, label: '문으로 들어가 복습 퀴즈 풀기', mark: false, r: 3 });
+  await waitInteract(ctx, { pos: front, quest: `타임머신으로 가자 (${name})`, label: '복습 퀴즈 풀고 타임머신 타기', mark: false, r: 3 });
   ctx.input.enabled = false;
-  // 문 안으로 걸어 들어간다
-  const dir = { x: -Math.sin(ry), z: -Math.cos(ry) };
-  world.autoMove = dir;
-  await ctx.wait(700);
-  world.autoMove = null;
   await ctx.fade(true);
   await ctx.fade(false);
+  // 퀴즈를 다 풀면: 타임머신 앞에 서서 걸어 들어가고(보이지 않게), 불꽃을 뿜으며 날아오른다
+  ctx.boardMachine = async () => {
+    const pl = world.player;
+    world.camMode = 'follow'; pl.visible = true;
+    pl.position.set(front.x, 0, front.z); pl.rotation.y = Math.atan2(at[0] - front.x, at[1] - front.z); world.snapCamera?.();
+    label.visible = false;
+    const b0 = world.bounds; // 타임머신이 걷는 곳 가장자리에 있어도 다가갈 수 있게
+    world.autoMove = { x: Math.sin(pl.rotation.y), z: Math.cos(pl.rotation.y) };
+    await ctx.wait(450);
+    world.autoMove = null; world.bounds = b0; pl.visible = false;
+    await new Promise(resolve => { let t = 0; const off = world.onUpdate(dt => { t += dt; tm.setFlame(Math.min(1.3, 0.4 + t)); if (t > 0.5) g.position.y = 20 * ((t - 0.5) / 1.4) ** 2; if (t >= 1.9) { off(); resolve(); } }); });
+    await ctx.fade(true);
+    world.testLift = g.position.y;
+    ctx.testHooks.boarded = true;
+  };
   return gate;
 }

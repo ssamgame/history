@@ -7,6 +7,7 @@ import { createAudio } from './audio.js';
 import { createDialogue } from './dialogue.js';
 import { createQualityController, guessInitialQuality } from './quality.js';
 import { runChapter } from './flow.js';
+import { playTravel } from './travel.js';
 import { createMusic } from './music.js';
 import { showTitle, showCourses, showMap, showIntroCard, showChapterResult, showSessionCard, showMenu, showMessage, createHud } from './screens.js';
 import { perfEnabled, createPerfStats, createPerfPanel } from './perf.js';
@@ -121,7 +122,7 @@ function boot() {
 
   async function playChapter(meta, stage) {
     const mod = (await meta.load()).default;
-    clearBackdrop(); world.clearLevel();
+    clearBackdrop(); world.clearLevel(); ctx.timeMachine = null; ctx.boardMachine = null;
     world.player.visible = true;
     quality.restart();
     world.camMode = 'follow';
@@ -162,15 +163,18 @@ function boot() {
     hud.hide();
     dialogue.dispose(); dialogue = null;
     curMeta = null;
+    hud.fade(false); // 타임머신이 날아오르며 어두워진 화면을 푼다
     await showChapterResult(ui, meta, result);
     if (isSessionDone(meta.session, save)) {
       // 편 복습 퀴즈는 뺐다(2026-11-04 선생님)
       await showSessionCard(ui, meta.session, save, ALL_CHAPTERS);
     }
-    // 빛나는 문(C-02)으로 마친 장은 문 너머 다음 장(또는 다음 편 1장)으로 바로 이어 간다
+    // 타임머신(C-02)으로 마친 장은 다음 장(또는 다음 편 1장)으로 바로 이어 간다
     if (!mod.portal || !next) return null;
-    if (next.course) { save.setCourse(next.course.id); return next.course.chapters[0]; }
-    return next.meta;
+    const to = next.course ? next.course.chapters[0] : next.meta;
+    if (to?.load) await playTravel(ctx, { from: meta, to, courseOf: courseOfChapter }); // 타임머신 이동 장면(연표 길·시간 터널)
+    if (next.course) save.setCourse(next.course.id);
+    return to;
   }
 
   // 같은 편의 다음 장, 6장이면 다음 편 { course }
