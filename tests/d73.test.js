@@ -6,7 +6,7 @@ import { createHud } from '../core/screens.js';
 test('d73: 메뉴 「장 선택으로」는 그 편을 주소(#map=편)에 실어 다시 열고, 첫 화면 없이 지도로', async () => {
   const src = await (await fetch('../core/main.js')).text();
   ok(/location\.hash = `map=\$\{c \|\| ''\}`/.test(src), '메뉴 map → #map=편');
-  ok(src.includes("/^#map=(\\w*)$/.exec(location.hash)") && src.includes('await mapLoop(); return;'), '열 때 #map이면 지도부터');
+  ok(src.includes("/^#map=(\\w*)$/.exec(location.hash)") && src.includes('world.player.visible = false; await mapLoop();'), '열 때 #map이면 지도부터');
 });
 
 test('d73: 1장 천막·수레·모닥불·지휘소·거란 천막은 실제 크기만큼 부딪힌다', async () => {
