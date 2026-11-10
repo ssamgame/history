@@ -63,6 +63,7 @@ async function timeline(ctx, { course, from, to }) {
   const tm = makeTimeMachine({ scale: 0.46 }); g.add(tm.group);
   const puffs = [...Array(16)].map(() => { const m = mesh(new THREE.CircleGeometry(0.3, 12), basic(INK, 0.5), 0, 0, 1); m.visible = false; m.userData.age = 9; return m; }); // 먹 자국 꼬리
   const lines = [...Array(4)].map((_, i) => { const m = mesh(new THREE.BoxGeometry(1.6 + i * 0.5, 0.05, 0.02), basic(INK, 0.35), 0, 0, 1.2); m.visible = false; return m; });   // 빠르기 줄
+  world.warm?.();
   const el = overlay(ui, `<div class="travel-line">${from.no}장 ▸ <b>${to.no}장 ${to.short || to.title}</b></div>`, 'paper');
   const x0 = X(a), x1 = X(b), dir = Math.sign(x1 - x0) || 1, FOOT = 0.42;
   // 떠나기 전 0~0.14(떨림) → 날기 0.14~0.86 → 내려앉기 0.86~1
@@ -111,6 +112,7 @@ async function tunnel(ctx, { fromYear, toYear, title, sub }) {
   const streaks = [...Array(36)].map((_, i) => { const a = i * 2.4, rr = 2.6 + (i % 5) * 0.8, m = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 5), basic(0xfff3cf, 0.7)); m.position.set(Math.cos(a) * rr, 0.4 + Math.sin(a) * rr, -i * 2.6); g.add(m); return m; }); // 빠르기 줄
   const spin = new THREE.Group(); g.add(spin);
   const tm = makeTimeMachine({ scale: 0.78 }); tm.group.rotation.set(-1.25, 0, 0); spin.add(tm.group);
+  world.warm?.();
   const el = overlay(ui, `<div class="travel-flash"></div><div class="travel-year"><span class="travel-from">${fromYear}년</span> ▸▸ <b class="travel-to">${fromYear}년</b></div><div class="travel-title">${title}</div><div class="travel-sub">${sub}</div>`);
   const yearEl = el.querySelector('.travel-to'), titleEl = el.querySelector('.travel-title'), flash = el.querySelector('.travel-flash');
   await run(world, 6, (k, t, dt) => {

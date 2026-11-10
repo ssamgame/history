@@ -149,6 +149,7 @@ export function buildArena(world, arena) {
     if (arena.edge) { g.add(arenaEdge(arena)); world.applyDecor?.(g); }
     for (const c of arena.colliders || []) world.addCollider({ ...at(c.x, c.z), r: c.r });
     const b = arena.bounds; world.bounds = { x0: b.x0 + ox, x1: b.x1 + ox, z0: b.z0 + oz, z1: b.z1 + oz };
+    world.warm?.(); // 무대의 셰이더를 미리 만든다(걷다가 처음 보일 때 멈칫하지 않게)
     world.perf?.time('무대 짓기', performance.now() - t0); // 개발용 성능 측정(?perf=1)
     world.remeasure?.(); // 무대는 마을보다 무거울 수 있으니 화질 자동 조절이 다시 잰다(직접 고른 화질은 그대로)
   }

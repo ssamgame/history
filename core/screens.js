@@ -276,7 +276,8 @@ export function showMenu(root, { muted, music = null, quality, storageOk = true 
         h('button', { class: 'btn danger', type: 'button', onclick: () => close('map') }, '그래도 나가기'),
         h('button', { class: 'btn', type: 'button', onclick: () => { leave.hidden = true; } }, '계속하기')));
     const fsMenu = fullscreenButton();
-    const qb = (lv, label) => h('button', { class: `btn ${quality === lv ? 'on' : ''}`, type: 'button', onclick: () => { onChange({ quality: lv }); close('close'); } }, label);
+    const shown = quality === 'lite' ? 'medium' : quality; // lite는 자동 조절이 고르는 '보통(가볍게)': 단추는 보통에 불이 켜진다
+    const qb = (lv, label) => h('button', { class: `btn ${shown === lv ? 'on' : ''}`, type: 'button', onclick: () => { onChange({ quality: lv }); close('close'); } }, label);
     const el = screen(root, 'menu',
       h('div', { class: 'card' },
         h('h2', {}, '메뉴'),

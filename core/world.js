@@ -163,6 +163,7 @@ function skyMaterial() {
 }
 
 export function createWorld(container, { quality = 'medium', renderer: injected = null } = {}) {
+  let shadowTick = 0;
   const markV = new THREE.Vector3(), talkAt = new THREE.Vector3(1e9, 0, 0), nearHid = []; let nearT = 0;
   let renderer;
   try { renderer = injected || new THREE.WebGLRenderer({ antialias: quality !== 'low' }); }
@@ -265,7 +266,7 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
     },
     // 멀리 있는 덜 중요한 장식(userData.minQuality: 'medium'|'high')은 화질이 그보다 낮으면 숨긴다. 걷는 곳·사람·가운데 소품은 표시가 없어 늘 보인다
     applyDecor(root = scene) {
-      const rank = { low: 0, medium: 1, high: 2 }, lv = rank[world.qualityLevel] ?? 1;
+      const rank = { low: 0, lite: 1, medium: 1, high: 2 }, lv = rank[world.qualityLevel] ?? 1;
       root.traverse(o => { if (o.userData.minQuality) o.visible = lv >= rank[o.userData.minQuality]; });
     },
     resize() {
@@ -438,7 +439,13 @@ export function createWorld(container, { quality = 'medium', renderer: injected 
       world.colliders.length = 0; world.npcs.clear(); updaters.length = 0; goal = null;
       world.closeView = false; world.followOffset = null; world.followLookY = null; world.autoMove = null; if (hidForTalk) { player.visible = true; hidForTalk = false; } camera.fov = FOV; camera.updateProjectionMatrix();
     },
-    render() { renderer.render(scene, camera); },
+    // 그림자는 '높음'이 아니면 두 프레임에 한 번만 새로 그린다(그림자 그리기가 장면을 한 번 더 그리는 값이라 태블릿에서 가장 무겁다, 2026-11-10)
+    render() {
+      if (renderer.shadowMap.enabled) { const every = world.qualityLevel === 'high' ? 1 : 2; renderer.shadowMap.autoUpdate = false; if (++shadowTick % every === 0) renderer.shadowMap.needsUpdate = true; }
+      renderer.render(scene, camera);
+    },
+    // 새로 지은 장면·무대·타임머신의 셰이더를 미리 만들어 둔다: 처음 화면에 들어올 때마다 멈칫하던 것을 장면을 짓는 때로 몰아 둔다
+    warm() { try { renderer.compile(scene, camera); renderer.shadowMap.needsUpdate = true; } catch { /* 못 해도 그리면서 만든다 */ } },
     dispose() {
       world.clearLevel();
       renderer.dispose();

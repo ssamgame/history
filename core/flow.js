@@ -55,6 +55,7 @@ export async function runChapter(meta, chapter, ctx, save, { resumeStage = 'intr
     const t2 = performance.now();
     if (chapter.bake !== false && ctx.world?.level && ctx.world.npcs) bakeLevel(ctx.world, built); // 움직이지 않는 조각을 재질별로 합쳐 태블릿에서 가볍게
     ctx.world?.applyDecor?.(); // 화질에 따라 먼 장식 켜고 끄기
+    ctx.world?.warm?.(); // 셰이더 미리 만들기(처음 보일 때의 멈칫 줄이기)
     if (perf) { perf.time('장면 짓기', t2 - t1, meta.id); perf.time('장면 굳히기', performance.now() - t2, meta.id); }
     if (from > 0) chapter.enterStage?.(ctx, STAGES[from]);
     if (from === 0 && film) await playIntro(ctx, meta, chapter.script.intro, chapter.introScene(ctx));
