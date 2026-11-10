@@ -574,3 +574,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .travel-sub { position: absolute; left: 0; right: 0; bottom: 6%; font-size: clamp(15px, 2.4vw, 22px); opacity: .9; }
 .travel-skip { position: absolute; right: 18px; bottom: 14px; font-size: 14px; opacity: .7; }
 .dlg[hidden] { display: none !important; } /* 모드 규칙(display: flex)이 hidden을 덮어 퀴즈 창이 닫힌 뒤에도 남던 것(타임머신 타는 장면을 가렸다) */
+
+.travel.paper { color: #2b2622; text-shadow: none; }
+.travel.paper .travel-line { top: 25%; }
+.travel.paper .travel-line b { color: #b3271e; }
+.travel-flash { position: absolute; inset: 0; background: #fff6d8; opacity: 0; }
