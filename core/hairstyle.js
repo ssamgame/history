@@ -94,6 +94,7 @@ export function hairStyle(L = {}, n = 0, role = 'farmer', e = era) {
   const rules = HAIR_RULES[hat], set = rules && (rules[e] || rules[Object.keys(rules)[0]]);
   if (!n) { // 기본 얼굴(이름난 인물·말을 거는 사람): 기본형 첫째 그대로
     if (set) Object.assign(out, set.bases[0]);
+    if (L.hair) Object.assign(out, L.hair); // 내 캐릭터가 고른 머리 모양(content/avatar.js travelerLook)
     if (!out.color) out.color = old ? HAIR_COLORS.white[0] : HAIR_COLORS.black[0];
     return out;
   }

@@ -2,7 +2,7 @@
 // 하늘에서 내려앉고, 학생이 2026년 옷차림으로 내려선다. 시간지기가 "…차림으로 변장하자"고 하면 그 시대 역할 옷으로 바뀐다(얼굴은 내 얼굴).
 // 타임머신은 그 자리에 세워 둔다(장 끝에 마을로 불러 다시 탄다: core/portal.js). 약 4.6초. 안내 칩이라 글을 읽는 동안 걸음을 막지 않는다.
 import * as THREE from 'three';
-import { TRAVELER_LOOK, applyAvatar, arrivalLine } from '../content/avatar.js';
+import { travelerLook, arrivalLine } from '../content/avatar.js';
 import { makeTimeMachine, TM_R } from './timemachine.js';
 
 export const ARRIVAL_SEC = 5.2, LAND_AT = 1.5, SWAP_AT = 3.7, BACK = 4.5; // 내려앉기 → 내려서기 → 변장
@@ -43,7 +43,7 @@ export async function playArrival(ctx, { meta, chapter = null, role, roleLook: l
   const b0 = world.bounds; // 도착 자리가 걷는 곳 밖(문 밖 길)이어도 밀려나지 않게
   p.position.y = groundY(world, p.position.x, p.position.z, [p]);
   p.visible = true; world.camMode = 'follow'; world.snapCamera?.(); // 따라가기 카메라 그대로(앞쪽에 세우면 성문·나무에 가린다)
-  world.setPlayerLook(applyAvatar(TRAVELER_LOOK, avatar), scale); // 2026년 옷차림으로 내려선다
+  world.setPlayerLook(travelerLook(avatar), scale); // 2026년 옷차림으로 내려선다
   // 시간의 문은 학생 오른쪽 옆 2.8m에, 문의 앞이 학생을 보게(뒤에 세우면 따라가기 카메라가 문 뒤에서 보게 된다)
   const dir = { x: Math.sin(ry), z: Math.cos(ry) }, side = { x: dir.z, z: -dir.x };
   const sd = spec?.side ?? 1; // side: -1이면 왼쪽(오른쪽에 집·나무가 있는 장)

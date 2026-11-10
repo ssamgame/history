@@ -11,7 +11,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const btn = (el, text) => [...el.querySelectorAll('button')].find(b => b.textContent.includes(text));
 
 test('avatar: 부위마다 2개 이상, 넘기면 끝에서 처음으로 돌고, 무작위도 올바른 값', () => {
-  ok(AVATAR_PARTS.length >= 7); AVATAR_PARTS.forEach(p => ok(p.options.length >= 2, p.key));
+  ok(AVATAR_PARTS.length >= 16); AVATAR_PARTS.forEach(p => ok(p.options.length >= 2, p.key));
   ok(isAvatar(DEFAULT_AVATAR));
   let a = DEFAULT_AVATAR; const n = AVATAR_PARTS.find(p => p.key === 'eye').options.length;
   for (let i = 0; i < n; i++) a = cycleAvatar(a, 'eye', 1);
@@ -52,12 +52,15 @@ test('avatar: 등록 화면 — ◀ ▶로 부위가 바뀌고, 무작위, 이�
     el.querySelector('[data-next="shape"]').click(); eq(val('shape'), '둥근 얼굴');
     el.querySelector('[data-prev="shape"]').click(); el.querySelector('[data-prev="shape"]').click(); eq(val('shape'), '하트형', '뒤로 돌면 마지막');
     el.querySelector('[data-key="sex"][data-value="f"]').click(); ok(el.querySelector('[data-key="sex"][data-value="f"]').classList.contains('on'));
+    ok(el.querySelector('.av-row[data-part="skin"]').hidden && !el.querySelector('.av-row[data-part="shape"]').hidden, '처음에는 얼굴 묶음만 보인다');
+    el.querySelector('.av-tab[data-tab="deco"]').click(); ok(!el.querySelector('.av-row[data-part="skin"]').hidden && el.querySelector('.av-row[data-part="shape"]').hidden, '꾸미기 탭');
     el.querySelector('[data-key="skin"][data-value="tan"]').click(); ok(el.querySelector('[data-key="skin"][data-value="tan"]').classList.contains('on'));
     ok(el.querySelector('.av-portrait').style.backgroundImage.includes('data:image'), '대원증 얼굴 그림');
     eq(el.querySelector('#avatar-name').value, '5-3 12번');
     btn(el, '무작위').click(); ok(isAvatar(JSON.parse(JSON.stringify(DEFAULT_AVATAR))));
     el.querySelector('#avatar-name').value = '김여행';
-    for (const b of el.querySelectorAll('button')) { const r = b.getBoundingClientRect(); ok(r.width >= 30 && r.height >= 28, `단추가 손가락 크기 "${b.textContent || b.getAttribute('aria-label')}"`); }
+    for (const t of el.querySelectorAll('.av-tab')) { t.click(); for (const b of el.querySelectorAll('button')) { if (!b.offsetParent) continue; const r = b.getBoundingClientRect(); ok(r.width >= 30 && r.height >= 28, `단추가 손가락 크기 "${b.textContent || b.getAttribute('aria-label')}"`); } }
+    el.querySelector('.av-tab[data-tab="wear"]').click(); el.querySelector('[data-key="band"][data-value="purple"]').click();
     btn(el, '대원증 받고 출발').click();
     const r = await p;
     ok(isAvatar(r.avatar)); eq(r.name, '김여행'); eq(el.children.length, 0, '화면이 닫힌다');
@@ -103,4 +106,29 @@ test('avatar: 타임머신 — 다음 여행지 이름, 이동 장면의 연도,
   const flames = () => { let n = 0; tm.group.traverse(o => { if (o.isMesh && o.visible && o.material.type === 'MeshBasicMaterial' && o.geometry.type === 'ConeGeometry') n += 1; }); return n; };
   eq(flames(), 0, '세워 두면 불꽃이 없다'); tm.setFlame(1); tm.tick(1); eq(flames(), 3, '날 때는 불꽃 셋');
   tm.dispose();
+});
+
+test('avatar: 개성 넓히기 — 2026년 차림은 내 머리·옷, 변장하면 역할 옷·투구 그대로에 얼굴·머리 빛깔·팔찌만 남는다', async () => {
+  const { travelerLook, normalizeAvatar } = await import('../content/avatar.js');
+  const { makePerson } = await import('../core/people.js');
+  const a = { ...DEFAULT_AVATAR, sex: 'f', hair: 'twin', hairColor: 'brown', top: 'hoodie', topColor: 'pink', bottomColor: 'denim', shoe: 'white', band: 'purple', cheek: 'freckles', mole: 'eye', glasses: 'square', extra: 'patch', skin: 'deep' };
+  ok(isAvatar(a));
+  const t = travelerLook(a);
+  eq([t.hat, t.hair.braids, t.outfit, t.top, t.robe, t.pants, t.shoe, t.band], ['braid', 2, 'shirt', 'hoodie', 0xe58fa6, 0x4a6a94, 0xeeeae0, 0x8a62c0]);
+  eq([t.face.freckles, t.face.patch, t.face.glasses, t.face.build.mole, t.skin], [true, true, 'square', [0.36, 0.12], 'deep']);
+  const names = p => { const s = new Set(); p.traverse(o => s.add(o.name)); return s; };
+  const tp = names(makePerson(t, { track: false, stable: true }));
+  ok(tp.has('hood') && tp.has('pocket') && tp.has('band') && tp.has('glasses'), '후드·주머니·팔찌·안경');
+  // 변장: 모든 편의 역할 옷에서 옷·모자는 그대로, 2026년 옷 조각(후드 등)은 남지 않고, 팔찌·머리 빛깔만 남는다
+  for (const id of ['ch1', 'ch5', 'j2', 'j4', 'k3', 'k5', 'i2', 'h4', 'h6']) {
+    const role = roleLook(id), d = applyAvatar(role, a), np = names(makePerson(d, { track: false, stable: true }));
+    eq([d.outfit, d.robe, d.pants, d.top, d.shoe], [role.outfit, role.robe, role.pants, undefined, undefined], `${id}: 옷은 역할 그대로`);
+    ok(d.hat === role.hat || d.hat === 'braid', `${id}: 모자·투구 그대로(${d.hat})`); ok(!d.hair, `${id}: 내 머리 모양은 변장하면 쓰지 않는다`);
+    eq([d.hairColor, d.band], ['#6a4630', 0x8a62c0], `${id}: 머리 빛깔·팔찌는 남는다`);
+    ok(np.has('band') && !np.has('hood') && !np.has('pocket'), `${id}: 팔찌만 남고 후드는 없다`);
+  }
+  // 예전에 저장한 캐릭터(부위 8개)도 그대로 쓴다: 점·안경은 새 자리로
+  const old = { sex: 'f', shape: 'round', eye: 'round', brow: 'arched', nose: 'button', mouth: 'small', skin: 'light', extra: 'glasses' };
+  ok(isAvatar(old)); const n = normalizeAvatar(old); eq([n.glasses, n.extra, n.hair, n.band], ['round', 'none', 'bob', 'gold']);
+  eq(normalizeAvatar({ ...old, extra: 'mole' }).mole, 'cheek');
 });

@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { makePerson } from './people.js';
 import { portraitURL } from './faces.js';
-import { AVATAR_PARTS, DEFAULT_AVATAR, TRAVELER_LOOK, cycleAvatar, randomAvatar, applyAvatar, labelOf, isAvatar } from '../content/avatar.js';
+import { AVATAR_PARTS, AVATAR_TABS, DEFAULT_AVATAR, cycleAvatar, randomAvatar, travelerLook, normalizeAvatar, labelOf, isAvatar } from '../content/avatar.js';
 
 const h = (tag, attrs = {}, ...kids) => {
   const el = document.createElement(tag);
@@ -15,7 +15,7 @@ const h = (tag, attrs = {}, ...kids) => {
 // 미리보기 인물: 고려편 학생 역할(병사) 옷에 내 얼굴. preview: false면(테스트) 3D를 만들지 않는다
 export function showAvatarMaker(root, { avatar = null, name = '', firstStop = '993년 고려', preview = true, title = '나를 만들어요' } = {}) {
   return new Promise(resolve => {
-    let a = isAvatar(avatar) ? { ...avatar } : { ...DEFAULT_AVATAR };
+    let a = isAvatar(avatar) ? normalizeAvatar(avatar) : { ...DEFAULT_AVATAR }, tab = AVATAR_TABS[0][0];
     const input = h('input', { id: 'avatar-name', type: 'text', placeholder: '이름 또는 번호', autocomplete: 'off', maxlength: '30' }); input.value = name || '';
     const portrait = h('div', { class: 'av-portrait' });
     const values = {};
@@ -27,13 +27,16 @@ export function showAvatarMaker(root, { avatar = null, name = '', firstStop = '9
           : h('span', { class: 'av-val' }, '');
       values[p.key] = val;
       const arrows = !p.swatch && p.key !== 'sex';
-      return h('div', { class: 'av-row', 'data-part': p.key },
+      return h('div', { class: `av-row${p.swatch ? ' av-row-swatch' : ''}`, 'data-part': p.key, 'data-tab': p.tab },
         h('span', { class: 'av-key' }, p.label),
         arrows ? h('button', { type: 'button', class: 'av-arrow', 'data-prev': p.key, 'aria-label': `${p.label} 이전`, onclick: () => set(cycleAvatar(a, p.key, -1)) }, '◀') : h('span'),
         val,
         arrows ? h('button', { type: 'button', class: 'av-arrow', 'data-next': p.key, 'aria-label': `${p.label} 다음`, onclick: () => set(cycleAvatar(a, p.key, 1)) }, '▶') : h('span'));
     });
-    const look = () => applyAvatar({ ...TRAVELER_LOOK }, a); // 2026년 여행자 차림(투구가 없어 얼굴·머리가 잘 보인다)
+    // 묶음 탭(얼굴·꾸미기·머리·옷): 한 번에 한 묶음의 줄만 보인다
+    const tabs = AVATAR_TABS.map(([id, label]) => h('button', { type: 'button', class: 'av-tab', 'data-tab': id, onclick: () => { tab = id; showTab(); } }, label));
+    const showTab = () => { tabs.forEach(b => b.classList.toggle('on', b.dataset.tab === tab)); rows.forEach(r => { r.hidden = r.dataset.tab !== tab; }); };
+    const look = () => travelerLook(a); // 2026년 여행자 차림(투구가 없어 얼굴·머리가 잘 보인다)
     let scene = null, cam = null, renderer = null, person = null, raf = 0;
     const canvas = h('canvas', { class: 'av-canvas', width: 420, height: 600 });
     const rebuild = () => {
@@ -55,7 +58,7 @@ export function showAvatarMaker(root, { avatar = null, name = '', firstStop = '9
       h('div', { class: 'av-inner' },
         h('div', { class: 'av-head' }, h('div', { class: 'eyebrow' }, '출발 2026년 · 시간 여행자 등록'), h('h2', {}, title)),
         h('div', { class: 'av-stage' }, canvas, h('div', { class: 'av-turn' }, '↻ 천천히 돌아요'), h('div', { class: 'av-cap' }, '2026년 차림 · 시대에 도착하면 그 시대 옷으로 변장해요')),
-        h('div', { class: 'av-rows' }, rows),
+        h('div', { class: 'av-rows' }, h('div', { class: 'av-tabs' }, tabs), rows),
         h('div', { class: 'av-acts' },
           h('button', { type: 'button', class: 'btn av-random', onclick: () => set(randomAvatar()) }, '🎲 무작위'),
           h('button', { type: 'button', class: 'btn primary av-go', onclick: done }, '대원증 받고 출발 ▸')),
@@ -81,7 +84,7 @@ export function showAvatarMaker(root, { avatar = null, name = '', firstStop = '9
         raf = requestAnimationFrame(tick);
       } catch (e) { console.warn('미리보기를 그릴 수 없어 얼굴 그림만 보인다', e); scene = null; }
     }
-    refresh();
+    refresh(); showTab();
     setTimeout(() => input.focus?.(), 50);
   });
 }

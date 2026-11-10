@@ -579,3 +579,11 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .travel.paper .travel-line { top: 25%; }
 .travel.paper .travel-line b { color: #b3271e; }
 .travel-flash { position: absolute; inset: 0; background: #fff6d8; opacity: 0; }
+
+/* 캐릭터 만들기 묶음 탭(얼굴·꾸미기·머리·옷) */
+.av-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.av-tab { min-height: 40px; border-radius: 8px; border: 1px solid rgba(255,255,255,.18); background: rgba(27,31,29,.75); color: #e9e2cf; font-size: 16px; font-weight: 700; cursor: pointer; }
+.av-tab.on { background: #d9a441; color: #2b241c; border-color: #d9a441; }
+.av-row[hidden] { display: none; }
+.av-row-swatch { grid-template-columns: 64px 0 1fr 0; min-height: 46px; }
+.av-swatch { gap: 6px; } .av-dot { width: 34px; height: 34px; flex: none; }

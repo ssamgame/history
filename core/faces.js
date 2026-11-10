@@ -134,6 +134,12 @@ export function drawFeatures(g, face = {}, cx, cy, R, { solid = false } = {}) {
     g.fillStyle = 'rgba(120, 180, 230, 0.95)'; g.beginPath(); g.ellipse(ex + sx * 0.06 * R, y0 + 0.34 * R, 0.035 * R, 0.05 * R, 0, 0, Math.PI * 2); g.fill();
   }
   // 안경: 검은 둥근 테와 다리
+  if (glasses === 'square') { // 네모 안경
+    g.strokeStyle = '#1a1614'; g.lineWidth = Math.max(2, 0.05 * R);
+    for (const sx of [-1, 1]) g.strokeRect(cx + sx * 0.33 * R - 0.19 * R, cy - 0.2 * R, 0.38 * R, 0.3 * R);
+    g.beginPath(); g.moveTo(cx - 0.14 * R, cy - 0.07 * R); g.lineTo(cx + 0.14 * R, cy - 0.07 * R); g.stroke();
+    for (const sx of [-1, 1]) { g.beginPath(); g.moveTo(cx + sx * 0.52 * R, cy - 0.07 * R); g.lineTo(cx + sx * 0.8 * R, cy - 0.12 * R); g.stroke(); }
+  }
   if (glasses === 'round') {
     g.strokeStyle = '#1a1614'; g.lineWidth = Math.max(2, 0.05 * R);
     for (const sx of [-1, 1]) { g.beginPath(); g.arc(cx + sx * 0.33 * R, cy - 0.05 * R, 0.19 * R, 0, Math.PI * 2); g.stroke(); }
@@ -150,6 +156,17 @@ export function drawFeatures(g, face = {}, cx, cy, R, { solid = false } = {}) {
     const top = [], bot = [];
     for (let i = 0; i <= 10; i++) { const t = i / 10, [x, y] = pt(t), th = T * (1 - v.browTaper * t) * (i === 0 ? 0.85 : 1); top.push([x, y - th * 0.55]); bot.push([x, y + th * 0.45]); }
     g.beginPath(); top.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); bot.reverse().forEach(([x, y]) => g.lineTo(x, y)); g.closePath(); g.fill();
+  }
+  if (face.freckles) { // 주근깨: 콧등과 두 볼에 옅은 갈색 점
+    g.fillStyle = 'rgba(150, 90, 60, 0.55)';
+    for (const [fx, fy] of [[0.3, 0.14], [0.42, 0.2], [0.52, 0.13], [0.36, 0.26], [0.48, 0.28], [0.12, 0.17]]) for (const sx of [-1, 1]) { g.beginPath(); g.arc(cx + sx * fx * R, cy + fy * R, 0.022 * R, 0, Math.PI * 2); g.fill(); }
+  }
+  if (face.patch) { // 볼 반창고
+    g.save(); g.translate(cx + 0.5 * R, cy + 0.3 * R); g.rotate(-0.5);
+    g.fillStyle = '#e8b98a'; g.strokeStyle = 'rgba(130, 85, 50, 0.85)'; g.lineWidth = Math.max(1, 0.012 * R);
+    g.beginPath(); g.roundRect ? g.roundRect(-0.15 * R, -0.055 * R, 0.3 * R, 0.11 * R, 0.04 * R) : g.rect(-0.15 * R, -0.055 * R, 0.3 * R, 0.11 * R); g.fill(); g.stroke();
+    g.fillStyle = 'rgba(250, 232, 205, 0.95)'; g.fillRect(-0.05 * R, -0.04 * R, 0.1 * R, 0.08 * R);
+    g.restore();
   }
   if (v.mole) { g.fillStyle = 'rgba(70, 45, 35, 0.8)'; g.beginPath(); g.arc(cx + v.mole[0] * R, cy + v.mole[1] * R, 0.03 * R, 0, Math.PI * 2); g.fill(); } // 점
   g.restore();

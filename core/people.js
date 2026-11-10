@@ -34,7 +34,7 @@ function part(geo, color, x, y, z, parent, kind = 'cloth') {
 
 const HEAD_Y = 2.02, HEAD_SCALE = 1.3;
 // 피부색(D-54): 밝은 얼굴(light), 보통, 햇볕에 그을린 얼굴(tan: 농민·군사·일꾼), 나이 든 얼굴(old)
-export const SKINS = { light: 0xf6d8ba, base: 0xf2cfab, tan: 0xe8c09a, old: 0xecc9a8 }; // D-54 고침: 얼굴이 너무 진해 보이지 않게 밝게
+export const SKINS = { pale: 0xfbe6d2, light: 0xf6d8ba, base: 0xf2cfab, tan: 0xe8c09a, deep: 0xd3a47c, old: 0xecc9a8 }; // D-54 고침: 얼굴이 너무 진해 보이지 않게 밝게
 const skinMats = new Map();
 const headMat = (skin = 'base', tone = 0) => { const c0 = new THREE.Color(SKINS[skin] ?? SKINS.base); const c = c0.offsetHSL(0, tone * 0.02, tone * 0.02).getHex(); if (!skinMats.has(c)) skinMats.set(c, new THREE.MeshLambertMaterial({ color: c })); return skinMats.get(c); };
 // 찰갑(작은 쇠·가죽 조각을 끈으로 엮은 갑옷) 무늬: 회색조로 그려 재질 색을 곱한다
@@ -208,7 +208,7 @@ export function makePerson(look = {}, { track = true, stable = false } = {}) {
   // 시대마다 다른 옷차림(2026-10-30 선생님: 당시 시대상을 복장에): 생김새의 eras[시대]가 있으면 그 시대 옷으로 바꿔 입는다
   { const ek = eraKey(), o = look.eras && ek && (look.eras[ek] || (ek === 'presentLate' && look.eras.present)); if (o) look = { ...look, ...o }; }
   const vary = !stable && !look.named;
-  const { trim = 0x2b241c, gear = null, outfit = null, hairColor = null, armor = 0x6b665e, pants = null, skin = null, sleeve = null, badge = null, royal = false, cord = null } = look; // sleeve 소매 빛(동달이), badge 흉배 빛, royal 곤룡포의 둥근 보, cord 도포의 세조대 빛
+  const { trim = 0x2b241c, gear = null, outfit = null, hairColor = null, armor = 0x6b665e, pants = null, skin = null, sleeve = null, badge = null, royal = false, cord = null, band: wristBand = null, top = null } = look; // sleeve 소매 빛(동달이), badge 흉배 빛, royal 곤룡포의 둥근 보, cord 도포의 세조대 빛
   let { robe, hat } = look;
   const crowdN = vary ? personCount % 6 + 1 : (look._n || 0); // 같은 생김새 묶음마다 여섯 가지 얼굴을 돌려 쓴다(얼굴 그림 수를 줄여 태블릿 메모리를 아낀다)
   const hv = hairStyle(look, crowdN, roleOf(look)); // 시대별 머리 모양(D-56, core/hairstyle.js)
@@ -225,7 +225,7 @@ export function makePerson(look = {}, { track = true, stable = false } = {}) {
     part(new THREE.BoxGeometry(0.2, 0.29, 0.22), 0x2b241c, 0, -0.14, 0, piv).name = 'thigh';
     const knee = new THREE.Group(); knee.name = 'knee'; knee.position.y = -0.275; piv.add(knee);
     part(new THREE.BoxGeometry(0.2, 0.29, 0.22), 0x2b241c, 0, -0.14, 0, knee).name = 'shin';
-    part(new THREE.BoxGeometry(0.24, 0.12, 0.34), 0x1e1a16, 0, -0.225, 0.05, knee, 'grain').name = 'shoe'; // 신발
+    part(new THREE.BoxGeometry(0.24, 0.12, 0.34), look.shoe ?? 0x1e1a16, 0, -0.225, 0.05, knee, 'grain').name = 'shoe'; // 신발
     piv.userData.knee = knee;
     legs.push(piv);
   }
@@ -295,7 +295,14 @@ export function makePerson(look = {}, { track = true, stable = false } = {}) {
     for (const sx of [-0.2, 0.2]) part(new THREE.BoxGeometry(0.16, 0.13, 0.03), trim, sx, 1.56, 0.41, g).rotation.x = -0.12;
   }
   // 앞섶(깃): 가슴에서 엇갈리는 흰 깃 두 줄. 양복(suit)이면 흰 셔츠와 넥타이
-  if (outfit === 'shirt' || outfit === 'dress') { // 셔츠 깃: 목 아래 두 갈래로 펼친 흰(또는 옷빛) 깃
+  if (outfit === 'shirt' && (top === 'tee' || top === 'hoodie')) { // 2026년 티셔츠·후드 티(내 캐릭터): 깃 대신 둥근 목둘레, 후드 티는 등 뒤 모자와 앞주머니·끈
+    const neck = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.04, 5, 14), mat(new THREE.Color(robe).offsetHSL(0, 0, -0.08).getHex(), 'cloth', 'object')); neck.rotation.x = Math.PI / 2; neck.position.set(0, 1.74, 0.02); neck.name = 'collar'; g.add(neck);
+    if (top === 'hoodie') {
+      const hood = part(new THREE.SphereGeometry(0.24, 8, 6), robe, 0, 1.72, -0.3, g); hood.scale.set(1.15, 0.8, 0.7); hood.name = 'hood';
+      part(new THREE.BoxGeometry(0.42, 0.2, 0.04), new THREE.Color(robe).offsetHSL(0, 0, -0.06).getHex(), 0, 1.24, 0.4, g).name = 'pocket';
+      for (const sx of [-1, 1]) part(new THREE.BoxGeometry(0.025, 0.2, 0.02), 0xf2efe8, sx * 0.08, 1.6, 0.37, g).name = 'string';
+    }
+  } else if (outfit === 'shirt' || outfit === 'dress') { // 셔츠 깃: 목 아래 두 갈래로 펼친 흰(또는 옷빛) 깃
     for (const sx of [-1, 1]) { const c = part(new THREE.BoxGeometry(0.16, 0.12, 0.03), outfit === 'dress' ? 0xf2efe8 : new THREE.Color(robe).offsetHSL(0, 0, 0.06).getHex(), sx * 0.09, 1.7, 0.33, g); c.rotation.set(-0.35, 0, sx * -0.5); c.name = 'collar'; }
   } else if (outfit === 'suit') {
     part(new THREE.BoxGeometry(0.3, 0.44, 0.05), 0xf2efe8, 0, 1.5, 0.36, g).rotation.x = -0.28;
@@ -313,6 +320,11 @@ export function makePerson(look = {}, { track = true, stable = false } = {}) {
     part(new THREE.BoxGeometry(wide ? 0.24 : 0.18, 0.72, wide ? 0.26 : 0.2), sleeve ?? robe, 0, -0.34, 0, piv); // sleeve: 동달이처럼 몸판과 다른 소매 빛
     part(new THREE.BoxGeometry(wide ? 0.26 : 0.2, 0.08, wide ? 0.28 : 0.22), trim, 0, -0.66, 0, piv); // 소맷부리
     const hand = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), headMat(sk, F.tone)); hand.position.set(0, -0.78, 0); hand.castShadow = true; hand.name = 'hand'; piv.add(hand);
+    if (wristBand && sx > 0) { // 시간 팔찌(내 캐릭터): 어떤 옷으로 변장해도 왼 손목에 남는 표시. 손 바로 위라 넓은 소매·갑옷에도 묻히지 않는다
+      const bg = new THREE.Group(); bg.name = 'band'; bg.position.set(0, -0.7, 0); piv.add(bg);
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.028, 6, 14), mat(wristBand, null, 'object')); ring.rotation.x = Math.PI / 2; ring.castShadow = true; bg.add(ring);
+      const gem = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.05, 0.03), mat(0xf6f1e2, null, 'object')); gem.position.set(0, 0, 0.115); bg.add(gem);
+    }
     arms.push(piv);
   }
   // 머리 묶음: 둥근 머리 + 만화풍 얼굴 무늬 + 모자. 만화처럼 머리를 크게(1.3배) 그린다.
@@ -354,10 +366,10 @@ export function makePerson(look = {}, { track = true, stable = false } = {}) {
   if (fv.noseBridge >= 0.6) { const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.026 + 0.01 * fv.noseW, nl * 0.75, 0.018 * npro), nm); bridge.position.set(0, -0.03 + nl * 0.3, 0.318 + 0.01 * npro); bridge.rotation.x = -0.3; nose.add(bridge); } // 콧대가 선 코(길고 곧은 코·높은 코)만
   const tip = new THREE.Mesh(new THREE.SphereGeometry(0.03, 6, 5), nm); tip.scale.set(fv.noseW * 1.25, 0.95 * fv.noseTip, (0.8 + 0.5 * npro)); tip.position.set(0, -0.03, 0.322 + 0.022 * npro); tip.name = 'noseTip'; nose.add(tip); // 얼굴 무늬의 코끝 자리(세로각 약 95도)
   // 안경(둥근 검은 테)
-  if (face.glasses === 'round') {
+  if (face.glasses === 'round' || face.glasses === 'square') { // 네모 안경: 네 모서리 고리를 45도 돌려 네모 테
     const gl = new THREE.Group(); gl.name = 'glasses'; hg.add(gl);
-    const frame = mat(0x1a1614, null, 'object');
-    for (const sx of [-1, 1]) { const r = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.012, 6, 16), frame); r.position.set(sx * 0.105, 0.015, 0.315); gl.add(r); }
+    const frame = mat(0x1a1614, null, 'object'), sq = face.glasses === 'square';
+    for (const sx of [-1, 1]) { const r = new THREE.Mesh(new THREE.TorusGeometry(sq ? 0.082 : 0.07, sq ? 0.009 : 0.012, 6, sq ? 4 : 16), frame); if (sq) { r.rotation.z = Math.PI / 4; r.scale.y = 0.78; } r.position.set(sx * 0.105, 0.015, 0.315); gl.add(r); }
     const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.012, 0.012), frame); bridge.position.set(0, 0.03, 0.33); gl.add(bridge);
   }
   // 머리카락 색(흰머리·희끗한 머리)
@@ -410,7 +422,7 @@ export function makePerson(look = {}, { track = true, stable = false } = {}) {
     part(hairCap(0.335, { front: hv.front || 'round', side: 1.5, back: 2.2 }), hc, 0, 0.06, -0.01, hz, 'grain'); // 가운데 가르마로 빗어 내린 머리
     const rib = { red: 0xb8282c, purple: 0x6a2a5a, black: 0x22201e }[hv.ribbon || 'red'];
     const len = hv.short ? 0.36 : 0.6, two = hv.braids === 2;
-    for (const sx of two ? [-1, 1] : [0]) {
+    for (const sx of hv.bob ? [] : two ? [-1, 1] : [0]) { // bob: 땋지 않은 단발(내 캐릭터)
       const bx = sx * 0.2, bz = two ? -0.22 : -0.3;
       part(new THREE.CylinderGeometry(0.05, 0.035, len, 6), hc, bx, -0.03 - len / 2, bz, hz, 'grain');
       part(new THREE.BoxGeometry(0.09, 0.14, 0.03), rib, bx, -0.06 - len, bz - 0.01, hz, 'grain');
