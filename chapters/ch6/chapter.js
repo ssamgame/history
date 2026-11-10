@@ -153,7 +153,7 @@ export default {
   script,
   quizzes: script.quizzes,
   stories: { yongjang: yongjangScene, hangpaduri: hangpaduriScene }, // 이야기 장면(D-58)
-  spawn: () => ({ at: scene.introFrom, to: scene.start }), // 도착 연출 자리(타임머신 틀, 2026-11-09): 탐험이 시작되는 곳(문 밖 길)과 같게
+  spawn: () => ({ at: scene.introFrom, to: scene.start, gate: scene.gate }), // 도착 연출 자리(타임머신 틀, 2026-11-09): 탐험이 시작되는 곳(문 밖 길)과 같게
 
   buildScene(world) {
     scene = buildCh6Scene(world); devWorld = world;

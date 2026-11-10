@@ -387,7 +387,7 @@ export default {
   },
   // 미니게임 뒤 빛나는 문(C-02): 진영 가운데 빈 땅, 돌아온 학생(남쪽)을 본다
   portal: { at: [0, 4], ry: 0 },
-  spawn: () => ({ at: INTRO_FROM, to: scene.start }), // 도착 연출 자리(타임머신 틀, 2026-11-09): 탐험이 시작되는 곳(문 밖 길)과 같게
+  spawn: () => ({ at: INTRO_FROM, to: scene.start, gate: scene.gate }), // 도착 연출 자리(타임머신 틀, 2026-11-09): 탐험이 시작되는 곳(문 밖 길)과 같게
 
   enterStage(ctx, stage) {
     if (stage === 'minigame') { ctx.world.bounds = EXPLORE_BOUNDS; placePlayer(ctx.world, scene.start); }

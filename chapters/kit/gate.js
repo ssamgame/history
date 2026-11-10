@@ -36,12 +36,14 @@ export function nameBoard(parent, name, x, z, { y = 0, ry = 0 } = {}) {
 // 누르거나 키를 누르면 건너뛴다(문은 활짝 열리고 학생은 to에). 걷는 곳(bounds)은 잠깐 넓혔다가 돌려놓는다.
 export function enterThroughGate(ctx, { from, to, gate, openTime = 0.6, speed = 0.8 }) {
   const { world, input } = ctx;
+  if (ctx.arrivalFrom) { from = ctx.arrivalFrom; ctx.arrivalFrom = null; } // 도착 연출(core/arrival.js)에서 선 자리부터 이어 걷는다(높이 from[2]는 걸으며 0으로)
+  const y0 = from[2] || 0;
   const b0 = world.bounds, s0 = world.speedScale;
   let dx = to[0] - from[0], dz = to[1] - from[1];
   const len = Math.hypot(dx, dz) || 1; dx /= len; dz /= len;
   input.enabled = false;
   world.bounds = { x0: Math.min(b0.x0, from[0]), x1: Math.max(b0.x1, from[0]), z0: Math.min(b0.z0, from[1]), z1: Math.max(b0.z1, from[1]) };
-  world.player.position.set(from[0], 0, from[1]);
+  world.player.position.set(from[0], y0, from[1]);
   world.player.rotation.y = Math.atan2(dx, dz);
   world.camMode = 'follow'; world.snapCamera();
   if (gate) gate.setOpen(0);
@@ -61,8 +63,9 @@ export function enterThroughGate(ctx, { from, to, gate, openTime = 0.6, speed = 
       t += dt;
       if (gate) gate.setOpen(t / openTime);
       if (t >= openTime && !world.autoMove) { world.speedScale = speed; world.autoMove = { x: dx, z: dz }; }
-      const p = world.player.position;
-      if ((p.x - to[0]) * dx + (p.z - to[1]) * dz >= 0) end();
+      const p = world.player.position, left = (to[0] - p.x) * dx + (to[1] - p.z) * dz;
+      p.y = y0 * Math.min(1, Math.max(0, left / len));
+      if (left <= 0) end();
     });
     addEventListener('keydown', end, true); addEventListener('pointerdown', end, true);
   });

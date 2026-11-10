@@ -335,7 +335,7 @@ export function buildTown(world, layout) {
   const L = world.level;
   world.bounds = layout.bounds;
   // 땅: 걷는 곳은 평평하고 바깥은 언덕, 멀리 산줄기
-  const field = terrainField({ bounds: layout.bounds, props: layout.props || [], hill: layout.hill ?? 1 });
+  const field = terrainField({ bounds: layout.bounds, props: layout.props || [], hill: layout.hill ?? 1, pads: layout.start ? [{ x: layout.start[0], z: layout.bounds.z1 + 9, r: 9 }] : [] }); // 마을 어귀 밖 길(도착 연출·걸어 들어오기)은 평평하게
   const color = layout.groundColor ?? 0x5f7a4c;
   const kind = layout.ground || 'grass';
   if (kind === 'stone') { // 돌을 깐 도시: 걷는 곳만 포장하고 바깥 언덕은 흙

@@ -433,7 +433,7 @@ export default {
   // 장 도입: 첫 해설은 해설 카드로 보인다(D-62, 2026-10-31 선생님: 저고여가 걷는 장면은 뒤의 저고여 사건 장면과 겹쳐 뺐다)
   // 미니게임 뒤 빛나는 문(C-02): 개경 궁궐 마당 오른쪽 빈 땅, 학생 쪽(남쪽)을 본다
   portal: { at: [6, 5], ry: 0 },
-  spawn: () => ({ at: scene.areas.palace.introFrom, to: scene.areas.palace.start }), // 도착 연출 자리(타임머신 틀, 2026-11-09): 탐험이 시작되는 곳(문 밖 길)과 같게
+  spawn: () => ({ at: scene.areas.palace.introFrom, to: scene.areas.palace.start, gate: scene.palaceGate }), // 도착 연출 자리(타임머신 틀, 2026-11-09): 탐험이 시작되는 곳(문 밖 길)과 같게
 
   enterStage(ctx, stage) {
     const P = scene.areas.palace;

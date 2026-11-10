@@ -20,14 +20,14 @@ const rectDist = (x, z, r) => Math.hypot(Math.max(r.x0 - x, 0, x - r.x1), Math.m
 // 물 밑 땅 높이: 깊게 둔다. 얕으면(-1.4) 물가 비탈이 완만해 물결이 오르내릴 때마다 바닷가 경계가 앞뒤로 크게 움직였다(2026-11-04 선생님: 육지와 바다 경계가 계속 변함)
 const WATER_FLOOR = -6;
 // spec: { bounds, props, roads, size, flatMargin, hill } → { heightAt(x, z), flatAt(x,z) }
-export function terrainField({ bounds, props = [], margin = 5, hill = 1 }) {
+export function terrainField({ bounds, props = [], margin = 5, hill = 1, pads: more = [] }) {
   const flat = { x0: bounds.x0 - margin, x1: bounds.x1 + margin, z0: bounds.z0 - margin, z1: bounds.z1 + margin };
   const waters = props.filter(p => p.type === 'water').map(p => {
     const w = (p.w || 200) / 2, d = (p.d || 60) / 2, c = Math.cos(p.ry || 0), s = Math.sin(p.ry || 0);
     return { p, w, d, c, s };
   });
   const pads = props.filter(p => p.type !== 'water' && p.type !== 'crowd' && rectDist(p.x, p.z, flat) > 0)
-    .map(p => ({ x: p.x, z: p.z, r: (p.type === 'western' ? Math.max(p.w || 8, p.d || 5) * 0.75 : 4.5) * (p.scale || 1) + 3 }));
+    .map(p => ({ x: p.x, z: p.z, r: (p.type === 'western' ? Math.max(p.w || 8, p.d || 5) * 0.75 : 4.5) * (p.scale || 1) + 3 })).concat(more);
   const inWater = (x, z) => waters.some(({ p, w, d, c, s }) => { const dx = x - p.x, dz = z - p.z, lx = dx * c - dz * s, lz = dx * s + dz * c; return Math.abs(lx) < w + 2 && Math.abs(lz) < d + 2; });
   // 가장 가까운 물 칸 가장자리까지 거리(물 밖). 바닷가·강둑이 절벽처럼 솟지 않고 완만하게 오르게 쓴다
   const waterDist = (x, z) => { let best = Infinity; for (const { p, w, d, c, s } of waters) { const dx = x - p.x, dz = z - p.z, lx = dx * c - dz * s, lz = dx * s + dz * c; best = Math.min(best, Math.hypot(Math.max(Math.abs(lx) - w - 2, 0), Math.max(Math.abs(lz) - d - 2, 0))); } return best; };

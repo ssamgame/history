@@ -78,10 +78,16 @@ test('avatar: 모든 장에 도착 자리(spawn)가 있고 탐험 시작 자리�
   let n = 0;
   for (const c of ALL_CHAPTERS.filter(c => c.load)) { const mod = (await c.load()).default; if (mod.spawn) n += 1; else ok(false, `${c.id}: spawn 없음`); }
   ok(n >= 30, `spawn 있는 장 ${n}`);
-  // 근대~현대편도 마을 밖(걷는 곳 바깥, 평평한 여유 5m 안)에 내려서 시작 자리로 걸어 들어온다(2026-11-10 선생님)
-  for (const id of ['k1', 'i3', 'h6']) {
-    const mod = (await ALL_CHAPTERS.find(c => c.id === id).load()).default, sp = mod.spawn(), b = mod.layout.bounds;
-    ok(sp.at[1] > b.z1 && sp.at[1] <= b.z1 + 5, `${id}: 밖에 내려선다 z=${sp.at[1]}`);
-    eq(sp.to, mod.layout.start, `${id}: 시작 자리로`);
-  }
+  // 캐릭터는 그 장의 문에서 BACK만큼 뒤에 서고(시간의 문 너비 4m의 절반보다 넉넉히), 걸어 들어오기는 그 자리에서 잇는다(2026-11-10 선생님)
+  const { BACK } = await import('../core/arrival.js');
+  ok(BACK >= 4, `문에서 ${BACK}m 뒤`);
+  const { enterThroughGate } = await import('../chapters/kit/gate.js');
+  const pos = { x: 0, y: 0, z: 0, set(x, y, z) { this.x = x; this.y = y; this.z = z; } };
+  const world = { bounds: { x0: -5, x1: 5, z0: -5, z1: 5 }, player: { position: pos, rotation: {} }, snapCamera() {}, onUpdate(f) { this.f = f; return () => { this.f = null; }; } };
+  const ctx = { world, input: {}, arrivalFrom: [0, 12, 0.6] };
+  const done = enterThroughGate(ctx, { from: [0, 8], to: [0, 2], openTime: 0 });
+  eq([pos.x, pos.y, pos.z], [0, 0.6, 12], '도착 자리에서 이어 걷는다');
+  eq(ctx.arrivalFrom, null, '한 번만 쓴다');
+  pos.z = 7; world.f(0.1); ok(pos.y > 0.2 && pos.y < 0.4, `걸으며 땅 높이로 내려온다 ${pos.y}`);
+  pos.z = 1.9; world.f(0.1); await done; eq([pos.y, pos.z], [0, 2]);
 });
