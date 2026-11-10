@@ -44,5 +44,6 @@ export async function playArrival(ctx, { meta, chapter = null, role, roleLook: l
   });
   if (gate) world.colliders.splice(-2, 2); // 문 기둥에 넣은 부딪힘 둘을 뺀다(makePortal이 마지막에 넣는다)
   if (b0) world.bounds = b0;
+  ctx.arrivedAt = meta?.id;
   ctx.testHooks.arrival = { shown: true, swapped, short, at: [p.position.x, p.position.z], gate: !!gate };
 }

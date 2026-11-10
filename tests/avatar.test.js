@@ -78,4 +78,10 @@ test('avatar: 모든 장에 도착 자리(spawn)가 있고 탐험 시작 자리�
   let n = 0;
   for (const c of ALL_CHAPTERS.filter(c => c.load)) { const mod = (await c.load()).default; if (mod.spawn) n += 1; else ok(false, `${c.id}: spawn 없음`); }
   ok(n >= 30, `spawn 있는 장 ${n}`);
+  // 근대~현대편도 마을 밖(걷는 곳 바깥, 평평한 여유 5m 안)에 내려서 시작 자리로 걸어 들어온다(2026-11-10 선생님)
+  for (const id of ['k1', 'i3', 'h6']) {
+    const mod = (await ALL_CHAPTERS.find(c => c.id === id).load()).default, sp = mod.spawn(), b = mod.layout.bounds;
+    ok(sp.at[1] > b.z1 && sp.at[1] <= b.z1 + 5, `${id}: 밖에 내려선다 z=${sp.at[1]}`);
+    eq(sp.to, mod.layout.start, `${id}: 시작 자리로`);
+  }
 });

@@ -15,6 +15,7 @@ import { DIORAMA } from '../modern/dioramas.js';
 import { showHowTo, chooseCards, sortCards, placeOnBoard, orderCards, timingBar, readBook, showDocument } from '../../core/minigame.js';
 import { sayAll, placePlayer, talkInOrder, setTalkStep, tryPart, sumParts } from '../joseon/common.js';
 import { buildTown } from './town.js';
+import { enterThroughGate } from './gate.js';
 import { PLAY, buildArena } from './play.js';
 
 const HOWTO = { // 짧게(2026-11-04 선생님: 게임 방법은 최대한 간략하게)
@@ -124,6 +125,7 @@ function runPart(ctx, scene, part, easy) {
 export function makeKitChapter(def) {
   const { script } = def;
   let scene = null;
+  const outside = [def.layout.start[0], def.layout.bounds.z1 + 4];
   const restoreEnd = ctx => { for (const p of def.parts) if (p.after) p.after(ctx, scene); };
   return {
     id: def.id, mood: def.mood, player: def.player, script, quizzes: script.quizzes, parts: def.parts, order: def.order, layout: def.layout, // parts·order·layout: 개발용 무대 보기와 진행 검사(tests/quest.test.js)
@@ -137,8 +139,12 @@ export function makeKitChapter(def) {
       if (stage === 'minigame' || stage === 'quiz') placePlayer(ctx.world, def.spot || def.layout.start);
       if (stage === 'quiz') { restoreEnd(ctx); ctx.setGoal(script.goals[script.goals.length - 1]); }
     },
-    explore(ctx) { return talkInOrder(ctx, script, def.order, def.layout.start); },
-    spawn: () => ({ at: def.layout.start, ry: Math.PI }), // 도착 연출 자리: 탐험 시작 자리와 같게(placePlayer 기본 방향)
+    async explore(ctx) {
+      // 도착 연출을 본 뒤에는 마을 밖 길에서 걸어 들어온다(2026-11-10 선생님: 고려처럼 밖에서 들어와야 자연스럽다)
+      if (ctx.arrivedAt === def.id) await enterThroughGate(ctx, { from: outside, to: def.layout.start, openTime: 0 });
+      return talkInOrder(ctx, script, def.order, def.layout.start);
+    },
+    spawn: () => ({ at: outside, to: def.layout.start }), // 도착 연출 자리: 마을 밖 길(걷는 곳 바깥, 땅은 평평한 여유 5m 안)
     async minigame(ctx) {
       const { world, dialogue, input } = ctx;
       input.enabled = false;
