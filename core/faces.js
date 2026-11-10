@@ -202,8 +202,25 @@ export function faceTexture(face = {}) {
 
 const hex = n => `#${n.toString(16).padStart(6, '0')}`;
 
-function drawHat(g, hat, cx, cy, R, hairColor = '#1e1c1a') {
+function drawHat(g, hat, cx, cy, R, hairColor = '#1e1c1a', hair = null) {
   g.save();
+  if (hair) { // 내 캐릭터가 고른 머리 모양(content/avatar.js travelerLook): 대원증·대화창 얼굴 그림도 3D와 같은 모양으로
+    g.fillStyle = hairColor;
+    const cap = ry => { g.beginPath(); g.ellipse(cx, cy - 0.45 * R, 0.98 * R, ry * R, 0, Math.PI, 0); g.fill(); };
+    const sides = len => { for (const s of [-1, 1]) { g.beginPath(); g.moveTo(cx + s * 0.6 * R, cy - 0.85 * R); g.quadraticCurveTo(cx + s * 1.14 * R, cy - 0.55 * R, cx + s * 1.06 * R, cy + len * R); g.lineTo(cx + s * 0.8 * R, cy + (len - 0.05) * R); g.quadraticCurveTo(cx + s * 0.86 * R, cy - 0.3 * R, cx + s * 0.55 * R, cy - 0.5 * R); g.closePath(); g.fill(); } };
+    const braid = (s, x, len) => { for (let i = 0; i < len; i++) { g.fillStyle = hairColor; g.beginPath(); g.ellipse(cx + s * x * R, cy + (0.5 + i * 0.2) * R, 0.13 * R, 0.13 * R, 0, 0, Math.PI * 2); g.fill(); } g.fillStyle = '#b8282c'; g.fillRect(cx + s * x * R - 0.12 * R, cy + (0.42 + len * 0.2) * R, 0.24 * R, 0.1 * R); };
+    if (hair.perm) { cap(0.6); for (let i = 0; i <= 8; i++) { const a = Math.PI * (1 + i / 8); g.beginPath(); g.arc(cx + Math.cos(a) * 0.92 * R, cy - 0.45 * R + Math.sin(a) * 0.6 * R, 0.2 * R, 0, Math.PI * 2); g.fill(); } for (const s of [-1, 1]) { g.beginPath(); g.arc(cx + s * 0.98 * R, cy - 0.25 * R, 0.18 * R, 0, Math.PI * 2); g.fill(); } }
+    else if (hair.cut === 'buzz') { g.globalAlpha = 0.8; cap(0.44); g.globalAlpha = 1; }
+    else if (hair.cut === 'back') cap(0.72);
+    else if (hair.cut === 'side') { cap(0.56); g.beginPath(); g.moveTo(cx - 0.35 * R, cy - 0.98 * R); g.quadraticCurveTo(cx + 0.5 * R, cy - 0.8 * R, cx + 0.95 * R, cy - 0.3 * R); g.lineTo(cx + 0.7 * R, cy - 0.62 * R); g.quadraticCurveTo(cx + 0.2 * R, cy - 0.62 * R, cx - 0.6 * R, cy - 0.5 * R); g.closePath(); g.fill(); } // 한쪽으로 빗은 앞머리
+    else if (hair.cut) cap(0.55);
+    else { // 단발·땋은 머리·양 갈래: 가운데 가르마와 옆머리
+      cap(0.65); sides(hair.bob ? 0.62 : 0.35);
+      g.strokeStyle = SKIN; g.lineWidth = Math.max(1.5, 0.04 * R); g.beginPath(); g.moveTo(cx, cy - 1.02 * R); g.lineTo(cx, cy - 0.72 * R); g.stroke();
+      if (hair.braids === 2) { braid(-1, 1.02, 2); braid(1, 1.02, 2); } else if (hair.braids) braid(1, 1.0, 4);
+    }
+    g.restore(); return;
+  }
   if (hat === 'official') {             // 복두: 검은 관과 양옆으로 뻗은 날개
     g.fillStyle = '#1e1c1a';
     g.fillRect(cx - 1.55 * R, cy - 0.95 * R, 3.1 * R, 0.12 * R);
@@ -313,10 +330,10 @@ export function portraitURL(lookId, expr = 'neutral') {
   else if (L.trim) { g.fillStyle = hex(L.trim); g.fillRect(14, 150, 132, 6); }
   const cx = 80, cy = 92, R = 42;
   const fs = faceVariant(L, expr).S, sx = fs.w * 0.97, sy = fs.h; // 얼굴형(D-55)
-  const skinCol = { light: '#f6d8ba', tan: '#e8c09a', old: '#ecc9a8' }[L.skin || (L.face?.age === 'old' ? 'old' : '')] || SKIN;
+  const skinCol = { pale: '#fbe6d2', light: '#f6d8ba', tan: '#e8c09a', deep: '#d3a47c', old: '#ecc9a8' }[L.skin || (L.face?.age === 'old' ? 'old' : '')] || SKIN;
   g.fillStyle = SKIN_SHADE; for (const s of [-1, 1]) { g.beginPath(); g.ellipse(cx + s * R * 0.98 * sx, cy + 4, 7, 10, 0, 0, Math.PI * 2); g.fill(); } // 귀
   g.fillStyle = skinCol; g.beginPath(); g.ellipse(cx, cy + (sy - 1) * R * 0.4, R * sx, R * sy, 0, 0, Math.PI * 2); g.fill();
-  drawHat(g, L.hat, cx, cy, R, L.hairColor);
+  drawHat(g, L.hat, cx, cy, R, L.hairColor, L.hair);
   drawFeatures(g, { ...L.face, v: faceVariant(L, expr) }, cx, cy + 4, R * 0.95);
   g.restore();
   const url = cv.toDataURL('image/png');
