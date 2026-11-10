@@ -30,6 +30,21 @@ export function buttonWord(label) {
 
 // 첫 화면(2026-11-09 선생님 시안 C): 뒤에는 고른 시대의 3D 장면(main.js가 띄움), 왼쪽 유리 판에 제목·소개·이름 칸·시작 단추, 아래에 시대 탭 다섯.
 // 탭을 누르면 고른 시대만 바뀌고(onCourse로 배경 장면을 바꾼다), 시작 단추로 들어간다. { action: 'new'|'continue', course, name? }로 끝난다(new일 때 name).
+// 전체 화면 켜고 끄기 단추(2026-11-10 선생님): 첫 화면과 메뉴에 둔다. 브라우저가 전체 화면을 못 하면(아이폰 사파리 등) 단추를 만들지 않는다
+export function fullscreenButton(cls = '') {
+  const d = document, root = d.documentElement;
+  const on = () => !!(d.fullscreenElement || d.webkitFullscreenElement);
+  if (!(root.requestFullscreen || root.webkitRequestFullscreen) || d.fullscreenEnabled === false) return null;
+  const b = h('button', { class: `btn fs-btn ${cls}`, type: 'button', onclick: () => {
+    try { const r = on() ? (d.exitFullscreen || d.webkitExitFullscreen).call(d) : (root.requestFullscreen || root.webkitRequestFullscreen).call(root); r?.catch?.(() => {}); } catch { /* 막힌 기기에서는 아무 일도 없다 */ }
+  } }, '');
+  const label = () => { b.textContent = on() ? '⛶ 전체 화면 끄기' : '⛶ 전체 화면'; b.setAttribute('aria-pressed', String(on())); };
+  label();
+  const sync = () => { if (b.isConnected) label(); else { d.removeEventListener('fullscreenchange', sync); d.removeEventListener('webkitfullscreenchange', sync); } };
+  d.addEventListener('fullscreenchange', sync); d.addEventListener('webkitfullscreenchange', sync);
+  return b;
+}
+
 // 첫 화면 오른쪽 위의 큰 QR코드(2026-11-10 선생님: 설명·테두리 없이 게임 그림 위에): 학생 주소로 바로 들어온다. 그림 파일 없이 SVG로 그린다(content/qr.js)
 function qrBox() {
   const NS = 'http://www.w3.org/2000/svg', svg = document.createElementNS(NS, 'svg'), path = document.createElementNS(NS, 'path');
@@ -78,6 +93,7 @@ export function showTitle(root, { savedName, hasProgress, storageOk, courses = [
             confirm),
           h('p', { class: 'controls' }, '걷기: 방향키·WASD 또는 화면 왼쪽을 손가락으로 끌기 · 말 걸기: 가까이 가서 스페이스·E 또는 「대화」 단추')),
         qrBox(),
+        fullscreenButton('title-fs'),
         cards.length > 0 && h('div', { class: 'title-courses' }, cards),
         h('p', { class: 'copyright' }, '© 2026 Jang ssam. All rights reserved.')));
   });
@@ -259,6 +275,7 @@ export function showMenu(root, { muted, music = null, quality, storageOk = true 
       h('div', { class: 'row' },
         h('button', { class: 'btn danger', type: 'button', onclick: () => close('map') }, '그래도 나가기'),
         h('button', { class: 'btn', type: 'button', onclick: () => { leave.hidden = true; } }, '계속하기')));
+    const fsMenu = fullscreenButton();
     const qb = (lv, label) => h('button', { class: `btn ${quality === lv ? 'on' : ''}`, type: 'button', onclick: () => { onChange({ quality: lv }); close('close'); } }, label);
     const el = screen(root, 'menu',
       h('div', { class: 'card' },
@@ -268,6 +285,7 @@ export function showMenu(root, { muted, music = null, quality, storageOk = true 
           music !== null && h('button', { class: 'btn', type: 'button', onclick: () => { onChange({ music: !music }); close('close'); } }, music ? '음악 끄기' : '음악 켜기')),
         h('p', {}, '화질'),
         h('div', { class: 'row' }, qb('low', '낮음'), qb('medium', '보통'), qb('high', '높음')),
+        fsMenu && h('p', {}, '화면'), fsMenu && h('div', { class: 'row' }, fsMenu),
         h('div', { class: 'row' },
           h('button', { class: 'btn', type: 'button', onclick: () => close('avatar') }, '내 캐릭터 바꾸기'),
           h('button', { class: 'btn', type: 'button', onclick: () => (storageOk ? close('map') : (leave.hidden = false)) }, '장 선택으로'),

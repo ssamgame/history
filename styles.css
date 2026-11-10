@@ -594,3 +594,6 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .title-qr svg { width: clamp(150px, 28vh, 240px); height: clamp(150px, 28vh, 240px); display: block; background: rgba(242, 234, 217, .93); border-radius: 6px; } /* 한지빛 바탕(카메라가 읽을 만큼만 밝게) */
 .title-intro { grid-row: 1; grid-column: 1; }
 @media (max-width: 760px) { .title-qr { display: none; } } /* 휴대폰 세로: 자리가 없어 시작 단추를 가린다(휴대폰은 이미 들어와 있다) */
+
+/* 전체 화면 단추: 첫 화면 왼쪽 위 */
+.title-fs { grid-row: 1; grid-column: 1; align-self: start; justify-self: start; margin: clamp(4px, 2vh, 18px) 0 0 clamp(0px, 3vw, 40px); min-height: 44px; padding: 8px 16px; font-size: 15px; background: rgba(27,31,29,.7); z-index: 1; }

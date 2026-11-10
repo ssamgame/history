@@ -358,3 +358,24 @@ test('map: 장 고르기에 「◀ 뒤로」 단추 — 누르면 back으로 끝
     const p2 = showMap(el, CHAPTERS, save, { onCourses: true }); ok(!el.querySelector('.board-back'), 'onBack이 없으면 단추도 없다'); el.querySelector('.screen')?.remove(); void p2;
   } finally { el.remove(); }
 });
+
+test('fullscreen: 첫 화면과 메뉴에 전체 화면 단추 — 누르면 켜기/끄기를 부르고 글이 바뀐다(2026-11-10 선생님)', async () => {
+  const { fullscreenButton } = await import('../core/screens.js');
+  const d = document, root = d.documentElement, keep = { req: root.requestFullscreen, exit: d.exitFullscreen };
+  let on = false; const calls = [];
+  Object.defineProperty(d, 'fullscreenElement', { configurable: true, get: () => (on ? root : null) });
+  root.requestFullscreen = () => { calls.push('on'); on = true; d.dispatchEvent(new Event('fullscreenchange')); return Promise.resolve(); };
+  d.exitFullscreen = () => { calls.push('off'); on = false; d.dispatchEvent(new Event('fullscreenchange')); return Promise.resolve(); };
+  const el = document.createElement('div'); el.id = 'ui'; document.body.appendChild(el);
+  try {
+    showTitle(el, { hasProgress: false, savedName: '', storageOk: true });
+    const b = el.querySelector('.title-fs'); ok(b, '첫 화면 단추'); eq(b.textContent, '⛶ 전체 화면');
+    const r = b.getBoundingClientRect(); ok(r.width >= 44 && r.height >= 40, '손가락 크기');
+    b.click(); eq(calls, ['on']); eq(b.textContent, '⛶ 전체 화면 끄기');
+    b.click(); eq(calls, ['on', 'off']); eq(b.textContent, '⛶ 전체 화면');
+    el.querySelector('.screen').remove();
+    const m = showMenu(el, { muted: false, quality: 'medium' }, () => {});
+    const mb = el.querySelector('.menu .fs-btn'); ok(mb, '메뉴 단추'); mb.click(); eq(calls.length, 3); ok(el.querySelector('.menu'), '눌러도 메뉴는 닫히지 않는다');
+    [...el.querySelectorAll('.menu button')].find(x => x.textContent === '닫기').click(); await m;
+  } finally { el.remove(); delete d.fullscreenElement; root.requestFullscreen = keep.req; d.exitFullscreen = keep.exit; }
+});
