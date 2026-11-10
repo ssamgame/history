@@ -87,7 +87,7 @@ test('map: 장 고르기 지도 뒤에 학생 병사가 보이지 않는다', as
     const w = await wait(() => frame.contentWindow.__world);
     ok(w, 'world');
     (await wait(() => find('고려를 지켜라'))).click();
-    (await wait(() => find('처음부터'))).click(); // 「고려편 처음부터 시작」(저장된 진행이 있으면 지울지 묻는다)
+    (await wait(() => find('캐릭터 생성하기') || find('새 캐릭터로 처음부터'))).click(); // 저장된 진행이 있으면 지울지 묻는다
     const next = await wait(() => find('지우기') || find('대원증 받고 출발'));
     if (next.textContent.includes('지우기')) next.click();
     (await wait(() => find('대원증 받고 출발'))).click(); // 캐릭터 만들기(2026-11-09)를 그대로 넘긴다

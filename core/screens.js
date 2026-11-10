@@ -57,16 +57,15 @@ export function showTitle(root, { savedName, hasProgress, storageOk, courses = [
   return new Promise(resolve => {
     let picked = (courses.find(c => c.id === course) || courses[0] || { id: 'goryeo' }).id;
     const eraOf = id => courses.find(c => c.id === id)?.era || '고려';
-    const input = h('input', { id: 'student-name', class: 'title-name', type: 'text', placeholder: '이름 또는 번호 (비워도 돼요)', autocomplete: 'off', maxlength: '30' });
-    input.value = savedName || '';
-    const done = action => { el.remove(); resolve(action === 'new' ? { action, course: picked, name: input.value.trim() } : { action, course: picked }); };
+    // 이름은 첫 화면에서 묻지 않고 캐릭터 만들기에서 짓는다(2026-11-10 선생님)
+    const done = action => { el.remove(); resolve({ action, course: picked }); };
     const confirm = h('div', { class: 'confirm', hidden: true },
       h('p', {}, `${savedName || '앞 친구'}의 기록이 지워져요. 지울까요?`),
       h('div', { class: 'row' },
         h('button', { class: 'btn danger', type: 'button', onclick: () => done('new') }, '지우기'),
         h('button', { class: 'btn', type: 'button', onclick: () => { confirm.hidden = true; } }, '취소')));
     const startBtn = h('button', { class: `btn ${hasProgress ? '' : 'primary'} title-start`, type: 'button', onclick: () => (hasProgress ? (confirm.hidden = false) : done('new')) }, '');
-    const label = () => { startBtn.textContent = hasProgress ? '처음부터' : `${eraOf(picked)}편 처음부터 시작 ▸`; };
+    const label = () => { startBtn.textContent = hasProgress ? '새 캐릭터로 처음부터' : '캐릭터 생성하기 ▸'; startBtn.title = `${eraOf(picked)}편 처음부터`; };
     const cards = courses.map(c => {
       const results = save ? c.chapters.map(ch => save.chapterResult(ch.id)).filter(Boolean) : [];
       const stars = results.reduce((a, r) => a + (r.stars || 0), 0);
@@ -77,7 +76,6 @@ export function showTitle(root, { savedName, hasProgress, storageOk, courses = [
         h('span', { class: 'title-course-progress' }, results.length ? `마친 장 ${results.length}/${c.chapters.length} · ★${stars}` : '아직 시작 전'));
     });
     label();
-    input.addEventListener('keydown', e => { if (e.key === 'Enter' && !hasProgress) done('new'); });
     const el = screen(root, 'title',
       h('div', { class: 'title-inner' },
         h('div', { class: 'title-intro' },
@@ -86,7 +84,6 @@ export function showTitle(root, { savedName, hasProgress, storageOk, courses = [
           h('p', { class: 'lead' }, '시대를 골라 그때 사람이 되어 보세요. 직접 걷고, 이야기를 듣고, 역사의 현장을 겪어 봐요.'),
           !storageOk && h('p', { class: 'warn' }, '이 기기에서는 저장되지 않아요. 끝까지 한 번에 해 주세요.'),
           h('div', { class: 'title-actions' },
-            h('label', { class: 'title-name-row', for: 'student-name' }, h('span', {}, '이름'), input),
             h('div', { class: 'row' },
               hasProgress && h('button', { class: 'btn primary title-start', type: 'button', onclick: () => done('continue') }, `이어하기 (${savedName || '저장된 기록'})`),
               startBtn),

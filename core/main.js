@@ -272,12 +272,12 @@ function boot() {
       const cur = save.data.current && courseOfChapter(save.data.current.id).id; // 하다 만 장이 있는 시대
       world.player.visible = false; // 첫 화면 글 뒤에 사람이 겹쳐 보이지 않게
       showBackdrop(cur || save.data.course || COURSES[0].id); // 첫 화면 뒤 3D 장면(기다리지 않는다)
-      const { action, course, name } = await showTitle(ui, { savedName: save.data.name, hasProgress, storageOk: storage.available, courses: COURSES, save, course: cur || save.data.course, onCourse: showBackdrop });
+      const { action, course } = await showTitle(ui, { savedName: save.data.name, hasProgress, storageOk: storage.available, courses: COURSES, save, course: cur || save.data.course, onCourse: showBackdrop });
       if (action === 'new') {
         save.reset();
         const first = courseById(course)?.chapters[0];
-        const r = await showAvatarMaker(ui, { avatar: null, name: name || '', firstStop: first ? `${String(first.years).split(/[~·]/)[0]}년 ${courseById(course).era}` : '993년 고려' }); // 시간 여행자 등록(2026-11-09)
-        save.setAvatar(r.avatar); save.setName(r.name || name || '');
+        const r = await showAvatarMaker(ui, { avatar: null, name: '', firstStop: first ? `${String(first.years).split(/[~·]/)[0]}년 ${courseById(course).era}` : '993년 고려' }); // 시간 여행자 등록(2026-11-09)
+        save.setAvatar(r.avatar); save.setName(r.name || '');
       } else if (cur && cur !== course) save.abandonCurrent(); // 다른 시대로 넘어가면 하다 만 장만 내려놓는다(마친 장과 별은 그대로)
       save.setCourse(course);
       await mapLoop();

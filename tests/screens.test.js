@@ -54,7 +54,7 @@ test('title: shows saved name and confirms reset', async () => {
   btn(el, '처음부터').click();
   btn(el, '지우기').click();
   await sleep(10);
-  eq(result, { action: 'new', course: 'goryeo', name: '5-3 12번' }); // 이름 칸은 첫 화면 안(2026-11-09): 지우기 전 이름이 채워져 있다
+  eq(result, { action: 'new', course: 'goryeo' }); // 이름은 캐릭터 만들기에서 짓는다(2026-11-10)
   el.remove();
 });
 
@@ -70,8 +70,10 @@ test('title: without progress, start needs no confirmation', async () => {
   const el = root();
   const p = showTitle(el, { savedName: '', hasProgress: false, storageOk: true });
   ok(!btn(el, '이어하기'), 'no continue button');
-  btn(el, '처음부터').click();
-  eq(await p, { action: 'new', course: 'goryeo', name: '' });
+  ok(!el.querySelector('#student-name'), '첫 화면에는 이름 칸이 없다(2026-11-10)');
+  eq(btn(el, '캐릭터').textContent, '캐릭터 생성하기 ▸');
+  btn(el, '캐릭터').click();
+  eq(await p, { action: 'new', course: 'goryeo' });
   el.remove();
 });
 
@@ -129,7 +131,7 @@ test('screens: title button is really clickable with HUD layers on top', async (
   const { createHud } = await import('../core/screens.js');
   const hud = createHud(ui, { touch: true });
   const p = showTitle(ui, { savedName: '', hasProgress: false, storageOk: true });
-  const b = btn(ui, '처음부터');
+  const b = btn(ui, '캐릭터 생성하기');
   const r = b.getBoundingClientRect();
   const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
   ok(hit === b || b.contains(hit), `top element is ${hit && (hit.className || hit.tagName)}`);
@@ -239,15 +241,14 @@ test('title: 오른쪽에 다섯 시대가 진행과 함께 있고, 고른 시�
   el.remove();
 });
 
-test('title: 기록이 없으면 시대 탭을 고르고 이름을 적은 뒤 처음부터 시작한다', async () => {
+test('title: 기록이 없으면 시대 탭을 고르고 「캐릭터 생성하기」로 시작한다(이름은 캐릭터 만들기에서)', async () => {
   const { COURSES } = await import('../chapters/index.js');
   const el = root();
   const p = showTitle(el, { savedName: '', hasProgress: false, storageOk: true, courses: COURSES, save: titleSave({}) });
   el.querySelector('[data-course="present"]').click();
-  ok(btn(el, '처음부터').textContent.includes('현대편'), '시작 단추에 고른 시대 이름');
-  el.querySelector('#student-name').value = '김현대';
-  btn(el, '처음부터').click();
-  eq(await p, { action: 'new', course: 'present', name: '김현대' });
+  ok(!el.querySelector('input'), '이름 칸 없음');
+  btn(el, '캐릭터 생성하기').click();
+  eq(await p, { action: 'new', course: 'present' });
   el.remove();
 });
 
@@ -263,7 +264,7 @@ test('title: 태블릿 가로와 휴대폰 세로 화면에서 소개 판·시�
       await sleep(80);
       const intro = d.querySelector('.title-intro').getBoundingClientRect(), list = d.querySelector('.title-courses').getBoundingClientRect(), acts = d.querySelector('.title-actions').getBoundingClientRect();
       ok(intro.bottom <= list.top + 1, `${w}x${h}: 소개 판이 시대 탭 위에`); // 2026-11-09 시안 C: 왼쪽 판 + 아래 탭
-      ok(acts.top >= intro.top - 1 && acts.bottom <= intro.bottom + 1, `${w}x${h}: 이름 칸·시작 단추는 소개 판 안`);
+      ok(acts.top >= intro.top - 1 && acts.bottom <= intro.bottom + 1, `${w}x${h}: 시작 단추는 소개 판 안`);
       const cr = d.querySelector('.copyright');
       ok(cr && cr.textContent.includes('©') && cr.textContent.includes('Jang ssam'), `${w}x${h}: 저작권 표시`);
       ok(cr && cr.getBoundingClientRect().top >= list.bottom - 1 && cr.getBoundingClientRect().bottom <= h + 1, `${w}x${h}: 저작권 표시가 맨 밑, 화면 안`);

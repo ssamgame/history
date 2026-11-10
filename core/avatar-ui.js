@@ -16,7 +16,7 @@ const h = (tag, attrs = {}, ...kids) => {
 export function showAvatarMaker(root, { avatar = null, name = '', firstStop = '993년 고려', preview = true, title = '나를 만들어요' } = {}) {
   return new Promise(resolve => {
     let a = isAvatar(avatar) ? normalizeAvatar(avatar) : { ...DEFAULT_AVATAR }, tab = AVATAR_TABS[0][0];
-    const input = h('input', { id: 'avatar-name', type: 'text', placeholder: '이름 또는 번호', autocomplete: 'off', maxlength: '30' }); input.value = name || '';
+    const input = h('input', { id: 'avatar-name', type: 'text', placeholder: '여기에 이름 쓰기', autocomplete: 'off', maxlength: '30' }); input.value = name || '';
     const portrait = h('div', { class: 'av-portrait' });
     const values = {};
     const rows = AVATAR_PARTS.map(p => {
@@ -65,7 +65,7 @@ export function showAvatarMaker(root, { avatar = null, name = '', firstStop = '9
         h('div', { class: 'av-card' },
           h('div', { class: 'av-card-title' }, '시간 여행 탐험대원증'),
           portrait,
-          h('label', { class: 'av-card-name', for: 'avatar-name' }, input),
+          h('label', { class: 'av-card-name', for: 'avatar-name' }, h('span', { class: 'av-name-key' }, '이름'), input),
           h('div', { class: 'av-card-line' }, h('span', {}, '출발'), h('b', {}, '2026년')),
           h('div', { class: 'av-card-line' }, h('span', {}, '첫 도착'), h('b', {}, firstStop)),
           h('div', { class: 'av-stamps' }, [1, 2, 3, 4, 5, 6].map(() => h('i'))),
