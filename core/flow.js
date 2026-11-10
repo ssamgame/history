@@ -5,6 +5,7 @@ import { bakeLevel } from './bake.js';
 import { turnTo } from './interact.js';
 import { showQuizView, endQuizView } from './quizview.js';
 import { portalStage } from './portal.js';
+import { NOTE_ID } from './challenge.js';
 import { playIntro } from './intro.js';
 import { setRigHook, POST_POSE } from './people.js';
 import { bodyOn, loadBody, attachBody, updateBodies, resetBodies, setBodyView } from './body.js';
@@ -63,7 +64,9 @@ export async function runChapter(meta, chapter, ctx, save, { resumeStage = 'intr
 
     if (from <= 1) {
       checkpoint('explore'); perf?.segment(`${meta.id} 탐험`);
+      ctx.challenge = ctx.makeChallenge ? ctx.makeChallenge(meta) : null; // 도전 쪽지(고려편부터)
       await chapter.explore(ctx);
+      ctx.challenge?.remove(); ctx.challenge = null;
     }
     if (from <= 2) {
       checkpoint('minigame'); perf?.segment(`${meta.id} 미니게임`);
@@ -101,6 +104,7 @@ export async function runChapter(meta, chapter, ctx, save, { resumeStage = 'intr
 // faceBack: 대화가 끝나면 말 건 사람이 처음 보던 쪽으로 다시 돌아선다(D-62, 5장 장인)
 export function roam(ctx, { onTalk, zones = [], faceBack = false }) {
   const { world, input, hud, dialogue } = ctx;
+  ctx.challenge?.place(); // 도전 쪽지의 숨은 안내판(core/challenge.js): 탐험이 시작될 때 한 번
   let busy = false, stopped = false;
   const inside = new Set();
   // 안내판(볼거리): 가까이 오면 '새 장소 발견'을 한 번 알리고, 읽은 수를 화면 위에 보인다
@@ -133,7 +137,7 @@ export function roam(ctx, { onTalk, zones = [], faceBack = false }) {
     npc.mesh.rotation.y = Math.atan2(world.player.position.x - p.x, world.player.position.z - p.z);
     world.setTalkCamera(npc.mesh); // 대화하는 동안 인물 얼굴 가까이
     if (npc.spot) { read.add(npc.id); showRead(); }
-    try { await onTalk(npc.id); } finally {
+    try { if (npc.id === NOTE_ID && ctx.challenge) await ctx.challenge.read(); else await onTalk(npc.id); } finally {
       if (world.camMode === 'talk') world.camMode = 'follow';
       dialogue.close();
       busy = false; input.enabled = !stopped;

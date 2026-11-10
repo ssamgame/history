@@ -18,7 +18,7 @@ export function createSave(storage) {
       const valid = d && typeof d === 'object' && typeof d.name === 'string' && d.chapters && typeof d.chapters === 'object';
       // 편이 생기기 전의 옛 기록: 고려편 장을 하나라도 했으면 고려편으로 본다(이어하기가 고려편 지도로 바로 간다)
       const oldGoryeo = valid && (Object.keys(d.chapters).some(id => /^ch\d$/.test(id)) || /^ch\d$/.test(d.current?.id || ''));
-      save.data = valid ? { name: d.name, chapters: d.chapters, current: d.current || null, avatar: d.avatar && typeof d.avatar === 'object' ? d.avatar : null, course: typeof d.course === 'string' ? d.course : oldGoryeo ? 'goryeo' : null, reviews: d.reviews && typeof d.reviews === 'object' ? d.reviews : {} } : empty(); // 옛 기록의 역사 수첩(notes)은 버린다(D-9)
+      save.data = valid ? { name: d.name, chapters: d.chapters, current: d.current || null, avatar: d.avatar && typeof d.avatar === 'object' ? d.avatar : null, course: typeof d.course === 'string' ? d.course : oldGoryeo ? 'goryeo' : null, reviews: d.reviews && typeof d.reviews === 'object' ? d.reviews : {}, ...(d.quests && typeof d.quests === 'object' ? { quests: d.quests } : {}) } : empty(); // 옛 기록의 역사 수첩(notes)은 버린다(D-9)
       return save.data;
     },
     persist() { return storage.set(KEY, save.data); },
@@ -35,6 +35,9 @@ export function createSave(storage) {
       save.persist();
     },
     chapterResult(id) { return save.data.chapters[id] || null; },
+    // 도전 쪽지(content/growth.js)를 해낸 장: { ch1: true }
+    setQuest(id) { (save.data.quests ||= {})[id] = true; save.persist(); },
+    quest(id) { return !!(save.data.quests || {})[id]; },
     // 편 복습 퀴즈 결과(D-21): { correct, total }
     setReview(session, r) { (save.data.reviews ||= {})[session] = r; save.persist(); },
     review(session) { return (save.data.reviews || {})[session] || null; },

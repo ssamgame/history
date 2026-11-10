@@ -8,6 +8,9 @@ import { createDialogue } from './dialogue.js';
 import { createQualityController, guessInitialQuality } from './quality.js';
 import { runChapter } from './flow.js';
 import { playTravel } from './travel.js';
+import { setupChallenge } from './challenge.js';
+import { showLetter, showLetterBox, showMachineUpgrade } from './growth-ui.js';
+import { CHALLENGES, LETTERS, tmLevel, finishedCount } from '../content/growth.js';
 import { createMusic } from './music.js';
 import { showTitle, showCourses, showMap, showIntroCard, showChapterResult, showSessionCard, showMenu, showMessage, createHud } from './screens.js';
 import { perfEnabled, createPerfStats, createPerfPanel } from './perf.js';
@@ -123,6 +126,9 @@ function boot() {
   async function playChapter(meta, stage) {
     const mod = (await meta.load()).default;
     clearBackdrop(); world.clearLevel(); ctx.timeMachine = null; ctx.boardMachine = null;
+    ctx.tmLevel = tmLevel(finishedCount(save)); // 타임머신 단계(마친 장 수)
+    ctx.makeChallenge = m => setupChallenge(ctx, m, save);
+    const firstTime = !save.chapterResult(meta.id);
     world.player.visible = true;
     quality.restart();
     world.camMode = 'follow';
@@ -164,7 +170,12 @@ function boot() {
     dialogue.dispose(); dialogue = null;
     curMeta = null;
     hud.fade(false); // 타임머신이 날아오르며 어두워진 화면을 푼다
-    await showChapterResult(ui, meta, result);
+    await showChapterResult(ui, meta, result, { quest: CHALLENGES[meta.id] ? save.quest(meta.id) : null });
+    if (firstTime && LETTERS[meta.id]) { // 그 장에서 도운 인물의 편지(처음 마쳤을 때만)
+      const mine = courseOfChapter(meta.id).chapters.filter(c => LETTERS[c.id]);
+      await showLetter(ui, meta.id, { name: save.data.name, have: mine.filter(c => save.chapterResult(c.id)).length, total: mine.length });
+    }
+    { const lv = tmLevel(finishedCount(save)); if (lv > ctx.tmLevel) await showMachineUpgrade(ui, lv, { done: finishedCount(save) }); ctx.tmLevel = lv; } // 새 부품
     if (isSessionDone(meta.session, save)) {
       // 편 복습 퀴즈는 뺐다(2026-11-04 선생님)
       await showSessionCard(ui, meta.session, save, ALL_CHAPTERS);
@@ -230,6 +241,7 @@ function boot() {
       music.play(`map:${course.id}`); // 시대 지도에서는 그 시대의 잔잔한 음악
       const id = await showMap(ui, course.chapters, save, {
         heading: `${course.era}편 · ${course.title}`, onCourses: true, onBack: true,
+        onLetters: course.chapters.some(c => LETTERS[c.id]) ? () => showLetterBox(ui, course.chapters, save) : null,
         onSessionCard: () => showSessionCard(ui, course.session, save, ALL_CHAPTERS),
       });
       if (id === 'back') return; // 「◀ 뒤로」: 첫 화면으로

@@ -142,7 +142,7 @@ const pathD = (pts, tall = false) => pts.map(([x, y], i) => {
   const [px, py] = pts[i - 1], out = i % 2 ? -14 : 14;
   return tall ? ` Q ${(out < 0 ? Math.min(px, x) : Math.max(px, x)) + out} ${(py + y) / 2} ${x} ${y}` : ` Q ${(px + x) / 2} ${(out < 0 ? Math.min(py, y) : Math.max(py, y)) + out} ${x} ${y}`;
 }).join('');
-export function showMap(root, chapters, save, { onSessionCard, onCourses, onBack, heading } = {}) {
+export function showMap(root, chapters, save, { onSessionCard, onCourses, onBack, onLetters, heading } = {}) { // onLetters: 편지를 받은 편이면 「편지함」 단추
   return new Promise(resolve => {
     const board = h('div', { class: 'board' });
     const wide = STOPS, tall = STOPS.map(([x, y]) => [y, x]); // 세로 화면에서는 위에서 아래로
@@ -157,19 +157,20 @@ export function showMap(root, chapters, save, { onSessionCard, onCourses, onBack
       board.appendChild(h('button', {
         class: `pick stop ${r ? 'done' : ''} ${now ? 'now' : ''}`, type: 'button', 'data-chapter': c.id, disabled: !open, style: `--x:${x}%;--y:${y}%`,
         onclick: () => { el.remove(); resolve(c.id); },
-      }, h('i', {}, String(c.no)), h('b', {}, c.title),
+      }, h('i', {}, String(c.no)), save.quest?.(c.id) && h('em', { class: 'stop-quest', title: '도전 쪽지 성공' }, '✦'), h('b', {}, c.title),
       h('small', {}, r ? starText(r.stars) : c.load ? (now ? `${c.years} · ▶ 지금 여기` : c.years) : '준비 중')));
     });
     // 이 편의 장을 하나라도 마쳤으면 결과 카드를 다시 볼 수 있다 (한 편의 1~6장이 한 장의 결과 카드)
     const sessionButtons = chapters.some(c => save.chapterResult(c.id))
       ? [h('button', { class: 'btn', type: 'button', onclick: () => onSessionCard && onSessionCard() }, '시간 여행 일지')] : [];
     const courseButton = onCourses ? h('button', { class: 'btn', type: 'button', onclick: () => { el.remove(); resolve('courses'); } }, '다른 시대') : null;
+    const letterButton = onLetters && chapters.some(c => save.chapterResult(c.id)) ? h('button', { class: 'btn board-letters', type: 'button', onclick: () => onLetters() }, '편지함') : null;
     const backButton = onBack ? h('button', { class: 'btn board-back', type: 'button', onclick: () => { el.remove(); resolve('back'); } }, '◀ 뒤로') : null; // 첫 화면으로(2026-11-10 선생님)
     const el = screen(root, 'mapscreen',
       h('div', { class: 'board-wrap' },
         h('div', { class: 'board-head' },
           h('div', {}, heading && h('div', { class: 'eyebrow' }, heading), h('h2', {}, '어디로 갈까요?')),
-          h('div', { class: 'row' }, backButton, sessionButtons, courseButton)),
+          h('div', { class: 'row' }, backButton, letterButton, sessionButtons, courseButton)),
         board,
         next && h('button', { class: 'btn primary board-go', type: 'button', onclick: () => { el.remove(); resolve(next.id); } }, `${next.no}장 시작하기 ▸`)));
   });
@@ -187,7 +188,7 @@ export function showIntroCard(root, meta, lines) {
   });
 }
 
-export function showChapterResult(root, meta, r) {
+export function showChapterResult(root, meta, r, { quest = null } = {}) { // quest: 도전 쪽지가 있는 장이면 해냈는지(true/false), 없으면 null
   return new Promise(resolve => {
     const el = screen(root, 'result',
       h('div', { class: 'card' },
@@ -198,6 +199,7 @@ export function showChapterResult(root, meta, r) {
           h('div', {}, h('b', {}, `${r.quizCorrect}/${r.quizTotal}`), h('span', {}, '퀴즈')),
           r.firstTryTotal > 0 && h('div', {}, h('b', {}, `${r.firstTryCorrect}/${r.firstTryTotal}`), h('span', {}, '놀이 한 번에')),
           h('div', {}, h('b', {}, timeText(r.seconds)), h('span', {}, '걸린 시간'))),
+        quest !== null && h('p', { class: `result-quest ${quest ? 'got' : ''}` }, quest ? '✦ 도전 쪽지 성공 — 금빛 도장을 받았어요' : '✦ 도전 쪽지는 아직이에요. 다시 와서 숨은 안내판을 찾아봐요'),
         h('div', { class: 'row' },
           h('button', { class: 'btn primary', type: 'button', onclick: () => { el.remove(); resolve(); } }, '다음'))));
   });
@@ -324,13 +326,14 @@ export function createHud(root, { touch }) {
   let noticeTimer = null;
   let camera = null;
   let lastList = null, lastIdx = -1; // 퀘스트 목록에서 마지막으로 보인 차례
+  let noteLi = null; // 도전 쪽지 줄
   return {
     joyZone, talkBtn, menuBtn,
     attachCamera(c) { camera = c; },
     show(meta) { // 화면 위 "나: …" 줄은 2026-10-27 선생님 말씀으로 뺐다
       chapter.textContent = `${meta.no}장 · ${meta.years} ${meta.event}`;
       box.hidden = false; menuBtn.hidden = false; joyZone.hidden = talkBtn.hidden = !touch; },
-    hide() { box.hidden = true; menuBtn.hidden = true; prompt.hidden = true; joyZone.hidden = talkBtn.hidden = true; notice.hidden = true; found.hidden = true; bigTimer.hidden = true; bigWait.hidden = true; },
+    hide() { noteLi?.remove(); noteLi = null; box.hidden = true; menuBtn.hidden = true; prompt.hidden = true; joyZone.hidden = talkBtn.hidden = true; notice.hidden = true; found.hidden = true; bigTimer.hidden = true; bigWait.hidden = true; },
     // 잠깐 뜨는 알림(새 장소 발견 등): 화면 위 가운데, 누르지 않아도 사라진다
     notice(text) { notice.textContent = text; notice.hidden = false; if (!box.hidden) notice.style.top = `${Math.round(box.getBoundingClientRect().bottom + 8)}px`; /* 목표 상자 바로 아래 */ clearTimeout(noticeTimer); noticeTimer = setTimeout(() => { notice.hidden = true; }, 2800); },
     // 예전 '살펴본 안내판 a/b': 퀘스트 목록으로 합쳐 더는 보이지 않는다(C-01)
@@ -345,6 +348,12 @@ export function createHud(root, { touch }) {
       if (i >= 0) lastIdx = i;
       const cur = h('li', { class: 'quest now' }, goal, counter);
       quests.replaceChildren(...done.map(t => h('li', { class: 'quest done' }, t)), text ? cur : h('li', { class: 'quest' }, counter)); // 퀘스트가 없어도 진행 수는 보인다
+      if (noteLi) quests.append(noteLi);
+    },
+    // 도전 쪽지 줄(core/challenge.js): 퀘스트 목록 맨 아래에 붙는다. done이면 금빛 ✓, text가 없으면 뗀다
+    setChallenge(text, done = false) {
+      noteLi?.remove(); noteLi = text ? h('li', { class: `quest note ${done ? 'got' : ''}` }, h('b', {}, done ? '✦ 도전 쪽지 성공' : '✦ 도전 쪽지'), ` ${text}`) : null;
+      if (noteLi) quests.append(noteLi);
     },
     setTimer(sec) {
       timer.hidden = true; bigTimer.hidden = sec == null; // 작은 글 대신 가운데 큰 숫자

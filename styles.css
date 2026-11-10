@@ -600,3 +600,32 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 
 .av-name-key { display: block; font-size: 13px; font-weight: 700; color: #b3271e; margin-bottom: 2px; }
 .av-card-name input { background: rgba(255,255,255,.55); border-radius: 6px 6px 0 0; padding: 4px 0; }
+
+/* 성장(2026-11-10): 도전 쪽지 줄·금빛 도장·편지·타임머신 새 부품 */
+.quest.note { font-size: 13px; color: #f0dfae; margin-top: 2px; } .quest.note b { color: var(--gold); font-weight: 800; }
+.quest.note.got { color: #ffe9a8; }
+.gold-seal { position: fixed; inset: 0; z-index: 45; display: grid; place-content: center; justify-items: center; gap: 12px; pointer-events: none; background: rgba(10,12,11,.35); }
+.gold-seal-mark { width: 150px; height: 150px; border-radius: 50%; border: 6px solid #c9962c; color: #a4761f; display: grid; place-items: center; text-align: center; font-size: 24px; font-weight: 900; line-height: 1.2; background: radial-gradient(#fff7d6, #f3d98c); box-shadow: 0 0 50px rgba(255,215,106,.8); transform: rotate(-10deg); animation: seal-in .35s cubic-bezier(.2,1.6,.4,1) both; }
+.gold-seal-text { background: rgba(27,31,29,.92); color: var(--hanji); padding: 8px 18px; border-radius: 999px; font-size: 16px; max-width: 86vw; text-align: center; word-break: keep-all; }
+@keyframes seal-in { from { transform: rotate(-10deg) scale(2.4); opacity: 0; } to { transform: rotate(-10deg) scale(1); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .gold-seal-mark { animation: none; } }
+.stop-quest { position: absolute; left: 50%; top: -6px; margin-left: 16px; width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(#fff7d6, #f3d98c); border: 2px solid #c9962c; color: #a4761f; font-style: normal; font-size: 12px; font-weight: 900; display: grid; place-items: center; }
+.result-quest { margin: 0; font-size: 15px; color: #7a6c58; } .result-quest.got { color: #a4761f; font-weight: 700; }
+.letter-screen { background: rgba(10,12,11,.82); }
+.letter-wrap { width: min(620px, 100%); display: grid; gap: 10px; justify-items: center; }
+.letter-wrap .row { display: flex; gap: 12px; align-items: center; justify-content: flex-end; width: 100%; }
+.letter-count { color: #d9c79a; font-size: 14px; margin-right: auto; }
+.letter { position: relative; width: 100%; box-sizing: border-box; background: linear-gradient(#f7efd9, #efe2c2); color: var(--text-ink); border-radius: 6px; padding: 22px 30px 18px; box-shadow: 0 14px 40px rgba(0,0,0,.6); display: grid; grid-template-columns: 84px 1fr; gap: 4px 18px; transform: rotate(-.6deg); text-align: left; }
+.letter-face { width: 84px; height: 84px; border-radius: 50%; border: 3px solid #3b2f22; background: #e9dcc3 center/cover; grid-row: span 2; }
+.letter-to { font-size: 13px; color: #8a7d68; align-self: end; } .letter h3 { margin: 0; font-size: 20px; align-self: start; }
+.letter-body { grid-column: 1 / -1; margin: 6px 0 0; padding-top: 10px; border-top: 1px dashed #b9ad96; line-height: 1.75; font-size: 16px; word-break: keep-all; }
+.letter-body b { color: var(--dan-red); }
+.letter-sign { grid-column: 1 / -1; text-align: right; font-weight: 800; padding-right: 66px; margin-top: 4px; }
+.letter-seal { position: absolute; right: 24px; bottom: 12px; width: 50px; height: 50px; border: 3px solid var(--dan-red); color: var(--dan-red); display: grid; place-items: center; font-size: 22px; font-weight: 900; transform: rotate(8deg); opacity: .85; }
+.letter-tabs { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; } .letter-tab { min-height: 44px; padding: 0 12px; font-size: 14px; } .letter-tab.on { background: var(--gold); color: var(--text-ink); border-color: var(--gold); } .letter-tab:disabled { opacity: .45; }
+.letter-slot { width: 100%; } .letter-empty { color: #d9c79a; text-align: center; }
+.tmup { background: radial-gradient(ellipse at 50% 45%, rgba(217,164,65,.35), rgba(10,12,11,.92) 65%); }
+.tmup-inner { display: grid; justify-items: center; gap: 6px; text-align: center; max-width: 620px; }
+.tmup-canvas { width: min(420px, 70vw); height: auto; aspect-ratio: 520 / 420; max-height: 46vh; }
+.tmup-parts { margin: 0; font-size: 17px; color: var(--hanji); word-break: keep-all; } .tmup-next { margin: 0 0 4px; font-size: 14px; color: #d9c79a; }
+@media (max-height: 600px) { .letter { padding: 14px 22px 12px; } .letter-body { font-size: 15px; line-height: 1.6; } .letter-face { width: 64px; height: 64px; } .letter { grid-template-columns: 64px 1fr; } }
