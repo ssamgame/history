@@ -223,7 +223,7 @@ export function animateWalk(person, moving, dt) {
   m.roll += (Math.max(-0.1, Math.min(0.1, -turnRate * v * 0.012)) - m.roll) * Math.min(1, dt * 6);
   const still = 1 - kk, breathe = Math.sin(u.t * 1.6 + u.ph) * 0.012 * still;
   const shift = Math.sin(u.t * 0.37 * (0.6 + 0.8 * frac(u.ph * 1.37)) + u.ph * 3) * 0.022 * st.idle * still; // 서 있을 때 이쪽저쪽 다리로 무게를 옮긴다(사람마다 다른 박자, D-62)
-  let ux = st.lean + (0.05 * Math.min(1, v / 2.5) + 0.08 * run) * kk - heavy * 0.06 * (c0?.at[2] > 0 ? 1 : -0.5) + breathe;
+  let ux = st.lean + (0.025 * Math.min(1, v / 2.5) + 0.03 * run) * kk - heavy * 0.06 * (c0?.at[2] > 0 ? 1 : -0.5) + breathe;
   let uy = s * 0.075 * kk * (1 + run * 0.5) * (u.carry && c0.arms[0] ? 0.4 : 1) + m.lag * 0.7;
   let uz = Math.cos(ph) * 0.022 * kk + m.roll + shift;
   // ③ 팔: 무기 쥔 자세(grip)는 makePerson이 정했다. 걷지 않을 때 내려놓은 팔은 천천히 내린다

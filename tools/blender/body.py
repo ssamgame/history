@@ -119,7 +119,7 @@ def walk(t):
     sn = legs(t, 0.42, 0.75)
     for s, sg in SIDES: swing(s, sn, sg, 0.38, 0.22)
 def run(t):
-    sn = legs(t, 0.7, 1.3, 0.05); P['spine'].rotation_euler.x = 0.18; P['head'].rotation_euler.x = -0.12
+    sn = legs(t, 0.7, 1.3, 0.05); P['spine'].rotation_euler.x = 0.05  # 2026-11-10: 0.18 숙이고 고개 -0.12 들던 것은 목을 내민 것처럼 보였다(core/body.js loadBody도 같은 값으로 고쳐 읽는다)
     for s, sg in SIDES: swing(s, sn, sg, 0.75, 1.3)
 def walk_spear(t):  # x+쪽(_L) 손에 창을 곧게 세워 쥔다: 팔꿈치를 굽혀 손이 가슴 앞, 손목으로 창을 세운다(창은 손 뼈에 붙는다)
     sn = legs(t, 0.38, 0.7)

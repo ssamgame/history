@@ -24,6 +24,14 @@ export async function loadBody(url = BODY_URL) {
     base = await new GLTFLoader().loadAsync(url);
     // 서 있기 동작의 머리 흔들기는 뺀다: 모든 사람이 같은 박자로 고개를 흔들어 보였다(D-62). 둘러보기는 core/motion.js가 사람마다 다르게 한다
     for (const clip of base.animations) if (clip.name === 'idle' || clip.name.startsWith('stand')) clip.tracks = clip.tracks.filter(t => !/^head\.(quaternion|rotation)/.test(t.name));
+    // 달리기 동작은 허리를 0.18 숙이고 고개만 0.12 들어 '목을 내밀고' 달리는 것처럼 보였다(2026-11-10 선생님): 허리 숙임을 0.05만 남기고 고개 들기는 뺀다
+    // (모델 파일은 그대로 두고 불러올 때 고친다. tools/blender/body.py의 run도 같은 값으로 맞춰 두었다)
+    const run = base.animations.find(c => c.name === 'run');
+    if (run) {
+      run.tracks = run.tracks.filter(t => !/^head\.(quaternion|rotation)/.test(t.name));
+      const up = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -0.13), q = new THREE.Quaternion();
+      for (const t of run.tracks) if (/^spine\.quaternion/.test(t.name)) for (let i = 0; i < t.values.length; i += 4) { q.fromArray(t.values, i).multiply(up).toArray(t.values, i); }
+    }
   }
   return base;
 }
