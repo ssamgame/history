@@ -362,7 +362,7 @@ export function buildTown(world, layout) {
     if (p.name) named[p.name] = g;
     if (p.type === 'hanok' && layout.dress !== false) dressHouse(world, L, p, layout);
   }
-  for (const s of layout.scatter || []) scatter(world, { ground: field.heightAt, ...s });
+  for (const s of layout.scatter || []) scatter(world, { ground: field.heightAt, ...s, avoid: [...(s.avoid || []), ...(layout.start ? [{ x: layout.start[0], z: layout.bounds.z1 + 9, r: 9 }] : [])] }); // 마을 어귀 밖 길에는 나무를 흩뿌리지 않는다(도착 연출을 가린다)
   if (layout.nature !== false) addNature(world, layout, field, kind, color);
   for (const n of layout.npcs || []) { world.addNpc(n.id, typeof n.look === 'string' ? LOOKS[n.look] : n.look, n.x, n.z, n.ry || 0); if (n.work) setWork(world.npcs.get(n.id).mesh, n.work); } // work: 일하는 동작
   for (const s of layout.signs || []) placeSign(world, s); // plaque면 이름만 있는 건물 간판(C-03)

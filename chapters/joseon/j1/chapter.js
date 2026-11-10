@@ -396,7 +396,7 @@ export default {
   // 미니게임 뒤 빛나는 문(C-02): 군대가 떠난 동쪽 통로, 학생 쪽(서쪽)을 본다.
   // 한양 궁궐 마당으로 옮긴 뒤에는 마당 동쪽(학생 쪽을 본다)에 선다(2026-10-30)
   portal: () => (scene?.court ? { at: [COURT.x + 7, COURT.z + 8], ry: -Math.PI / 2 } : { at: [6, -0.5], ry: -Math.PI / 2 }),
-  spawn: () => ({ at: scene.introFrom, to: scene.start, gate: scene.gate }), // 도착 연출 자리(타임머신 틀, 2026-11-09): 탐험이 시작되는 곳(문 밖 길)과 같게
+  spawn: () => ({ at: scene.introFrom, to: scene.start, gate: scene.gate, side: -1 }), // 도착 연출 자리(타임머신 틀, 2026-11-09): 탐험이 시작되는 곳(문 밖 길)과 같게
 
   enterStage(ctx, stage) {
     if (stage === 'minigame') { scene.gate.setOpen(0); placePlayer(ctx.world, [0, 1.5]); }
