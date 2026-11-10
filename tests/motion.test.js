@@ -21,7 +21,7 @@ test('motion: 빠르기에 따라 보폭·걸음 박자·상체 숙임이 달라
   const r = [1.3, 2.8, 5.5].map(v => { const p = makePerson(LOOKS.villager, { track: false }); p.scale.setScalar(1); walkAt(p, v, 30); return walkAt(p, v, 60); });
   ok(r[0].amp < r[2].amp, `보폭 ${r.map(x => x.amp.toFixed(2))}`);
   ok(r[0].steps < r[1].steps && r[1].steps < r[2].steps, `걸음 박자 ${r.map(x => x.steps.toFixed(1))}`);
-  ok(r[2].lean > r[0].lean + 0.05, `달릴 때 더 숙인다 ${r.map(x => x.lean.toFixed(2))}`);
+  ok(r[2].lean > r[0].lean + 0.02 && r[2].lean < 0.08, `달릴 때 조금 더 숙이되 목을 내밀 만큼은 아니다(2026-11-10) ${r.map(x => x.lean.toFixed(2))}`);
   // 걸음 박자는 빠르기에 맞춘다(발이 미끄러지지 않게): 걸음 수 × 보폭 ≈ 간 거리
   const p = makePerson(LOOKS.villager, { track: false }); p.scale.setScalar(1); walkAt(p, 1.6, 30); const w = walkAt(p, 1.6, 90);
   const dist = 1.6 * 3, strides = w.steps / Math.PI; ok(Math.abs(dist / strides - 0.67) < 0.25, `걸음당 ${(dist / strides).toFixed(2)}m`);
