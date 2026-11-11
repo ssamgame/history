@@ -181,6 +181,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .seal { flex: none; background: var(--dan-red); color: var(--hanji); font-family: var(--font-display); font-size: 13px; padding: 2px 6px; border-radius: 2px; }
 .menubtn { position: fixed; z-index: 10; top: calc(12px + env(safe-area-inset-top, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); min-height: 48px; padding: 0 16px; font-size: 16px; border-radius: 4px; border: 1px solid rgba(242,234,217,.5); background: rgba(27,31,29,.82); color: var(--hanji); }
 .menubtn[hidden], .prompt[hidden] { display: none; }
+.menu .card { gap: 8px; padding: 16px 24px; } .menu .card p { font-size: 15px; line-height: 1.3; color: var(--muted); } /* 줄이 다섯이라(소리·화질·화면·시간 여행·나가기) 탭 화면 높이 560 안에 들어가게 촘촘히 */
 .prompt { position: fixed; z-index: 9; transform: translate(-50%, -100%); pointer-events: none; background: var(--ink); color: var(--hanji); border: 1px solid var(--gold); border-radius: 4px; padding: 4px 10px; font-size: 15px; white-space: nowrap; }
 .fade { position: fixed; inset: 0; z-index: 40; background: #000; opacity: 0; pointer-events: none; transition: opacity .6s; }
 .fade.on { opacity: 1; }
@@ -601,16 +602,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .av-name-key { display: block; font-size: 13px; font-weight: 700; color: #b3271e; margin-bottom: 2px; }
 .av-card-name input { background: rgba(255,255,255,.55); border-radius: 6px 6px 0 0; padding: 4px 0; }
 
-/* 성장(2026-11-10): 도전 쪽지 줄·금빛 도장·편지·타임머신 새 부품 */
-.quest.note { font-size: 13px; color: #f0dfae; margin-top: 2px; } .quest.note b { color: var(--gold); font-weight: 800; }
-.quest.note.got { color: #ffe9a8; }
-.gold-seal { position: fixed; inset: 0; z-index: 45; display: grid; place-content: center; justify-items: center; gap: 12px; pointer-events: none; background: rgba(10,12,11,.35); }
-.gold-seal-mark { width: 150px; height: 150px; border-radius: 50%; border: 6px solid #c9962c; color: #a4761f; display: grid; place-items: center; text-align: center; font-size: 26px; font-weight: 900; line-height: 1.15; background: radial-gradient(#fff7d6, #f3d98c); box-shadow: 0 0 50px rgba(255,215,106,.8); transform: rotate(-10deg); animation: seal-in .35s cubic-bezier(.2,1.6,.4,1) both; }
-.gold-seal-text { background: rgba(27,31,29,.92); color: var(--hanji); padding: 8px 18px; border-radius: 999px; font-size: 16px; max-width: 86vw; text-align: center; word-break: keep-all; }
-@keyframes seal-in { from { transform: rotate(-10deg) scale(2.4); opacity: 0; } to { transform: rotate(-10deg) scale(1); opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .gold-seal-mark { animation: none; } }
-.stop-quest { position: absolute; left: 50%; top: -6px; margin-left: 16px; width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(#fff7d6, #f3d98c); border: 2px solid #c9962c; color: #a4761f; font-style: normal; font-size: 12px; font-weight: 900; display: grid; place-items: center; }
-.result-quest { margin: 0; font-size: 15px; color: #7a6c58; } .result-quest.got { color: #a4761f; font-weight: 700; }
+/* 성장(2026-11-10·11): 편지·타임머신 새 부품·타임머신 꾸미기 */
 .letter-screen { background: rgba(10,12,11,.82); }
 .letter-wrap { width: min(620px, 100%); display: grid; gap: 10px; justify-items: center; }
 .letter-wrap .row { display: flex; gap: 12px; align-items: center; justify-content: flex-end; width: 100%; }
@@ -628,4 +620,15 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .tmup-inner { display: grid; justify-items: center; gap: 6px; text-align: center; max-width: 620px; }
 .tmup-canvas { width: min(420px, 70vw); height: auto; aspect-ratio: 520 / 420; max-height: 46vh; }
 .tmup-parts { margin: 0; font-size: 17px; color: var(--hanji); word-break: keep-all; } .tmup-next { margin: 0 0 4px; font-size: 14px; color: #d9c79a; }
+.tmshop { background: radial-gradient(ellipse at 28% 50%, rgba(217,164,65,.3), rgba(10,12,11,.94) 62%); }
+.tmshop-inner { display: grid; grid-template-columns: minmax(200px, 40%) 1fr; grid-template-areas: "view head" "view parts" "view foot"; gap: 8px 18px; width: min(940px, 100%); align-items: center; }
+.tmshop-head { grid-area: head; } .tmshop-head h2 { margin: 2px 0; font-size: clamp(20px, 2.6vw, 26px); } .tmshop-count { margin: 0; font-size: 14px; color: #d9c79a; }
+.tmshop-canvas { grid-area: view; width: 100%; height: auto; aspect-ratio: 1; max-height: 70vh; justify-self: center; }
+.tmshop-parts { grid-area: parts; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.tmshop-part { min-height: 62px; display: grid; gap: 2px; align-content: center; padding: 8px 10px; text-align: left; border-radius: 8px; border: 2px solid rgba(242,234,217,.35); background: rgba(27,31,29,.85); color: var(--hanji); font: inherit; cursor: pointer; word-break: keep-all; }
+.tmshop-part b { font-size: 15px; } .tmshop-part small { font-size: 12px; color: #d9c79a; }
+.tmshop-part.on { border-color: var(--gold); background: rgba(217,164,65,.24); }
+.tmshop-part:disabled { opacity: .5; cursor: default; }
+.tmshop-foot { grid-area: foot; display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+@media (max-width: 700px) { .tmshop-inner { grid-template-columns: 1fr; grid-template-areas: "head" "view" "parts" "foot"; } .tmshop-canvas { width: auto; max-height: 26vh; } .tmshop-parts { grid-template-columns: repeat(2, 1fr); } }
 @media (max-height: 600px) { .letter { padding: 14px 22px 12px; } .letter-body { font-size: 15px; line-height: 1.6; } .letter-face { width: 64px; height: 64px; } .letter { grid-template-columns: 64px 1fr; } }

@@ -103,7 +103,7 @@ test('avatar: 타임머신 — 다음 여행지 이름, 이동 장면의 연도,
   eq(yearOf({ years: '1018~1019' }), 1018); eq(yearOf({ years: '1880~1900년대' }), 1880);
   const tm = makeTimeMachine();
   ok(tm.group.name === 'timeMachine' && tm.group.userData.dynamic, '굳히기에 합쳐지지 않는다');
-  const flames = () => { let n = 0; tm.group.traverse(o => { if (o.isMesh && o.visible && o.material.type === 'MeshBasicMaterial' && o.geometry.type === 'ConeGeometry') n += 1; }); return n; };
+  const flames = () => { let n = 0; const seen = o => { for (let q = o; q; q = q.parent) if (!q.visible) return false; return true; }; tm.group.traverse(o => { if (o.isMesh && seen(o) && o.userData.len) n += 1; }); return n; }; // 떼어 둔 부품(쌍부스터)의 불꽃은 묶음째 숨는다
   eq(flames(), 0, '세워 두면 불꽃이 없다'); tm.setFlame(1); tm.tick(1); eq(flames(), 3, '날 때는 불꽃 셋');
   tm.dispose();
 });

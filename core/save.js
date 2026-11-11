@@ -18,7 +18,7 @@ export function createSave(storage) {
       const valid = d && typeof d === 'object' && typeof d.name === 'string' && d.chapters && typeof d.chapters === 'object';
       // 편이 생기기 전의 옛 기록: 고려편 장을 하나라도 했으면 고려편으로 본다(이어하기가 고려편 지도로 바로 간다)
       const oldGoryeo = valid && (Object.keys(d.chapters).some(id => /^ch\d$/.test(id)) || /^ch\d$/.test(d.current?.id || ''));
-      save.data = valid ? { name: d.name, chapters: d.chapters, current: d.current || null, avatar: d.avatar && typeof d.avatar === 'object' ? d.avatar : null, course: typeof d.course === 'string' ? d.course : oldGoryeo ? 'goryeo' : null, reviews: d.reviews && typeof d.reviews === 'object' ? d.reviews : {}, ...(d.quests && typeof d.quests === 'object' ? { quests: d.quests } : {}) } : empty(); // 옛 기록의 역사 수첩(notes)은 버린다(D-9)
+      save.data = valid ? { name: d.name, chapters: d.chapters, current: d.current || null, avatar: d.avatar && typeof d.avatar === 'object' ? d.avatar : null, course: typeof d.course === 'string' ? d.course : oldGoryeo ? 'goryeo' : null, reviews: d.reviews && typeof d.reviews === 'object' ? d.reviews : {}, ...(Array.isArray(d.tmOff) ? { tmOff: d.tmOff } : {}), ...(d.letters && typeof d.letters === 'object' ? { letters: d.letters } : {}) } : empty(); // 옛 기록의 역사 수첩(notes)은 버린다(D-9)
       return save.data;
     },
     persist() { return storage.set(KEY, save.data); },
@@ -35,9 +35,11 @@ export function createSave(storage) {
       save.persist();
     },
     chapterResult(id) { return save.data.chapters[id] || null; },
-    // 도전 쪽지(content/growth.js)를 해낸 장: { ch1: true }
-    setQuest(id) { (save.data.quests ||= {})[id] = true; save.persist(); },
-    quest(id) { return !!(save.data.quests || {})[id]; },
+    // 타임머신에서 떼어 둔 부품 번호(content/growth.js TM_STAGES의 차례): 붙였다 뗐다 할 수 있다
+    setTmOff(list) { save.data.tmOff = [...list]; save.persist(); },
+    // 받은 편지(content/growth.js LETTERS): 복습 퀴즈 앞에서 받는다. 예전 기록은 마친 장이면 받은 것으로 본다
+    addLetter(id) { (save.data.letters ||= {})[id] = true; save.persist(); },
+    hasLetter(id) { return !!((save.data.letters || {})[id] || save.data.chapters[id]); },
     // 편 복습 퀴즈 결과(D-21): { correct, total }
     setReview(session, r) { (save.data.reviews ||= {})[session] = r; save.persist(); },
     review(session) { return (save.data.reviews || {})[session] || null; },

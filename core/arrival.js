@@ -51,7 +51,7 @@ export async function playArrival(ctx, { meta, chapter = null, role, roleLook: l
   const mx = p.position.x + side.x * 3.4 * sd, mz = p.position.z + side.z * 3.4 * sd;
   ctx.timeMachine?.dispose?.();
   let tm = null, my = 0;
-  try { tm = makeTimeMachine({ level: ctx.tmLevel || 0 }); my = groundY(world, mx, mz, [p]); tm.group.position.set(mx, my + 16, mz); tm.group.rotation.y = Math.atan2(-side.x * sd, -side.z * sd); world.level.add(tm.group); tm.setFlame(1); world.warm?.(); } catch (e) { console.warn('타임머신', e); }
+  try { tm = makeTimeMachine({ parts: ctx.tmParts || [] }); my = groundY(world, mx, mz, [p]); tm.group.position.set(mx, my + 16, mz); tm.group.rotation.y = Math.atan2(-side.x * sd, -side.z * sd); world.level.add(tm.group); tm.setFlame(1); world.warm?.(); } catch (e) { console.warn('타임머신', e); }
   p.visible = !tm;
   const home = p.position.clone(); // 변장할 자리(문 밖 길). 학생은 타임머신 문에서 나와 여기까지 걸어온다
   if (b0) world.bounds = { x0: Math.min(b0.x0, home.x, mx) - 2, x1: Math.max(b0.x1, home.x, mx) + 2, z0: Math.min(b0.z0, home.z, mz) - 2, z1: Math.max(b0.z1, home.z, mz) + 2 }; // 걷는 곳 밖이어도 밀려나지 않게

@@ -8,9 +8,8 @@ import { createDialogue } from './dialogue.js';
 import { createQualityController, guessInitialQuality } from './quality.js';
 import { runChapter } from './flow.js';
 import { playTravel } from './travel.js';
-import { setupChallenge } from './challenge.js';
-import { showLetter, showLetterBox, showMachineUpgrade } from './growth-ui.js';
-import { CHALLENGES, LETTERS, tmLevel, finishedCount } from '../content/growth.js';
+import { showLetter, showLetterBox, showMachineUpgrade, showMachineShop } from './growth-ui.js';
+import { LETTERS, tmLevel, tmParts, finishedCount } from '../content/growth.js';
 import { createMusic } from './music.js';
 import { showTitle, showCourses, showMap, showIntroCard, showChapterResult, showSessionCard, showMenu, showMessage, createHud } from './screens.js';
 import { perfEnabled, createPerfStats, createPerfPanel } from './perf.js';
@@ -77,13 +76,19 @@ function boot() {
   const openMenu = async () => {
     if (!inChapter) return;
     world.paused = true; // 메뉴를 보는 동안 미니게임 시간이 흐르지 않게
-    const choice = await showMenu(ui, { muted: audio.muted, music: musicOn, quality: quality.level, storageOk: storage.available }, change => {
+    const choice = await showMenu(ui, { muted: audio.muted, music: musicOn, quality: quality.level, storageOk: storage.available, letters: true, machine: true }, change => {
       if ('muted' in change) { audio.setMuted(change.muted); storage.set(PREF_MUTED, change.muted); }
       if ('music' in change) { musicOn = change.music; storage.set(PREF_MUSIC, change.music); }
       applyMusic();
       if (change.quality) { quality.set(change.quality); storage.set(PREF_QUALITY, change.quality); }
     });
     world.paused = false;
+    if (choice === 'letters' || choice === 'machine') { // 편지함·타임머신 꾸미기: 게임 중 언제든(2026-11-11 선생님)
+      world.paused = true;
+      if (choice === 'letters') await showLetterBox(ui, LETTER_CHAPTERS, save); else await openMachine();
+      world.paused = false;
+      return;
+    }
     if (choice === 'avatar') { // 내 캐릭터 바꾸기: 얼굴만 바꾸고 지금 장의 역할 옷에 바로 입힌다
       world.paused = true;
       const r = await showAvatarMaker(ui, { avatar: save.data.avatar, name: save.data.name, title: '내 캐릭터 바꾸기' });
@@ -94,6 +99,9 @@ function boot() {
     }
     if (choice === 'map') { const c = curMeta ? courseOfChapter(curMeta.id).id : save.data.course; save.abandonCurrent(); location.hash = `map=${c || ''}`; location.reload(); } // 하던 장을 버리고 다시 열어 첫 화면 없이 그 편의 장 선택 지도로(#map, 2026-11-05 플레이 점검: 첫 화면으로 갔다)
   };
+  // 타임머신 꾸미기: 부품을 떼었다 붙이면 저장하고, 서 있는 타임머신도 바로 바뀐다
+  const LETTER_CHAPTERS = ALL_CHAPTERS.filter(c => LETTERS[c.id]);
+  const openMachine = () => showMachineShop(ui, save, { onChange: () => { ctx.tmParts = tmParts(save); ctx.timeMachine?.setParts(ctx.tmParts); } });
   input.onMenu(openMenu);
   hud.menuBtn.addEventListener('click', openMenu);
 
@@ -105,6 +113,15 @@ function boot() {
     wait: ms => new Promise(r => setTimeout(r, ms)),
     fade: on => hud.fade(on),
     onAction(fn) { actionHandlers.add(fn); return () => actionHandlers.delete(fn); },
+  };
+  // 그 장에서 도운 인물의 편지(2026-11-11 선생님: 복습 퀴즈를 풀기 전에 받는다): 놀이가 끝나고 타임머신을 부르기 전에 한 번(core/flow.js)
+  ctx.giveLetter = async meta => {
+    if (!LETTERS[meta.id] || save.data.letters?.[meta.id]) return;
+    save.addLetter(meta.id);
+    const mine = courseOfChapter(meta.id).chapters.filter(c => LETTERS[c.id]);
+    world.paused = true; input.releaseJoystick();
+    await showLetter(ui, meta.id, { name: save.data.name, have: mine.filter(c => save.hasLetter(c.id)).length, total: mine.length });
+    world.paused = false;
   };
 
   let last = performance.now(), wasTalking = false;
@@ -126,9 +143,7 @@ function boot() {
   async function playChapter(meta, stage) {
     const mod = (await meta.load()).default;
     clearBackdrop(); world.clearLevel(); ctx.timeMachine = null; ctx.boardMachine = null;
-    ctx.tmLevel = tmLevel(finishedCount(save)); // 타임머신 단계(마친 장 수)
-    ctx.makeChallenge = m => setupChallenge(ctx, m, save);
-    const firstTime = !save.chapterResult(meta.id);
+    ctx.tmLevel = tmLevel(finishedCount(save)); ctx.tmParts = tmParts(save); // 타임머신 단계(마친 장 수)와 붙여 둔 부품
     world.player.visible = true;
     quality.restart();
     world.camMode = 'follow';
@@ -170,12 +185,8 @@ function boot() {
     dialogue.dispose(); dialogue = null;
     curMeta = null;
     hud.fade(false); // 타임머신이 날아오르며 어두워진 화면을 푼다
-    await showChapterResult(ui, meta, result, { quest: CHALLENGES[meta.id] ? save.quest(meta.id) : null });
-    if (firstTime && LETTERS[meta.id]) { // 그 장에서 도운 인물의 편지(처음 마쳤을 때만)
-      const mine = courseOfChapter(meta.id).chapters.filter(c => LETTERS[c.id]);
-      await showLetter(ui, meta.id, { name: save.data.name, have: mine.filter(c => save.chapterResult(c.id)).length, total: mine.length });
-    }
-    { const lv = tmLevel(finishedCount(save)); if (lv > ctx.tmLevel) await showMachineUpgrade(ui, lv, { done: finishedCount(save) }); ctx.tmLevel = lv; } // 새 부품
+    await showChapterResult(ui, meta, result);
+    { const lv = tmLevel(finishedCount(save)); if (lv > ctx.tmLevel) await showMachineUpgrade(ui, lv, { done: finishedCount(save), parts: tmParts(save) }); ctx.tmLevel = lv; ctx.tmParts = tmParts(save); } // 새 부품(얻으면 바로 붙는다)
     if (isSessionDone(meta.session, save)) {
       // 편 복습 퀴즈는 뺐다(2026-11-04 선생님)
       await showSessionCard(ui, meta.session, save, ALL_CHAPTERS);
@@ -242,6 +253,7 @@ function boot() {
       const id = await showMap(ui, course.chapters, save, {
         heading: `${course.era}편 · ${course.title}`, onCourses: true, onBack: true,
         onLetters: course.chapters.some(c => LETTERS[c.id]) ? () => showLetterBox(ui, course.chapters, save) : null,
+        onMachine: openMachine,
         onSessionCard: () => showSessionCard(ui, course.session, save, ALL_CHAPTERS),
       });
       if (id === 'back') return; // 「◀ 뒤로」: 첫 화면으로

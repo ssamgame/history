@@ -159,7 +159,7 @@ export async function portalStage(ctx, chapter, next) {
   let tm = ctx.timeMachine;
   if (tm?.collider) { const i = world.colliders.indexOf(tm.collider); if (i >= 0) world.colliders.splice(i, 1); tm.collider = null; }
   const parked = !!tm?.group.parent;
-  if (!parked) { tm = makeTimeMachine({ level: ctx.tmLevel || 0 }); world.level.add(tm.group); world.warm?.(); tm.offTick = world.onUpdate((dt, t) => tm.tick(t)); }
+  if (!parked) { tm = makeTimeMachine({ parts: ctx.tmParts || [] }); world.level.add(tm.group); world.warm?.(); tm.offTick = world.onUpdate((dt, t) => tm.tick(t)); }
   world.player.visible = true; world.closeView = true; world.camMode = 'follow';
   ctx.dialogue?.say?.({ who: 'guide', text: '타임머신을 불렀어. 다가가서 복습 퀴즈를 풀면 탈 수 있어!' });
   // 세워 둔 자리에서 솟아올랐다가(0.7초) 마을에 내려앉는다(1.3초). 이어하기로 퀴즈부터 시작하면 바로 내려앉는다
