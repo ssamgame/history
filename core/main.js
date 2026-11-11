@@ -89,14 +89,6 @@ function boot() {
       world.paused = false;
       return;
     }
-    if (choice === 'avatar') { // 내 캐릭터 바꾸기: 얼굴만 바꾸고 지금 장의 역할 옷에 바로 입힌다
-      world.paused = true;
-      const r = await showAvatarMaker(ui, { avatar: save.data.avatar, name: save.data.name, title: '내 캐릭터 바꾸기' });
-      world.paused = false;
-      save.setAvatar(r.avatar); if (r.name) save.setName(r.name);
-      if (curMeta && role) { const mod = (await curMeta.load()).default; const lk = applyAvatar(roleLook(curMeta.id, mod.player), r.avatar); role.lookOpts = lk; world.setPlayerLook(lk, role.scale); }
-      return;
-    }
     if (choice === 'map') { const c = curMeta ? courseOfChapter(curMeta.id).id : save.data.course; save.abandonCurrent(); location.hash = `map=${c || ''}`; location.reload(); } // 하던 장을 버리고 다시 열어 첫 화면 없이 그 편의 장 선택 지도로(#map, 2026-11-05 플레이 점검: 첫 화면으로 갔다)
   };
   // 타임머신 꾸미기: 부품을 떼었다 붙이면 저장하고, 서 있는 타임머신도 바로 바뀐다

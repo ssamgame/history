@@ -102,8 +102,9 @@ test('growth: 장 고르기에 「타임머신」·「편지함」 단추, 게�
     const m1 = showMenu(ui, { muted: false, quality: 'medium', letters: true, machine: true }, () => {}); btn(ui, '편지함').click(); eq(await m1, 'letters');
     const m2 = showMenu(ui, { muted: false, quality: 'medium', letters: true, machine: true }, () => {});
     for (const b of [...ui.querySelectorAll('button')].filter(x => x.offsetParent)) { const r = b.getBoundingClientRect(); ok(r.width >= 44 && r.height >= 40 && r.bottom <= innerHeight + 1, `단추 ${b.textContent}`); }
+    ok(!btn(ui, '캐릭터'), '한 번 정한 캐릭터는 바꾸지 못한다: 메뉴에 「내 캐릭터 바꾸기」가 없다');
     btn(ui, '타임머신 꾸미기').click(); eq(await m2, 'machine');
-    const m3 = showMenu(ui, { muted: false, quality: 'medium' }, () => {}); ok(!btn(ui, '편지함') && !btn(ui, '타임머신 꾸미기')); btn(ui, '닫기').click(); await m3;
+    const m3 = showMenu(ui, { muted: false, quality: 'medium' }, () => {}); ok(!btn(ui, '편지함') && !btn(ui, '타임머신 꾸미기') && !ui.textContent.includes('시간 여행')); btn(ui, '닫기').click(); await m3;
   } finally { ui.remove(); }
 });
 
