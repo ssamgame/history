@@ -14,12 +14,13 @@ export const tmLevel = done => TM_STAGES.reduce((lv, s, i) => (done >= s.at ? i 
 export const finishedCount = save => Object.keys(save?.data?.chapters || {}).length;
 
 // 도전 쪽지: 탐험하는 곳 한쪽에 숨은 안내판(sign)을 찾아 읽으면 시간지기가 한 가지를 묻는다. 맞히면 금빛 도장.
-// task: 퀘스트 목록에 보이는 글. sign.lines: 안내판 글(대본의 사실 그대로). options[answer]가 답.
+// task: 퀘스트 목록에 보이는 글. sign: 안내판 제목, lines: 안내판 글(대본의 사실 그대로). options[answer]가 답.
+// at: [x, z]를 주면 그 자리에, 없으면 빈 곳을 찾아 세운다(core/challenge.js findNoteSpot)
 export const CHALLENGES = {
   ch1: { task: '숨은 안내판 「국경의 소식」을 찾아 읽기', sign: '국경의 소식',
     lines: [{ who: 'narr', text: '거란은 송나라와 다투고 있어서, 송과 가까운 고려를 경계했어요.', src: ['S19'] }],
     question: '거란이 고려를 경계한 까닭은?', options: ['고려가 송나라와 가까워서', '고려의 땅이 넓어서', '고려에 배가 많아서'], answer: 0, src: ['S19'] },
-  ch2: { task: '숨은 안내판 「흥화진」을 찾아 읽기', sign: '흥화진',
+  ch2: { task: '숨은 안내판 「압록강과 흥화진」을 찾아 읽기', sign: '압록강과 흥화진', at: [3, -7], // 성 안이 좁고 초가지붕이 넓어 자리를 직접 정한다(성벽 계단 쪽 빈 마당)
     lines: [{ who: 'narr', text: '흥화진은 압록강에서 가장 가까운 성이에요. 그래서 거란군이 가장 먼저 쳐들어왔어요.', src: ['S2'] }],
     question: '거란군이 흥화진을 가장 먼저 공격한 까닭은?', options: ['고려의 도읍이어서', '압록강에서 가장 가까운 성이어서', '성벽이 가장 낮아서'], answer: 1, src: ['S2'] },
   ch3: { task: '숨은 안내판 「고려군 진영」을 찾아 읽기', sign: '고려군 진영',

@@ -7,17 +7,22 @@ import { showSeal } from './growth-ui.js';
 
 export const NOTE_ID = 'questnote';
 
-// 안내판 자리: 학생이 선 곳에서 옆·뒤쪽으로 5~8m, 걷는 곳 안이고 사람·건물에서 떨어진 곳(같은 장면이면 늘 같은 자리)
+// 안내판 자리: 걷는 곳 안에서 사람·건물과 떨어진 빈 곳 가운데, 학생이 선 곳에서 8m쯤 떨어지고 바라보는 쪽에서 비켜난 곳
+// (눈앞에 바로 보이지 않고 조금 둘러봐야 찾는다. 같은 장면이면 늘 같은 자리). 빈 곳이 없으면 null
 export function findNoteSpot(world) {
   const p = world.player.position, ry = world.player.rotation.y, b = world.bounds;
-  const free = (x, z) => (!b || (x > b.x0 + 1.5 && x < b.x1 - 1.5 && z > b.z0 + 1.5 && z < b.z1 - 1.5))
-    && world.colliders.every(c => Math.hypot(c.x - x, c.z - z) > c.r + 1.6)
-    && [...world.npcs.values()].every(n => Math.hypot(n.mesh.position.x - x, n.mesh.position.z - z) > 3);
-  for (const r of [6.5, 5, 8, 4]) for (const a of [Math.PI / 2, -Math.PI / 2, 2.1, -2.1, 1.05, -1.05, 2.7, -2.7, Math.PI]) {
-    const x = p.x + Math.sin(ry + a) * r, z = p.z + Math.cos(ry + a) * r;
-    if (free(x, z)) return { x, z };
+  if (!b) return null;
+  const free = (x, z) => world.colliders.every(c => Math.hypot(c.x - x, c.z - z) > c.r + 1.4)
+    && [...world.npcs.values()].every(n => Math.hypot(n.mesh.position.x - x, n.mesh.position.z - z) > 2.8);
+  let best = null, score = -Infinity;
+  for (let x = Math.ceil(b.x0 + 1.5); x <= b.x1 - 1.5; x += 1) for (let z = Math.ceil(b.z0 + 1.5); z <= b.z1 - 1.5; z += 1) {
+    const d = Math.hypot(x - p.x, z - p.z);
+    if (d < 3.5 || d > 14 || !free(x, z)) continue;
+    const off = Math.abs(Math.atan2(Math.sin(Math.atan2(x - p.x, z - p.z) - ry), Math.cos(Math.atan2(x - p.x, z - p.z) - ry))); // 바라보는 쪽에서 벗어난 각(0~π)
+    const sc = -Math.abs(d - 8) + Math.min(off, 2) * 1.5; // 8m쯤, 옆·뒤쪽일수록 좋다
+    if (sc > score) { score = sc; best = { x, z }; }
   }
-  return null;
+  return best;
 }
 
 export function setupChallenge(ctx, meta, save) {
@@ -29,7 +34,7 @@ export function setupChallenge(ctx, meta, save) {
     id: meta.id, task: c.task, done: false,
     place() {
       if (placed) return; placed = true;
-      const at = findNoteSpot(world);
+      const at = c.at ? { x: c.at[0], z: c.at[1] } : findNoteSpot(world);
       if (!at) return; // 자리가 없으면 이번에는 쪽지 없이(장은 그대로)
       const p = world.player.position;
       spot = world.addSpot(NOTE_ID, makeSign(c.sign), at.x, at.z, Math.atan2(p.x - at.x, p.z - at.z)); // 글이 학생 쪽을 보게

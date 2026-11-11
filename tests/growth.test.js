@@ -61,7 +61,8 @@ test('growth: 도전 쪽지 — 탐험이 시작되면 숨은 안내판이 서�
     const sp = world.npcs.get(NOTE_ID); ok(sp && sp.spot, '안내판'); eq([...world.npcs.keys()].filter(k => k === NOTE_ID).length, 1);
     const { x, z } = sp.mesh.position, b = world.bounds;
     ok(x > b.x0 + 1 && x < b.x1 - 1 && z > b.z0 + 1 && z < b.z1 - 1, '걷는 곳 안'); ok(Math.hypot(x + 6.5, z - 6) > 3.5, '막힌 자리는 피한다');
-    const d = Math.hypot(x - 0, z - 6); ok(d >= 3.5 && d <= 8.5, `학생에게서 ${d.toFixed(1)}m`);
+    const d = Math.hypot(x - 0, z - 6); ok(d >= 3.5 && d <= 14, `학생에게서 ${d.toFixed(1)}m`);
+    ok(world.colliders.filter(c => c !== sp.collider).every(c => Math.hypot(c.x - x, c.z - z) > c.r + 1.3), '건물·사람과 떨어진 곳');
     eq(hudCalls[0], [CHALLENGES.ch2.task, false]); ok(said[0].includes('도전 쪽지가 왔어'));
     await ch.read(); ok(!ch.done && !save.quest('ch2'), '틀리면 아직'); ok(said.at(-1).includes('다시 읽고'));
     pick = CHALLENGES.ch2.answer;

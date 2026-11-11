@@ -85,7 +85,7 @@ export function showMachineUpgrade(root, level, { preview = true, done = 0 } = {
     try {
       renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true }); renderer.setPixelRatio(Math.min(2, devicePixelRatio || 1));
       const sc = new THREE.Scene(); sc.add(new THREE.HemisphereLight(0xffffff, 0x556050, 1.4)); const sun = new THREE.DirectionalLight(0xfff2d0, 1.5); sun.position.set(4, 8, 7); sc.add(sun);
-      const cam = new THREE.PerspectiveCamera(32, 520 / 420, 0.1, 100); cam.position.set(0, 3.6, 15.5); cam.lookAt(0, 2.3, 0);
+      const cam = new THREE.PerspectiveCamera(32, 520 / 420, 0.1, 100); cam.position.set(0, 3.4, level >= 2 ? 13.5 : 11); cam.lookAt(0, 2.3, 0); // 날개가 붙으면 조금 물러선다
       const tm = makeTimeMachine({ level }); sc.add(tm.group); tm.setFlame(0.35);
       let t = 0, last = performance.now();
       const loop = now => { const dt = Math.min(0.1, (now - last) / 1000); last = now; t += dt; tm.group.rotation.y = t * 0.6; tm.tick(t); renderer.render(sc, cam); raf = requestAnimationFrame(loop); };
