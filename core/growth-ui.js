@@ -23,7 +23,7 @@ function letterCard(id, L, name) {
   const body = h('p', { class: 'letter-body' }, letterParts(L.body).map(p => (p.strong ? h('b', {}, p.text) : p.text)));
   const pt = h('div', { class: 'letter-face' }); pt.style.backgroundImage = `url(${portraitURL(L.from)})`;
   return h('div', { class: 'letter', 'data-letter': id },
-    pt, h('div', { class: 'letter-to' }, `시간 여행자 ${name || ''}에게`.replace('  ', ' ')), h('h3', {}, `${L.name}의 편지`),
+    pt, h('div', { class: 'letter-to' }, name ? `시간 여행자 ${name}에게` : '시간 여행자에게'), h('h3', {}, `${L.name}의 편지`),
     body, h('div', { class: 'letter-sign' }, `— ${L.when}, ${L.name}`), h('div', { class: 'letter-seal', 'aria-hidden': 'true' }, L.seal));
 }
 // 편지 한 통: 장을 처음 마쳤을 때. have/total: 이 편에서 모은 편지 수
