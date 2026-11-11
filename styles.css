@@ -193,6 +193,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .scroll-item:active { background: rgba(43,36,28,.1); }
 .scroll-item b { font-size: 14px; font-weight: 800; } .scroll-item small { min-height: 13px; font-size: 12px; font-weight: 700; color: #8a6a3a; } .scroll-item.out b { color: var(--dan-red); }
 .scroll-item .ic { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: #2b241c; color: #f7efd9; font-size: 18px; font-weight: 900; } .scroll-item .ic.r { background: var(--dan-red); } .scroll-item .ic.g { background: var(--dan-green); } .scroll-item .ic.b { background: #2f4a7a; }
+.bang { position: absolute; top: -4px; right: -4px; width: 22px; height: 22px; border-radius: 50%; background: var(--gold); color: #2b241c; display: grid; place-items: center; font-style: normal; font-weight: 900; font-size: 15px; line-height: 1; box-shadow: 0 1px 4px rgba(0,0,0,.5); } /* 안 읽은 편지 */
+.scroll-item, .board-letters, .letter-tab { position: relative; } .scroll-item .bang { top: 0; right: 14px; }
 .menu .confirm { position: fixed; right: max(12px, env(safe-area-inset-right, 0px)); bottom: 16px; width: min(440px, calc(100% - 24px)); box-sizing: border-box; color: var(--hanji); box-shadow: 0 8px 22px rgba(0,0,0,.55); }
 @media (prefers-reduced-motion: no-preference) {
   .menu-band { animation: menu-unroll .45s cubic-bezier(.2,.8,.3,1) both; } .menu-roll.l { animation: menu-roll .45s cubic-bezier(.2,.8,.3,1) both; }

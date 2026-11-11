@@ -97,10 +97,10 @@ test('growth: 장 고르기에 「타임머신」·「편지함」 단추, 게�
   try {
     const save = memSave(); save.addLetter('ch1');
     let letters = 0, machine = 0; const pm = showMap(ui, CHAPTERS, save, { onLetters: () => { letters += 1; }, onMachine: () => { machine += 1; } });
-    btn(ui, '편지함').click(); btn(ui, '타임머신').click(); eq([letters, machine], [1, 1]); ok(!ui.querySelector('.stop-quest')); ui.querySelector('.screen').remove(); void pm;
+    ok(btn(ui, '편지함').querySelector('.bang'), '장 고르기 편지함에도 느낌표'); btn(ui, '편지함').click(); btn(ui, '타임머신').click(); eq([letters, machine], [1, 1]); ok(!ui.querySelector('.stop-quest')); ui.querySelector('.screen').remove(); void pm;
     const pm2 = showMap(ui, CHAPTERS, memSave(), { onLetters: () => {} }); ok(!btn(ui, '편지함'), '받은 편지가 없으면 단추도 없다'); ok(!btn(ui, '타임머신')); ui.querySelector('.screen').remove(); void pm2;
-    const m1 = showMenu(ui, { muted: false, quality: 'medium', letters: 2, machine: true }, () => {}); ok(btn(ui, '편지함').textContent.includes('2통')); btn(ui, '편지함').click(); eq(await m1, 'letters');
-    const m2 = showMenu(ui, { muted: false, quality: 'medium', letters: 0, machine: true }, () => {}); ok(btn(ui, '편지함'), '받은 편지가 없어도 편지함은 있다');
+    const m1 = showMenu(ui, { muted: false, quality: 'medium', letters: 2, machine: true }, () => {}); ok(btn(ui, '편지함').textContent.includes('2통') && btn(ui, '편지함').querySelector('.bang'), '안 읽은 편지 수와 느낌표'); btn(ui, '편지함').click(); eq(await m1, 'letters');
+    const m2 = showMenu(ui, { muted: false, quality: 'medium', letters: 0, machine: true }, () => {}); ok(btn(ui, '편지함') && !btn(ui, '편지함').textContent.includes('통') && !btn(ui, '편지함').querySelector('.bang'), '다 읽었으면 숫자도 느낌표도 없다');
     for (const b of [...ui.querySelectorAll('button')].filter(x => x.offsetParent)) { const r = b.getBoundingClientRect(); ok(r.width >= 44 && r.height >= 40 && r.bottom <= innerHeight + 1, `단추 ${b.textContent}`); }
     ok(!btn(ui, '캐릭터'), '한 번 정한 캐릭터는 바꾸지 못한다: 메뉴에 「내 캐릭터 바꾸기」가 없다');
     btn(ui, '타임머신').click(); eq(await m2, 'machine');
@@ -128,9 +128,9 @@ test('growth: 편지 — 인물의 편지(내 이름·강조한 사실·도장),
     const save = memSave(); save.setName('김여행'); save.addLetter('ch1'); save.finishChapter('ch3', { stars: 3 }); // 받은 편지, 그리고 예전 기록(마친 장)
     ok(save.hasLetter('ch1') && save.hasLetter('ch3') && !save.hasLetter('ch2'));
     const pb = showLetterBox(ui, CHAPTERS, save);
-    eq(ui.querySelectorAll('.letter-tab').length, 6); eq(ui.querySelectorAll('.letter-tab:disabled').length, 4, '안 받은 편지는 잠김');
+    eq(ui.querySelectorAll('.letter-tab').length, 6); eq(save.unreadLetters(['ch1', 'ch2', 'ch3']), 1, '펼친 1장 편지는 읽은 것, 3장은 아직'); eq(ui.querySelectorAll('.letter-tab .bang').length, 1); eq(ui.querySelectorAll('.letter-tab:disabled').length, 4, '안 받은 편지는 잠김');
     ok(ui.querySelector('.letter').textContent.includes('서희의 편지'));
-    ui.querySelector('[data-letter-tab="ch3"]').click(); ok(ui.querySelector('.letter').textContent.includes('강감찬의 편지'));
+    ui.querySelector('[data-letter-tab="ch3"]').click(); ok(ui.querySelector('.letter').textContent.includes('강감찬의 편지')); eq(save.unreadLetters(['ch1', 'ch3']), 0); ok(!ui.querySelector('.bang'), '읽으면 느낌표가 사라진다');
     for (const b of ui.querySelectorAll('button:not(:disabled)')) { const r = b.getBoundingClientRect(); ok(r.width >= 44 && r.height >= 40, `단추 크기 ${b.textContent}`); }
     btn(ui, '닫기').click(); await pb;
     const pe = showLetterBox(ui, CHAPTERS, memSave()); ok(ui.textContent.includes('아직 받은 편지가 없어요')); btn(ui, '닫기').click(); await pe;

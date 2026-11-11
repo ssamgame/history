@@ -8,7 +8,7 @@ import { createDialogue } from './dialogue.js';
 import { createQualityController, guessInitialQuality } from './quality.js';
 import { runChapter } from './flow.js';
 import { playTravel } from './travel.js';
-import { showLetter, showLetterBox, showMachineUpgrade, showMachineShop } from './growth-ui.js';
+import { showLetterBox, showMachineUpgrade, showMachineShop } from './growth-ui.js';
 import { LETTERS, tmLevel, tmParts, finishedCount } from '../content/growth.js';
 import { createMusic } from './music.js';
 import { showTitle, showCourses, showMap, showIntroCard, showChapterResult, showSessionCard, showMenu, showMessage, createHud } from './screens.js';
@@ -76,7 +76,7 @@ function boot() {
   const openMenu = async () => {
     if (!inChapter) return;
     world.paused = true; // 메뉴를 보는 동안 미니게임 시간이 흐르지 않게
-    const choice = await showMenu(ui, { muted: audio.muted, music: musicOn, quality: quality.level, storageOk: storage.available, letters: LETTER_CHAPTERS.filter(c => save.hasLetter(c.id)).length, machine: true }, change => {
+    const choice = await showMenu(ui, { muted: audio.muted, music: musicOn, quality: quality.level, storageOk: storage.available, letters: save.unreadLetters(LETTER_CHAPTERS.map(c => c.id)), machine: true }, change => {
       if ('muted' in change) { audio.setMuted(change.muted); storage.set(PREF_MUTED, change.muted); }
       if ('music' in change) { musicOn = change.music; storage.set(PREF_MUSIC, change.music); }
       applyMusic();
@@ -110,10 +110,9 @@ function boot() {
   ctx.giveLetter = async meta => {
     if (!LETTERS[meta.id] || save.data.letters?.[meta.id]) return;
     save.addLetter(meta.id);
-    const mine = courseOfChapter(meta.id).chapters.filter(c => LETTERS[c.id]);
-    world.paused = true; input.releaseJoystick();
-    await showLetter(ui, meta.id, { name: save.data.name, have: mine.filter(c => save.hasLetter(c.id)).length, total: mine.length });
-    world.paused = false;
+    // 바로 펼치지 않고 알리기만 한다(2026-11-11 선생님): 편지함에 느낌표가 붙고, 학생이 열어 읽으면 사라진다
+    dialogue?.say({ who: 'guide', text: `${LETTERS[meta.id].name}의 편지가 왔어! 메뉴의 편지함에서 읽어 봐.` });
+    await ctx.wait(2600);
   };
 
   let last = performance.now(), wasTalking = false;

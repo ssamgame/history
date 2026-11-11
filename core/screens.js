@@ -165,7 +165,7 @@ export function showMap(root, chapters, save, { onSessionCard, onCourses, onBack
       ? [h('button', { class: 'btn', type: 'button', onclick: () => onSessionCard && onSessionCard() }, '시간 여행 일지')] : [];
     const courseButton = onCourses ? h('button', { class: 'btn', type: 'button', onclick: () => { el.remove(); resolve('courses'); } }, '다른 시대') : null;
     const machineButton = onMachine ? h('button', { class: 'btn', type: 'button', onclick: () => onMachine() }, '타임머신') : null;
-    const letterButton = onLetters && chapters.some(c => save.hasLetter(c.id)) ? h('button', { class: 'btn board-letters', type: 'button', onclick: () => onLetters() }, '편지함') : null;
+    const letterButton = onLetters && chapters.some(c => save.hasLetter(c.id)) ? h('button', { class: 'btn board-letters', type: 'button', onclick: e => { e.currentTarget.querySelector('.bang')?.remove(); onLetters(); } }, '편지함', save.unreadLetters(chapters.map(c => c.id)) > 0 && h('i', { class: 'bang' }, '!')) : null;
     const backButton = onBack ? h('button', { class: 'btn board-back', type: 'button', onclick: () => { el.remove(); resolve('back'); } }, '◀ 뒤로') : null; // 첫 화면으로(2026-11-10 선생님)
     const el = screen(root, 'mapscreen',
       h('div', { class: 'board-wrap' },
@@ -267,7 +267,7 @@ export function showSessionCard(root, session, save, chapters) {
 const openMenus = new WeakMap(); // root → 열려 있는 메뉴의 약속 (Esc를 여러 번 눌러도 메뉴는 하나)
 // 메뉴(2026-11-11 선생님 시안 ③): 메뉴 단추 자리에서 왼쪽으로 가로 두루마리가 주르륵 펼쳐진다. 항목은 둥근 그림 + 이름 + 지금 상태.
 // 소리·음악·화질·전체 화면은 눌러도 닫히지 않고 그 자리에서 바뀐다(화질은 누를 때마다 낮음 → 보통 → 높음). 편지함·타임머신·장 선택은 닫으며 그 일을 알린다.
-// letters: false면 편지함 없음, 숫자면 받은 편지 수. machine: 「타임머신 꾸미기」. 역사 수첩 단추는 2026-10-27(D-9), 「내 캐릭터 바꾸기」는 2026-11-11 뺐다
+// letters: false면 편지함 없음, 숫자면 안 읽은 편지 수. machine: 「타임머신 꾸미기」. 역사 수첩 단추는 2026-10-27(D-9), 「내 캐릭터 바꾸기」는 2026-11-11 뺐다
 export function showMenu(root, { muted, music = null, quality, storageOk = true, letters = false, machine = false }, onChange) {
   if (openMenus.has(root)) return openMenus.get(root);
   const p = new Promise(resolve => {
@@ -288,7 +288,7 @@ export function showMenu(root, { muted, music = null, quality, storageOk = true,
       music !== null && item('', face('♬', '음악', onOff(music), music ? 'g' : ''), b => { music = !music; onChange({ music }); b.replaceChildren(...face('♬', '음악', onOff(music), music ? 'g' : '')); }),
       item('', face('◐', '화질', QN[q] || '보통'), b => { q = QS[(QS.indexOf(q) + 1) % 3]; onChange({ quality: q }); b.replaceChildren(...face('◐', '화질', QN[q])); }),
       fs,
-      letters !== false && item('', face('✉︎', '편지함', typeof letters === 'number' ? `${letters}통` : '', 'r'), () => close('letters')),
+      letters !== false && item('', [...face('✉︎', '편지함', letters > 0 ? `${letters}통` : '', 'r'), letters > 0 && h('i', { class: 'bang' }, '!')], () => close('letters')), // 숫자·느낌표는 안 읽은 편지가 있을 때만
       machine && item('', face('▲', '타임머신', '', 'b'), () => close('machine')),
       item('out', face('↩︎', '장 선택', '', 'r'), () => (storageOk ? close('map') : (leave.hidden = false))));
     const rollL = h('i', { class: 'menu-roll l' }), scroll = h('div', { class: 'menu-scroll' }, rollL, band, h('i', { class: 'menu-roll' }));

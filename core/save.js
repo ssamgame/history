@@ -18,7 +18,7 @@ export function createSave(storage) {
       const valid = d && typeof d === 'object' && typeof d.name === 'string' && d.chapters && typeof d.chapters === 'object';
       // 편이 생기기 전의 옛 기록: 고려편 장을 하나라도 했으면 고려편으로 본다(이어하기가 고려편 지도로 바로 간다)
       const oldGoryeo = valid && (Object.keys(d.chapters).some(id => /^ch\d$/.test(id)) || /^ch\d$/.test(d.current?.id || ''));
-      save.data = valid ? { name: d.name, chapters: d.chapters, current: d.current || null, avatar: d.avatar && typeof d.avatar === 'object' ? d.avatar : null, course: typeof d.course === 'string' ? d.course : oldGoryeo ? 'goryeo' : null, reviews: d.reviews && typeof d.reviews === 'object' ? d.reviews : {}, ...(Array.isArray(d.tmOff) ? { tmOff: d.tmOff } : {}), ...(d.letters && typeof d.letters === 'object' ? { letters: d.letters } : {}) } : empty(); // 옛 기록의 역사 수첩(notes)은 버린다(D-9)
+      save.data = valid ? { name: d.name, chapters: d.chapters, current: d.current || null, avatar: d.avatar && typeof d.avatar === 'object' ? d.avatar : null, course: typeof d.course === 'string' ? d.course : oldGoryeo ? 'goryeo' : null, reviews: d.reviews && typeof d.reviews === 'object' ? d.reviews : {}, ...(Array.isArray(d.tmOff) ? { tmOff: d.tmOff } : {}), ...(d.letters && typeof d.letters === 'object' ? { letters: d.letters } : {}), ...(d.lettersRead && typeof d.lettersRead === 'object' ? { lettersRead: d.lettersRead } : {}) } : empty(); // 옛 기록의 역사 수첩(notes)은 버린다(D-9)
       return save.data;
     },
     persist() { return storage.set(KEY, save.data); },
@@ -39,6 +39,9 @@ export function createSave(storage) {
     setTmOff(list) { save.data.tmOff = [...list]; save.persist(); },
     // 받은 편지(content/growth.js LETTERS): 복습 퀴즈 앞에서 받는다. 예전 기록은 마친 장이면 받은 것으로 본다
     addLetter(id) { (save.data.letters ||= {})[id] = true; save.persist(); },
+    // 편지함에서 펼쳐 읽은 편지(2026-11-11 선생님: 안 읽은 편지는 느낌표와 숫자로 알린다)
+    readLetter(id) { if ((save.data.lettersRead ||= {})[id]) return; save.data.lettersRead[id] = true; save.persist(); },
+    unreadLetters(ids) { return ids.filter(id => save.hasLetter(id) && !(save.data.lettersRead || {})[id]).length; },
     hasLetter(id) { return !!((save.data.letters || {})[id] || save.data.chapters[id]); },
     // 편 복습 퀴즈 결과(D-21): { correct, total }
     setReview(session, r) { (save.data.reviews ||= {})[session] = r; save.persist(); },

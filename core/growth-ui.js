@@ -37,14 +37,16 @@ export function showLetter(root, id, { name = '', have = 0, total = 0 } = {}) {
 export function showLetterBox(root, chapters, save) {
   return new Promise(resolve => {
     const got = chapters.filter(c => LETTERS[c.id] && save.hasLetter(c.id));
-    let k = 0;
+    const unread = c => save.unreadLetters([c.id]) > 0;
+    let k = Math.max(0, got.findIndex(unread)); // 안 읽은 편지부터 펼친다
     const slot = h('div', { class: 'letter-slot' });
     const tabs = chapters.filter(c => LETTERS[c.id]).map(c => {
       const has = got.includes(c);
-      return h('button', { class: 'btn letter-tab', type: 'button', disabled: !has, 'data-letter-tab': c.id, onclick: () => { k = got.indexOf(c); show(); } }, has ? `${c.no}장 ${LETTERS[c.id].name}` : `${c.no}장 ?`);
+      return h('button', { class: 'btn letter-tab', type: 'button', disabled: !has, 'data-letter-tab': c.id, onclick: () => { k = got.indexOf(c); show(); } }, has ? `${c.no}장 ${LETTERS[c.id].name}` : `${c.no}장 ?`, has && unread(c) && h('i', { class: 'bang' }, '!'));
     });
     const show = () => {
       const c = got[k];
+      if (c) { save.readLetter(c.id); tabs.find(b => b.dataset.letterTab === c.id)?.querySelector('.bang')?.remove(); } // 펼치면 읽은 편지
       tabs.forEach(b => b.classList.toggle('on', !!c && b.dataset.letterTab === c.id));
       slot.replaceChildren(c ? letterCard(c.id, LETTERS[c.id], save.data.name) : h('p', { class: 'letter-empty' }, '아직 받은 편지가 없어요. 놀이를 마치면 그 시대 사람이 편지를 보내 줘요.'));
     };
