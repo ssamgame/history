@@ -67,9 +67,8 @@ export function createDialogue(root, speakers, { typeMs = 26, reduceMotion = fal
     choicesEl.hidden = true; nextEl.hidden = true;
     const chars = [...line.text];
     clearInterval(timer); timer = null;
-    if (reduceMotion || typeMs <= 0) textEl.textContent = line.text;
-    else { let i = 0; textEl.textContent = ''; timer = setInterval(() => { i += 1; textEl.textContent = chars.slice(0, i).join(''); if (i >= chars.length) { clearInterval(timer); timer = null; } }, typeMs); }
-    const typing = (reduceMotion || typeMs <= 0) ? 0 : chars.length * typeMs, stay = typing + GUIDE_MS(chars.length);
+    textEl.textContent = line.text; // 시간지기 말은 한 번에 다 보인다(2026-11-11 선생님: 한 글자씩 나오면 태블릿에서 뚝뚝 끊긴다)
+    const stay = GUIDE_MS(chars.length);
     chipUntil = performance.now() + Math.min(2500, Math.max(1200, stay * 0.6));
     const hide = () => { clearTimeout(autoT); autoT = null; clearInterval(timer); timer = null; chipUntil = 0; advanceFn = null; el.hidden = true; if (onClose) onClose(); };
     advanceFn = hide; // 눌러도 바로 사라진다

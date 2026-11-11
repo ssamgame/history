@@ -289,8 +289,8 @@ export function showMenu(root, { muted, music = null, quality, storageOk = true,
       item('', face('◐', '화질', QN[q] || '보통'), b => { q = QS[(QS.indexOf(q) + 1) % 3]; onChange({ quality: q }); b.replaceChildren(...face('◐', '화질', QN[q])); }),
       fs,
       letters !== false && item('', face('✉︎', '편지함', typeof letters === 'number' ? `${letters}통` : '', 'r'), () => close('letters')),
-      machine && item('', face('▲', '타임머신', '꾸미기', 'b'), () => close('machine')),
-      item('out', face('↩︎', '장 선택', '나가기', 'r'), () => (storageOk ? close('map') : (leave.hidden = false))));
+      machine && item('', face('▲', '타임머신', '', 'b'), () => close('machine')),
+      item('out', face('↩︎', '장 선택', '', 'r'), () => (storageOk ? close('map') : (leave.hidden = false))));
     const rollL = h('i', { class: 'menu-roll l' }), scroll = h('div', { class: 'menu-scroll' }, rollL, band, h('i', { class: 'menu-roll' }));
     const el = screen(root, 'menu', h('button', { class: 'menubtn menu-close', type: 'button', onclick: () => close('close') }, '닫기'), scroll, leave);
     el.addEventListener('click', e => { if (e.target === el) close('close'); }); // 바깥(게임 화면)을 눌러도 닫힌다
