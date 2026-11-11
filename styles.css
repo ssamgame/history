@@ -619,14 +619,13 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .tmup { background: radial-gradient(ellipse at 50% 45%, rgba(217,164,65,.35), rgba(10,12,11,.92) 65%); }
 .tmup-inner { display: grid; justify-items: center; gap: 6px; text-align: center; max-width: 620px; }
 .tmup-canvas { width: min(420px, 70vw); height: auto; aspect-ratio: 520 / 420; max-height: 46vh; }
-.tmup-parts { margin: 0; font-size: 17px; color: var(--hanji); word-break: keep-all; } .tmup-next { margin: 0 0 4px; font-size: 14px; color: #d9c79a; }
+.tmup-next { margin: 0 0 4px; font-size: 14px; color: #d9c79a; }
 .tmshop { background: radial-gradient(ellipse at 28% 50%, rgba(217,164,65,.3), rgba(10,12,11,.94) 62%); }
 .tmshop-inner { display: grid; grid-template-columns: minmax(200px, 40%) 1fr; grid-template-areas: "view head" "view parts" "view foot"; gap: 8px 18px; width: min(940px, 100%); align-items: center; }
 .tmshop-head { grid-area: head; } .tmshop-head h2 { margin: 2px 0; font-size: clamp(20px, 2.6vw, 26px); } .tmshop-count { margin: 0; font-size: 14px; color: #d9c79a; }
 .tmshop-canvas { grid-area: view; width: 100%; height: auto; aspect-ratio: 1; max-height: 70vh; justify-self: center; }
 .tmshop-parts { grid-area: parts; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.tmshop-part { min-height: 62px; display: grid; gap: 2px; align-content: center; padding: 8px 10px; text-align: left; border-radius: 8px; border: 2px solid rgba(242,234,217,.35); background: rgba(27,31,29,.85); color: var(--hanji); font: inherit; cursor: pointer; word-break: keep-all; }
-.tmshop-part b { font-size: 15px; } .tmshop-part small { font-size: 12px; color: #d9c79a; }
+.tmshop-part { min-height: 62px; display: grid; place-items: center; padding: 8px 10px; text-align: center; border-radius: 8px; border: 2px solid rgba(242,234,217,.35); background: rgba(27,31,29,.85); color: var(--hanji); font: inherit; font-weight: 700; font-size: 16px; cursor: pointer; word-break: keep-all; }
 .tmshop-part.on { border-color: var(--gold); background: rgba(217,164,65,.24); }
 .tmshop-part:disabled { opacity: .5; cursor: default; }
 .tmshop-foot { grid-area: foot; display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }

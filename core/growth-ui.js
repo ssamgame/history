@@ -81,7 +81,6 @@ export function showMachineUpgrade(root, level, { preview = true, done = 0, part
         h('div', { class: 'eyebrow' }, '타임머신이 자랐어요!'),
         h('h2', {}, `새 부품 「${st.name}」`),
         canvas,
-        h('p', { class: 'tmup-parts' }, st.parts),
         h('p', { class: 'tmup-next' }, next ? `다음 부품 「${next.name}」: ${next.at}장을 마치면 (지금 ${done}장)` : '모든 부품을 모았어요. 시간의 달인!'),
         h('button', { class: 'btn primary', type: 'button', onclick: close }, '멋지다! ▸')));
     root.append(el);
@@ -104,11 +103,11 @@ export function showMachineShop(root, save, { preview = true, onChange } = {}) {
     const paint = () => {
       const on = tmParts(save);
       cards.forEach((b, i) => {
-        const n = i + 1, has = n <= lv, fit = on.includes(n);
+        const fit = on.includes(i + 1);
         b.classList.toggle('on', fit); b.setAttribute('aria-pressed', String(fit));
-        b.replaceChildren(h('b', {}, stages[i].name), h('small', {}, !has ? `${stages[i].at}장을 마치면 얻어요` : fit ? '붙어 있어요 · 누르면 떼기' : '떼어 두었어요 · 누르면 붙이기'));
+        b.textContent = stages[i].name; // 부품 이름만(2026-11-11 선생님: 자잘한 설명은 뺀다). 붙인 부품은 금빛 테, 못 얻은 부품은 흐리게
       });
-      count.textContent = lv ? `붙인 부품 ${on.length} / 얻은 부품 ${lv}` : '아직 얻은 부품이 없어요. 3장을 마치면 첫 부품을 얻어요.';
+      count.textContent = lv ? '' : '아직 얻은 부품이 없어요. 3장을 마치면 첫 부품을 얻어요.';
       view?.tm.setParts(on);
     };
     const close = () => { view?.stop(); el.remove(); resolve(); };

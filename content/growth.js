@@ -4,16 +4,16 @@
 
 // 타임머신 단계: 마친 장 수(at)에 닿으면 부품이 붙는다(core/timemachine.js makeTimeMachine({ level }))
 export const TM_STAGES = [ // 3~4장마다 하나씩(2026-11-11 선생님): 30장을 모두 마치면 아홉 번 자란다
-  { at: 0, name: '기본 타임머신', parts: '시간 여행의 시작' },
-  { at: 3, name: '금빛 시계', parts: '금빛 시계 테 · 굵은 창틀 · 꼭대기 큰 불빛' },
-  { at: 6, name: '단청 날개', parts: '금빛 테를 두른 붉은 날개 한 쌍' },
-  { at: 9, name: '청사초롱', parts: '문 양옆 청사초롱 · 날개 끝 등불 · 금빛 허리띠' },
-  { at: 12, name: '꼬리 날개와 쌍부스터', parts: '꼬리 날개 · 부스터 둘 더' },
-  { at: 15, name: '단청 띠와 깃발', parts: '네 빛깔 단청 무늬 띠 · 날개 위 깃발' },
-  { at: 18, name: '시간 고리', parts: '몸통 둘레를 도는 금 고리와 빛 구슬' },
-  { at: 22, name: '금관', parts: '코 둘레에 솟은 금빛 관' },
-  { at: 26, name: '별 조각', parts: '떠도는 별 조각 · 푸른 겹고리' },
-  { at: 30, name: '시간의 달인', parts: '발밑 빛 고리 · 푸른 불꽃 · 머리 위 큰 별' },
+  { at: 0, name: '기본 타임머신' },
+  { at: 3, name: '금빛 시계' },
+  { at: 6, name: '단청 날개' },
+  { at: 9, name: '청사초롱' },
+  { at: 12, name: '꼬리 날개와 쌍부스터' },
+  { at: 15, name: '단청 띠와 깃발' },
+  { at: 18, name: '시간 고리' },
+  { at: 22, name: '금관' },
+  { at: 26, name: '별 조각' },
+  { at: 30, name: '시간의 달인' },
 ];
 export const tmLevel = done => TM_STAGES.reduce((lv, s, i) => (done >= s.at ? i : lv), 0);
 export const finishedCount = save => Object.keys(save?.data?.chapters || {}).length;

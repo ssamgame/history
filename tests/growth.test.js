@@ -21,7 +21,7 @@ test('growth: 타임머신 단계 — 3~4장마다 부품이 하나씩(아홉 �
   eq(TM_STAGES.map(s => s.at), [0, 3, 6, 9, 12, 15, 18, 22, 26, 30]);
   for (let i = 1; i < TM_STAGES.length; i++) { const gap = TM_STAGES[i].at - TM_STAGES[i - 1].at; ok(gap === 3 || gap === 4, `${TM_STAGES[i].name}: ${gap}장 만에`); }
   eq([0, 2, 3, 5, 6, 9, 12, 15, 18, 21, 22, 26, 29, 30].map(tmLevel), [0, 0, 1, 1, 2, 3, 4, 5, 6, 6, 7, 8, 8, 9]);
-  ok(TM_STAGES.every(s => s.name && s.parts)); eq(new Set(TM_STAGES.map(s => s.name)).size, TM_STAGES.length, '이름이 서로 다르다');
+  ok(TM_STAGES.every(s => s.name && !s.parts), '부품은 이름만(설명 없음)'); eq(new Set(TM_STAGES.map(s => s.name)).size, TM_STAGES.length, '이름이 서로 다르다');
   eq(finishedCount({ data: { chapters: { ch1: {}, ch2: {} } } }), 2); eq(finishedCount(null), 0);
   const n = TM_STAGES.map((_, L) => { const tm = makeTimeMachine({ level: L }); eq(tm.parts, Array.from({ length: L }, (_, i) => i + 1)); const c = meshes(tm); tm.dispose(); return c; });
   for (let i = 1; i < n.length; i++) ok(n[i] >= n[i - 1] + 3, `단계 ${i}: 조각 ${n[i - 1]} → ${n[i]}`);
@@ -65,10 +65,9 @@ test('growth: 타임머신 꾸미기 — 얻은 부품을 눌러 떼고 붙이�
     let changed = 0; const p = showMachineShop(ui, save, { preview: false, onChange: () => { changed += 1; } });
     const cards = [...ui.querySelectorAll('.tmshop-part')]; eq(cards.length, 9);
     eq(cards.filter(b => !b.disabled).length, 2, '얻은 부품 둘만 누를 수 있다'); eq(cards.filter(b => b.classList.contains('on')).length, 2);
-    ok(cards[0].textContent.includes('금빛 시계') && cards[0].textContent.includes('누르면 떼기')); ok(cards[2].textContent.includes('9장을 마치면'));
-    ok(ui.textContent.includes('붙인 부품 2 / 얻은 부품 2'));
-    cards[0].click(); eq(save.data.tmOff, [1]); eq(tmParts(save), [2]); eq(changed, 1); ok(!cards[0].classList.contains('on') && cards[0].textContent.includes('누르면 붙이기'));
-    eq(cards[0].getAttribute('aria-pressed'), 'false'); ok(ui.textContent.includes('붙인 부품 1 / 얻은 부품 2'));
+    eq(cards.map(b => b.textContent), TM_STAGES.slice(1).map(s => s.name), '부품 이름만 보인다(설명 글 없음)'); eq(ui.querySelector('.tmshop-count').textContent, '');
+    cards[0].click(); eq(save.data.tmOff, [1]); eq(tmParts(save), [2]); eq(changed, 1); ok(!cards[0].classList.contains('on'));
+    eq(cards[0].getAttribute('aria-pressed'), 'false');
     cards[0].click(); eq(save.data.tmOff, []); eq(changed, 2);
     cards[2].click(); eq(save.data.tmOff, [], '잠긴 부품은 눌러도 그대로');
     btn(ui, '모두 떼기').click(); eq(tmParts(save), []); btn(ui, '모두 붙이기').click(); eq(tmParts(save), [1, 2]);
@@ -141,7 +140,7 @@ test('growth: 타임머신에 새 부품이 붙으면 알림 — 부품 이름�
   const ui = root();
   try {
     const p = showMachineUpgrade(ui, 1, { preview: false, done: 3 });
-    ok(ui.textContent.includes('타임머신이 자랐어요') && ui.textContent.includes('금빛 시계'));
+    ok(ui.textContent.includes('타임머신이 자랐어요') && ui.textContent.includes('금빛 시계')); ok(!ui.querySelector('.tmup-parts'), '부품 설명 글은 없다');
     ok(ui.textContent.includes('다음 부품 「단청 날개」: 6장을 마치면 (지금 3장)'));
     btn(ui, '멋지다').click(); await p; ok(!ui.querySelector('.tmup'));
     const p4 = showMachineUpgrade(ui, 9, { preview: false, done: 30 }); ok(ui.textContent.includes('모든 부품을 모았어요')); btn(ui, '멋지다').click(); await p4;
