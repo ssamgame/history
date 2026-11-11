@@ -117,6 +117,11 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .confirm[hidden] { display: none; }
 .confirm p { margin: 0; }
 .warn { color: var(--gold); margin: 0; }
+.title-code[hidden] { display: none; }
+.title-actions .btn.title-code { justify-self: start; min-height: 44px; padding: 0 16px; font-size: 15px; background: rgba(27,31,29,.7); }
+.codescreen .card { gap: 10px; } .codescreen .warn { color: var(--dan-red); min-height: 1.5em; font-size: 15px; }
+.code-show { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: clamp(17px, 2.4vw, 22px); font-weight: 700; letter-spacing: .06em; line-height: 1.6; padding: 10px 12px; border: 2px dashed #8f8068; border-radius: 6px; background: #fffaf0; word-break: break-word; user-select: all; }
+.code-input { font-family: ui-monospace, Menlo, Consolas, monospace; text-transform: uppercase; }
 
 /* 편 고르기: 편마다 한지 카드, 넓으면 나란히, 좁으면 위아래 */
 .courses-inner { width: min(900px, 100%); display: grid; gap: 16px; }

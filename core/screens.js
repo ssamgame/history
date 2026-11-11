@@ -53,18 +53,19 @@ function qrBox() {
   return h('div', { class: 'title-qr' }, svg); // 글·테두리 없이 장면 위에 바로 얹는다
 }
 
-export function showTitle(root, { savedName, hasProgress, storageOk, courses = [], save = null, course = null, onCourse = null }) {
+export function showTitle(root, { savedName, hasProgress, storageOk, courses = [], save = null, course = null, onCourse = null, onCode = false }) {
   return new Promise(resolve => {
     let picked = (courses.find(c => c.id === course) || courses[0] || { id: 'goryeo' }).id;
     const eraOf = id => courses.find(c => c.id === id)?.era || '고려';
     // 이름은 첫 화면에서 묻지 않고 캐릭터 만들기에서 짓는다(2026-11-10 선생님)
     const done = action => { el.remove(); resolve({ action, course: picked }); };
     const confirm = h('div', { class: 'confirm', hidden: true },
-      h('p', {}, `${savedName || '앞 친구'}의 기록이 지워져요. 지울까요?`),
+      h('p', {}, `${savedName || '앞 친구'}의 기록이 모두 지워져요(캐릭터·별·타임머신 부품·편지). 되돌릴 수 없어요. 정말 지울까요?`), // 실수 방지(2026-11-11 선생님)
       h('div', { class: 'row' },
         h('button', { class: 'btn danger', type: 'button', onclick: () => done('new') }, '지우기'),
-        h('button', { class: 'btn', type: 'button', onclick: () => { confirm.hidden = true; } }, '취소')));
-    const startBtn = h('button', { class: `btn ${hasProgress ? '' : 'primary'} title-start`, type: 'button', onclick: () => (hasProgress ? (confirm.hidden = false) : done('new')) }, '');
+        h('button', { class: 'btn', type: 'button', onclick: () => { confirm.hidden = true; if (codeBtn) codeBtn.hidden = false; } }, '취소')));
+    const codeBtn = onCode ? h('button', { class: 'btn title-code', type: 'button', onclick: () => done('code') }, '진행 코드') : null; // 다른 태블릿으로 옮기기(2026-11-11 선생님)
+    const startBtn = h('button', { class: `btn ${hasProgress ? '' : 'primary'} title-start`, type: 'button', onclick: () => { if (!hasProgress) return done('new'); confirm.hidden = false; if (codeBtn) codeBtn.hidden = true; } }, ''); // 묻는 동안은 진행 코드 단추를 숨겨 자리를 낸다
     const label = () => { startBtn.textContent = hasProgress ? '새 캐릭터로 처음부터' : '캐릭터 생성하기 ▸'; startBtn.title = `${eraOf(picked)}편 처음부터`; };
     const cards = courses.map(c => {
       const results = save ? c.chapters.map(ch => save.chapterResult(ch.id)).filter(Boolean) : [];
@@ -87,12 +88,41 @@ export function showTitle(root, { savedName, hasProgress, storageOk, courses = [
             h('div', { class: 'row' },
               hasProgress && h('button', { class: 'btn primary title-start', type: 'button', onclick: () => done('continue') }, `이어하기 (${savedName || '저장된 기록'})`),
               startBtn),
+            codeBtn,
             confirm),
           h('p', { class: 'controls' }, '걷기: 방향키·WASD 또는 화면 왼쪽을 손가락으로 끌기 · 말 걸기: 가까이 가서 스페이스·E 또는 「대화」 단추')),
         qrBox(),
         fullscreenButton('title-fs'),
         cards.length > 0 && h('div', { class: 'title-courses' }, cards),
         h('p', { class: 'copyright' }, '© 2026 Jang ssam. All rights reserved.')));
+  });
+}
+
+// 진행 코드 화면: 내 코드(기록이 있을 때)와 코드 넣기. code: 지금 기록의 코드(없으면 null), decode: 글 → 기록(틀리면 null),
+// hasProgress: 지금 기록이 있으면 덮어쓴다고 알린다. 코드를 넣어 되살리면 { data, name }, 그냥 닫으면 null
+export function showProgressCode(root, { code = null, decode, hasProgress = false, name = '' }) {
+  return new Promise(resolve => {
+    const close = v => { el.remove(); resolve(v); };
+    const input = h('input', { class: 'code-input', type: 'text', autocomplete: 'off', autocapitalize: 'characters', spellcheck: 'false', placeholder: '예: 1A2B-3C4D-…', 'aria-label': '진행 코드' });
+    const nameIn = h('input', { type: 'text', maxlength: 12, value: name, placeholder: '이름', 'aria-label': '이름' });
+    const msg = h('p', { class: 'warn', role: 'alert' });
+    const go = () => {
+      const data = decode(input.value);
+      if (!data) { msg.textContent = '코드가 맞지 않아요. 한 글자씩 다시 확인해 주세요.'; return; }
+      if (hasProgress && !go.sure) { go.sure = true; msg.textContent = '이 태블릿의 지금 기록은 지워지고 코드의 기록으로 바뀌어요. 한 번 더 누르면 바꿔요.'; return; }
+      close({ data, name: nameIn.value.trim() });
+    };
+    input.addEventListener('input', () => { go.sure = false; msg.textContent = ''; });
+    const el = screen(root, 'codescreen',
+      h('div', { class: 'card' },
+        h('h2', {}, '진행 코드'),
+        code && h('p', {}, '다른 태블릿에서 이어 하려면 이 코드를 종이에 적어 가세요.'),
+        code && h('div', { class: 'code-show', 'aria-label': '내 진행 코드' }, code),
+        h('p', {}, '적어 온 코드가 있으면 여기에 넣어요.'),
+        input, nameIn, msg,
+        h('div', { class: 'row' },
+          h('button', { class: 'btn primary', type: 'button', onclick: go }, '이 코드로 이어하기'),
+          h('button', { class: 'btn', type: 'button', onclick: () => close(null) }, '닫기'))));
   });
 }
 
@@ -259,7 +289,6 @@ export function showSessionCard(root, session, save, chapters) {
         h('div', { class: 'points' }, h('b', {}, '핵심 정리'), h('ol', {}, SESSIONS[session].points.map(p => h('li', {}, p)))),
         wrong.length > 0 && h('div', { class: 'review' }, h('b', {}, '다시 보기'),
           h('ul', {}, wrong.map(w => h('li', {}, `${w.question} → 정답: ${w.answer}. ${w.explain}`)))),
-        h('p', { class: 'note' }, '이 화면을 선생님께 보여 주세요.'),
         h('button', { class: 'btn primary', type: 'button', onclick: () => { el.remove(); resolve(); } }, '닫기')));
   });
 }

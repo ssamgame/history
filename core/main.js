@@ -11,7 +11,8 @@ import { playTravel } from './travel.js';
 import { showLetterBox, showMachineUpgrade, showMachineShop } from './growth-ui.js';
 import { LETTERS, tmLevel, tmParts, finishedCount } from '../content/growth.js';
 import { createMusic } from './music.js';
-import { showTitle, showCourses, showMap, showIntroCard, showChapterResult, showSessionCard, showMenu, showMessage, createHud } from './screens.js';
+import { encodeProgress, decodeProgress } from './progress-code.js';
+import { showProgressCode, showTitle, showCourses, showMap, showIntroCard, showChapterResult, showSessionCard, showMenu, showMessage, createHud } from './screens.js';
 import { perfEnabled, createPerfStats, createPerfPanel } from './perf.js';
 import { ALL_CHAPTERS, COURSES, courseById, courseOfChapter, isSessionDone } from '../chapters/index.js';
 import { LOOKS } from '../content/characters.js';
@@ -287,7 +288,12 @@ function boot() {
       const cur = save.data.current && courseOfChapter(save.data.current.id).id; // 하다 만 장이 있는 시대
       world.player.visible = false; // 첫 화면 글 뒤에 사람이 겹쳐 보이지 않게
       showBackdrop(cur || save.data.course || COURSES[0].id); // 첫 화면 뒤 3D 장면(기다리지 않는다)
-      const { action, course } = await showTitle(ui, { savedName: save.data.name, hasProgress, storageOk: storage.available, courses: COURSES, save, course: cur || save.data.course, onCourse: showBackdrop });
+      const { action, course } = await showTitle(ui, { savedName: save.data.name, hasProgress, storageOk: storage.available, courses: COURSES, save, course: cur || save.data.course, onCourse: showBackdrop, onCode: true });
+      if (action === 'code') { // 진행 코드: 내 코드 보기·코드 넣기(다른 태블릿으로 옮기기)
+        const r = await showProgressCode(ui, { code: hasProgress ? encodeProgress(save.data) : null, decode: decodeProgress, hasProgress, name: save.data.name });
+        if (r) save.restore(r.data, r.name);
+        continue;
+      }
       if (action === 'new') {
         save.reset();
         const first = courseById(course)?.chapters[0];

@@ -23,6 +23,8 @@ export function createSave(storage) {
     },
     persist() { return storage.set(KEY, save.data); },
     reset() { save.data = empty(); storage.remove(KEY); },
+    // 진행 코드로 되살리기(core/progress-code.js): 지금 기록을 통째로 바꾼다
+    restore(d, name = '') { save.data = { ...empty(), reviews: {}, ...d, name, current: null }; save.persist(); },
     setName(name) { save.data.name = name; save.persist(); },
     setAvatar(a) { save.data.avatar = a; save.persist(); },
     setCourse(id) { save.data.course = id; save.persist(); },
