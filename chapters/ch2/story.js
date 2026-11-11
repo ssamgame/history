@@ -65,7 +65,7 @@ export function gwakjuScene(ctx) {
     const marchers = [yg, ...army]; hook.throughWall = 0;
     const off = world.onUpdate(() => { for (const p of marchers) if (p.visible && p.position.z < front + 0.2 && p.position.z > back - 0.2 && Math.abs(p.position.x) > GATE_HALF - 0.35) hook.throughWall++; });
     const going = march(world, marchers, 0, -(Math.max(...marchers.map(p => p.position.z)) - back + 1.5), 7);
-    await say(L.lines[4], yg); ctx.dialogue.close();
+    await say(L.lines[3], yg); ctx.dialogue.close();
     await going;
     off();
     marchers.forEach(p => { p.visible = false; }); // 성안으로 들어갔다
@@ -84,7 +84,6 @@ export function gwakjuScene(ctx) {
     people.push(...folk);
     hook.facing = facingShare(world, folk);
     await say(L.lines[2], folk[1]);
-    await say(L.lines[3]);
     hook.freed = folk.length;
   } });
 }
@@ -93,7 +92,8 @@ export function gwakjuScene(ctx) {
 // 고려군 반대쪽(북쪽)으로 돌아서 물러가고, 양규와 적은 군사가 그 뒤를 쫓아 나간다. 양규의 대사 없이 해설 두 줄로 맺는다.
 // 북쪽(z0 -40)까지 걷는 땅: 물러가는 대군이 끝까지 가도 평평한 땅을 밟는다(2026-11-03, 예전 -20은 언덕에 발이 묻힘)
 export const LAST = { origin: [400, 0], ground: 'earth', groundColor: 0xdfe2e6, hill: 1, bounds: { x0: -24, x1: 24, z0: -40, z1: 14 }, edge: { style: 'forest', back: false } };
-export function lastStandScene(ctx) {
+// part(2026-11-11 선생님: 백성 구출 놀이를 사이에 넣는다): 'retreat'는 거란군이 물러가는 데까지, 'stand'는 둘러싸여 싸우는 끝 장면만. 없으면 이어서 모두
+export function lastStandScene(ctx, { part = null } = {}) {
   const L = script.result;
   return storyScene(ctx, { key: 'lastStand', arena: LAST, mood: 'snow', async run({ g, hook, cam, glide, say, fadeIn }) {
     const { world } = ctx;
@@ -107,6 +107,7 @@ export function lastStandScene(ctx) {
     const few = [[-0.6, 10.2], [2.8, 10.4], [0.4, 11.6], [3.6, 9], [-1.8, 9.2]].map(([x, z], i) => person(g, i === 3 ? 'archer' : 'soldier', x, z, Math.PI));
     hook.goryeo = [yg, ...few]; // 고려군끼리 몸이 겹치지 않는지 테스트가 잰다
     const gflag = new THREE.Group(); gflag.position.set(2, 0, 11.8); BLD.banner(gflag, { color: 0x8a2f24, h: 3.6 }); g.add(gflag);
+    if (part === 'stand') { await lastStand(ctx, { g, hook, cam, glide, fadeIn, say, yg, few, hide: [...K.units, gflag], last: L[1] }); hook.flag = true; return; }
     cam([5, 7.5, 22], [0, 1.2, -6]); // 고려군 너머로 거란 대군 전체가 보이게
     await fadeIn();
     await wait(world, 1.2); // 마주 선 두 군대를 잠깐 보여 준 뒤
@@ -121,15 +122,15 @@ export function lastStandScene(ctx) {
     const away = advance(world, goers, 0, -30, 10, { stagger: 0.35 });
     await glide([5, 7.5, 22], [0, 1.2, -6], [-4, 13, 20], [0, 0, -18], 5);
     await said0; ctx.dialogue.close();
+    if (part === 'retreat') { await away; hook.retreated = goers.filter(u => u.userData.person || u.userData.legs).length; return; }
     // 양규와 군사들이 물러가는 거란군 뒤를 쫓아가 뒤를 지키던 거란군과 짝지어 맞붙는다(창으로 찌르고 막고 되받아친다)
     guard.forEach(u => { u.rotation.y = 0; });
     const fighters = [yg, ...few.slice(0, 4)].sort((p, q) => p.position.x - q.position.x);
     const fight = melee(world, fighters.map((a, i) => ({ a, b: guard[i] })), { approach: 2.6, lose: 0.5, flee: [0, -1], seed: 3 });
     march(world, [gflag], 0, -6, 2.6);
     hook.melee = fight.hook;
-    const said1 = say(script.lastScene.chase); // 뒤쫓아 싸우는 동안 해설
     await glide([-4, 13, 20], [0, 0, -18], [7, 3.2, 4], [0, 1.4, -6], 2.6);
-    await Promise.all([away, fight.done, said1]);
+    await Promise.all([away, fight.done]);
     ctx.dialogue.close();
     hook.feet = K.units.filter(u => u.visible).map(u => [u.position.x, u.position.z]); // 물러난 자리(발이 언덕에 묻히지 않는지 테스트가 본다)
     const mv = goers.reduce((a, u, i) => a.add(u.position.clone().sub(c0[i])), new THREE.Vector3()).normalize();

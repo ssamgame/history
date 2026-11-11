@@ -438,3 +438,21 @@ test('ch2 last stand: Goryeo soldiers never pass through each other while chargi
     ok(near > 0.7, `고려군 사이 가장 가까울 때 ${near.toFixed(2)}m (${at})`);
   } finally { off(); bot.stop(); s.done(); }
 }, { timeout: 90000 });
+
+// 2026-11-11 선생님: 백성을 구했다는 말이 겹쳤다 → 거란군이 물러간 뒤에 백성 구출 놀이, 겹치는 해설은 뺀다
+test('ch2: 거란군이 물러간 뒤 백성 구출 — 물러가는 장면과 끝 장면을 나눠 틀고, 백성을 구했다는 해설은 한 번만', async () => {
+  const all = JSON.stringify(ch2Script);
+  eq(all.split('끌려가던 많은 백성을 구했어요').length - 1, 1); ok(!ch2Script.lastScene.chase && !all.includes('끌고 가고 있었어요'), '겹치던 해설 두 줄을 뺐다');
+  const src = ch2.minigame.toString(), at = k => src.indexOf(k);
+  ok(at("part: 'retreat'") > at('gwakjuScene') && at("part: 'retreat'") < at('rescue(ctx') && at('rescue(ctx') < at("part: 'stand'"), '곽주 → 물러감 → 구출 → 끝 장면');
+  const s = touchSetup(ch2Script.speakers); const bot = touchBot(s, { answers: new Set() });
+  const ev = []; const say0 = s.dialogue.say; s.dialogue.say = l => { ev.push(l.text); return say0(l); };
+  try {
+    ch2.buildScene(s.w, s.ctx);
+    await ch2.stories.lastStand(s.ctx, { part: 'retreat' });
+    eq(ev, [ch2Script.result[0].text], '물러가는 장면에는 현종의 약속 해설만'); ok(s.ctx.testHooks.lastStand.retreated > 20 && !s.ctx.testHooks.lastStand.surround);
+    ev.length = 0;
+    await ch2.stories.lastStand(s.ctx, { part: 'stand' });
+    eq(ev, [ch2Script.lastScene.surrounded.text, ch2Script.result[1].text]); ok(s.ctx.testHooks.lastStand.fallen);
+  } finally { bot.stop(); s.done(); }
+}, { timeout: 90000 });

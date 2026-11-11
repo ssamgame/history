@@ -583,6 +583,7 @@ export default {
     dialogue.close();
     world.followOffset = null; world.followLookY = null;
     await gwakjuScene(ctx); // 이야기 장면(D-58): 양규가 곽주를 되찾는다
+    await lastStandScene(ctx, { part: 'retreat' }); // 현종의 약속으로 거란군이 물러간다 → 그 뒤에 백성 구출(2026-11-11 선생님)
 
     await ctx.fade(true);
     scene.setField(true); // 들판: 성과 거란 진영 없이 황량한 들판과 멀리 끌려가는 백성(D-62)
@@ -610,7 +611,7 @@ export default {
     await ctx.fade(false);
     await sayAll(dialogue, script.rescue.done);
     dialogue.close();
-    await lastStandScene(ctx); // 끝 해설 장면(D-58): 거란군이 물러가고 양규는 끝까지 싸운다
+    await lastStandScene(ctx, { part: 'stand' }); // 끝 해설 장면: 뒤쫓던 양규가 둘러싸여 끝까지 싸운다
     return { firstTryCorrect: [a, b].filter(x => x.first).length, firstTryTotal: 2, easyModeUsed: a.easyModeUsed || b.easyModeUsed };
   },
 };

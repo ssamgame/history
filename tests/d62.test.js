@@ -199,7 +199,7 @@ test('d62 고려2-9·10: 물러나는 거란 대군은 고려군 반대쪽으로
     const h = s.ctx.testHooks.lastStand;
     ok(h.retreated >= 40, `물러나는 거란군 ${h.retreated}`);
     ok(h.away > 0.85, `고려군 반대쪽으로 물러난다(방향 ${h.away?.toFixed(2)})`);
-    ok(h.lines === 4, `해설 ${h.lines}줄`); // 물러감·뒤쫓음·둘러싸임·전사(2026-11-09)
+    ok(h.lines === 3, `해설 ${h.lines}줄`); // 물러감·둘러싸임·전사(2026-11-11: 뒤쫓으며 백성을 구했다는 해설은 구출 놀이 뒤 한 번만)
     // 물러난 대군의 발이 무대 밖 언덕에 묻히지 않는다(2026-11-03): 끝까지 물러난 자리도 평평한 땅
     const { terrainField } = await import('../chapters/kit/terrain.js');
     const { LAST } = await import('../chapters/ch2/story.js');
