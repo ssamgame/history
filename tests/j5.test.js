@@ -209,9 +209,9 @@ test('j5 N-02·N-03·N-04: names over the two ministers, a shivering 백성 star
     ok(folk && folk.mesh.visible, 'a cold 백성 in the fortress');
     ok(folk.mesh.userData.legs[0].userData.knee && folk.mesh.userData.legs[0].userData.knee.rotation.x > 1, 'crouching with bent knees');
     j5.enterStage(s.ctx, 'minigame');
-    const prev = new Map(); let maxHop = 0; // 데려간 신하가 대신 곁으로 순간이동하지 않고 걸어간다(2026-11-07)
+    const prev = new Map(); let maxHop = 0, minGap = Infinity; // 데려간 신하가 대신 곁으로 순간이동하지 않고 걸어간다(2026-11-07)
     s.w.onUpdate(() => {
-      for (const id of ['official1', 'official2', 'official3', 'official4']) { const n = s.w.npcs.get(id); if (!n || !n.mesh.visible) { prev.delete(id); continue; } const q = n.mesh.position, o = prev.get(id); if (o) maxHop = Math.max(maxHop, Math.hypot(q.x - o.x, q.z - o.z)); prev.set(id, { x: q.x, z: q.z }); }
+      for (const id of ['official1', 'official2', 'official3', 'official4']) { const n = s.w.npcs.get(id); if (!n || !n.mesh.visible) { prev.delete(id); continue; } const q = n.mesh.position, o = prev.get(id); if (o) maxHop = Math.max(maxHop, Math.hypot(q.x - o.x, q.z - o.z)); prev.set(id, { x: q.x, z: q.z }); const pp = s.w.player.position; if (q.x > 300) minGap = Math.min(minGap, Math.hypot(q.x - pp.x, q.z - pp.z)); }
       frame += 1;
       const rz = folk.mesh.userData.arms[0].rotation.z; if (lastRz != null) shiver = Math.max(shiver, Math.abs(rz - lastRz)); lastRz = rz; // D-67: 몸을 떠는 대신 손을 비빈다
       if (frame % 5) return;
@@ -227,6 +227,7 @@ test('j5 N-02·N-03·N-04: names over the two ministers, a shivering 백성 star
     ok(iHow < iL && iL < iW && iW < iS, `lament ${iL} → walk ${iW} → 삼전도 ${iS}`);
     ok(s.ctx.testHooks.ledBy === 'injo', 'walked behind 인조 (leadWalk)');
     ok(maxHop < 1.5, `escorted officials walk to their place, no teleport (max hop ${maxHop.toFixed(2)}m)`);
+    ok(minGap > 0.42, `officials never stand inside the student: following, or walking to their place (2026-11-11 자동 점검, closest ${minGap.toFixed(2)}m)`);
   } finally { bot.stop(); s.done(); }
 }, { timeout: 150000 });
 
@@ -268,3 +269,19 @@ test('j5 N-05: kneel with knees, then hands, back and head go down in order, smo
     ok(dh > 0.12 || Math.abs(K.l - O.l) > 0.2, `인조 ${K.h.toFixed(2)} vs ${O.h.toFixed(2)}`);
   }
 });
+
+// 2026-11-11 자동 점검(tools/qa): 뼈대 몸으로 웅크린 백성과 아이의 몸·발이 땅에 0.13m 묻혔다(예전 몸에 맞춘 내려앉기 0.43)
+test('j5 qa: the huddled cold villager and the child sit on the ground, not in it', async () => {
+  const { loadBody, attachBody, updateBodies, resetBodies } = await import('../core/body.js');
+  const { setRigHook, POST_POSE } = await import('../core/people.js');
+  const { createProbe } = await import('../tools/qa/probe.js');
+  await loadBody(); resetBodies(); setRigHook(attachBody); POST_POSE.add(updateBodies);
+  const w = testWorld();
+  try {
+    buildJ5Scene(w); setRigHook(null);
+    ok(w.npcs.get('coldfolk').mesh.userData.skel, 'skeleton body');
+    const probe = createProbe(w);
+    for (let i = 0; i < 80; i++) { w.step(1 / 20, { x: 0, z: 0 }); if (i > 20) probe.tick(1 / 20); } // 덧씌운 자세가 다 섞인 뒤
+    eq(probe.events.filter(e => e.kind === 'sunk').map(e => `${e.who} ${e.detail}`), []);
+  } finally { setRigHook(null); POST_POSE.delete(updateBodies); w.dispose(); }
+}, { timeout: 60000 });

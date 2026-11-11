@@ -43,7 +43,7 @@ export function buildJ2Scene(world) {
   // 땅: 궁궐 밖 풀밭과 박석을 깐 마당
   let hillH = () => 0;
   {
-    hillH = sceneGround(L, { bounds: world.bounds, margin: 11, color: 0x5c804d, size: 180 }); // 궁궐 밖은 언덕과 먼 산
+    hillH = sceneGround(L, { bounds: world.bounds, margin: 15, color: 0x5c804d, size: 180 }); // 궁궐 밖은 언덕과 먼 산. 문 밖 시작 자리(z 23~24.3)까지 평평하게(2026-11-11 자동 점검: 11이면 발이 0.17m 묻힘)
     mk(new THREE.BoxGeometry(34, 0.06, 36), 0xa59c8a, 0, 0.03, 2, L, false);
     mk(new THREE.BoxGeometry(3, 0.08, 20), 0xb3ab99, 0, 0.05, 4, L, false); // 가운데 어도(높은 길)
   }

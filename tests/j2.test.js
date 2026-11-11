@@ -181,3 +181,16 @@ test('j2 낱자 달리기: letters drift around their spots, faster for the seco
   eq(WORD_SECONDS.length, 2); ok(WORD_SECONDS.every(s => s >= 30), 'enough time');
   ok(j2Script.wordsHowto.steps[0].includes('떠다니'), 'how-to says the letters drift');
 });
+
+// 2026-11-11 자동 점검(tools/qa): 궁궐 문 밖 시작 자리(introFrom)가 언덕 비탈이라 걸어 들어오는 학생의 발이 0.17m 묻혔다
+test('j2 qa: the road outside the palace gate where the student starts is flat ground', async () => {
+  const { createProbe } = await import('../tools/qa/probe.js');
+  const w = testWorld();
+  try {
+    const sc = buildJ2Scene(w);
+    w.player.position.set(sc.introFrom[0], 0, sc.introFrom[1]);
+    const probe = createProbe(w);
+    for (let i = 0; i < 8; i++) { w.step(1 / 20, { x: 0, z: 0 }); probe.tick(1 / 20); }
+    eq(probe.events.filter(e => e.kind === 'sunk').map(e => `${e.who} ${e.detail}`), []);
+  } finally { w.dispose(); }
+});

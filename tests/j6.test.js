@@ -377,3 +377,21 @@ test('j6 돌 쌓기 시합: four workers carry one stone across the wall front; 
     await run;
   } finally { s.done(); }
 });
+
+// 2026-11-11 자동 점검(tools/qa): 뼈대 몸으로 돌 나르는 백성이 쪼그려 앉을 때 발이 땅에 0.37m 묻혔고(예전 몸에 맞춘 -0.38),
+// 한 줄 길을 오가며 서로 몸을 뚫고 지나갔다
+test('j6 qa: stone carriers keep their feet on the ground when they crouch and never walk through each other', async () => {
+  const { loadBody, attachBody, updateBodies, resetBodies } = await import('../core/body.js');
+  const { setRigHook, POST_POSE } = await import('../core/people.js');
+  const { createProbe } = await import('../tools/qa/probe.js');
+  await loadBody(); resetBodies(); setRigHook(attachBody); POST_POSE.add(updateBodies);
+  const w = testWorld();
+  try {
+    const sc = buildJ6Scene(w); setRigHook(null);
+    ok(sc.carriers.every(c => c.userData.skel), 'carriers have the skeleton body');
+    const probe = createProbe(w);
+    for (let i = 0; i < 2400; i++) { w.step(1 / 20, { x: 0, z: 0 }); probe.tick(1 / 20); } // 2분
+    const bad = probe.events.filter(e => (e.kind === 'sunk' || e.kind === 'overlap') && /^p\d/.test(e.who)); // 이름 없는 사람(p1~p3)은 돌 나르는 백성뿐
+    eq(bad.map(e => `${e.kind}:${e.who} ${e.detail} ${e.t}s @${e.at}`), []);
+  } finally { setRigHook(null); POST_POSE.delete(updateBodies); w.dispose(); }
+}, { timeout: 60000 });

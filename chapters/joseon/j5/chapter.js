@@ -325,6 +325,8 @@ async function escortOfficials(ctx, easy) {
         if (o.done && o.stand) { // 데려간 신하는 대신 곁 자기 자리까지 걸어가 마당 쪽(남쪽)을 보고 선다
           const m = o.n.mesh.position, dx = o.stand.x - m.x, dz = o.stand.z - m.z, d = Math.hypot(dx, dz);
           if (d > 0.08) { const st = Math.min(d, 3.5 * dt); world.moveNpc(o.id, m.x + dx / d * st, m.z + dz / d * st, Math.atan2(dx, dz)); } else { world.moveNpc(o.id, o.stand.x, o.stand.z, Math.PI); o.stand = null; }
+          const ex = p.x - m.x, ez = p.z - m.z, e = Math.hypot(ex, ez); // 자리로 가는 신하가 학생 몸을 뚫고 지나가지 않게 학생을 살짝 비켜 세운다(2026-11-11 자동 점검)
+          if (e < 0.9 && e > 1e-6) { p.x = m.x + ex / e * 0.9; p.z = m.z + ez / e * 0.9; }
           continue;
         }
         if (o.done || o === cur) continue;
@@ -344,6 +346,7 @@ async function escortOfficials(ctx, easy) {
       // 따라오기: 학생 뒤 1.6 거리를 지킨다
       const m = cur.n.mesh.position, dx = p.x - m.x, dz = p.z - m.z, d = Math.hypot(dx, dz);
       if (d > 1.7) { const st = Math.min(d - 1.6, 7 * dt); world.moveNpc(cur.id, m.x + dx / d * st, m.z + dz / d * st, Math.atan2(dx, dz)); }
+      else if (d < 0.9 && d > 1e-6) world.moveNpc(cur.id, p.x - dx / d * 0.9, p.z - dz / d * 0.9, Math.atan2(dx, dz)); // 학생이 돌아서 다가오면 물러선다(따라오는 신하는 길을 막지 않게 부딪힘이 없어 몸이 겹쳤다, 2026-11-11 자동 점검)
       for (const [bin, v] of Object.entries(sides)) {
         const inside = Math.hypot(p.x - v.x, p.z - v.z) < 2.4;
         if (!inside) { if (told === bin) told = null; continue; }

@@ -65,7 +65,7 @@ export function huddlePose(person) {
   u.legs.forEach((l, i) => { l.rotation.set(-1.85 - 0.3, 0, (i ? -1 : 1) * 0.1); l.userData.knee.rotation.x = 1.75; });
   u.arms.forEach((a, i) => { a.rotation.set(-1.25, 0, (i ? 1 : -1) * 0.35); a.userData.elbow.rotation.x = -1.3; });
   u.head.rotation.x = 0.45;
-  return 0.43; // 내려앉는 높이(엉덩이가 땅 가까이)
+  return u.skel ? 0.3 : 0.43; // 내려앉는 높이(엉덩이가 땅 가까이). 뼈대 몸은 0.43이면 몸·발이 0.13m 묻혔다(2026-11-11 자동 점검)
 }
 
 function seeded(s) { return () => (s = (s * 16807) % 2147483647) / 2147483647; }

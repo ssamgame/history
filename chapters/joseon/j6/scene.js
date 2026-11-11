@@ -235,7 +235,17 @@ export function buildJ6Scene(world) {
     u.legs.forEach(l => { l.rotation.x = -0.95 * crouch; if (l.userData.knee) l.userData.knee.rotation.x = 1.7 * crouch; });
     if (u.carry) carryPose(p, 0, 0);
     else if (u.arms) u.arms.forEach(a => { a.rotation.set(-1.25 * crouch, 0, 0); });
-    p.position.y = -0.38 * crouch;
+    // 신 바닥이 땅에 닿게 내려앉는다(뼈대 몸은 예전 몸만큼 내려가지 않아 -0.38이면 발이 0.37m 묻혔다, 2026-11-11 자동 점검). 뼈 자세는 지난 프레임 것
+    p.position.y = 0;
+    if (crouch > 0) { p.updateMatrixWorld(true); let low = Infinity; p.traverse(o => { if (o.name === 'shoe') low = Math.min(low, shoeBox.setFromObject(o).min.y); }); if (low < Infinity) p.position.y = -low; }
+  };
+  const shoeBox = new THREE.Box3();
+  // 걷는 길의 오른편 SIDE만큼 비킨 자리(꺾이는 곳은 두 길의 오른편 선이 만나는 곳): 마주 오는 두 사람의 길이 꺾이는 곳에서도 엇갈리지 않게
+  const SIDE = 0.35, right = (a, b) => { const l = Math.hypot(b.x - a.x, b.z - a.z) || 1; return [-(b.z - a.z) / l, (b.x - a.x) / l]; };
+  const lane = (a, b, c) => {
+    const n1 = right(a, b); if (!c) return { x: b.x + n1[0] * SIDE, z: b.z + n1[1] * SIDE };
+    const n2 = right(b, c), ml = Math.hypot(n1[0] + n2[0], n1[1] + n2[1]) || 1, mx = (n1[0] + n2[0]) / ml, mz = (n1[1] + n2[1]) / ml, k = SIDE / Math.max(0.3, mx * n1[0] + mz * n1[1]);
+    return { x: b.x + mx * k, z: b.z + mz * k };
   };
   const CARRY_STEP = 0.62, CARRY_AMP = Math.asin(CARRY_STEP / 1.1); // 돌을 안은 사람의 한 걸음(보통보다 조금 짧게)
   const stepCarrier = (p, dt) => {
@@ -250,10 +260,24 @@ export function buildJ6Scene(world) {
     }
     // 걷기: 'to'는 길을 따라 돌무더기로(돌을 안고 조금 느리게), 'back'은 거꾸로 돌 더미로
     const fwd = j.phase === 'to', next = fwd ? j.seg + 1 : j.seg - 1;
-    const goal = ROUTE[next], d = Math.hypot(goal.x - p.position.x, goal.z - p.position.z), v = j.speed * (fwd ? 0.82 : 1) * dt;
+    // 가는 쪽의 오른편으로 SIDE만큼 비켜 걷는다: 한 줄 길을 마주 오는 사람과 몸이 뚫고 지나가지 않게(2026-11-11 자동 점검)
+    // 돌 더미(길 끝)에서 떠날 때는 먼저 0.6m 안에 제 쪽 길로 옮겨 선다(들어오는 사람의 길을 비스듬히 가로지르지 않게. 들어오는 사람은 그동안 기다린다)
+    const A = ROUTE[j.seg], B = ROUTE[next], n = right(A, B), al = Math.hypot(B.x - A.x, B.z - A.z), ex = (B.x - A.x) / al, ez = (B.z - A.z) / al;
+    const side = (j.seg === 0 || j.seg === ROUTE.length - 1) && Math.abs((p.position.x - A.x) * n[0] + (p.position.z - A.z) * n[1] - SIDE) > 0.05 && (p.position.x - A.x) * ex + (p.position.z - A.z) * ez < 0.6;
+    const goal = side ? { x: A.x + n[0] * SIDE + ex * 0.6, z: A.z + n[1] * SIDE + ez * 0.6 } : lane(A, B, ROUTE[next + (fwd ? 1 : -1)]), d = Math.hypot(goal.x - p.position.x, goal.z - p.position.z), v = j.speed * (fwd ? 0.82 : 1) * dt;
+    j.side = side;
+    // 앞(가는 쪽 0.7m 안)에 같은 쪽으로 가거나 돌을 들고 내리는 사람이 있으면 서서 기다린다: 빠른 사람이 느린 사람을 뚫고 지나가지 않게.
+    // 서로 기다리게 되면 앞 번호가 먼저 간다. 마주 오는 사람은 오른편으로 비껴 지나가므로 기다리지 않는다(제 쪽 길로 옮겨 서는 중이면 기다린다)
+    j.waitFor = carriers.find(o => {
+      const oj = o.userData.job; if (o === p || ((oj.phase === 'to' || oj.phase === 'back') && oj.phase !== j.phase && !oj.side)) return false;
+      const ox = o.position.x - p.position.x, oz = o.position.z - p.position.z;
+      return Math.hypot(ox, oz) < 0.7 && ox * (goal.x - p.position.x) + oz * (goal.z - p.position.z) > 0 && !(oj.waitFor === p && carriers.indexOf(p) < carriers.indexOf(o));
+    }) || null;
+    if (j.waitFor) { u.walking = false; p.position.y = gaitPose(p, j.ph, 0, CARRY_AMP); return; }
     let dr = Math.atan2(goal.x - p.position.x, goal.z - p.position.z) - p.rotation.y; dr = Math.atan2(Math.sin(dr), Math.cos(dr));
     p.rotation.y += dr * Math.min(1, dt * 6);
-    if (d <= v) {
+    if (d <= v && side) { p.position.x = goal.x; p.position.z = goal.z; }
+    else if (d <= v) {
       p.position.x = goal.x; p.position.z = goal.z; j.seg = next;
       if (next === ROUTE.length - 1) { j.phase = 'drop'; p.rotation.y = Math.atan2(pileAt.x - p.position.x, pileAt.z - p.position.z); }
       else if (next === 0) { j.phase = 'pick'; p.rotation.y = Math.atan2(9 - p.position.x, 0.8 - p.position.z); } // 동쪽 돌 더미를 보고 든다
