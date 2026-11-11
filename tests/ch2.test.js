@@ -449,7 +449,9 @@ test('ch2: 거란군이 물러간 뒤 백성 구출 — 물러가는 장면과 �
   const ev = []; const say0 = s.dialogue.say; s.dialogue.say = l => { ev.push(l.text); return say0(l); };
   try {
     ch2.buildScene(s.w, s.ctx);
+    let hid = false; const offH = s.w.onUpdate(() => { if (s.w.storyOn && s.ctx.ui.classList.contains('story-on')) hid = true; });
     await ch2.stories.lastStand(s.ctx, { part: 'retreat' });
+    offH(); ok(hid && !s.ctx.ui.classList.contains('story-on'), '이야기 장면 동안만 퀘스트 글을 숨긴다');
     eq(ev, [ch2Script.result[0].text], '물러가는 장면에는 현종의 약속 해설만'); ok(s.ctx.testHooks.lastStand.retreated > 20 && !s.ctx.testHooks.lastStand.surround);
     ev.length = 0;
     await ch2.stories.lastStand(s.ctx, { part: 'stand' });

@@ -474,6 +474,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .review-opt.wrong { border-color: #d97a98; background: #ffd9e4; color: #5a2032; }
 
 /* 장 도입 장면(C-03): 위아래 검은 띠, 제목, 아래 자막, 건너뛰기 */
+.story-on .hud { visibility: hidden; } /* 이야기 장면 동안 퀘스트 글 숨김 */
 .filming .hud, .filming .menubtn, .filming .joyzone, .filming .talkbtn { visibility: hidden; }
 .intro-film { position: fixed; inset: 0; z-index: 30; cursor: pointer; }
 .intro-bar { position: absolute; left: 0; right: 0; height: 9vh; background: #000; }

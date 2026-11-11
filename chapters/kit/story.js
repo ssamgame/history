@@ -15,6 +15,7 @@ export async function storyScene(ctx, { key, arena, mood = null, run }) {
   const P = world.player.position.clone(), ry = world.player.rotation.y, mode = world.camMode, cv = world.closeView, mood0 = world.moodName, inp = ctx.input.enabled, vis = world.player.visible;
   const hook = ctx.testHooks[key] = { shown: false, lines: 0, facing: 1 };
   ctx.input.enabled = false;
+  ctx.ui?.classList.add('story-on'); // 이야기 장면 동안 퀘스트 글을 숨긴다(2026-11-11 선생님: 앞 단계 퀘스트가 그대로 떠 있었다)
   world.storyOn = true; // 이야기 장면 중(고정 카메라를 쓰는 때라고 테스트·장 코드가 알 수 있게)
   await ctx.fade?.(true);
   const a = buildArena(world, arena), g = a.group;
@@ -49,7 +50,7 @@ export async function storyScene(ctx, { key, arena, mood = null, run }) {
     world.closeView = cv;
     world.camMode = mode === 'fixed' ? 'follow' : mode; world.snapCamera?.();
     ctx.input.enabled = inp;
-    world.storyOn = false;
+    world.storyOn = false; ctx.ui?.classList.remove('story-on');
     await ctx.fade?.(false);
   }
   return hook;
