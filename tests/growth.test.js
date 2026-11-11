@@ -4,7 +4,7 @@ import { TM_STAGES, tmLevel, tmParts, finishedCount, LETTERS, letterParts } from
 import * as GROWTH from '../content/growth.js';
 import { SOURCES } from '../content/sources.js';
 import { LOOKS } from '../content/characters.js';
-import { CHAPTERS } from '../chapters/index.js';
+import { CHAPTERS, ALL_CHAPTERS } from '../chapters/index.js';
 import { makeTimeMachine } from '../core/timemachine.js';
 import { showLetter, showLetterBox, showMachineUpgrade, showMachineShop } from '../core/growth-ui.js';
 import * as GROWTH_UI from '../core/growth-ui.js';
@@ -77,14 +77,15 @@ test('growth: 타임머신 꾸미기 — 얻은 부품을 눌러 떼고 붙이�
   } finally { ui.remove(); }
 });
 
-test('growth: 편지는 고려편 여섯 장 — 사실마다 출처, "장군" 호칭 없음. 도전 쪽지는 없다(2026-11-11 선생님)', () => {
-  const ids = CHAPTERS.map(c => c.id);
-  eq(Object.keys(LETTERS), ids);
+test('growth: 편지는 다섯 편 서른 장 모두 — 사실마다 출처, "장군" 호칭 없음. 도전 쪽지는 없다(2026-11-11 선생님)', () => {
+  const ids = ALL_CHAPTERS.map(c => c.id);
+  eq(Object.keys(LETTERS), ids); eq(ids.length, 30);
   for (const id of ids) {
     const L = LETTERS[id];
     ok(LOOKS[L.from], `${id} 편지 보낸 사람 생김새 ${L.from}`); ok(L.name && L.when && L.seal && L.src.every(s => SOURCES[s]), `${id} 편지 출처`);
     const parts = letterParts(L.body); ok(parts.some(p => p.strong) && parts.some(p => !p.strong), `${id} 편지에 강조한 사실`);
     ok(!L.body.includes('장군'), `${id}: "장군" 호칭은 쓰지 않는다`);
+    const n = [...L.body.replaceAll('*', '')].length; ok(n >= 100 && n <= 200, `${id} 편지 길이 ${n}자`);
   }
   eq(letterParts('가 *나* 다'), [{ text: '가 ', strong: false }, { text: '나', strong: true }, { text: ' 다', strong: false }]);
   ok(!('CHALLENGES' in GROWTH) && !('showSeal' in GROWTH_UI), '도전 쪽지 자료·금빛 도장은 뺐다');
@@ -124,7 +125,7 @@ test('growth: 편지 — 인물의 편지(내 이름·강조한 사실·도장),
     ok(card.querySelector('.letter-face').style.backgroundImage.includes('data:image'), '보낸 사람 얼굴');
     ok(card.querySelectorAll('.letter-body b').length >= 2, '강조한 사실'); ok(!card.textContent.includes('*'));
     ok(ui.textContent.includes('편지함 2/6'));
-    btn(ui, '편지함에 넣기').click(); eq(await p, true); eq(await showLetter(ui, 'j1'), false, '편지가 없는 장');
+    btn(ui, '편지함에 넣기').click(); eq(await p, true); eq(await showLetter(ui, 'nope'), false, '편지가 없는 장');
     const save = memSave(); save.setName('김여행'); save.addLetter('ch1'); save.finishChapter('ch3', { stars: 3 }); // 받은 편지, 그리고 예전 기록(마친 장)
     ok(save.hasLetter('ch1') && save.hasLetter('ch3') && !save.hasLetter('ch2'));
     const pb = showLetterBox(ui, CHAPTERS, save);

@@ -76,7 +76,7 @@ function boot() {
   const openMenu = async () => {
     if (!inChapter) return;
     world.paused = true; // 메뉴를 보는 동안 미니게임 시간이 흐르지 않게
-    const choice = await showMenu(ui, { muted: audio.muted, music: musicOn, quality: quality.level, storageOk: storage.available, letters: save.unreadLetters(LETTER_CHAPTERS.map(c => c.id)), machine: true }, change => {
+    const choice = await showMenu(ui, { muted: audio.muted, music: musicOn, quality: quality.level, storageOk: storage.available, letters: save.unreadLetters(letterChapters().map(c => c.id)), machine: true }, change => {
       if ('muted' in change) { audio.setMuted(change.muted); storage.set(PREF_MUTED, change.muted); }
       if ('music' in change) { musicOn = change.music; storage.set(PREF_MUSIC, change.music); }
       applyMusic();
@@ -85,14 +85,14 @@ function boot() {
     world.paused = false;
     if (choice === 'letters' || choice === 'machine') { // 편지함·타임머신 꾸미기: 게임 중 언제든(2026-11-11 선생님)
       world.paused = true;
-      if (choice === 'letters') await showLetterBox(ui, LETTER_CHAPTERS, save); else await openMachine();
+      if (choice === 'letters') await showLetterBox(ui, letterChapters(), save); else await openMachine();
       world.paused = false;
       return;
     }
     if (choice === 'map') { const c = curMeta ? courseOfChapter(curMeta.id).id : save.data.course; save.abandonCurrent(); location.hash = `map=${c || ''}`; location.reload(); } // 하던 장을 버리고 다시 열어 첫 화면 없이 그 편의 장 선택 지도로(#map, 2026-11-05 플레이 점검: 첫 화면으로 갔다)
   };
   // 타임머신 꾸미기: 부품을 떼었다 붙이면 저장하고, 서 있는 타임머신도 바로 바뀐다
-  const LETTER_CHAPTERS = ALL_CHAPTERS.filter(c => LETTERS[c.id]);
+  const letterChapters = () => (curMeta ? courseOfChapter(curMeta.id).chapters : ALL_CHAPTERS).filter(c => LETTERS[c.id]); // 게임 중 편지함은 지금 편의 여섯 통
   const openMachine = () => showMachineShop(ui, save, { onChange: () => { ctx.tmParts = tmParts(save); ctx.timeMachine?.setParts(ctx.tmParts); } });
   input.onMenu(openMenu);
   hud.menuBtn.addEventListener('click', openMenu);
