@@ -14,19 +14,22 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const root = () => { const el = document.createElement('div'); document.body.appendChild(el); return el; };
 const btn = (el, text) => [...el.querySelectorAll('button')].find(b => b.textContent.includes(text));
 
-test('growth: 타임머신 단계 — 3·6·12·30장에 부품이 붙고, 단계가 오를수록 조각이 확 늘어난다', () => {
-  eq([0, 2, 3, 5, 6, 11, 12, 29, 30].map(tmLevel), [0, 0, 1, 1, 2, 2, 3, 3, 4]);
-  eq(TM_STAGES.length, 5); ok(TM_STAGES.every(s => s.name && s.parts));
+test('growth: 타임머신 단계 — 3~4장마다 부품이 하나씩(아홉 번), 단계가 오를 때마다 조각이 늘어난다', () => {
+  eq(TM_STAGES.map(s => s.at), [0, 3, 6, 9, 12, 15, 18, 22, 26, 30]);
+  for (let i = 1; i < TM_STAGES.length; i++) { const gap = TM_STAGES[i].at - TM_STAGES[i - 1].at; ok(gap === 3 || gap === 4, `${TM_STAGES[i].name}: ${gap}장 만에`); }
+  eq([0, 2, 3, 5, 6, 9, 12, 15, 18, 21, 22, 26, 29, 30].map(tmLevel), [0, 0, 1, 1, 2, 3, 4, 5, 6, 6, 7, 8, 8, 9]);
+  ok(TM_STAGES.every(s => s.name && s.parts)); eq(new Set(TM_STAGES.map(s => s.name)).size, TM_STAGES.length, '이름이 서로 다르다');
   eq(finishedCount({ data: { chapters: { ch1: {}, ch2: {} } } }), 2); eq(finishedCount(null), 0);
   const count = L => { const tm = makeTimeMachine({ level: L }); let n = 0; tm.group.traverse(o => { if (o.isMesh) n += 1; }); eq(tm.level, L); tm.dispose(); return n; };
-  const n = [0, 1, 2, 3, 4].map(count);
-  for (let i = 1; i < 5; i++) ok(n[i] >= n[i - 1] + 8, `단계 ${i}: 조각 ${n[i - 1]} → ${n[i]} (눈에 띄게 늘어난다)`);
-  // 3단계부터 부스터가 넷(+가운데)이라 불꽃 다섯, 고리는 시간이 흐르면 돈다
-  const tm = makeTimeMachine({ level: 4 }); tm.setFlame(1); tm.tick(0);
-  let flames = 0, glow = 0; tm.group.traverse(o => { if (o.isMesh && o.visible && o.geometry.type === 'ConeGeometry' && o.material.type === 'MeshBasicMaterial') flames += 1; if (o.isMesh && o.geometry.type === 'OctahedronGeometry') glow += 1; });
-  eq(flames, 5); ok(glow >= 6, '떠도는 별 조각');
-  const ring = []; tm.group.traverse(o => { if (o.isMesh && o.geometry.type === 'TorusGeometry' && o.geometry.parameters.radius > 2.5 && o.position.y > 1) ring.push(o); });
-  ok(ring.length >= 2, '시간 고리 둘'); const z0 = ring[0].rotation.z; tm.tick(1); ok(ring[0].rotation.z !== z0, '고리가 돈다');
+  const n = TM_STAGES.map((_, L) => count(L));
+  for (let i = 1; i < n.length; i++) ok(n[i] >= n[i - 1] + 3, `단계 ${i}: 조각 ${n[i - 1]} → ${n[i]}`);
+  // 4단계부터 부스터가 넷(+가운데)이라 불꽃 다섯, 6단계부터 시간 고리가 돈다, 8단계부터 별 조각
+  const flamesOf = L => { const tm = makeTimeMachine({ level: L }); tm.setFlame(1); tm.tick(0); let f = 0; tm.group.traverse(o => { if (o.isMesh && o.visible && o.geometry.type === 'ConeGeometry' && o.material.type === 'MeshBasicMaterial') f += 1; }); tm.dispose(); return f; };
+  eq([flamesOf(3), flamesOf(4), flamesOf(9)], [3, 5, 5]);
+  const tm = makeTimeMachine({ level: 9 }); let glow = 0; const ring = [];
+  tm.group.traverse(o => { if (o.isMesh && o.geometry.type === 'OctahedronGeometry') glow += 1; if (o.isMesh && o.geometry.type === 'TorusGeometry' && o.geometry.parameters.radius > 2.5 && o.position.y > 1) ring.push(o); });
+  ok(glow >= 8, '별 조각과 큰 별'); ok(ring.length >= 2, '시간 고리 둘');
+  tm.tick(0); const z0 = ring[0].rotation.z; tm.tick(1); ok(ring[0].rotation.z !== z0, '고리가 돈다');
   tm.dispose();
 });
 
@@ -66,7 +69,7 @@ test('growth: 도전 쪽지 — 탐험이 시작되면 숨은 안내판이 서�
     eq(hudCalls[0], [CHALLENGES.ch2.task, false]); ok(said[0].includes('도전 쪽지가 왔어'));
     await ch.read(); ok(!ch.done && !save.quest('ch2'), '틀리면 아직'); ok(said.at(-1).includes('다시 읽고'));
     pick = CHALLENGES.ch2.answer;
-    const p = ch.read(); await sleep(30); ok(ui.querySelector('.gold-seal'), '금빛 도장'); await p;
+    const p = ch.read(); await sleep(30); ok(ui.querySelector('.gold-seal-mark').textContent.includes('잘했어요'), '금빛 도장 「참 잘했어요」'); await p;
     ok(ch.done && save.quest('ch2')); eq(hudCalls.at(-1), [CHALLENGES.ch2.task, true]); ok(!ui.querySelector('.gold-seal'), '도장은 저절로 사라진다');
     const n0 = world.colliders.length; ch.remove(); eq(world.npcs.has(NOTE_ID), false); eq(world.colliders.length, n0 - 1);
     eq(setupChallenge(ctx, meta, save), null, '해낸 쪽지는 다시 내지 않는다');
@@ -84,7 +87,7 @@ test('growth: 퀘스트 목록의 도전 쪽지 줄은 퀘스트가 바뀌어도
     hud.setChallenge('숨은 안내판 찾기'); hud.setGoal('가', [1, 2], ['가', '나']); hud.setGoal('나', [2, 2], ['가', '나']);
     const li = ui.querySelector('.quest.note'); ok(li && li.textContent.includes('✦ 도전 쪽지') && li.textContent.includes('숨은 안내판 찾기'));
     eq(ui.querySelectorAll('.quest.note').length, 1);
-    hud.setChallenge('숨은 안내판 찾기', true); ok(ui.querySelector('.quest.note.got').textContent.includes('성공'));
+    hud.setChallenge('숨은 안내판 찾기', true); ok(ui.querySelector('.quest.note.got').textContent.includes('참 잘했어요'));
     hud.setChallenge(null); ok(!ui.querySelector('.quest.note'));
     ui.innerHTML = '';
     const r = { stars: 3, quizCorrect: 2, quizTotal: 2, firstTryCorrect: 1, firstTryTotal: 1, seconds: 300 };
@@ -123,10 +126,10 @@ test('growth: 타임머신에 새 부품이 붙으면 알림 — 부품 이름�
   const ui = root();
   try {
     const p = showMachineUpgrade(ui, 1, { preview: false, done: 3 });
-    ok(ui.textContent.includes('타임머신이 자랐어요') && ui.textContent.includes('금빛 시계') && ui.textContent.includes('12장') === false);
+    ok(ui.textContent.includes('타임머신이 자랐어요') && ui.textContent.includes('금빛 시계'));
     ok(ui.textContent.includes('다음 부품 「단청 날개」: 6장을 마치면 (지금 3장)'));
     btn(ui, '멋지다').click(); await p; ok(!ui.querySelector('.tmup'));
-    const p4 = showMachineUpgrade(ui, 4, { preview: false, done: 30 }); ok(ui.textContent.includes('모든 부품을 모았어요')); btn(ui, '멋지다').click(); await p4;
+    const p4 = showMachineUpgrade(ui, 9, { preview: false, done: 30 }); ok(ui.textContent.includes('모든 부품을 모았어요')); btn(ui, '멋지다').click(); await p4;
     const s = showSeal(ui, '시험', 40); ok(ui.querySelector('.gold-seal-text').textContent === '시험'); await s; ok(!ui.querySelector('.gold-seal'));
   } finally { ui.remove(); }
 });

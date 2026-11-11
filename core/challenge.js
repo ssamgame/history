@@ -40,7 +40,7 @@ export function setupChallenge(ctx, meta, save) {
       spot = world.addSpot(NOTE_ID, makeSign(c.sign), at.x, at.z, Math.atan2(p.x - at.x, p.z - at.z)); // 글이 학생 쪽을 보게
       spot.mesh.userData.dynamic = true;
       hud.setChallenge?.(c.task);
-      dialogue?.say({ who: 'guide', text: `도전 쪽지가 왔어! ${c.task}. 해내면 금빛 도장을 받아.` });
+      dialogue?.say({ who: 'guide', text: `도전 쪽지가 왔어! ${c.task}. 꼼꼼히 읽으면 금빛 도장을 받아.` });
       ctx.testHooks.challenge = { at: [at.x, at.z], done: false };
     },
     async read() {
@@ -55,7 +55,7 @@ export function setupChallenge(ctx, meta, save) {
           if (spot) spot.mark.visible = false;
           if (ctx.testHooks.challenge) ctx.testHooks.challenge.done = true;
           ctx.audio?.play?.('bell');
-          await showSeal(ctx.ui, `${c.options[c.answer]} — 금빛 도장을 받았어요`);
+          await showSeal(ctx.ui, `꼼꼼히 읽었구나! ${c.options[c.answer]}`);
         } else dialogue.say({ who: 'guide', text: '아쉬워! 안내판을 다시 읽고 한 번 더 도전해 보자.' });
       } finally { busy = false; }
     },

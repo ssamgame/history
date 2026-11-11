@@ -605,7 +605,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .quest.note { font-size: 13px; color: #f0dfae; margin-top: 2px; } .quest.note b { color: var(--gold); font-weight: 800; }
 .quest.note.got { color: #ffe9a8; }
 .gold-seal { position: fixed; inset: 0; z-index: 45; display: grid; place-content: center; justify-items: center; gap: 12px; pointer-events: none; background: rgba(10,12,11,.35); }
-.gold-seal-mark { width: 150px; height: 150px; border-radius: 50%; border: 6px solid #c9962c; color: #a4761f; display: grid; place-items: center; text-align: center; font-size: 24px; font-weight: 900; line-height: 1.2; background: radial-gradient(#fff7d6, #f3d98c); box-shadow: 0 0 50px rgba(255,215,106,.8); transform: rotate(-10deg); animation: seal-in .35s cubic-bezier(.2,1.6,.4,1) both; }
+.gold-seal-mark { width: 150px; height: 150px; border-radius: 50%; border: 6px solid #c9962c; color: #a4761f; display: grid; place-items: center; text-align: center; font-size: 26px; font-weight: 900; line-height: 1.15; background: radial-gradient(#fff7d6, #f3d98c); box-shadow: 0 0 50px rgba(255,215,106,.8); transform: rotate(-10deg); animation: seal-in .35s cubic-bezier(.2,1.6,.4,1) both; }
 .gold-seal-text { background: rgba(27,31,29,.92); color: var(--hanji); padding: 8px 18px; border-radius: 999px; font-size: 16px; max-width: 86vw; text-align: center; word-break: keep-all; }
 @keyframes seal-in { from { transform: rotate(-10deg) scale(2.4); opacity: 0; } to { transform: rotate(-10deg) scale(1); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .gold-seal-mark { animation: none; } }

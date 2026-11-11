@@ -157,7 +157,7 @@ export function showMap(root, chapters, save, { onSessionCard, onCourses, onBack
       board.appendChild(h('button', {
         class: `pick stop ${r ? 'done' : ''} ${now ? 'now' : ''}`, type: 'button', 'data-chapter': c.id, disabled: !open, style: `--x:${x}%;--y:${y}%`,
         onclick: () => { el.remove(); resolve(c.id); },
-      }, h('i', {}, String(c.no)), save.quest?.(c.id) && h('em', { class: 'stop-quest', title: '도전 쪽지 성공' }, '✦'), h('b', {}, c.title),
+      }, h('i', {}, String(c.no)), save.quest?.(c.id) && h('em', { class: 'stop-quest', title: '도전 쪽지를 해냈어요' }, '✦'), h('b', {}, c.title),
       h('small', {}, r ? starText(r.stars) : c.load ? (now ? `${c.years} · ▶ 지금 여기` : c.years) : '준비 중')));
     });
     // 이 편의 장을 하나라도 마쳤으면 결과 카드를 다시 볼 수 있다 (한 편의 1~6장이 한 장의 결과 카드)
@@ -199,7 +199,7 @@ export function showChapterResult(root, meta, r, { quest = null } = {}) { // que
           h('div', {}, h('b', {}, `${r.quizCorrect}/${r.quizTotal}`), h('span', {}, '퀴즈')),
           r.firstTryTotal > 0 && h('div', {}, h('b', {}, `${r.firstTryCorrect}/${r.firstTryTotal}`), h('span', {}, '놀이 한 번에')),
           h('div', {}, h('b', {}, timeText(r.seconds)), h('span', {}, '걸린 시간'))),
-        quest !== null && h('p', { class: `result-quest ${quest ? 'got' : ''}` }, quest ? '✦ 도전 쪽지 성공 — 금빛 도장을 받았어요' : '✦ 도전 쪽지는 아직이에요. 다시 와서 숨은 안내판을 찾아봐요'),
+        quest !== null && h('p', { class: `result-quest ${quest ? 'got' : ''}` }, quest ? '✦ 도전 쪽지 — 참 잘했어요! 금빛 도장을 받았어요' : '✦ 도전 쪽지는 아직이에요. 다시 와서 숨은 안내판을 찾아봐요'),
         h('div', { class: 'row' },
           h('button', { class: 'btn primary', type: 'button', onclick: () => { el.remove(); resolve(); } }, '다음'))));
   });
@@ -352,7 +352,7 @@ export function createHud(root, { touch }) {
     },
     // 도전 쪽지 줄(core/challenge.js): 퀘스트 목록 맨 아래에 붙는다. done이면 금빛 ✓, text가 없으면 뗀다
     setChallenge(text, done = false) {
-      noteLi?.remove(); noteLi = text ? h('li', { class: `quest note ${done ? 'got' : ''}` }, h('b', {}, done ? '✦ 도전 쪽지 성공' : '✦ 도전 쪽지'), ` ${text}`) : null;
+      noteLi?.remove(); noteLi = text ? h('li', { class: `quest note ${done ? 'got' : ''}` }, h('b', {}, done ? '✦ 참 잘했어요' : '✦ 도전 쪽지'), ` ${text}`) : null;
       if (noteLi) quests.append(noteLi);
     },
     setTimer(sec) {

@@ -11,10 +11,10 @@ const h = (tag, attrs = {}, ...kids) => {
   return el;
 };
 
-// 금빛 도장: 화면 가운데에 쾅 찍혔다가 1.8초 뒤 사라진다(누르지 않아도 된다)
+// 금빛 도장 「참 잘했어요」(2026-11-11 선생님: 안내판을 읽은 것에 '도전 성공'은 어색하다): 가운데에 쾅 찍혔다가 1.8초 뒤 사라진다
 export function showSeal(root, text, ms = 1800) {
   if (!root) return Promise.resolve();
-  const el = h('div', { class: 'gold-seal', role: 'status' }, h('div', { class: 'gold-seal-mark' }, '도전', h('br'), '성공'), h('div', { class: 'gold-seal-text' }, text));
+  const el = h('div', { class: 'gold-seal', role: 'status' }, h('div', { class: 'gold-seal-mark' }, '참', h('br'), '잘했어요'), h('div', { class: 'gold-seal-text' }, text));
   root.append(el);
   return new Promise(r => setTimeout(() => { el.remove(); r(); }, ms));
 }
@@ -85,7 +85,7 @@ export function showMachineUpgrade(root, level, { preview = true, done = 0 } = {
     try {
       renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true }); renderer.setPixelRatio(Math.min(2, devicePixelRatio || 1));
       const sc = new THREE.Scene(); sc.add(new THREE.HemisphereLight(0xffffff, 0x556050, 1.4)); const sun = new THREE.DirectionalLight(0xfff2d0, 1.5); sun.position.set(4, 8, 7); sc.add(sun);
-      const cam = new THREE.PerspectiveCamera(32, 520 / 420, 0.1, 100); cam.position.set(0, 3.4, level >= 2 ? 13.5 : 11); cam.lookAt(0, 2.3, 0); // 날개가 붙으면 조금 물러선다
+      const cam = new THREE.PerspectiveCamera(32, 520 / 420, 0.1, 100); cam.position.set(0, 3.6, level >= 9 ? 15.5 : level >= 2 ? 13.5 : 11); cam.lookAt(0, level >= 9 ? 2.9 : 2.3, 0); // 날개가 붙으면 조금 물러선다
       const tm = makeTimeMachine({ level }); sc.add(tm.group); tm.setFlame(0.35);
       let t = 0, last = performance.now();
       const loop = now => { const dt = Math.min(0.1, (now - last) / 1000); last = now; t += dt; tm.group.rotation.y = t * 0.6; tm.tick(t); renderer.render(sc, cam); raf = requestAnimationFrame(loop); };
