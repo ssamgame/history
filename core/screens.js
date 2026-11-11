@@ -31,14 +31,14 @@ export function buttonWord(label) {
 // 첫 화면(2026-11-09 선생님 시안 C): 뒤에는 고른 시대의 3D 장면(main.js가 띄움), 왼쪽 유리 판에 제목·소개·이름 칸·시작 단추, 아래에 시대 탭 다섯.
 // 탭을 누르면 고른 시대만 바뀌고(onCourse로 배경 장면을 바꾼다), 시작 단추로 들어간다. { action: 'new'|'continue', course, name? }로 끝난다(new일 때 name).
 // 전체 화면 켜고 끄기 단추(2026-11-10 선생님): 첫 화면과 메뉴에 둔다. 브라우저가 전체 화면을 못 하면(아이폰 사파리 등) 단추를 만들지 않는다
-export function fullscreenButton(cls = '') {
+export function fullscreenButton(cls = '', paint = null) { // paint(b, on): 단추 모양을 따로 그릴 때(메뉴 두루마리)
   const d = document, root = d.documentElement;
   const on = () => !!(d.fullscreenElement || d.webkitFullscreenElement);
   if (!(root.requestFullscreen || root.webkitRequestFullscreen) || d.fullscreenEnabled === false) return null;
   const b = h('button', { class: `btn fs-btn ${cls}`, type: 'button', onclick: () => {
     try { const r = on() ? (d.exitFullscreen || d.webkitExitFullscreen).call(d) : (root.requestFullscreen || root.webkitRequestFullscreen).call(root); r?.catch?.(() => {}); } catch { /* 막힌 기기에서는 아무 일도 없다 */ }
   } }, '');
-  const label = () => { b.textContent = on() ? '⛶ 전체 화면 끄기' : '⛶ 전체 화면'; b.setAttribute('aria-pressed', String(on())); };
+  const label = () => { if (paint) paint(b, on()); else b.textContent = on() ? '⛶ 전체 화면 끄기' : '⛶ 전체 화면'; b.setAttribute('aria-pressed', String(on())); };
   label();
   const sync = () => { if (b.isConnected) label(); else { d.removeEventListener('fullscreenchange', sync); d.removeEventListener('webkitfullscreenchange', sync); } };
   d.addEventListener('fullscreenchange', sync); d.addEventListener('webkitfullscreenchange', sync);
@@ -265,7 +265,10 @@ export function showSessionCard(root, session, save, chapters) {
 }
 
 const openMenus = new WeakMap(); // root → 열려 있는 메뉴의 약속 (Esc를 여러 번 눌러도 메뉴는 하나)
-export function showMenu(root, { muted, music = null, quality, storageOk = true, letters = false, machine = false }, onChange) { // letters·machine: 「편지함」·「타임머신 꾸미기」 단추(2026-11-11 선생님: 게임 중 언제든) // 역사 수첩 단추는 2026-10-27(D-9) 뺐다
+// 메뉴(2026-11-11 선생님 시안 ③): 메뉴 단추 자리에서 왼쪽으로 가로 두루마리가 주르륵 펼쳐진다. 항목은 둥근 그림 + 이름 + 지금 상태.
+// 소리·음악·화질·전체 화면은 눌러도 닫히지 않고 그 자리에서 바뀐다(화질은 누를 때마다 낮음 → 보통 → 높음). 편지함·타임머신·장 선택은 닫으며 그 일을 알린다.
+// letters: false면 편지함 없음, 숫자면 받은 편지 수. machine: 「타임머신 꾸미기」. 역사 수첩 단추는 2026-10-27(D-9), 「내 캐릭터 바꾸기」는 2026-11-11 뺐다
+export function showMenu(root, { muted, music = null, quality, storageOk = true, letters = false, machine = false }, onChange) {
   if (openMenus.has(root)) return openMenus.get(root);
   const p = new Promise(resolve => {
     const close = v => { el.remove(); openMenus.delete(root); resolve(v); };
@@ -274,26 +277,24 @@ export function showMenu(root, { muted, music = null, quality, storageOk = true,
       h('div', { class: 'row' },
         h('button', { class: 'btn danger', type: 'button', onclick: () => close('map') }, '그래도 나가기'),
         h('button', { class: 'btn', type: 'button', onclick: () => { leave.hidden = true; } }, '계속하기')));
-    const fsMenu = fullscreenButton();
-    const shown = quality === 'lite' ? 'medium' : quality; // lite는 자동 조절이 고르는 '보통(가볍게)': 단추는 보통에 불이 켜진다
-    const qb = (lv, label) => h('button', { class: `btn ${shown === lv ? 'on' : ''}`, type: 'button', onclick: () => { onChange({ quality: lv }); close('close'); } }, label);
-    const el = screen(root, 'menu',
-      h('div', { class: 'card' },
-        h('h2', {}, '메뉴'),
-        h('p', {}, '소리'),
-        h('div', { class: 'row' }, h('button', { class: 'btn', type: 'button', onclick: () => { onChange({ muted: !muted }); close('close'); } }, muted ? '소리 켜기' : '소리 끄기'),
-          music !== null && h('button', { class: 'btn', type: 'button', onclick: () => { onChange({ music: !music }); close('close'); } }, music ? '음악 끄기' : '음악 켜기')),
-        h('p', {}, '화질'),
-        h('div', { class: 'row' }, qb('low', '낮음'), qb('medium', '보통'), qb('high', '높음')),
-        fsMenu && h('p', {}, '화면'), fsMenu && h('div', { class: 'row' }, fsMenu),
-        (letters || machine) && h('p', {}, '시간 여행'), // 「내 캐릭터 바꾸기」는 뺐다(2026-11-11 선생님: 한 번 정한 캐릭터는 바꾸지 못한다)
-        (letters || machine) && h('div', { class: 'row' },
-          letters && h('button', { class: 'btn', type: 'button', onclick: () => close('letters') }, '편지함'),
-          machine && h('button', { class: 'btn', type: 'button', onclick: () => close('machine') }, '타임머신 꾸미기')),
-        h('div', { class: 'row' },
-          h('button', { class: 'btn', type: 'button', onclick: () => (storageOk ? close('map') : (leave.hidden = false)) }, '장 선택으로'),
-          h('button', { class: 'btn primary', type: 'button', onclick: () => close('close') }, '닫기')),
-        leave));
+    const face = (icon, name, state, tone = '') => [h('span', { class: `ic ${tone}`, 'aria-hidden': 'true' }, icon), h('b', {}, name), h('small', {}, state)];
+    const item = (cls, parts, onclick) => { const b = h('button', { class: `scroll-item ${cls}`, type: 'button', onclick: () => onclick(b) }, parts); return b; };
+    const onOff = v => (v ? '켜짐' : '꺼짐');
+    const QS = ['low', 'medium', 'high'], QN = { low: '낮음', medium: '보통', high: '높음' };
+    let q = quality === 'lite' ? 'medium' : quality; // lite는 자동 조절이 고르는 '보통(가볍게)'
+    const fs = fullscreenButton('scroll-item', (b, on) => b.replaceChildren(...face('⛶', '전체 화면', onOff(on), on ? 'g' : '')));
+    const band = h('div', { class: 'menu-band' },
+      item('', face('♪', '소리', onOff(!muted), muted ? '' : 'g'), b => { muted = !muted; onChange({ muted }); b.replaceChildren(...face('♪', '소리', onOff(!muted), muted ? '' : 'g')); }),
+      music !== null && item('', face('♬', '음악', onOff(music), music ? 'g' : ''), b => { music = !music; onChange({ music }); b.replaceChildren(...face('♬', '음악', onOff(music), music ? 'g' : '')); }),
+      item('', face('◐', '화질', QN[q] || '보통'), b => { q = QS[(QS.indexOf(q) + 1) % 3]; onChange({ quality: q }); b.replaceChildren(...face('◐', '화질', QN[q])); }),
+      fs,
+      letters !== false && item('', face('✉︎', '편지함', typeof letters === 'number' ? `${letters}통` : '', 'r'), () => close('letters')),
+      machine && item('', face('▲', '타임머신', '꾸미기', 'b'), () => close('machine')),
+      item('out', face('↩︎', '장 선택', '나가기', 'r'), () => (storageOk ? close('map') : (leave.hidden = false))));
+    const rollL = h('i', { class: 'menu-roll l' }), scroll = h('div', { class: 'menu-scroll' }, rollL, band, h('i', { class: 'menu-roll' }));
+    const el = screen(root, 'menu', h('button', { class: 'menubtn menu-close', type: 'button', onclick: () => close('close') }, '닫기'), scroll, leave);
+    el.addEventListener('click', e => { if (e.target === el) close('close'); }); // 바깥(게임 화면)을 눌러도 닫힌다
+    scroll.style.setProperty('--w', `${band.offsetWidth}px`); // 펼쳐지는 길이(왼쪽 축이 이만큼 굴러간다)
   });
   openMenus.set(root, p);
   return p;
@@ -308,13 +309,15 @@ export function createHud(root, { touch }) {
   // 왼쪽 위 '퀘스트' 목록(C-01, 2026-10-28): 마친 퀘스트는 ✓로 흐리게, 지금 퀘스트는 굵게, 그 아래 진행 수(들은 이야기 1/3 등)
   const quests = h('ol', { class: 'quest-list' });
   const goal = h('span', { class: 'goal-text' }); // 지금 퀘스트 글(시험·배치 검사가 찾는다)
-  const goalStep = h('span', { class: 'goal-step', hidden: true });
+  const goalStep = h('span', { class: 'goal-step', hidden: true }); // 붉은 도장 안 '2/6'
+  const stampNo = h('b', {}), stamp = h('div', { class: 'hud-stamp' }, stampNo, goalStep); // 붉은 도장: 몇 장·몇 번째 퀘스트(2026-11-11 선생님 시안 D: 상자 없이 먹 글씨)
+  const bar = h('div', { class: 'hud-bar', hidden: true }, h('i')); // 이 장의 퀘스트를 얼마나 했는지 금빛 줄
   const chapter = h('div', { class: 'hud-chapter' });
   const timer = h('div', { class: 'hud-timer', hidden: true });
   const counter = h('div', { class: 'hud-counter', hidden: true });
   const found = h('div', { class: 'hud-found', hidden: true }); // 예전 '살펴본 안내판' 칸: 이제 쓰지 않는다(늘 숨김)
   quests.append(h('li', { class: 'quest' }, counter)); // 퀘스트를 정하기 전에도 진행 수는 보인다
-  const box = h('div', { class: 'hud', hidden: true }, chapter, h('div', { class: 'hud-goal' }, h('span', { class: 'seal' }, '퀘스트'), quests), found, h('div', { class: 'hud-row' }, timer));
+  const box = h('div', { class: 'hud', hidden: true }, stamp, chapter, h('div', { class: 'hud-goal' }, quests), found, h('div', { class: 'hud-row' }, timer));
   const notice = h('div', { class: 'hud-notice', hidden: true, role: 'status' });
   const bigTimer = h('div', { class: 'hud-bigtimer', hidden: true, 'aria-live': 'off' }); // 남은 시간: 화면 위 가운데에 크게
   const bigWait = h('div', { class: 'hud-bigwait', hidden: true, 'aria-live': 'off' }); // 기다리는 동안 남은 초(정류장 등): 큰 시간 바로 아래
@@ -333,7 +336,7 @@ export function createHud(root, { touch }) {
     joyZone, talkBtn, menuBtn,
     attachCamera(c) { camera = c; },
     show(meta) { // 화면 위 "나: …" 줄은 2026-10-27 선생님 말씀으로 뺐다
-      chapter.textContent = `${meta.no}장 · ${meta.years} ${meta.event}`;
+      stampNo.textContent = `${meta.no}장`; chapter.textContent = `${meta.years} ${meta.event}`;
       box.hidden = false; menuBtn.hidden = false; joyZone.hidden = talkBtn.hidden = !touch; },
     hide() { box.hidden = true; menuBtn.hidden = true; prompt.hidden = true; joyZone.hidden = talkBtn.hidden = true; notice.hidden = true; found.hidden = true; bigTimer.hidden = true; bigWait.hidden = true; },
     // 잠깐 뜨는 알림(새 장소 발견 등): 화면 위 가운데, 누르지 않아도 사라진다
@@ -342,13 +345,13 @@ export function createHud(root, { touch }) {
     setFound() { found.hidden = true; },
     // 지금 퀘스트(text)와 이 장의 퀘스트 목록(list). list 안에서 text보다 앞의 것은 마친 퀘스트로 ✓
     setGoal(text, step = null, list = []) {
-      goal.textContent = text || ''; goalStep.hidden = !step; if (step) goalStep.textContent = `${step[0]}/${step[1]}`;
+      goal.textContent = text || ''; goalStep.hidden = !step; bar.hidden = !step; if (step) { goalStep.textContent = `${step[0]}/${step[1]}`; bar.firstChild.style.width = `${Math.round(step[0] / step[1] * 100)}%`; }
       const i = list.indexOf(text);
       if (list !== lastList) { lastList = list; lastIdx = -1; }
       // 목록에 없는 퀘스트(빛나는 문 찾아가기 등)는 그때까지 한 퀘스트를 모두 마친 것으로 본다
       const done = (i >= 0 ? list.slice(0, i) : list.slice(0, lastIdx + 1)).slice(-2); // 마친 것은 바로 앞 두 개만(화면이 좁아서)
       if (i >= 0) lastIdx = i;
-      const cur = h('li', { class: 'quest now' }, goal, counter);
+      const cur = h('li', { class: 'quest now' }, goal, bar, counter);
       quests.replaceChildren(...done.map(t => h('li', { class: 'quest done' }, t)), text ? cur : h('li', { class: 'quest' }, counter)); // 퀘스트가 없어도 진행 수는 보인다
     },
     setTimer(sec) {

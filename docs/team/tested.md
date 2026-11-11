@@ -153,3 +153,4 @@
 - 2026-11-11 도전 쪽지 뺌(core/challenge.js 삭제), 타임머신 부품 떼었다 붙이기(`setParts`·`save.data.tmOff`·「타임머신 꾸미기」 화면), 편지는 복습 퀴즈 앞에서 받고 게임 중 메뉴 「편지함」에서 언제든 읽기: B: growth|flow|screens|save|sw|layout|classroom|d30|quest|menu|avatar|map|title|portal|arrival|travel|d73 94 통과(avatar 불꽃 세기·growth 숨은 단추 검사를 새 구조에 맞게 고침). 실제 게임(1000×560)에서 메뉴 높이(560 안), 꾸미기 화면에서 부품을 떼면 서 있는 타임머신이 바로 바뀌는 것, 고려 2장 놀이 뒤 편지 → 타임머신 → 퀴즈 차례를 확인. 이어서 ch1|ch2|k1|타임머신 62 통과. 학생 사이트는 v97 그대로(미리보기만).
 - 2026-11-11 타임머신 부품 설명 글 뺌(꾸미기 화면 카드·새 부품 알림은 부품 이름만): A: growth|layout 30 통과, 꾸미기 화면 사진 확인.
 - 2026-11-11 메뉴에서 「내 캐릭터 바꾸기」 뺌(한 번 정한 캐릭터는 못 바꿈): A: growth|screens|menu 17 통과.
+- 2026-11-11 퀘스트 표시(시안 D: 붉은 도장 + 먹 글씨 + 금빛 줄), 시간지기 말풍선(시계 얼굴), 메뉴 두루마리(시안 ③: 옆으로 펼침, 소리·화질은 그 자리에서 바뀜): B: screens|menu|music|dialogue 30 통과 + layout|growth|d30|quest|classroom|flow|title|map|sw|avatar|hud|d73|ch1 98 통과. 실제 게임(1000×560) 고려 1장·현대 3장에서 퀘스트·말풍선·메뉴 펼침(중간·끝)·소리와 화질 누르기 사진 확인.

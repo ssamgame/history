@@ -78,10 +78,11 @@ test('menu: separate music switch', async () => {
   const el = document.createElement('div'); document.body.appendChild(el);
   const changes = [];
   const p = showMenu(el, { muted: false, music: true, quality: 'medium' }, c => changes.push(c));
-  const b = [...el.querySelectorAll('button')].find(x => x.textContent === '음악 끄기');
-  ok(b, 'music off button');
+  const b = [...el.querySelectorAll('button')].find(x => x.textContent.includes('음악'));
+  ok(b && b.textContent.includes('켜짐'), 'music switch');
   b.click();
-  eq(changes, [{ music: false }]);
+  eq(changes, [{ music: false }]); ok(b.textContent.includes('꺼짐') && el.querySelector('.menu'), '눌러도 메뉴는 열려 있고 상태만 바뀐다');
+  [...el.querySelectorAll('button')].find(x => x.textContent === '닫기').click();
   await p; el.remove();
 });
 

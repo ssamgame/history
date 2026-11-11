@@ -145,6 +145,7 @@ test('dialogue: 해설은 자막, 안내는 칩, 사람 말은 한지 대화창(
   d.advance();
   d.say({ who: 'guide', text: '안내' }); await sleep(5);
   ok(q('.dlg').classList.contains('mode-chip'), '안내는 칩');
+  { const cs = getComputedStyle(q('.dlg')), head = getComputedStyle(q('.dlg-head')); ok(cs.backgroundColor === 'rgba(0, 0, 0, 0)' && head.backgroundColor !== 'rgba(0, 0, 0, 0)' && getComputedStyle(q('.dlg'), '::before').borderRadius === '50%', '시간지기는 시계 얼굴 + 말풍선(2026-11-11)'); eq(q('.dlg-name').textContent, '시간지기'); }
   d.advance();
   d.say({ who: 'seohui', text: '말' }); await sleep(5);
   ok(!q('.dlg').classList.contains('mode-cap') && !q('.dlg').classList.contains('mode-chip') && !q('.dlg').classList.contains('mode-quiz'), '사람은 대화창');

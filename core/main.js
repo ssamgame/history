@@ -76,7 +76,7 @@ function boot() {
   const openMenu = async () => {
     if (!inChapter) return;
     world.paused = true; // 메뉴를 보는 동안 미니게임 시간이 흐르지 않게
-    const choice = await showMenu(ui, { muted: audio.muted, music: musicOn, quality: quality.level, storageOk: storage.available, letters: true, machine: true }, change => {
+    const choice = await showMenu(ui, { muted: audio.muted, music: musicOn, quality: quality.level, storageOk: storage.available, letters: LETTER_CHAPTERS.filter(c => save.hasLetter(c.id)).length, machine: true }, change => {
       if ('muted' in change) { audio.setMuted(change.muted); storage.set(PREF_MUTED, change.muted); }
       if ('music' in change) { musicOn = change.music; storage.set(PREF_MUSIC, change.music); }
       applyMusic();

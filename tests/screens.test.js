@@ -1,5 +1,5 @@
 import { test, eq, ok } from './harness.js';
-import { showTitle, askName, showMap, showSessionCard, showMenu, showChapterResult } from '../core/screens.js';
+import { showTitle, askName, showMap, showSessionCard, showMenu, showChapterResult, createHud } from '../core/screens.js';
 import { CHAPTERS, SESSIONS } from '../chapters/index.js';
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -145,7 +145,7 @@ test('menu: leaving to the map without storage asks first', async () => {
   const el = root();
   let result = null;
   showMenu(el, { muted: false, quality: 'medium', storageOk: false }, () => {}).then(r => { result = r; });
-  btn(el, '장 선택으로').click();
+  btn(el, '장 선택').click();
   await sleep(10);
   eq(result, null);
   ok(el.textContent.includes('사라져요'));
@@ -379,4 +379,41 @@ test('fullscreen: 첫 화면과 메뉴에 전체 화면 단추 — 누르면 켜
     const mb = el.querySelector('.menu .fs-btn'); ok(mb, '메뉴 단추'); mb.click(); eq(calls.length, 3); ok(el.querySelector('.menu'), '눌러도 메뉴는 닫히지 않는다');
     [...el.querySelectorAll('.menu button')].find(x => x.textContent === '닫기').click(); await m;
   } finally { el.remove(); delete d.fullscreenElement; root.requestFullscreen = keep.req; d.exitFullscreen = keep.exit; }
+});
+
+// 2026-11-11 선생님 시안: 퀘스트는 상자 없이 먹 글씨 + 붉은 도장(D), 메뉴는 옆으로 펼치는 두루마리(③)
+test('screens: 메뉴 두루마리 — 항목이 한 줄 띠에 놓이고, 소리·화질은 눌러도 닫히지 않고 바뀌며, 바깥을 누르면 닫힌다', async () => {
+  const el = root();
+  try {
+    const changes = [];
+    const p = showMenu(el, { muted: false, music: true, quality: 'lite', letters: 3, machine: true }, c => changes.push(c));
+    const items = [...el.querySelectorAll('.menu-band .scroll-item')];
+    eq(items.map(b => b.querySelector('b').textContent), ['소리', '음악', '화질', '전체 화면', '편지함', '타임머신', '장 선택'].filter(n => n !== '전체 화면' || el.querySelector('.fs-btn')));
+    ok(el.querySelectorAll('.menu-roll').length === 2 && el.querySelector('.menu-scroll').style.getPropertyValue('--w').endsWith('px'), '두루마리 축 둘과 펼쳐지는 길이');
+    ok(!el.querySelector('.menu .card') && !el.textContent.includes('캐릭터'), '예전 카드 메뉴·캐릭터 바꾸기는 없다');
+    const [sound, , q] = items;
+    ok(sound.textContent.includes('켜짐')); sound.click(); ok(sound.textContent.includes('꺼짐')); sound.click(); ok(sound.textContent.includes('켜짐'));
+    ok(q.textContent.includes('보통'), 'lite는 보통으로 보인다'); q.click(); q.click(); q.click();
+    eq(changes, [{ muted: true }, { muted: false }, { quality: 'high' }, { quality: 'low' }, { quality: 'medium' }]); ok(q.textContent.includes('보통') && el.querySelector('.menu'), '메뉴는 그대로 열려 있다');
+    for (const b of el.querySelectorAll('.menu button')) if (b.offsetParent) { const r = b.getBoundingClientRect(); ok(r.width >= 44 && r.height >= 44 && r.left >= 0 && r.right <= innerWidth + 1 && r.bottom <= innerHeight + 1, `단추 ${b.textContent}`); }
+    const close = el.querySelector('.menu-close'), band = el.querySelector('.menu-scroll').getBoundingClientRect(), c = close.getBoundingClientRect();
+    ok(c.bottom <= band.top + 12, '닫기 단추는 두루마리 위(메뉴 단추 자리)');
+    el.querySelector('.screen.menu').click(); eq(await p, 'close'); ok(!el.querySelector('.menu'));
+  } finally { el.remove(); }
+});
+
+test('screens: 퀘스트 표시 — 붉은 도장에 장과 차례(2/6), 지금 퀘스트는 먹 글씨, 금빛 줄이 차례만큼 찬다', () => {
+  const el = root();
+  try {
+    const hud = createHud(el, { touch: false }); hud.show({ no: 3, years: '1018~1019', event: '귀주 대첩' });
+    eq(el.querySelector('.hud-stamp b').textContent, '3장'); eq(el.querySelector('.hud-chapter').textContent, '1018~1019 귀주 대첩'); ok(!el.querySelector('.hud .seal'), "'퀘스트' 딱지는 없다");
+    ok(el.querySelector('.goal-step').hidden, '퀘스트를 정하기 전에는 차례가 없다');
+    hud.setGoal('나', [2, 4], ['가', '나', '다', '라']);
+    eq(el.querySelector('.hud-stamp').textContent, '3장2/4'); eq(el.querySelector('.quest.now .goal-text').textContent, '나');
+    const bar = el.querySelector('.quest.now .hud-bar'); ok(bar && !bar.hidden); eq(bar.firstChild.style.width, '50%');
+    const box = getComputedStyle(el.querySelector('.hud')); ok(box.backgroundColor === 'rgba(0, 0, 0, 0)' && box.borderTopWidth === '0px', '상자(바탕·테두리)가 없다'); ok(box.textShadow !== 'none', '글씨에 먹 그림자');
+    eq(getComputedStyle(el.querySelector('.quest.done')).display, 'none', '마친 퀘스트 줄은 숨긴다(도장과 줄이 알려 준다)');
+    hud.setGoal('빛나는 문으로'); ok(el.querySelector('.goal-step').hidden && el.querySelector('.hud-bar').hidden, '차례가 없는 퀘스트');
+    const m = el.querySelector('.menubtn').getBoundingClientRect(); ok(Math.abs(m.width - m.height) < 1 && m.width >= 48, '메뉴 단추는 둥근 도장');
+  } finally { el.remove(); }
 });

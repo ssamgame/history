@@ -92,19 +92,19 @@ test('growth: 편지는 고려편 여섯 장 — 사실마다 출처, "장군" �
   try { const hud = createHud(ui, { touch: false }); ok(!hud.setChallenge, '퀘스트 목록의 도전 쪽지 줄도 없다'); } finally { ui.remove(); }
 });
 
-test('growth: 장 고르기에 「타임머신」·「편지함」 단추, 게임 중 메뉴에 「편지함」·「타임머신 꾸미기」', async () => {
+test('growth: 장 고르기에 「타임머신」·「편지함」 단추, 게임 중 메뉴 두루마리에 「편지함」(받은 수)·「타임머신 꾸미기」', async () => {
   const ui = root();
   try {
     const save = memSave(); save.addLetter('ch1');
     let letters = 0, machine = 0; const pm = showMap(ui, CHAPTERS, save, { onLetters: () => { letters += 1; }, onMachine: () => { machine += 1; } });
     btn(ui, '편지함').click(); btn(ui, '타임머신').click(); eq([letters, machine], [1, 1]); ok(!ui.querySelector('.stop-quest')); ui.querySelector('.screen').remove(); void pm;
     const pm2 = showMap(ui, CHAPTERS, memSave(), { onLetters: () => {} }); ok(!btn(ui, '편지함'), '받은 편지가 없으면 단추도 없다'); ok(!btn(ui, '타임머신')); ui.querySelector('.screen').remove(); void pm2;
-    const m1 = showMenu(ui, { muted: false, quality: 'medium', letters: true, machine: true }, () => {}); btn(ui, '편지함').click(); eq(await m1, 'letters');
-    const m2 = showMenu(ui, { muted: false, quality: 'medium', letters: true, machine: true }, () => {});
+    const m1 = showMenu(ui, { muted: false, quality: 'medium', letters: 2, machine: true }, () => {}); ok(btn(ui, '편지함').textContent.includes('2통')); btn(ui, '편지함').click(); eq(await m1, 'letters');
+    const m2 = showMenu(ui, { muted: false, quality: 'medium', letters: 0, machine: true }, () => {}); ok(btn(ui, '편지함'), '받은 편지가 없어도 편지함은 있다');
     for (const b of [...ui.querySelectorAll('button')].filter(x => x.offsetParent)) { const r = b.getBoundingClientRect(); ok(r.width >= 44 && r.height >= 40 && r.bottom <= innerHeight + 1, `단추 ${b.textContent}`); }
     ok(!btn(ui, '캐릭터'), '한 번 정한 캐릭터는 바꾸지 못한다: 메뉴에 「내 캐릭터 바꾸기」가 없다');
-    btn(ui, '타임머신 꾸미기').click(); eq(await m2, 'machine');
-    const m3 = showMenu(ui, { muted: false, quality: 'medium' }, () => {}); ok(!btn(ui, '편지함') && !btn(ui, '타임머신 꾸미기') && !ui.textContent.includes('시간 여행')); btn(ui, '닫기').click(); await m3;
+    btn(ui, '타임머신').click(); eq(await m2, 'machine');
+    const m3 = showMenu(ui, { muted: false, quality: 'medium' }, () => {}); ok(!btn(ui, '편지함') && !btn(ui, '타임머신')); btn(ui, '닫기').click(); await m3;
   } finally { ui.remove(); }
 });
 
