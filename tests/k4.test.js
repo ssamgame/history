@@ -119,3 +119,11 @@ test('k4 D-33: 환구단 즉위식 — 사람들이 지켜보고, 고종이 제�
     ok(s.w.player.visible, '학생이 보인다');
   } finally { bot.stop(); s.done(); }
 }, { timeout: 60000 });
+
+// 2026-11-12 선생님(상황에 안 맞는 소품): 이름표가 「우물가」·「시장」이면 그 자리에 우물·노점이 있어야 한다(수레만 있던 것)
+test('k4 시대: 신문 배달 무대의 우물가에는 우물, 시장에는 노점이 있다', () => {
+  const p = k4.parts[0], A = p.arena, things = [...(A.center || []), ...(A.props || [])];
+  const near = (label, type, r) => { const at = p.route.find(q => q.label === label); return things.some(t => t.type === type && Math.hypot(t.x - at.x, t.z - at.z) < r); };
+  ok(near('우물가', 'well', 5), '우물가 옆 우물');
+  ok(near('시장', 'stall', 5), '시장 옆 노점');
+});

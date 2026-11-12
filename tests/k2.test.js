@@ -130,3 +130,18 @@ test('k2 D-30 G-04: 청 군대가 오면 김옥균이 몸을 숙이고 빠른 �
     eq(a.rotation.x, 0, '끝나면 자세를 되돌린다');
   } finally { w.dispose(); }
 });
+
+// 2026-11-12 선생님(시대에 안 맞는 복장): 갑신정변(1884)은 단발령(1895) 전이라 거리의 아이도 짧게 깎은 머리가 아니라 댕기 머리다
+test('k2 시대: 정변 뒤 거리 장면 사람들은 짧은 머리가 아니다(단발령 전)', async () => {
+  const { touchSetup, touchBot } = await import('./bot.js');
+  const s = touchSetup(script.speakers), bot = touchBot(s, { answers: new Set() });
+  const hats = new Set();
+  try {
+    k2.buildScene(s.w, s.ctx); s.w.player.position.set(1, 0, 2);
+    let done = false; const run = k2.stories.qingStreet(s.ctx).then(() => { done = true; });
+    while (!done) { s.w.level.traverse(o => { const L = o.name === 'face' && o.userData.look; if (L) hats.add(L.hat); }); await new Promise(r => setTimeout(r, 40)); }
+    await run;
+    ok(hats.size > 1, `사람을 보았다 ${[...hats]}`);
+    for (const h of ['short', 'buzz', 'swept', 'cap', 'fedora']) ok(!hats.has(h), `${h} 머리·모자가 없다`);
+  } finally { bot.stop(); s.done(); }
+}, { timeout: 120000 });

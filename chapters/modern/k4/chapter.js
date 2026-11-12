@@ -35,7 +35,8 @@ function russianFlag() {
 
 // ── 무대(마을에서 떨어진 x 400) ──
 // 신문 배달: 1890년대 한성. 궁궐·러시아 공사관·신문사·환구단·종로가 흩어져 있다
-const HANSEONG = { edge: { style: 'street', seed: 79 }, center: [{ type: 'papers', x: -17, z: 2, kind: 'news', n: 3 }, { type: 'cart', x: -16, z: -5, ry: 0.3 }, { type: 'noticeBoard', x: 16, z: -6, ry: -0.5 }, { type: 'cart', x: 7, z: 14, ry: 0.3 }, { type: 'papers', x: 9, z: 7, kind: 'news', n: 3 }],
+const HANSEONG = { edge: { style: 'street', seed: 79 }, center: [{ type: 'papers', x: -17, z: 2, kind: 'news', n: 3 }, { type: 'cart', x: -16, z: -5, ry: 0.3 }, { type: 'noticeBoard', x: 16, z: -6, ry: -0.5 }, { type: 'cart', x: 7, z: 14, ry: 0.3 }, { type: 'papers', x: 9, z: 7, kind: 'news', n: 3 },
+    { type: 'well', x: -18.5, z: -1.5 }, { type: 'stall', x: 10.5, z: -5.5, ry: -1.25, seed: 4 }], // 「우물가」 옆 우물, 「시장」 옆 노점(2026-11-12 선생님: 이름표 자리에 그 모양이 없으면 어색하다)
   origin: [400, 0], ground: 'earth', groundColor: 0x9a8a6a, bounds: { x0: -24, x1: 24, z0: -22, z1: 22 },
   roads: [{ x: 0, z: 0, w: 46, d: 5, color: 0x8a8070 }, { x: 0, z: 0, w: 5, d: 44, color: 0x8a8070 }],
   props: [

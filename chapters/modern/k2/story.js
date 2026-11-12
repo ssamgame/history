@@ -11,8 +11,8 @@ export function qingStreetScene(ctx) {
   return storyScene(ctx, { key: 'qingStreet', arena: HANSEONG, mood: 'overcast', async run({ g, hook, cam, say, people, fadeIn }) {
     const { world } = ctx;
     const column = troop(g, 'qingSoldier', -11, 0, { cols: 2, rows: 5, gap: 1.4, ry: Math.PI / 2, jitter: 0.15 }); // D-68: 뒷줄까지 무대 안(양옆 가게 줄 x ±18.5 안)에서 출발
-    // 길가 가게 앞 사람들(카메라 쪽 길가에서 얼굴이 보이게)
-    const folk = [[-4, 5.2], [-2.4, 5.6], [2.2, 5.4], [3.8, 5.8], [0, 6.4]].map(([x, z], i) => person(g, ['commoner', 'commoner', 'woman', 'peasant', 'kidModern'][i], x, z, 0));
+    // 길가 가게 앞 사람들(카메라 쪽 길가에서 얼굴이 보이게). 1884년은 단발령(1895) 전이라 아이는 댕기 머리(kid)
+    const folk = [[-4, 5.2], [-2.4, 5.6], [2.2, 5.4], [3.8, 5.8], [0, 6.4]].map(([x, z], i) => person(g, ['commoner', 'commoner', 'woman', 'peasant', 'kid'][i], x, z, 0));
     folk.forEach(p => face(p, 0, 15)); people.push(...folk);
     cam([0, 3.6, 15], [0, 1.4, 0]);
     await fadeIn();
