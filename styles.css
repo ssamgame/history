@@ -90,7 +90,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .title h1 { font-size: clamp(40px, 5.6vw, 64px); line-height: 1.08; word-break: keep-all; }
 .title h1 span { color: var(--dan-red); }
 .title .eyebrow { font-size: 13px; letter-spacing: .14em; color: var(--gold); }
-.title .lead { margin: 0; line-height: 1.6; color: #ddd5c4; max-width: 44ch; font-size: 16px; }
+.title .lead { margin: 0; line-height: 1.6; color: #ddd5c4; max-width: 40ch; font-size: 18px; }
 .title-actions { display: grid; gap: 10px; }
 .title-name-row { display: flex; align-items: center; gap: 10px; font-size: 14px; color: #c9c1b0; }
 .title-name { flex: 1; min-width: 0; font: inherit; font-size: 16px; padding: 9px 12px; border-radius: 6px; border: 1px solid rgba(242,234,217,.4); background: rgba(27,31,29,.6); color: var(--hanji); }
@@ -112,7 +112,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
   .title-course { flex: 1 1 45%; }
   .title-course-progress { white-space: normal; }
 }
-@media (max-height: 620px) { .title-inner { gap: 8px; } .title-intro { gap: 8px; } .title h1 { font-size: 40px; } .title .lead { font-size: 14px; line-height: 1.5; } .title-actions .btn { min-height: 46px; font-size: 16px; } .title-course { min-height: 50px; padding: 5px 10px; } .title-course-name { font-size: 14px; } .title .controls { display: none; } }
+@media (max-height: 620px) { .title-inner { gap: 8px; } .title-intro { gap: 8px; } .title h1 { font-size: 40px; } .title .lead { font-size: 16px; line-height: 1.5; } .title-actions .btn { min-height: 46px; font-size: 16px; } .title-course { min-height: 50px; padding: 5px 10px; } .title-course-name { font-size: 14px; } .title .controls { display: none; } }
 .confirm { background: var(--ink-2); border: 1px solid var(--gold); border-radius: 4px; padding: 14px; display: grid; gap: 10px; }
 .confirm[hidden] { display: none; }
 .confirm p { margin: 0; }
@@ -623,7 +623,10 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .title-qr { grid-row: 1; grid-column: 1; align-self: start; justify-self: end; margin: clamp(4px, 2vh, 18px) clamp(0px, 2vw, 24px) 0 0; }
 .title-qr svg { width: clamp(150px, 28vh, 240px); height: clamp(150px, 28vh, 240px); display: block; background: rgba(242, 234, 217, .93); border-radius: 6px; } /* 한지빛 바탕(카메라가 읽을 만큼만 밝게) */
 .title-intro { grid-row: 1; grid-column: 1; }
-@media (max-width: 760px) { .title-qr { display: none; } } /* 휴대폰 세로: 자리가 없어 시작 단추를 가린다(휴대폰은 이미 들어와 있다) */
+.title-help { grid-row: 1; grid-column: 1; align-self: end; justify-self: end; width: min(400px, 42%); margin: 0 clamp(0px, 2vw, 24px) 4px 0; display: grid; gap: 8px; padding: 12px 16px; border-radius: 10px; background: rgba(27,31,29,.78); border: 1px solid rgba(217,164,65,.45); font-size: 16px; line-height: 1.45; word-break: keep-all; }
+.title-help b { display: block; color: var(--gold); font-size: 15px; } .title-help span { color: var(--hanji); }
+@media (max-height: 620px) { .title-help { padding: 8px 14px; gap: 5px; font-size: 15px; line-height: 1.35; } }
+@media (max-width: 760px) { .title-qr, .title-help { display: none; } } /* 휴대폰 세로: 자리가 없어 시작 단추를 가린다(휴대폰은 이미 들어와 있다) */
 
 /* 전체 화면 단추: 첫 화면 왼쪽 위 */
 .title-fs { grid-row: 1; grid-column: 1; align-self: start; justify-self: start; margin: clamp(4px, 2vh, 18px) 0 0 clamp(0px, 3vw, 40px); min-height: 44px; padding: 8px 16px; font-size: 15px; background: rgba(27,31,29,.7); z-index: 1; }

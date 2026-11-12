@@ -1,3 +1,4 @@
+import { COURSES } from '../chapters/index.js';
 import { test, eq, ok } from './harness.js';
 import { showTitle, askName, showMap, showSessionCard, showMenu, showChapterResult, createHud } from '../core/screens.js';
 import { CHAPTERS, SESSIONS } from '../chapters/index.js';
@@ -316,18 +317,7 @@ test('screens D-9: no 역사 수첩 in the menu or on the chapter result card', 
   } finally { r.remove(); }
 });
 
-test('title D-11-2: one short controls line (walk and talk) on the first screen', async () => {
-  const ui = document.createElement('div'); document.body.appendChild(ui);
-  showTitle(ui, { courses: [] });
-  await new Promise(r => setTimeout(r, 0));
-  const c = ui.querySelector('.title .controls');
-  ok(c, 'controls line');
-  const t = c.textContent;
-  ok(t.includes('걷기') && t.includes('방향키') && t.includes('WASD') && t.includes('화면 왼쪽'), t);
-  ok(t.includes('말 걸기') && t.includes('대화') && t.includes('스페이스'), t);
-  ui.remove();
-});
-
+// (예전 'title D-11-2: 한 줄 조작 안내' 검사는 2026-11-12 조작법 상자 검사로 바꿨다 — 파일 끝)
 test('screens: the action button shows what it does, not always 대화 (2026-11-08)', async () => {
   const { buttonWord } = await import('../core/screens.js');
   eq(buttonWord(null), '대화'); eq(buttonWord('세종과 이야기하기'), '대화');
@@ -415,5 +405,20 @@ test('screens: 퀘스트 표시 — 붉은 도장에 장과 차례(2/6), 지금 
     eq(getComputedStyle(el.querySelector('.quest.done')).display, 'none', '마친 퀘스트 줄은 숨긴다(도장과 줄이 알려 준다)');
     hud.setGoal('빛나는 문으로'); ok(el.querySelector('.goal-step').hidden && el.querySelector('.hud-bar').hidden, '차례가 없는 퀘스트');
     const m = el.querySelector('.menubtn').getBoundingClientRect(); ok(Math.abs(m.width - m.height) < 1 && m.width >= 48, '메뉴 단추는 둥근 도장');
+  } finally { el.remove(); }
+});
+
+// 2026-11-12 선생님: 첫 화면에 조작법을 키보드가 있을 때·없을 때로 나눠 적는다
+test('screens: 첫 화면 조작법 — 키보드가 있을 때와 없을 때를 따로 적고, QR·시작 단추와 겹치지 않는다', () => {
+  const el = root();
+  try {
+    showTitle(el, { hasProgress: true, savedName: '김여행', storageOk: true, onCode: true, courses: COURSES });
+    const rows = [...el.querySelectorAll('.title-help > div')]; eq(rows.map(r => r.querySelector('b').textContent), ['키보드가 있을 때', '키보드가 없을 때']);
+    ok(rows[0].textContent.includes('방향키') && rows[0].textContent.includes('E') && rows[0].textContent.includes('Esc')); ok(rows[1].textContent.includes('끌어서 걷기') && rows[1].textContent.includes('둥근 단추'));
+    ok(!el.querySelector('.controls'), '예전 한 줄 조작 안내는 없다');
+    ok(parseFloat(getComputedStyle(el.querySelector('.title-help')).fontSize) >= 15 && parseFloat(getComputedStyle(el.querySelector('.title .lead')).fontSize) >= 16, '글씨를 키웠다');
+    const R = s => el.querySelector(s).getBoundingClientRect(), hit = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+    const help = R('.title-help');
+    if (help.width) { ok(!(el.querySelector('.title-qr') && hit(help, R('.title-qr'))) && !hit(help, R('.title-actions')) && !hit(help, R('.title-courses')), '겹치지 않는다'); ok(help.right <= innerWidth + 1 && help.top >= 0); }
   } finally { el.remove(); }
 });

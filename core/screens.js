@@ -89,9 +89,12 @@ export function showTitle(root, { savedName, hasProgress, storageOk, courses = [
               hasProgress && h('button', { class: 'btn primary title-start', type: 'button', onclick: () => done('continue') }, `이어하기 (${savedName || '저장된 기록'})`),
               startBtn),
             codeBtn,
-            confirm),
-          h('p', { class: 'controls' }, '걷기: 방향키·WASD 또는 화면 왼쪽을 손가락으로 끌기 · 말 걸기: 가까이 가서 스페이스·E 또는 「대화」 단추')),
+            confirm)),
         qrBox(),
+        // 조작법(2026-11-12 선생님: 키보드가 있을 때와 없을 때를 나눠 적는다)
+        h('div', { class: 'title-help' },
+          h('div', {}, h('b', {}, '키보드가 있을 때'), h('span', {}, '방향키(또는 W A S D)로 걷기 · E로 말 걸기와 행동 · Esc로 메뉴')),
+          h('div', {}, h('b', {}, '키보드가 없을 때'), h('span', {}, '화면 왼쪽 아래를 누른 채 끌어서 걷기 · 오른쪽 아래 둥근 단추로 말 걸기와 행동 · 오른쪽 위 「메뉴」'))),
         fullscreenButton('title-fs'),
         cards.length > 0 && h('div', { class: 'title-courses' }, cards),
         h('p', { class: 'copyright' }, '© 2026 Jang ssam. All rights reserved.')));
