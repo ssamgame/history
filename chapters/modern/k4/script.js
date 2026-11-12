@@ -13,6 +13,7 @@ export default {
     speaker: { name: '독립 협회 회원', mark: '演', color: '#4a4f5a', look: 'scholarModern' },
     woman: { name: '한성 아낙', mark: '女', color: '#b8768a', look: 'woman' },
     merchant: { name: '종로 상인', mark: '商', color: '#7a5a3c', look: 'commoner' },
+    student: { name: '학당 학생', mark: '學', color: '#2f4a7a', look: 'hakdangStudent' }, // 1890년대 학당 학생은 한복에 땋은 머리(2026-11-12 선생님)
     youth: { name: '젊은이', mark: '靑', color: '#5d7a9a', look: 'citizen' },
     elder: { name: '한성 노인', mark: '老', color: '#6b6258', look: 'scholar' },
   },

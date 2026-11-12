@@ -36,7 +36,7 @@ function russianFlag() {
 // ── 무대(마을에서 떨어진 x 400) ──
 // 신문 배달: 1890년대 한성. 궁궐·러시아 공사관·신문사·환구단·종로가 흩어져 있다
 const HANSEONG = { edge: { style: 'street', seed: 79 }, center: [{ type: 'papers', x: -17, z: 2, kind: 'news', n: 3 }, { type: 'cart', x: -16, z: -5, ry: 0.3 }, { type: 'noticeBoard', x: 16, z: -6, ry: -0.5 }, { type: 'cart', x: 7, z: 14, ry: 0.3 }, { type: 'papers', x: 9, z: 7, kind: 'news', n: 3 },
-    { type: 'well', x: -18.5, z: -1.5 }, { type: 'stall', x: 10.5, z: -5.5, ry: -1.25, seed: 4 }], // 「우물가」 옆 우물, 「시장」 옆 노점(2026-11-12 선생님: 이름표 자리에 그 모양이 없으면 어색하다)
+    { type: 'well', x: -18.5, z: -1.5 }, { type: 'stall', x: 10.5, z: -5.5, ry: -1.25, seed: 4 }, { type: 'hanok', x: 6, z: -17.5, tile: true, scale: 1.15 }, { type: 'banner', x: 9.2, z: -14.2, text: '학당', h: 3.6 }], // 「학교 앞」 옆 기와집 학당과 깃발(가게처럼 보이지 않게) // 「우물가」 옆 우물, 「시장」 옆 노점(2026-11-12 선생님: 이름표 자리에 그 모양이 없으면 어색하다)
   origin: [400, 0], ground: 'earth', groundColor: 0x9a8a6a, bounds: { x0: -24, x1: 24, z0: -22, z1: 22 },
   roads: [{ x: 0, z: 0, w: 46, d: 5, color: 0x8a8070 }, { x: 0, z: 0, w: 5, d: 44, color: 0x8a8070 }],
   props: [
@@ -44,7 +44,7 @@ const HANSEONG = { edge: { style: 'street', seed: 79 }, center: [{ type: 'papers
     { type: 'western', x: 15, z: 15, w: 6, d: 6, h: 9, color: 0xe8e4da },   // 러시아 공사관
     { type: 'western', x: -15, z: 15, w: 6, d: 4, h: 4, color: 0x8a5a4a },  // 독립신문사
     { type: 'pavilion', x: 15, z: -16 },                                    // 환구단
-    { type: 'stage', x: 15, z: 4 }, { type: 'crowd', x: 9, z: 2, n: 6, cols: 3, looks: ['citizen', 'gentleman', 'student'], face: Math.PI / 2 }, // 종로
+    { type: 'stage', x: 15, z: 4 }, { type: 'crowd', x: 9, z: 2, n: 6, cols: 3, looks: ['citizen', 'gentleman', 'hakdangStudent'], face: Math.PI / 2 }, // 종로
   ],
 };
 // 환구단 즉위식(탐험 끝 장면): 가운데 둥근 세 단 제단(아래에서 따로 짓는다), 돌길 양옆에 신하, 뒤에 지켜보는 사람들
@@ -65,7 +65,7 @@ export const JONGNO = { edge: { style: 'street', seed: 91 }, center: [{ type: 'p
   props: [
     { type: 'stage', x: 0, z: -8 }, { type: 'flagpole', x: -3.6, z: -9.6 }, { type: 'flagpole', x: 3.6, z: -9.6 },
     { type: 'crowd', x: -4.6, z: -4.4, n: 8, cols: 4, looks: ['commoner', 'gentleman', 'woman', 'scholar'], face: Math.PI },
-    { type: 'crowd', x: 4.6, z: -4.4, n: 8, cols: 4, looks: ['citizen', 'commoner', 'student', 'woman'], face: Math.PI },
+    { type: 'crowd', x: 4.6, z: -4.4, n: 8, cols: 4, looks: ['citizen', 'commoner', 'hakdangStudent', 'woman'], face: Math.PI },
     { type: 'shop', x: -14, z: -4, w: 5, ry: Math.PI / 2, sign: '비단', seed: 2 }, { type: 'shop', x: -14, z: 6, w: 5, ry: Math.PI / 2, thatch: true, seed: 4 },
     { type: 'shop', x: 14, z: -4, w: 5, ry: -Math.PI / 2, sign: '종이', seed: 6 }, { type: 'shop', x: 14, z: 6, w: 5, ry: -Math.PI / 2, sign: '약방', seed: 1 },
   ],
@@ -92,7 +92,7 @@ export async function coronation(ctx) {
   world.addCollider({ ...a.at(ax, az), r: 5 }); // 학생이 제단 위로 걸어 올라가지 않게(무대를 치우면 함께 치운다)
   // 신하: 돌길 양옆에 마주 보고 선다 / 지켜보는 사람들: 뒤쪽 양옆
   const officials = [1, 3, 5, 7].flatMap(z => [person(g, 'joseonOfficial', -2.4, z, Math.PI / 2), person(g, 'joseonOfficial', 2.4, z, -Math.PI / 2)]);
-  const looks = ['commoner', 'woman', 'scholar', 'citizen', 'gentleman', 'commoner', 'student'];
+  const looks = ['commoner', 'woman', 'scholar', 'citizen', 'gentleman', 'commoner', 'hakdangStudent'];
   const watchers = [];
   [[-8.2, 8.4], [-6.8, 8.6], [-5.4, 8.3], [-4, 8.7], [-7.5, 10], [-6.1, 10.2], [-4.7, 9.9], [5.4, 8.4], [6.8, 8.6], [8.2, 8.3], [4.9, 10.1], [6.3, 10.2], [7.7, 9.9], [3.9, 11.4]]
     .forEach(([x, z], i) => watchers.push(person(g, looks[i % looks.length], x, z, Math.PI + (x < 0 ? 0.35 : -0.35))));
@@ -145,7 +145,7 @@ async function speechScene(ctx) {
   nameBoard(g, '종로', 3.4, 10.4);
   const [sx, sz] = JONGNO.stand;
   const speaker = person(g, 'scholarModern', sx, sz, 0); speaker.position.y = 0.8;
-  const cheer = [[-2, -0.6], [-0.7, -0.2], [0.7, -0.4], [2, -0.8], [-1.4, 0.9], [1.4, 0.8]].map(([x, z], i) => person(g, ['commoner', 'citizen', 'woman', 'student'][i % 4], x, z, Math.PI));
+  const cheer = [[-2, -0.6], [-0.7, -0.2], [0.7, -0.4], [2, -0.8], [-1.4, 0.9], [1.4, 0.8]].map(([x, z], i) => person(g, ['commoner', 'citizen', 'woman', 'hakdangStudent'][i % 4], x, z, Math.PI));
   const p0 = a.at(...JONGNO.from); placePlayer(world, [p0.x, p0.z]);
   const wide = () => world.setFixedCamera([O.x + 7, 5, O.z + 9], [O.x, 1.6, O.z - 6]);
   const face = () => world.setFixedCamera([O.x + sx + 0.6, 0.8 + 2.2, O.z + sz + 4.6], [O.x + sx, 0.8 + 1.75, O.z + sz]); // 연사 얼굴을 정면에서
@@ -199,7 +199,7 @@ const base = makeKitChapter({
     props: [
       { type: 'arch', x: 0, z: -7, label: '독립문' },
       { type: 'stage', x: -10, z: -4 },
-      { type: 'crowd', x: -10, z: -0.5, n: 10, cols: 5, looks: ['commoner', 'gentleman', 'student', 'woman', 'scholar'], face: Math.PI },
+      { type: 'crowd', x: -10, z: -0.5, n: 10, cols: 5, looks: ['commoner', 'gentleman', 'hakdangStudent', 'woman', 'scholar'], face: Math.PI },
       { type: 'hanok', x: 11, z: -6, tile: true, scale: 1.5 },
       { type: 'flagpole', x: 7.5, z: -0.6, scale: 1.3 }, { type: 'flagpole', x: -14, z: -6 }, // 태극기가 집에 가리지 않게 길가 앞쪽에
       { type: 'western', x: 13, z: 9.5, w: 6, d: 4, h: 5, ry: Math.PI },

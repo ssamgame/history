@@ -18,7 +18,7 @@ export function treatyScene(ctx) {
     blk(fl, 2.6, 0.7, 1.2, 0x6b4a32, 0, 0.35, 2, 'wood');
     const paper = blk(fl, 0.8, 0.03, 0.55, 0xe8e2d2, 0, 0.72, 2, 'cloth');
     const joseon = [[-1.9, 1.6], [-1.9, 2.6]].map(([x, z]) => { const p = person(fl, 'joseonOfficial', x, z, Math.PI / 2 - 0.6); return p; });
-    const japan = [[1.9, 1.6], [1.9, 2.6]].map(([x, z]) => { const p = person(fl, 'gentleman', x, z, -Math.PI / 2 + 0.6); return p; });
+    const japan = [[1.9, 1.6], [1.9, 2.6]].map(([x, z]) => { const p = person(fl, 'envoyWestern', x, z, -Math.PI / 2 + 0.6); return p; });
     const stamp = blk(fl, 0.12, 0.16, 0.12, 0x8a2f24, -0.2, 1.4, 2, 'wood');
     cam([0, 4.4, 15], [0, 1, -20]); // 바다의 군함과 정자를 함께
     await fadeIn();

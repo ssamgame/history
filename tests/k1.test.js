@@ -204,6 +204,7 @@ test('k1 시대: 양반은 갓과 도포 차림이고, 봉화는 돌로 쌓은 �
   const { LOOKS } = await import('../content/characters.js');
   const lk = script.parts.regent.route.find(r => r.label === '양반 댁').look;
   eq(lk, 'scholar'); eq(script.speakers.yangban.look, 'scholar'); eq(LOOKS[lk].hat, 'gat'); ok(LOOKS[lk].outfit !== 'suit', '양복이 아니다');
+  { const srcs = (await Promise.all(['chapter.js', 'story.js'].map(f => fetch(`../chapters/modern/k1/${f}`).then(r => r.text())))).join('\n'); ok(!/'gentleman'/.test(srcs) && /'envoyWestern'/.test(srcs), '일본 사절은 모자 없는 양복 차림'); eq(LOOKS.envoyWestern.hat, 'short'); }
   ok(![script.parts.regent, script.parts.coast].some(p => p.route.some(r => r.look && LOOKS[r.look].outfit === 'suit')), '이 장의 놀이에 양복 차림은 없다');
   const s = touchSetup(script.speakers);
   try {

@@ -127,3 +127,12 @@ test('k4 시대: 신문 배달 무대의 우물가에는 우물, 시장에는 �
   ok(near('우물가', 'well', 5), '우물가 옆 우물');
   ok(near('시장', 'stall', 5), '시장 옆 노점');
 });
+
+// 2026-11-12 선생님: 「학교 앞」에는 학당이 있고, 1890년대 학생은 교복이 아니라 한복 차림
+test('k4 시대 2: 학교 앞에 학당 건물이 있고, 이 장의 학생은 교복·학생모가 아니다', async () => {
+  const { LOOKS } = await import('../content/characters.js');
+  const src = await (await fetch('../chapters/modern/k4/chapter.js')).text();
+  ok(!/'student'/.test(src) && /'hakdangStudent'/.test(src), '교복 학생(student) 대신 학당 학생'); eq(LOOKS.hakdangStudent.hat, 'daenggi'); ok(LOOKS.hakdangStudent.outfit !== 'uniform');
+  eq(script.speakers.student.look, 'hakdangStudent');
+  ok(/type: 'banner'[^}]*text: '학당'/.test(src) && /type: 'hanok', x: 6, z: -17.5, tile: true/.test(src), '기와집 학당과 학당 깃발');
+});

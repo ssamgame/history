@@ -40,7 +40,7 @@ const YEONMU = { edge: { style: 'tile', seed: 47 }, center: [{ type: 'papers', x
   origin: [400, 0], ground: 'earth', groundColor: 0x8a7a5a, bounds: { x0: -18, x1: 18, z0: -12, z1: 14 },
   props: [
     { type: 'pavilion', x: 0, z: -11 }, { type: 'desk', x: 0, z: -6 },
-    { type: 'crowd', x: -4, z: -5, n: 2, cols: 2, looks: ['joseonOfficial'], face: Math.PI / 2 }, { type: 'crowd', x: 4, z: -5, n: 2, cols: 2, looks: ['gentleman'], face: -Math.PI / 2 },
+    { type: 'crowd', x: -4, z: -5, n: 2, cols: 2, looks: ['joseonOfficial'], face: Math.PI / 2 }, { type: 'crowd', x: 4, z: -5, n: 2, cols: 2, looks: ['envoyWestern'], face: -Math.PI / 2 },
     { type: 'water', x: 0, z: -80, w: 240, d: 120 }, { type: 'steamship', x: -16, z: -30, ry: Math.PI / 2, solid: false, old: true, flag: 'japan' }, // 앞쪽은 모두 바다(D-03). 연무당 앞바다의 일본 군함
   ],
 };

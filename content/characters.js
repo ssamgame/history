@@ -65,6 +65,9 @@ export const LOOKS = {
   peasant: { outfit: 'short', pants: 0xe0d6c0, robe: 0xddd2bb, hat: 'topknot', trim: 0x7a4e32, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   seojaepil: { named: true, robe: 0x2b2f36, outfit: 'suit', hat: 'short', trim: 0x2b2f36, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'thin' } },
   gentleman: { robe: 0x3a3530, outfit: 'suit', hat: 'fedora', trim: 0x3a3530, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache' } },
+  // 2026-11-12 선생님: 시대에 맞는 차림 — 1890년대 학당 학생(교복이 아니라 한복에 땋은 머리), 1876년 일본 사절(양복, 모자 없이)
+  hakdangStudent: { robe: 0xe6dcc3, outfit: 'short', pants: 0xe0d6c0, hat: 'daenggi', trim: 0x2f4a7a, role: 'youth', face: { eyes: 'stern', brows: 'stern', mouth: 'flat', age: 'young' } },
+  envoyWestern: { robe: 0x3a3530, outfit: 'suit', hat: 'short', trim: 0x3a3530, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', beard: 'mustache' } },
   student: { outfit: 'uniform', role: 'youth', robe: 0x22262e, hat: 'cap', trim: 0xd9a441, face: { eyes: 'stern', brows: 'stern', mouth: 'flat', age: 'young' } },
   schoolgirl: { eras: { present: { outfit: 'dress', robe: 0xf2efe8, pants: 0x22304a } }, outfit: 'chima', pants: 0x22262e, robe: 0xe9e4da, hat: 'braid', trim: 0x2c3a5a, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
   woman: { eras: { presentLate: { outfit: 'dress', robe: 0xe8dcc8, pants: 0x5a6a8a } }, outfit: 'chima', pants: 0x2f4a5e, robe: 0xb8768a, hat: 'bun', trim: 0x2f4a5e, face: { eyes: 'stern', brows: 'stern', mouth: 'flat' } },
