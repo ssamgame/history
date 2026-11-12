@@ -311,6 +311,8 @@ export function drive(ctx, part, easy) {
     let lab = null;
     if (r.label) { lab = labelSprite(r.label, { size: r.labelSize || 1 }); lab.position.set(r.x, r.post ? 3.6 : 3.2, r.z); lab.visible = i === 0 || !!part.showAll; g.add(lab); }
     if (r.post) { const p = new THREE.Group(); p.position.set(r.x + 2.2, 0, r.z); g.add(p); add(p, new THREE.CylinderGeometry(0.1, 0.12, 2.6, 6), 0x5a3f2a, 0, 1.3, 0); add(p, box(1.6, 0.5, 0.08), 0xefe3c6, 0, 2.3, 0.08); } // 이정표 기둥
+    // 봉수대(2026-11-12 선생님: 맨땅에 불을 지피면 어색하다): 돌로 쌓은 둥근 대(연조) 위에서 봉화가 오른다. 그 자리 사람(r.look)과 겹치지 않게 반대쪽에 쌓는다
+    if (r.fire) { const b = new THREE.Group(); b.name = 'beacon'; b.position.set(r.x - 1.8, 0, r.z - 1.2); g.add(b); add(b, new THREE.CylinderGeometry(0.8, 1.0, 0.5, 10), 0x8a8478, 0, 0.25, 0); add(b, new THREE.CylinderGeometry(0.55, 0.72, 1.1, 10), 0x9a948a, 0, 1.05, 0); add(b, new THREE.CylinderGeometry(0.62, 0.6, 0.14, 10), 0x6f6a62, 0, 1.67, 0); world.addCollider({ ...s.at(r.x - 1.8, r.z - 1.2), r: 1.0 }); } // 무대를 치울 때 부딪힘도 함께 지워진다(arena 정리)
     let person = null;
     if (r.look) { person = standPerson(g, r.look, r.x + (r.post ? -1.6 : 1.6), r.z - 0.6); person.rotation.y = r.ry ?? 0; }
     for (const [k, lk] of (r.crowd || []).entries()) { const q = standPerson(g, lk, r.x - 1.5 + k * 1.5, r.z - 2.3 - (k % 2) * 0.5); q.rotation.y = Math.atan2(r.x - q.position.x, r.z + 3 - q.position.z); } // 그 이름표의 사람들(학생들·시민들)
@@ -428,7 +430,7 @@ export function drive(ctx, part, easy) {
       o.rotation.set(0, 0, 0); o.scale.setScalar(1); o.position.set(r.x + (r.drop[0] ?? 1.2), log ? 1.3 : 0.02, r.z + (r.drop[1] ?? -1.4)); g.add(o);
     }
     r.m.visible = false; if (r.lab) r.lab.visible = false;
-    if (r.fire) { const fx = makeFire({ size: 1.3, detail: world.quality?.particles ?? 1 }); fx.group.position.set(r.x + 1.6, 1.0, r.z - 1.2); g.add(fx.group); fx.setLit(true); fires.push(fx); } // 봉화가 타오른다
+    if (r.fire) { const fx = makeFire({ size: 1.3, detail: world.quality?.particles ?? 1 }); fx.group.position.set(r.x - 1.8, 2.3, r.z - 1.2); g.add(fx.group); fx.setLit(true); fires.push(fx); } // 봉화가 봉수대 위에서 타오른다
     if (r.say) toast(ctx, r.say, 'good');
     last = [r.x, r.z]; next += 1; held = 0; pressAt = null;
     const p = world.player.position;

@@ -198,3 +198,26 @@ test('k1 플레이 점검: 해안 순찰에서 말하는 선비(망루)·관리(
   eq(r[1].look, 'scholar'); eq(r[2].look, 'joseonOfficial');
   eq(r[1].talk[0].who, 'scholar'); eq(r[2].talk[0].who, 'official');
 });
+
+// 2026-11-12 선생님: 시대에 안 맞는 복장(1860년대 양반이 양복)과 맨땅 봉화를 고친다
+test('k1 시대: 양반은 갓과 도포 차림이고, 봉화는 돌로 쌓은 봉수대 위에서 오른다', async () => {
+  const { LOOKS } = await import('../content/characters.js');
+  const lk = script.parts.regent.route.find(r => r.label === '양반 댁').look;
+  eq(lk, 'scholar'); eq(script.speakers.yangban.look, 'scholar'); eq(LOOKS[lk].hat, 'gat'); ok(LOOKS[lk].outfit !== 'suit', '양복이 아니다');
+  ok(![script.parts.regent, script.parts.coast].some(p => p.route.some(r => r.look && LOOKS[r.look].outfit === 'suit')), '이 장의 놀이에 양복 차림은 없다');
+  const s = touchSetup(script.speakers);
+  try {
+    const n0 = s.w.colliders.length;
+    const p = PLAY.drive(s.ctx, { arena: { origin: [300, 0], bounds: { x0: -20, x1: 20, z0: -20, z1: 20 } }, from: [0, 10], seconds: 60, route: [{ x: 0, z: 0, press: '봉화 올리기', fire: true, look: 'joseonOfficial' }] }, false);
+    let beacon = null; s.w.level.traverse(o => { if (o.name === 'beacon') beacon = o; });
+    ok(beacon, '봉수대'); const top = new THREE.Box3().setFromObject(beacon).max.y; ok(top > 1.4, `봉수대 높이 ${top.toFixed(2)}`);
+    const bp = beacon.getWorldPosition(new THREE.Vector3()), pp = new THREE.Vector3(300 + 1.6, 0, -0.6); // 그 자리 사람은 이름표 오른쪽(+1.6)에 선다
+    ok(Math.hypot(bp.x - pp.x, bp.z - pp.z) > 1.6, '그 자리 사람과 겹치지 않는다'); ok(s.w.colliders.length > n0, '봉수대에 부딪힌다');
+    s.w.player.position.set(300, 0, 0.5); for (let i = 0; i < 4; i++) s.w.step(1 / 20, { x: 0, z: 0 });
+    s.ctx.input.pressAction?.(); for (const f of s.actions || []) f();
+    for (let i = 0; i < 30; i++) s.w.step(1 / 20, { x: 0, z: 0 });
+    let fire = null; s.w.level.traverse(o => { if (o.isPoints || (o.isMesh && o.material?.blending === THREE.AdditiveBlending)) { const y = o.getWorldPosition(new THREE.Vector3()).y; if (fire === null || y < fire) fire = y; } });
+    if (fire !== null) ok(fire >= top - 0.6, `불이 봉수대 위에서 탄다(불 ${fire.toFixed(2)}, 대 ${top.toFixed(2)})`);
+    void p;
+  } finally { s.done(); }
+});

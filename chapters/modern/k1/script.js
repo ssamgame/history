@@ -11,7 +11,7 @@ export default {
     daewongun: { name: '흥선 대원군', mark: '雲', color: '#4f5f86', look: 'daewongun' },
     fisher: { name: '어부', mark: '漁', color: '#5d6b3e', look: 'peasant' },
     worker: { name: '공사장 일꾼', mark: '工', color: '#7a5a3a', look: 'worker' },
-    yangban: { name: '양반', mark: '班', color: '#3a4a5a', look: 'gentleman' },
+    yangban: { name: '양반', mark: '班', color: '#3a4a5a', look: 'scholar' }, // 갓과 도포(2026-11-12 선생님: 1860년대 양반이 양복을 입고 있었다)
   },
   intro: [
     { who: 'narr', text: '19세기 후반, 어린 나이로 왕이 된 고종을 대신해 아버지 흥선 대원군이 나라를 다스렸어요.', src: ['S51'] },
@@ -64,7 +64,7 @@ export default {
           talk: [{ who: 'narr', text: '흥선 대원군은 경복궁을 고쳐 지었어요.', src: ['S51'] }] },
         { label: '세금 거두는 관리', look: 'joseonOfficial',
           talk: [{ who: 'official', text: '이제는 양반도 세금을 내야 한다. 저 양반 댁에 가서 세금을 받아 오너라.', src: ['S51'] }] },
-        { label: '양반 댁', look: 'gentleman', give: 'sack', say: '세금 꾸러미를 받았어요!',
+        { label: '양반 댁', look: 'scholar', give: 'sack', say: '세금 꾸러미를 받았어요!',
           talk: [{ who: 'yangban', text: '예전엔 우리 양반은 내지 않던 세금이오. 이제는 우리도 내야 한다니.' }] },
         { label: '세금 거두는 관리', drop: [1.4, -1.6], say: '세금을 건넸어요!',
           talk: [{ who: 'official', text: '잘했다. 흥선 대원군께서는 양반에게도 세금을 내게 하셨다.', src: ['S51'] }] },
