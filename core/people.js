@@ -106,11 +106,12 @@ export function hairCap(r = 0.335, o = {}) {
 const HAIR = (o) => [hairCap(0.335, o), 0x1e1c1a, 0, 2.08, -0.01];
 const JOSEON_HATS = {
   // 갓: 넓은 챙과 높은 원통 모자 (양반·학자)
-  // 2026-11-12 선생님("모자가 머리 위에 떠 있다"): 예전엔 모자 밑면이 정수리 머리 위에 얹혀 챙과 머리 사이로 하늘이 보였다(옆에서 8cm).
-  // 머리가 모자 속으로 들어가게 내려 쓴다(tests/hat.test.js가 모든 생김새·시대·동작에서 잰다)
+  // 2026-11-12 선생님("모자가 머리 위에 떠 있다"): 챙·원뿔 밑면이 정수리 위에 얹혀 옆에서 보면 모자와 머리 사이로 하늘이 보였다(갓 7~9cm).
+  // 내려 쓰면 위에서 보는 카메라에서 챙이 눈썹을 가리므로(얼굴이 보이게), 높이는 그대로 두고 모자 아래에 테를 둘러 틈을 메운다(tests/hat.test.js)
   gat: () => [HAIR_T(), HAIR_B(),
-    [new THREE.CylinderGeometry(0.6, 0.6, 0.025, 20), 0x1a1816, 0, 2.31, 0],
-    [new THREE.CylinderGeometry(0.19, 0.23, 0.32, 14), 0x1a1816, 0, 2.47, 0]],
+    [new THREE.CylinderGeometry(0.6, 0.6, 0.025, 20), 0x1a1816, 0, 2.43, 0],
+    [new THREE.CylinderGeometry(0.19, 0.23, 0.32, 14), 0x1a1816, 0, 2.59, 0],
+    [new THREE.CylinderGeometry(0.27, 0.31, 0.16, 14), 0x1a1816, 0, 2.35, -0.01]], // 챙 아래 테(망건·탕건 자리): 챙과 머리 사이 빈틈을 메운다
   // 익선관: 둥근 검은 관, 뒤가 높고 위로 선 두 날개 (임금·세자)
   ikseon: () => [
     [new THREE.SphereGeometry(0.35, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2).rotateX(-0.45), 0x1e1c1a, 0, 2.08, 0],
@@ -145,8 +146,9 @@ const JOSEON_HATS = {
   braid: () => [HAIR({ front: 'round', side: 1.52, back: 2.25 }), [new THREE.CylinderGeometry(0.06, 0.04, 0.55, 6), 0x1e1c1a, 0, 1.75, -0.3]],
   // 청나라 모자: 낮은 원뿔과 붉은 술
   qing: () => [HAIR_B(), [new THREE.CylinderGeometry(0.05, 0.03, 0.6, 6), 0x1e1c1a, 0, 1.78, -0.33], // 뒷머리와 땋아 내린 변발(D-63)
-    [new THREE.ConeGeometry(0.44, 0.3, 14), 0x3a3028, 0, 2.41, 0], // 머리에 눌러 쓴다(2026-11-12: 옆에서 모자 밑으로 2cm 틈이 보였다)
-    [new THREE.SphereGeometry(0.08, 8, 6), 0xb8452f, 0, 2.59, 0]],
+    [new THREE.ConeGeometry(0.44, 0.3, 14), 0x3a3028, 0, 2.45, 0],
+    [new THREE.SphereGeometry(0.08, 8, 6), 0xb8452f, 0, 2.63, 0],
+    [new THREE.CylinderGeometry(0.28, 0.31, 0.12, 14), 0x3a3028, 0, 2.33, -0.01]], // 모자 아래 테: 원뿔 밑과 머리 사이 빈틈을 메운다
 };
 
 // 움직이는 인물(따라오는 사람·감시원·행진하는 사람들)도 걸을 때 다리와 팔을 흔든다. 만든 인물을 모아 두고 매 프레임 자리가 바뀌었는지 본다.
