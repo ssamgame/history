@@ -105,7 +105,7 @@ export function attachBody(g, look = {}) {
   const S = { root, mixer, acts, links, cur: null, target: null, w: {}, fade: FADE, manual: null, bones: B, look, mixed: new Map(), skinOn: true };
   S.foreRest = ['R', 'L'].map(s => [B(`forearm_${s}`), B(`forearm_${s}`).quaternion.clone()]); // 곧게 편 아래팔(묶인 자세)
   S.rehome = (from, to) => { people.delete(from); people.add(to); };
-  S.freeze = () => { root.traverse(o => { if (o.isSkinnedMesh) o.visible = false; }); people.delete(g); S.frozen = true; }; // 움직이지 않는 군중으로 굳힐 때(core/bake.js)
+  S.freeze = () => { root.traverse(o => { if (o.isSkinnedMesh) o.visible = false; }); people.delete(g); S.frozen = true; S.mats = new Set(); g.traverse(o => { if (o.isMesh && !o.isSkinnedMesh) S.mats.add(o.material.uuid); }); }; // 움직이지 않는 군중으로 굳힐 때(core/bake.js). mats: 굳혀 합쳐진 옷 조각의 재질(점검 도구가 그 사람 자신을 건물로 잘못 보지 않게)
   Object.defineProperty(u, 'skel', { value: S, writable: true, configurable: true }); // 숨긴 칸: three의 clone·toJSON이 userData를 JSON으로 복사할 때 동작기(mixer)의 순환 참조로 죽지 않게
   play(g, 'idle', 0);
   { const k = Math.sin((u.ph ?? 0) * 91.7) * 43758.5453, f = k - Math.floor(k), k2 = Math.sin((u.ph ?? 0) * 37.3) * 24634.6345; acts.idle.time = f * acts.idle.getClip().duration; S.idleRate = 0.7 + 0.6 * (k2 - Math.floor(k2)); acts.idle.timeScale = S.idleRate; } // 숨쉬기 박자도 사람마다 다른 자리·빠르기로

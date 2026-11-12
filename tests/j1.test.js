@@ -253,3 +253,19 @@ test('j1 fun: the turn-back crossing — gather all stragglers, then wade across
     eq(r.first, true);
   } finally { bot.stop(); s.done(); }
 }, { timeout: 120000 });
+
+test('j1: 진영 군사가 천막·다른 군사 속에 서 있거나 순찰하며 천막을 뚫고 지나가지 않는다(2026-11-12 선생님: 천막에 겹쳐 선 군사)', async () => {
+  const { clashes } = await import('../tools/qa/probe.js');
+  const w = testWorld();
+  try {
+    const s = buildJ1Scene(w), bad = new Set();
+    const walkers = s.extra.filter(p => p.parent === w.level);
+    ok(walkers.length >= 2, `순찰 ${walkers.length}`);
+    for (const c of clashes(w)) if (c.person !== w.player) bad.add(`처음 ${c.person ? '사람' : '굳힌 군사'} ${c.at.x.toFixed(1)},${c.at.z.toFixed(1)} ${c.what}`);
+    for (let i = 0; i < 900; i++) { // 45초 동안 순찰(한 바퀴 넘게)
+      w.step(1 / 20, { x: 0, z: 0 });
+      if (i % 10 === 0) for (const c of clashes(w, { people: walkers })) bad.add(`순찰 ${c.at.x.toFixed(1)},${c.at.z.toFixed(1)} ${c.what}`);
+    }
+    eq([...bad], []);
+  } finally { w.dispose(); }
+}, { timeout: 120000 });

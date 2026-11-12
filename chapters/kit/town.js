@@ -348,9 +348,9 @@ export function buildTown(world, layout) {
   if (layout.skyline) { const sk = skyline(field, { center: [(layout.bounds.x0 + layout.bounds.x1) / 2, (layout.bounds.z0 + layout.bounds.z1) / 2], ...layout.skyline }); if (sk) L.add(sk); }
   if (layout.mountains !== false) { const mr = mountainRing(field, { color: hill ?? (kind === 'stone' ? 0x6a7a58 : color), center: [(layout.bounds.x0 + layout.bounds.x1) / 2, (layout.bounds.z0 + layout.bounds.z1) / 2] }); if (mr) L.add(mr); }
   for (const [i, r] of (layout.roads || []).entries()) { const m = new THREE.Mesh(box(r.w, 0.05, r.d), mat(r.color || 0x8f7556, r.kind || 'earth')); m.position.set(r.x, 0.025 + i * ROAD_STEP, r.z); m.receiveShadow = true; L.add(m); } // 겹치는 길은 조금씩 높이를 달리한다(같은 높이면 겹친 곳이 번갈아 반짝였다, 2026-11-04 선생님)
-  const named = {}; let chats = 0;
+  const named = {}; let chats = 0; const solids = [];
   for (const p of layout.props || []) {
-    const g = new THREE.Group(); g.position.set(p.x, p.y || 0, p.z); g.rotation.y = p.ry || 0; if (p.scale) g.scale.setScalar(p.scale); L.add(g); // y: 축대 위에 올린 부품
+    const g = new THREE.Group(); if (p.type !== 'crowd') solids.push(g); g.position.set(p.x, p.y || 0, p.z); g.rotation.y = p.ry || 0; if (p.scale) g.scale.setScalar(p.scale); L.add(g); // y: 축대 위에 올린 부품
     const r = BUILD[p.type](g, p);
     if (p.type === 'crowd') {
       const live = g.children.filter(c => c.userData.chat); live.forEach(c => g.remove(c));
@@ -372,13 +372,13 @@ export function buildTown(world, layout) {
   // 깃발 그림이 아직 없으면(flagTex null) 무늬 없는 산·땅·물까지 '깃발'로 잡혀 흔들리던 오류(D-32)를 막는다
   if (flagTex) L.traverse(o => { if (o.isMesh && o.material && o.material.map === flagTex && !flags.includes(o)) flags.push(o); });
   world.onUpdate((dt, t) => { flags.forEach((f, i) => { f.rotation.y = Math.sin(t * 2.5 + i) * 0.25; }); });
-  const walkers = roadWalkers(world, layout);
+  const walkers = roadWalkers(world, layout, solids);
   return { named, weather, start: layout.start, chats, walkers };
 }
 
 // 길을 오가는 사람 둘(D-67 ③: 몇 사람은 자연스럽게 걷게). 가장 긴 길 가운데 줄에서 집·안내판·사람 자리를 피한 가장 긴 빈 구간을
 // 둘이 서로 반대로 천천히 오가고, 끝에서 잠깐 멈췄다 돌아선다. 생김새는 그 장의 무리(crowd)나 이름 없는 사람에게서 빌린다(시대에 맞게)
-function roadWalkers(world, layout) {
+function roadWalkers(world, layout, solids = []) {
   const looks = (layout.props || []).filter(p => p.type === 'crowd' && !p.flags).flatMap(p => p.looks || ['commoner'])
     .concat((layout.npcs || []).map(n => n.look).filter(l => typeof l === 'string' && LOOKS[l] && !LOOKS[l].named));
   if (!looks.length || layout.walkers === false) return [];
@@ -387,8 +387,11 @@ function roadWalkers(world, layout) {
     const cols = c.cols || 5, rows = Math.ceil((c.n || 10) / cols), dz = (rows - 1) * 1.35 / 2, ry = c.ry || 0;
     busy.push({ x: c.x + dz * Math.sin(ry), z: c.z + dz * Math.cos(ry), r: Math.hypot(cols * 1.3, rows * 1.35) / 2 + 0.8 });
   }
+  // 막는 자리(collider)가 없는 부품(solid: false인 전차·담 등)도 피한다: 무릎 높이 넘는 조각의 바닥 넓이(2026-11-12 선생님: 행인이 서 있는 전차를 뚫고 지나갔다)
+  const boxes = []; for (const g of solids) { g.updateMatrixWorld(true); g.traverse(o => { if (o.isMesh && !o.isInstancedMesh) { const bx = new THREE.Box3().setFromObject(o); if (bx.max.y - bx.min.y > 0.3 && bx.max.y > 0.4) boxes.push(bx.expandByScalar(0.35)); } }); }
   const free = (x, z) => x > b.x0 + 1 && x < b.x1 - 1 && z > b.z0 + 1 && z < b.z1 - 1
-    && world.colliders.every(c => Math.hypot(x - c.x, z - c.z) > c.r + 0.8) && busy.every(c => Math.hypot(x - c.x, z - c.z) > c.r);
+    && world.colliders.every(c => Math.hypot(x - c.x, z - c.z) > c.r + 0.8) && busy.every(c => Math.hypot(x - c.x, z - c.z) > c.r)
+    && boxes.every(bx => x < bx.min.x || x > bx.max.x || z < bx.min.z || z > bx.max.z);
   let best = null;
   for (const r of layout.roads || []) {
     const along = r.w >= r.d, len = along ? r.w : r.d, at = t => (along ? [r.x + t, r.z] : [r.x, r.z + t]);

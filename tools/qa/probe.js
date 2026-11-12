@@ -4,14 +4,14 @@
 // - tests/qa-probe.test.js는 createProbe(world)를 직접 불러 일부러 만든 오류를 잡는지 확인한다
 // 감지 항목(kind): torso·head(몸통·머리가 비어 투명해 보임) · seeThrough(반투명 재질) · sunk(발이 땅에 묻힘) · overlap(사람끼리 겹침)
 //   · horseOverlap · rider(기수가 안장에서 벗어남) · hand(든 물건이 손에서 떨어짐) · glide(다리를 움직이지 않고 미끄러져 감)
-//   · jump(한 프레임에 크게 순간이동) · nan(위치·각도가 숫자가 아님) · uiOff(단추가 화면 밖) · uiCovered(단추가 다른 판에 덮임)
+//   · clash(사람이 천막·건물·담·소품·굳힌 군중 속에 서 있거나 뚫고 지나감) · jump(한 프레임에 크게 순간이동) · nan(위치·각도가 숫자가 아님) · uiOff(단추가 화면 밖) · uiCovered(단추가 다른 판에 덮임)
 // 무게(severity): error(그대로 보이면 틀린 화면) · warn(장면 연출일 수도 있어 사람이 사진으로 본다: 순간이동·겹침·묻힘·미끄러짐·화면 단추)
 // 판정은 일부러 넉넉하게 잡는다: 걸음·카메라·조명에 따른 정상적인 흔들림은 잡지 않고, 눈에 띄는 오류만 잡는다.
 // 걸음의 자연스러움·악수의 어색함 같은 것은 숫자로 판정하지 않는다(사진·영상을 사람이 본다).
 import * as THREE from 'three';
 
 const ARM_LEN = 0.78; // core/interact.js와 같은 팔 길이(어깨에서 손끝까지, 사람 크기 1일 때)
-export const LIMITS = { sunk: 0.12, handSec: 1, overlap: 0.42, horseOverlap: 0.9, riderOff: 0.35, hand: 0.6, glideSpeed: 0.35, glideSec: 0.6, jumpSpeed: 25, jumpDist: 2.5, riderSec: 0.6 };
+export const LIMITS = { clashBody: 0.22, clashSec: 1, sunk: 0.12, handSec: 1, overlap: 0.42, horseOverlap: 0.9, riderOff: 0.35, hand: 0.6, glideSpeed: 0.35, glideSec: 0.6, jumpSpeed: 25, jumpDist: 2.5, riderSec: 0.6 };
 
 const v1 = new THREE.Vector3(), v2 = new THREE.Vector3(), box = new THREE.Box3(), down = new THREE.Vector3(0, -1, 0);
 const shown = o => { for (let p = o; p; p = p.parent) if (!p.visible) return false; return true; };
@@ -19,11 +19,60 @@ export const SEVERITY = { torso: 'error', head: 'error', seeThrough: 'error', na
 const isPerson = o => !!(o.userData && o.userData.legs && o.userData.arms && o.userData.upper);
 const bad = v => !Number.isFinite(v.x) || !Number.isFinite(v.y) || !Number.isFinite(v.z);
 
+// 사람이 건물·천막·담·소품 속에 서 있는지(2026-11-12 선생님: 천막에 겹쳐 선 군사, 벽을 뚫고 지나가는 사람).
+// 사람마다 발목·허리·가슴 높이(0.35·0.9·1.4m)에서 여덟 방향으로 몸 반지름(0.22m)만큼 광선을 쏘아 사람 밖의 조각에 닿으면 '닿음',
+// 허리 높이에서 여덟 방향이 모두 3m 안에서 막히고 바로 위 3m 안에 지붕이 있으면 '둘러싸임'(천막·건물 안에 들어가 있음).
+// 땅(판·원판)·반투명 조각·풀·나무 흩뿌리기(InstancedMesh)·사람·말·타임머신은 뺀다. 장면 굳히기로 합쳐진 군중은 굳힐 때 남긴 발 자리(userData.bakedPeople)로 잰다.
+// 문짝 사이로 지나가는 것은 몸이 문짝에 닿지 않으니 잡히지 않는다.
+const isPartOfPerson = o => { for (let p = o; p; p = p.parent) if (isPerson(p) || p.userData?.horse || p.userData?.timeMachine) return true; return false; };
+export function clashes(world, { body = LIMITS.clashBody, people: only = null } = {}) {
+  const L = world.level; L.updateMatrixWorld(true);
+  const targets = [], sides = [];
+  L.traverse(o => {
+    if (!o.isMesh || o.isInstancedMesh || o.isSkinnedMesh || !shown(o) || isPartOfPerson(o)) return;
+    const mt = o.material; if (Array.isArray(mt) || (mt.transparent && mt.opacity < 0.5)) return;
+    const t = o.geometry.type; if (t === 'PlaneGeometry' || t === 'CircleGeometry') return; // 땅·물·웅덩이
+    targets.push(o); sides.push([mt, mt.side]);
+  });
+  const list = [];
+  if (only) for (const o of only) list.push({ o, p: o.getWorldPosition(new THREE.Vector3()), s: o.getWorldScale(new THREE.Vector3()).y });
+  else {
+    L.traverse(o => { if (isPerson(o) && shown(o)) list.push({ o, mats: o.userData.skel?.frozen ? o.userData.skel.mats : null, p: o.getWorldPosition(new THREE.Vector3()), s: o.getWorldScale(new THREE.Vector3()).y }); }); // 굳힌 뼈대 몸(core/body.js freeze)은 옷 조각이 장면 덩어리로 옮겨 갔다
+    L.traverse(o => { // 굳힌 무리: 같은 무리 사람끼리 가까이 선 것은 사람끼리의 겹침(overlap)이 볼 일이라 무리 전체의 옷 재질을 뺀다
+      const all = o.userData?.bakedPeople; if (!all || !shown(o)) return;
+      const mats = new Set(); for (const b of all) for (const m of b.mats || []) mats.add(m);
+      for (const b of all) list.push({ o: null, mats, p: new THREE.Vector3(b.x, b.y, b.z).applyMatrix4(o.matrixWorld), s: b.s });
+    });
+  }
+  const ray = new THREE.Raycaster(), out = [], up = new THREE.Vector3(0, 1, 0);
+  const D = [...Array(8)].map((_, i) => new THREE.Vector3(Math.cos(i * Math.PI / 4), 0, Math.sin(i * Math.PI / 4)));
+  for (const [m] of sides) m.side = THREE.DoubleSide; // 안쪽에서 쏜 광선도 면에 닿게(끝나면 되돌린다)
+  try {
+    for (const { o, mats, p, s } of list) {
+      const own = h => !!mats?.has(h.object.material.uuid); // 굳힌 사람은 자기 옷·몸 재질로 합쳐진 덩어리를 빼고 잰다(장면 굳히기가 다시 합쳐도 재질은 같다)
+      const first = hits => hits.find(h => !own(h));
+      // 땅 높이 차이가 큰 사람(축대 위·배 위)은 발 높이 그대로 잰다
+      let near = null;
+      for (const h of [0.35, 0.9, 1.4]) for (const d of D) {
+        ray.set(v1.copy(p).addScaledVector(up, h * s), d); ray.far = body * s;
+        const hit = first(ray.intersectObjects(targets, false));
+        if (hit && (!near || hit.distance < near.distance)) near = hit;
+      }
+      let blocked = 0; const mid = v2.copy(p).addScaledVector(up, 0.9 * s);
+      for (const d of D) { ray.set(mid, d); ray.far = 3; if (first(ray.intersectObjects(targets, false))) blocked += 1; }
+      ray.set(mid, up); ray.far = 3; const roof = blocked === 8 ? first(ray.intersectObjects(targets, false)) : null;
+      if (near || roof) { const ob = (near || roof).object; out.push({ person: o, at: p.clone(), touch: near ? +near.distance.toFixed(2) : null, enclosed: !!roof, what: `${ob.name || ob.parent?.name || ob.geometry.type} #${ob.material.color?.getHexString?.() || ''}` }); }
+    }
+  } finally { for (const [m, sd] of sides) m.side = sd; }
+  return out;
+}
+
 export function createProbe(world, { ui = null, label = () => '', limits = {} } = {}) {
   const L = { ...LIMITS, ...limits };
   const events = [], seen = new Map(), ids = new WeakMap(), track = new WeakMap();
   const stats = { frames: 0, t: 0, people: 0, horses: 0, kinds: {} };
-  let nid = 0, grounds = [], groundAt = -Infinity, lastLevelCount = -1, slow = 0;
+  let nid = 0, grounds = [], groundAt = -Infinity, lastLevelCount = -1, slow = 0, clashAt = 0;
+  const clashSeen = new Map();
   const ray = new THREE.Raycaster();
 
   const idOf = o => {
@@ -141,6 +190,16 @@ export function createProbe(world, { ui = null, label = () => '', limits = {} } 
     }
     const hs = horses.map(h => [h, h.getWorldPosition(new THREE.Vector3()), h.getWorldScale(new THREE.Vector3()).x / 1.3]); // 지도 위에 작게 줄인 말은 그만큼 가까워도 된다
     for (let i = 0; i < hs.length; i++) for (let j = i + 1; j < hs.length; j++) if (hs[i][1].distanceTo(hs[j][1]) < L.horseOverlap * Math.min(hs[i][2], hs[j][2])) report('horseOverlap', hs[i][0], `with horse ${idOf(hs[j][0])}`);
+    // 건물·천막·소품 속에 선 사람(1초에 한 번쯤, 무겁다). 굳힌 군중은 한 번만 잰다. 같은 사람이 1초 넘게(두 번 이어서) 겹쳐야 남긴다(스치는 것은 빼고)
+    if (stats.t - clashAt >= 1) {
+      clashAt = stats.t; const now = new Set();
+      for (const c of clashes(world)) {
+        const key = c.person || `baked@${c.at.x.toFixed(1)},${c.at.z.toFixed(1)}`; now.add(key);
+        const n = (clashSeen.get(key) || 0) + 1; clashSeen.set(key, n);
+        if (n >= 1 + L.clashSec) { if (c.person) report('clash', c.person, `${c.enclosed ? 'inside' : 'touching'} ${c.what}`); else report('clash', null, `baked person at ${c.at.x.toFixed(1)},${c.at.z.toFixed(1)} ${c.enclosed ? 'inside' : 'touching'} ${c.what}`); }
+      }
+      for (const k of [...clashSeen.keys()]) if (!now.has(k)) clashSeen.delete(k);
+    }
     // 화면 단추: 화면 밖으로 나갔거나 다른 판에 덮였는가(1초에 한 번쯤)
     if (ui && stats.frames % 30 === 0) checkUi();
   }

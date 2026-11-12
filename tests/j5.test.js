@@ -285,3 +285,13 @@ test('j5 qa: the huddled cold villager and the child sit on the ground, not in i
     eq(probe.events.filter(e => e.kind === 'sunk').map(e => `${e.who} ${e.detail}`), []);
   } finally { setRigHook(null); POST_POSE.delete(updateBodies); w.dispose(); }
 }, { timeout: 60000 });
+
+test('j5: 남한산성 안의 군사·백성이 행궁·창고·군막 속에 서 있지 않다(2026-11-12 선생님: 건물에 겹쳐 선 사람)', async () => {
+  const { clashes } = await import('../tools/qa/probe.js');
+  const w = testWorld();
+  try {
+    buildJ5Scene(w);
+    const bad = clashes(w).filter(c => c.person !== w.player && c.person?.visible !== false).map(c => `${c.at.x.toFixed(1)},${c.at.z.toFixed(1)} ${c.what}`);
+    eq(bad, []);
+  } finally { w.dispose(); }
+}, { timeout: 60000 });

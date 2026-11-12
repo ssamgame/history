@@ -76,3 +76,24 @@ test('qa probe: 화면 밖으로 나간 단추와 다른 판에 덮인 단추를
     ok(got.includes('uiOff:밖'), got.join(' ')); ok(got.includes('uiCovered:덮임'), got.join(' ')); ok(!got.some(g => g.endsWith(':내려서')), '내려서 볼 수 있는 판 안의 단추는 잡지 않는다'); ok(!got.some(g => g.endsWith(':정상')), `정상 단추는 잡지 않는다 ${JSON.stringify(probe.events)}`);
   } finally { ui.remove(); w.dispose(); }
 });
+
+test('qa probe: 천막·벽 속에 선 사람과 벽을 뚫고 지나가는 사람을 잡고(clash), 열린 문 사이로 지나가거나 옆에 선 사람은 잡지 않는다', async () => {
+  const { tent, bakeStatic } = await import('../chapters/kit/buildings.js');
+  const { clashes } = await import('../tools/qa/probe.js');
+  const { w, P } = scene();
+  try {
+    const t = new THREE.Group(); t.position.set(-6, 0, -6); tent(t, {}); w.level.add(t);
+    const wall = new THREE.Mesh(new THREE.BoxGeometry(8, 2.4, 0.4), new THREE.MeshLambertMaterial()); wall.position.set(6, 1.2, -6); w.level.add(wall); // 가운데에 문(틈 1.6m)
+    const wall2 = wall.clone(); wall.position.x = 6 - 4.8; wall2.position.x = 6 + 4.8; w.level.add(wall2);
+    const inTent = P('soldier', -6, -6), beside = P('soldier', -6, -3), door = P('villager', 6, -6), through = P('villager', 2, -6);
+    const crowd = new THREE.Group(); crowd.position.set(-6, 0, 5); const t2 = new THREE.Group(); tent(t2, {}); crowd.add(t2);
+    const p2 = makePerson(LOOKS.soldier); p2.position.set(0.3, 0, 0.2); crowd.add(p2); bakeStatic(crowd); w.level.add(crowd); // 굳힌 무리 속에서 천막과 겹친 사람
+    w.player.position.set(0, 0, 9);
+    const hits = clashes(w), who = hits.map(c => c.person);
+    ok(who.includes(inTent), '천막 속 군사'); ok(who.includes(through), '벽 속 사람');
+    ok(!who.includes(beside) && !who.includes(door), `옆에 선 사람·문 사이 사람은 아님: ${hits.map(c => c.what).join(', ')}`);
+    ok(hits.some(c => !c.person && Math.hypot(c.at.x + 5.7, c.at.z - 5.2) < 0.3), '굳힌 무리 속 사람도 남긴 발 자리로 잡는다');
+    const probe = createProbe(w); run(probe, 80);
+    ok(probe.events.some(e => e.kind === 'clash' && e.who !== '-'), `감지기 사건: ${kinds(probe).join(', ')}`);
+  } finally { w.dispose(); }
+});

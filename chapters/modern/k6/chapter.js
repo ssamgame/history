@@ -78,7 +78,7 @@ const HAGUE = { edge: { style: 'brick', seed: 207 }, center: [{ type: 'lamp', x:
   origin: [400, 0], ground: 'stone', groundColor: 0xb0a890, bounds: { x0: -20, x1: 20, z0: -12, z1: 14 },
   props: [
     { type: 'western', x: 0, z: -14, w: 18, d: 5, h: 8, dome: true, color: 0xc8b8a0 },
-    { type: 'crowd', x: -1.4, z: -10.6, n: 1, looks: ['gendarme'], face: 0 }, { type: 'crowd', x: 1.4, z: -10.6, n: 1, looks: ['gendarme'], face: 0 }, // 회의장 문 앞을 막아선 일본군 둘(2026-11-04 선생님: 일제의 방해로 들어가지 못한 것)
+    { type: 'crowd', x: -1.4, z: -9.6, n: 1, looks: ['gendarme'], face: 0 }, { type: 'crowd', x: 1.4, z: -9.6, n: 1, looks: ['gendarme'], face: 0 }, // 회의장 문 앞을 막아선 일본군 둘(2026-11-04 선생님: 일제의 방해로 들어가지 못한 것). 2026-11-12: 회의장 돌 기단 속에 발이 묻혀 있어 한 걸음 앞으로
   ],
 };
 // 하얼빈 역(2026-11-04 선생님: 안중근이 이토 히로부미를 처단하는 장면, 겨누는 순간까지): 역 건물 앞 승강장, 늘어선 군인, 구경하는 사람들

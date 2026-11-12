@@ -145,7 +145,7 @@ export function buildJ5Scene(world) {
   });
   const setFire = (f, on) => { f.lit = on; f.fx.setLit(on); f.flame.visible = on; };
   // 성벽 위를 지키는 병사들
-  for (const a of [0.4, 1.2, 2.0, 4.0, 4.9, 5.7]) {
+  for (const a of [0.4, 1.2, 2.0, 4.0, 5.3, 5.7]) { // 4.9였던 한 사람은 행궁 벽 속에 서 있어 옮김(2026-11-12)
     const s = makePerson(LOOKS.joseonSoldier);
     s.position.set(Math.cos(a) * (WALL.rx - 1.6), 0, Math.sin(a) * (WALL.rz - 1.6)); s.rotation.y = Math.atan2(Math.cos(a), Math.sin(a)); L.add(s);
   }

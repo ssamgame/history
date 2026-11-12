@@ -462,7 +462,10 @@ export function curvedHipRoof(parent, w, d, h, color, x, y, z) {
 export function bakeStatic(group, skip = () => false) {
   group.updateMatrixWorld(true);
   const inv = new THREE.Matrix4().copy(group.matrixWorld).invert(), rel = new THREE.Matrix4();
-  const buckets = new Map(), keep = [];
+  const buckets = new Map(), keep = [], baked = [];
+  // 굳힌 사람의 발 자리(group 기준)와 그 사람 옷의 재질을 남겨 둔다: 사람이 천막·건물에 겹쳐 서 있는지 굳힌 뒤에도 검사한다(tools/qa/probe.js clashes)
+  for (const c of group.children) if (c.userData?.legs && c.userData?.upper) { c.updateMatrixWorld(true); const p = c.getWorldPosition(new THREE.Vector3()).applyMatrix4(inv); const mats = new Set(); c.traverse(o => { if (o.isMesh) mats.add(o.material.uuid); }); baked.push({ x: p.x, y: p.y, z: p.z, s: c.getWorldScale(new THREE.Vector3()).y, mats }); }
+  if (baked.length) group.userData.bakedPeople = baked;
   group.traverse(o => {
     if (!o.isMesh || o.isInstancedMesh) return;
     if (skip(o)) { keep.push(o); return; }

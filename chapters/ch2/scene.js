@@ -139,7 +139,7 @@ export function buildCh2Scene(world) {
   }
   // 북쪽 거란 진영
   const khitan = new THREE.Group(); L.add(khitan);
-  for (const [x, z] of [[-14, -36], [-4, -40], [7, -37], [16, -42], [-20, -46], [0, -50], [12, -52]]) {
+  for (const [x, z] of [[-14, -38], [-4, -40], [7, -39], [16, -42], [-20, -46], [0, -50], [12, -52]]) { // 앞쪽 두 채는 대군 넷째 줄과 겹치지 않게 뒤로(2026-11-12)
     mk(new THREE.CylinderGeometry(2.1, 2.1, 1.7, 9), 0x8f7556, x, 0.85, z, khitan);
     mk(new THREE.ConeGeometry(2.4, 1.5, 9), 0x5e432c, x, 2.45, z, khitan);
   }

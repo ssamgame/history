@@ -391,3 +391,13 @@ test('ch4 fun: Salitai appears late in the defense; reaching his spot wins, lett
     } finally { s.done(); }
   }
 }, { timeout: 120000 });
+
+test('ch4: 처인성 안 백성·스님이 초가·짚더미·장작 속에 서 있지 않다(2026-11-12 선생님: 건물에 겹쳐 선 사람)', async () => {
+  const { clashes } = await import('../tools/qa/probe.js');
+  const w = testWorld();
+  try {
+    const s = buildCh4Scene(w);
+    const bad = clashes(w, { people: s.cheoinFolk }).map(c => `${c.at.x.toFixed(1)},${c.at.z.toFixed(1)} ${c.what}`);
+    eq(bad, []);
+  } finally { w.dispose(); }
+}, { timeout: 60000 });

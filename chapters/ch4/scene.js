@@ -260,7 +260,7 @@ export function buildCh4Scene(world) {
     for (const [dx, dz, ry] of [[-6.2, 4.6, 0.5], [6.2, 4.4, -0.5]]) { const g = new THREE.Group(); g.position.set(CHEOIN_X + dx, 0, dz); g.rotation.y = ry; g.scale.setScalar(0.8); cheoin.add(g); hanok(g, {}); world.addCollider({ x: CHEOIN_X + dx, z: dz, r: 2 }); }
     for (const [dx, dz, fn] of [[-2.8, 8.2, straw], [3, 8.4, woodpile]]) { const g = new THREE.Group(); g.position.set(CHEOIN_X + dx, 0, dz); cheoin.add(g); fn(g); }
     for (let i = 0; i < 8; i++) {
-      const a = 0.3 + i * 0.35; // D-13: 성 안 남쪽(성벽 위 카메라 뒤)에 모여 있다
+      const a = [0, 0.3, 1, 1.45, 1.7, 2.15, 2.85, 3.15][i]; // D-13: 성 안 남쪽(성벽 위 카메라 뒤)에 모여 있다. 초가·짚더미·장작 자리는 비켜 선다(2026-11-12: 예전엔 두 사람이 초가 속에 서 있었다)
       const who = i % 2 ? LOOKS.monk : LOOKS.villager;
       const p = makePerson(who); p.position.set(CHEOIN_X + Math.cos(a) * (CHEOIN_R - 3.4), 0, Math.sin(a) * (CHEOIN_R - 3.4)); // 성벽 가까이는 궁수 자리
       p.rotation.y = Math.atan2(Math.cos(a), Math.sin(a)); cheoin.add(p); cheoinFolk.push(p);

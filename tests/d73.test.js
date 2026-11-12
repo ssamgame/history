@@ -35,3 +35,39 @@ test('d73: 서희가 기다릴 때 「따라와!」, 강가에서 막히면 「�
   ok(src.includes("labelSprite('따라와!')") && src.includes('call.visible = waiting'), '따라와 표시');
   ok(src.includes('강은 다리로 건너자'), '다리 안내');
 });
+
+test('d73 겹침: 근대~현대 마을을 오가는 사람(행인)이 건물·전차·소품을 뚫고 지나가지 않고, 마을에 세운 사람이 건물 속에 서 있지 않다(2026-11-12 선생님)', async () => {
+  const { MODERN, COLONIAL, PRESENT } = await import('../chapters/index.js');
+  const { buildTown } = await import('../chapters/kit/town.js');
+  const { clashes } = await import('../tools/qa/probe.js');
+  const bad = [];
+  for (const meta of [...MODERN, ...COLONIAL, ...PRESENT]) {
+    const ch = (await meta.load()).default, w = testWorld();
+    try {
+      const t = buildTown(w, ch.layout);
+      for (const c of clashes(w)) if (c.person !== w.player) bad.push(`${ch.id} ${c.person ? '사람' : '무리'} ${c.at.x.toFixed(1)},${c.at.z.toFixed(1)} ${c.what}`);
+      for (let i = 0; i < 400; i++) { // 20초(행인이 길 끝까지 오간다)
+        w.step(1 / 20, { x: 0, z: 0 });
+        if (i % 8 === 0) for (const c of clashes(w, { people: t.walkers })) bad.push(`${ch.id} 행인 ${c.at.x.toFixed(1)},${c.at.z.toFixed(1)} ${c.what}`);
+      }
+    } finally { w.dispose(); }
+  }
+  eq([...new Set(bad.map(b => b.replace(/(-?\d+)\.\d,(-?\d+)\.\d/, '$1,$2')))], []);
+}, { timeout: 600000 });
+
+test('d73 겹침 무대: 근대~현대 미니게임 무대에 세운 무리·소품의 사람이 무대 건물·소품 속에 서 있지 않다(2026-11-12 선생님)', async () => {
+  const { MODERN, COLONIAL, PRESENT } = await import('../chapters/index.js');
+  const { buildArena } = await import('../chapters/kit/play.js');
+  const { clashes } = await import('../tools/qa/probe.js');
+  const arenas = (v, out = new Set(), d = 0) => { if (v && typeof v === 'object' && d < 5) { if (v.origin && v.bounds) out.add(v); else for (const x of Object.values(v)) arenas(x, out, d + 1); } return out; };
+  const bad = []; let n = 0;
+  for (const meta of [...MODERN, ...COLONIAL, ...PRESENT]) {
+    const ch = (await meta.load()).default;
+    for (const a of arenas(ch.parts)) {
+      const w = testWorld(); n += 1;
+      try { buildArena(w, a); for (const c of clashes(w)) if (c.person !== w.player) bad.push(`${ch.id} (${a.origin}) ${c.at.x.toFixed(1)},${c.at.z.toFixed(1)} ${c.what}`); } finally { w.dispose(); }
+    }
+  }
+  ok(n >= 17, `무대 ${n}`);
+  eq(bad, []);
+}, { timeout: 600000 });

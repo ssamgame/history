@@ -458,3 +458,13 @@ test('ch2: 거란군이 물러간 뒤 백성 구출 — 물러가는 장면과 �
     eq(ev, [ch2Script.lastScene.surrounded.text, ch2Script.result[1].text]); ok(s.ctx.testHooks.lastStand.fallen);
   } finally { bot.stop(); s.done(); }
 }, { timeout: 90000 });
+
+test('ch2: 거란 대군·왕·장수가 거란 진영 천막 속에 서 있지 않다(2026-11-12 선생님: 천막·건물에 겹쳐 선 사람)', async () => {
+  const { clashes } = await import('../tools/qa/probe.js');
+  const w = testWorld();
+  try {
+    buildCh2Scene(w);
+    const bad = clashes(w).filter(c => c.person !== w.player).map(c => `${c.at.x.toFixed(1)},${c.at.z.toFixed(1)} ${c.what}`);
+    eq(bad, []);
+  } finally { w.dispose(); }
+}, { timeout: 60000 });
