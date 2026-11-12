@@ -1,4 +1,5 @@
 // 서비스 워커가 처음 설치될 때 기기에 저장해 둘 파일 목록. 장을 추가하면 여기에도 넣는다.
+import { DIST_FIRST } from '../dist/manifest.js';
 export const CACHE = 'goryeo-v99'; // 배포할 때마다 올린다 (학생 기기에 새 판이 반영되도록)
 
 export const PRECACHE = [
@@ -55,9 +56,11 @@ export function cacheKeyFor(url, mode, swUrl) {
 // 바뀌어 통째로 새로 받으므로 옛 파일이 섞이지 않는다. 고친 내용은 다음에 열 때 보인다.
 const PER_CHAPTER = /^chapters\/(ch\d|joseon\/j\d|modern\/k\d|colonial\/i\d|present\/h\d)\//;
 export const INSTALL = PRECACHE.filter(u => !PER_CHAPTER.test(u));
-// 서버에 바뀌었는지 물어 받는다(브라우저가 방금 받은 파일이면 '그대로'라는 짧은 답만 온다)
-export function precacheRequests() {
-  return INSTALL.map(u => new Request(u, { cache: 'no-cache' }));
+// 학생 주소에서는 묶은 판(dist/, tools/build.cjs)을 쓴다: 첫 화면에 필요한 묶음 몇 개와 화면·모델 파일만 미리 받는다
+export const INSTALL_DIST = ['index.html', 'styles.css', 'assets/models/body.glb', ...DIST_FIRST];
+// 서버에 바뀌었는지 물어 받는다(브라우저가 방금 받은 파일이면 '그대로'라는 짧은 답만 온다). bundled: 묶은 판을 쓰는 곳인지
+export function precacheRequests(bundled = false) {
+  return (bundled ? INSTALL_DIST : INSTALL).map(u => new Request(u, { cache: 'no-cache' }));
 }
 // 목록을 size개씩 차례로 받아 저장한다. 실패한 것은 세어만 두고 넘어간다. 돌려주는 값: 저장한 수
 export async function precacheGently(reqs, { fetch, put, size = 4 }) {
@@ -72,7 +75,7 @@ export function cacheFirst({ fetch, match, put }) {
   return match().then(hit => hit || Promise.resolve().then(fetch).then(r => { if (r && r.ok) put(r.clone()); return r; }));
 }
 
-// (예전 방식, 지금은 쓰지 않는다) 파일 받기: 인터넷이 되면 언제나 새 파일을 쓰고 저장본도 바꾼다.
+// 학생 주소가 아닌 곳(미리보기)에서 쓰는 방식: 인터넷이 되면 언제나 새 파일을 쓰고 저장본도 바꾼다.
 // 끊겼거나 timeoutMs 안에 오지 않으면 저장본을 쓴다(교실 와이파이가 느릴 때). 저장본이 없으면 새 파일을 끝까지 기다린다.
 export function networkFirst({ fetch, match, put, timeoutMs = 4000 }) {
   const fresh = Promise.resolve().then(fetch).then(r => { if (r && r.ok) put(r.clone()); return r; });

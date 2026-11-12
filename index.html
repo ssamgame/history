@@ -10,6 +10,7 @@
 <body>
 <div id="stage"></div>
 <div id="ui"></div>
-<script type="module" src="core/main.js"></script>
+<!-- 학생 주소(github.io)에서는 묶은 판(dist/, tools/build.cjs)을 읽는다: 여러 명이 한꺼번에 접속해도 요청이 몰리지 않게. 개발·미리보기는 원본 그대로 -->
+<script type="module">import(location.hostname.endsWith('github.io') ? './dist/main.js' : './core/main.js');</script>
 </body>
 </html>
