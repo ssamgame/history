@@ -1,6 +1,6 @@
 import { test, eq, ok } from './harness.js';
 import { createInput } from '../core/input.js';
-import { createAudio, sayCue } from '../core/audio.js';
+import { createAudio, actionSound } from '../core/audio.js';
 
 function setup() {
   const joyZone = document.createElement('div');
@@ -99,12 +99,11 @@ test('input: lost pointer capture releases the joystick', () => {
   done();
 });
 
-// 2026-11-12 선생님이 고른 효과음: 대화 시작(두 음 올림)·대사 넘기기(물방울)·상호작용(맑은 딩), 시간지기 안내는 소리 없음
-test('audio: 대화가 열릴 때는 talk, 이어지는 대사는 next, 시간지기 안내는 소리 없이', () => {
+// 2026-11-12 선생님: E·행동 단추를 누를 때만, 상황에 맞는 소리(대사가 넘어갈 때는 소리 없음)
+test('audio: 행동 단추 글자에 맞는 소리 — 말 걸기·읽기·줍기·놓기·밀기·물, 모르는 행동은 맑은 딩', () => {
+  eq(['대화', '읽기', '살펴보기', '줍기', '받기', '싣기', '놓기', '붙이기', '찍기', '밀어내기', '치기', '누르기', '붓기', '헹구기', '타기', '들어가기', ''].map(actionSound),
+    ['talk', 'read', 'read', 'pick', 'pick', 'pick', 'put', 'put', 'put', 'push', 'push', 'push', 'water', 'water', 'act', 'act', 'act']);
   const a = createAudio(); a.setMuted(true);
-  sayCue(a, { who: 'seohui', text: '가' }, false); eq(a.last, 'talk');
-  sayCue(a, { who: 'narr', text: '나' }, true); eq(a.last, 'next');
-  a.last = null; sayCue(a, { who: 'guide', text: '다' }, false); eq(a.last, null);
-  for (const n of ['next', 'talk', 'act']) { a.play(n); eq(a.last, n); }
-  a.play('tap'); eq(a.last, 'act', '행동 소리 바로 뒤의 톡 소리는 겹치지 않게 뺀다');
+  a.action('줍기'); eq(a.last, 'pick'); a.play('tap'); eq(a.last, 'pick', '행동 소리 바로 뒤의 톡 소리는 겹치지 않게 뺀다');
+  for (const n of ['talk', 'act', 'read', 'pick', 'put', 'push']) { a.play(n); eq(a.last, n); }
 });

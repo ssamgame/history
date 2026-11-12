@@ -25,7 +25,7 @@
   - `core/people.js` 인물(만화풍 얼굴, 무기), `content/characters.js` 생김새
   - `core/props.js` 풀·꽃·바위·덤불·소나무 흩뿌리기(InstancedMesh, 화질에 따라 개수 조절)
   - `core/minigame.js` 미니게임 도구, `core/dialogue.js` 대화창, `core/screens.js` 화면들
-  - `core/music.js` 장별 배경음악(Web Audio로 연주), `core/audio.js` 효과음(2026-11-12 선생님이 미리듣기에서 고름: 대화가 열릴 때 `talk` 두 음 올림, 이어지는 대사마다 `next` 물방울, E·행동 단추로 줍기·올리기·읽기를 할 때 `act` 맑은 딩 — 안내판 읽기도 같은 소리. 시간지기 안내는 소리 없음. `sayCue`·`main.js`의 `onSay`/`onAction`)
+  - `core/music.js` 장별 배경음악(Web Audio로 연주), `core/audio.js` 효과음(2026-11-12 선생님: E·행동 단추를 누를 때만 상황에 맞는 소리 — 단추 글자로 고른다(`actionSound`: 말 걸기 `talk`, 읽기·보기 `read`, 줍기·받기 `pick`, 놓기·붙이기 `put`, 밀기·치기 `push`, 물 `water`, 그 밖 `act`). 대사가 넘어갈 때는 소리를 내지 않는다. 장이 따로 내던 `tap`은 겹치면 뺀다)
   - `core/quality.js` 화질 3단계와 자동 하향, `core/save.js` 저장(기기 안 localStorage만)
   - `chapters/chN/` 장별 `script.js`(대사·퀴즈·출처) `scene.js`(장면) `chapter.js`(진행)
   - `chapters/index.js` 편 목록(`COURSES`), 장 목록, 열림·완료 규칙(같은 편 안에서만 센다)

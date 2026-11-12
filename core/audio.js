@@ -7,10 +7,13 @@ const SOUNDS = {
   water: [{ f: 120, d: 0.6, type: 'sine', to: 40 }],
   boom: [{ f: 110, d: 0.7, type: 'sawtooth', to: 28 }, { f: 60, d: 0.5, type: 'sine', to: 25, at: 0.02 }], // 먼바다 군함의 대포(D-28)
   bell: [{ f: 523, d: 0.9, type: 'sine' }, { f: 90, d: 0.3, type: 'triangle', at: 0.45 }], // 자격루의 종과 북(D-23)
-  // 대화·행동 효과음(2026-11-12 선생님이 미리듣기에서 고름): 대사 넘기기 A5 물방울, 대화 시작 B1 두 음 올림, 상호작용 C1 맑은 딩(안내판 읽기도 같은 소리)
-  next: [{ f: 900, d: 0.07, type: 'sine', to: 1500, v: 0.8 }],
-  talk: [{ f: 523, d: 0.08, type: 'triangle' }, { f: 784, d: 0.14, type: 'triangle', at: 0.08 }],
-  act: [{ f: 880, d: 0.18, type: 'triangle' }, { f: 1320, d: 0.22, type: 'sine', at: 0.03, v: 0.5 }],
+  // 행동 효과음(2026-11-12 선생님: E·행동 단추를 누를 때 상황에 맞는 소리만. 대사가 넘어갈 때는 소리 없음) — actionSound가 단추 글자로 고른다
+  talk: [{ f: 523, d: 0.08, type: 'triangle' }, { f: 784, d: 0.14, type: 'triangle', at: 0.08 }],                              // 말 걸기: 두 음 올림
+  act: [{ f: 880, d: 0.18, type: 'triangle' }, { f: 1320, d: 0.22, type: 'sine', at: 0.03, v: 0.5 }],                           // 그 밖의 행동: 맑은 딩
+  read: [{ f: 1800, d: 0.16, type: 'triangle', to: 600, v: 0.3 }, { f: 700, d: 0.12, type: 'sine', to: 420, at: 0.05, v: 0.4 }], // 읽기·보기: 두루마리 펼침
+  pick: [{ f: 330, d: 0.14, type: 'sine', to: 660 }],                                                                           // 줍기·받기·싣기: 집어 올림
+  put: [{ f: 300, d: 0.07, type: 'triangle', to: 150 }, { f: 1200, d: 0.02, type: 'square', v: 0.2 }],                          // 놓기·붙이기·찍기: 나무 딱
+  push: [{ f: 160, d: 0.16, type: 'sine', to: 80 }, { f: 320, d: 0.04, type: 'triangle', v: 0.4 }],                             // 밀기·치기·당기기: 북 톡
   shot: [{ f: 190, d: 0.14, type: 'sawtooth', to: 45 }, { f: 70, d: 0.22, type: 'sine', to: 30, at: 0.01 }], // 의병의 총소리(D-37)
 };
 
@@ -20,10 +23,11 @@ export function createAudio() {
     volume: 0.3,
     muted: false,
     setMuted(b) { audio.muted = b; },
+    // E·행동 단추를 눌렀을 때: 단추 글자에 맞는 소리
+    action(word) { actAt = performance.now(); audio.play(actionSound(word)); },
     play(name) {
       const now = performance.now();
-      if (name === 'tap' && now - actAt < 120) return; // 행동 소리(act)가 방금 났으면 장이 따로 내는 톡 소리는 겹치지 않게 뺀다
-      if (name === 'act') actAt = now;
+      if (name === 'tap' && now - actAt < 120) return; // 행동 소리가 방금 났으면 장이 따로 내는 톡 소리는 겹치지 않게 뺀다
       audio.last = name; // 마지막으로 내려던 소리(테스트용)
       if (audio.muted || !SOUNDS[name]) return;
       try {
@@ -45,9 +49,13 @@ export function createAudio() {
   return audio;
 }
 
-// 대사가 뜰 때의 소리(2026-11-12 선생님): 대화가 열려 있지 않다가 사람 말·해설이 뜨면 '대화 시작', 이어지는 대사는 '대사 넘기기'.
-// 시간지기 안내(guide)는 소리 없이 뜬다. wasOpen: 이 대사 바로 앞에 대화창·자막이 떠 있었는지
-export function sayCue(audio, line, wasOpen) {
-  if (!line || line.who === 'guide') return;
-  audio.play(wasOpen ? 'next' : 'talk');
-}
+// 행동 단추의 글자(core/screens.js buttonWord: '대화'·'줍기'·'읽기'…)로 그 행동에 맞는 소리 이름을 고른다
+const ACTION_SOUNDS = [
+  ['talk', /^대화$|인사|배웅/],
+  ['read', /읽|보기|살펴|펼치|듣기/],
+  ['water', /붓|헹구|긷|젓|씻|담그|삶/],
+  ['pick', /줍|받|들기|집기|싣|모으|올리|꺼내|챙기|뽑/],
+  ['put', /놓|붙이|넣|찍|세우|쌓|달기|꽂|심|걸기|짓/],
+  ['push', /밀|치기|당기|누르|두드|박기|새기|쏘|던지|끄기|켜기/],
+];
+export const actionSound = word => (ACTION_SOUNDS.find(([, re]) => re.test(word || '')) || ['act'])[0];
