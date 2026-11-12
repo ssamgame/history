@@ -293,6 +293,10 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .trace-dot.passed { fill: var(--dan-red); }
 .stroke-done { fill: none; stroke: #3b2414; stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; }
 /* 지도에서 고르기 */
+/* 지도에서 고르기(고려 4장 도읍 고르기)의 지도 틀: 2026-11-09 장 고르기를 새로 만들 때 함께 지워져, 점·선·이름표가 화면 전체를 기준으로 흩어졌다(2026-11-12 선생님) */
+.map.pick { position: relative; aspect-ratio: 3 / 4; }
+.map.pick svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.map.pick .land { fill: #3c4a3f; stroke: var(--gold); stroke-width: 1.5; }
 .map.pick { width: min(300px, 60vh, 100%); justify-self: center; }
 .map-place { position: absolute; transform: translate(-50%, -50%); min-height: 48px; padding: 6px 12px; border-radius: 24px; border: 2px solid var(--gold); background: var(--dan-red); color: var(--hanji); font-size: 15px; font-weight: 700; white-space: nowrap; box-shadow: 0 3px 8px rgba(0,0,0,.35); }
 .map-dot { position: absolute; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: var(--gold); border: 2px solid var(--hanji); pointer-events: none; }

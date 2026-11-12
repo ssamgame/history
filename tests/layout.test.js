@@ -1,5 +1,5 @@
 // 조선편 미니게임 화면 배치 점검: 탭(가로)·크롬북·휴대폰 크기에서 버튼과 판이 화면 안에 다 들어오고 서로 겹치지 않는지
-import { test, ok } from './harness.js';
+import { test, ok, eq } from './harness.js';
 import { sleep } from './bot.js';
 
 const KINDS = []; // 조선편 화면 카드 놀이는 모두 장면 속 놀이로 바뀜(j3 D-23, j4 D-25, j6 D-27). 다시 생기면 여기에
@@ -162,3 +162,24 @@ test('layout: 목표 상자·남은 시간·알림·대화창이 세로·가로 
     } finally { frame.remove(); }
   }
 }, { timeout: 120000 });
+
+// 2026-11-12 선생님: 고려 4장 도읍 고르기 — 점·선·이름표가 지도 틀 안에서 제자리를 가리킨다(지도 틀 CSS가 지워져 화면 전체로 흩어졌었다)
+test('layout: 지도에서 고르기 — 점은 지도 안에 있고, 선은 점에서 이름표로 이어지며, 강화도는 개경의 서남쪽', async () => {
+  const { pickOnMap } = await import('../core/minigame.js');
+  const ch4 = (await import('../chapters/ch4/script.js')).default;
+  const ui = document.createElement('div'); document.body.appendChild(ui);
+  try {
+    pickOnMap({ ui }, ch4.capital);
+    const map = ui.querySelector('.map.pick').getBoundingClientRect(), land = ui.querySelector('.map.pick svg').getBoundingClientRect();
+    ok(map.width > 150 && Math.abs(map.height / map.width - 4 / 3) < 0.05, `지도 틀 ${Math.round(map.width)}×${Math.round(map.height)}`); ok(Math.abs(land.width - map.width) < 2, '땅 그림이 틀을 채운다');
+    eq(getComputedStyle(ui.querySelector('.land')).fill, 'rgb(60, 74, 63)', '땅 색');
+    const dots = [...ui.querySelectorAll('.map-dot')].map(d => d.getBoundingClientRect()), C = r => [r.left + r.width / 2, r.top + r.height / 2];
+    for (const d of dots) { const [x, y] = C(d); ok(x > map.left && x < map.right && y > map.top && y < map.bottom, '점이 지도 안'); }
+    const P = id => C(ui.querySelector(`[data-place="${id}"]`).getBoundingClientRect());
+    const places = ch4.capital.places, dotOf = id => C(dots[places.findIndex(p => p.id === id)]);
+    for (const p of places) { const [dx, dy] = dotOf(p.id), [lx, ly] = P(p.id); ok(Math.hypot(lx - dx, ly - dy) < map.width * 0.45, `${p.label} 이름표가 제 점 가까이`); }
+    const g = dotOf('gaegyeong'), k = dotOf('ganghwa'), s = dotOf('seogyeong'); ok(k[0] < g[0] && k[1] > g[1], '강화도는 개경의 서남쪽'); ok(s[1] < g[1], '서경은 개경의 북쪽');
+    const lines = [...ui.querySelectorAll('.map-line')]; eq(lines.length, 3);
+    for (const [i, l] of lines.entries()) { const r = l.getBoundingClientRect(), d = dots[i], [lx, ly] = P(places[i].id); ok(r.left <= C(d)[0] + 3 && r.right >= Math.min(C(d)[0], lx) - 3 && Math.max(r.width, r.height) < map.width * 0.5, '선이 점에서 이름표까지만'); }
+  } finally { ui.remove(); }
+});
