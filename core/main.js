@@ -3,7 +3,7 @@ import { createStorage } from './storage.js';
 import { createSave } from './save.js';
 import { createWorld } from './world.js';
 import { createInput } from './input.js';
-import { createAudio } from './audio.js';
+import { createAudio, sayCue } from './audio.js';
 import { createDialogue } from './dialogue.js';
 import { createQualityController, guessInitialQuality } from './quality.js';
 import { runChapter } from './flow.js';
@@ -70,6 +70,7 @@ function boot() {
   let curMeta = null, curGoals = []; // 이 장의 목표 목록(미션 진행 표시)
   input.onAction(() => {
     if (dialogue && dialogue.isBlocking()) { if (!dialogue.isChoosing()) dialogue.advance(); return; } // 안내 칩이 떠 있어도 E는 말 걸기·행동으로 간다
+    if (!hud.talkBtn.disabled && hud.talkBtn.textContent !== '대화') audio.play('act'); // 줍기·올리기·읽기 같은 행동(사람에게 말 걸기는 대화 시작 소리가 난다)
     actionHandlers.forEach(f => f());
   });
 
@@ -149,9 +150,10 @@ function boot() {
     ctx.spotState = { found: new Set(), read: new Set() }; // 새 장: 발견·읽은 안내판을 새로 센다
     // 대사에 expr(놀람·걱정·분노·기쁨·긴장·말하기)이 있으면 말하는 사람의 3D 얼굴도 그 표정으로, 다음 대사·대화창이 닫히면 평소 얼굴로(D-57)
     // 대화 몸짓(2026-10-30 움직임 개선): 말하는 사람은 표정에 맞는 손짓과 끄덕임, 듣는 사람(학생 또는 학생이 말할 때 앞의 사람)은 가끔 끄덕인다
-    let exprOn = null, talkers = [];
+    let exprOn = null, talkers = [], talkOpen = false; // talkOpen: 대화창·자막이 떠 있는 중(닫히면 다음 대사는 '대화 시작' 소리)
     const calm = () => { if (exprOn) { setExpression(exprOn, 'neutral'); exprOn = null; } talkers.forEach(t => setTalking(t, null)); talkers = []; };
     const onSay = line => {
+      sayCue(audio, line, talkOpen); if (line.who !== 'guide') talkOpen = true; // 대화 시작·대사 넘기기 소리
       calm();
       const npc = world.npcs.get(line.who), m = line.who === 'me' ? world.player : npc && !npc.spot ? npc.mesh : null;
       if (m && line.expr) { setExpression(m, line.expr); exprOn = m; }
@@ -163,7 +165,7 @@ function boot() {
     };
     // '나'(학생)의 대화창 그림은 글자(我) 대신 이 장에서 맡은 인물의 얼굴(2026-11-05 선생님)
     const speakers = { ...mod.script.speakers, me: { name: '나', ...(mod.script.speakers?.me || {}), look: myLook } };
-    dialogue = createDialogue(ui, speakers, { reduceMotion, onSay, onClose: calm });
+    dialogue = createDialogue(ui, speakers, { reduceMotion, onSay, onClose: () => { talkOpen = false; calm(); } });
     hud.show(meta);
     hud.setTouchVisible(true);
     inChapter = true; input.enabled = true;

@@ -1,6 +1,6 @@
 import { test, eq, ok } from './harness.js';
 import { createInput } from '../core/input.js';
-import { createAudio } from '../core/audio.js';
+import { createAudio, sayCue } from '../core/audio.js';
 
 function setup() {
   const joyZone = document.createElement('div');
@@ -97,4 +97,14 @@ test('input: lost pointer capture releases the joystick', () => {
   ok(input.move().x > 0.5, 'a new touch works again');
   pe('pointerup', 90, 50);
   done();
+});
+
+// 2026-11-12 선생님이 고른 효과음: 대화 시작(두 음 올림)·대사 넘기기(물방울)·상호작용(맑은 딩), 시간지기 안내는 소리 없음
+test('audio: 대화가 열릴 때는 talk, 이어지는 대사는 next, 시간지기 안내는 소리 없이', () => {
+  const a = createAudio(); a.setMuted(true);
+  sayCue(a, { who: 'seohui', text: '가' }, false); eq(a.last, 'talk');
+  sayCue(a, { who: 'narr', text: '나' }, true); eq(a.last, 'next');
+  a.last = null; sayCue(a, { who: 'guide', text: '다' }, false); eq(a.last, null);
+  for (const n of ['next', 'talk', 'act']) { a.play(n); eq(a.last, n); }
+  a.play('tap'); eq(a.last, 'act', '행동 소리 바로 뒤의 톡 소리는 겹치지 않게 뺀다');
 });
