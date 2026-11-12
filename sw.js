@@ -1,9 +1,9 @@
-// 오프라인 캐시: 받은 게임 파일을 기기에 저장해 두고, 인터넷이 끊기거나 아주 느릴 때만 저장된 파일로 연다.
-// 인터넷이 되면 언제나 새 파일을 받아 쓴다(고친 내용이 바로 보이게).
-import { CACHE, precacheRequests, cacheKeyFor, networkFirst } from './core/precache.js';
+// 오프라인 캐시: 받은 게임 파일을 기기에 저장해 두고, 저장된 파일이 있으면 서버에 묻지 않고 바로 쓴다
+// (여러 명이 한꺼번에 접속해도 요청이 몰리지 않게, core/precache.js). 새 판은 CACHE 번호가 바뀌어 새로 받는다.
+import { CACHE, precacheRequests, precacheGently, cacheKeyFor, cacheFirst } from './core/precache.js';
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(precacheRequests())).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then(c => precacheGently(precacheRequests(), { fetch: r => fetch(r), put: (r, res) => c.put(r, res) })).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', e => {
@@ -16,9 +16,9 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
   const key = cacheKeyFor(req.url, req.mode, self.location.href);
-  e.respondWith(networkFirst({
-    fetch: () => fetch(req, { cache: 'no-cache' }), // 브라우저 캐시도 서버에 바뀌었는지 묻게
-    match: () => caches.match(key || req, { ignoreSearch: true }),
+  e.respondWith(cacheFirst({
+    fetch: () => fetch(req, { cache: 'no-cache' }), // 저장본이 없을 때만: 브라우저 캐시의 옛 파일이 새 판에 섞이지 않게 서버에 묻는다
+    match: () => caches.open(CACHE).then(c => c.match(key || req, { ignoreSearch: true })),
     put: res => caches.open(CACHE).then(c => c.put(key || req, res)),
   }));
 });

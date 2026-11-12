@@ -1,5 +1,5 @@
 // 서비스 워커가 처음 설치될 때 기기에 저장해 둘 파일 목록. 장을 추가하면 여기에도 넣는다.
-export const CACHE = 'goryeo-v98'; // 배포할 때마다 올린다 (학생 기기에 새 판이 반영되도록)
+export const CACHE = 'goryeo-v99'; // 배포할 때마다 올린다 (학생 기기에 새 판이 반영되도록)
 
 export const PRECACHE = [
   'index.html', 'styles.css', 'vendor/three.module.min.js', 'content/sources.js', 'content/review.js',
@@ -49,12 +49,30 @@ export function cacheKeyFor(url, mode, swUrl) {
   return u.pathname === base.pathname || u.pathname === `${base.pathname}index.html` ? 'index.html' : null;
 }
 
-// 설치할 때는 브라우저 HTTP 캐시를 거치지 않고 서버에서 새로 받는다 (옛 파일이 새 판에 섞이지 않게)
+// 여러 명이 한꺼번에 접속할 때(2026-11-12 선생님: 20명 넘게 켜면 접속이 잘 안 된다): 한 교실에서 요청이 몰리지 않게 한다.
+// ① 설치할 때는 모든 장에 공통인 파일만 미리 받는다(장마다의 파일은 그 장에 들어갈 때 받아 저장) ② 한꺼번에가 아니라 네 개씩 차례로,
+// 못 받은 파일은 건너뛴다(나중에 쓰일 때 다시 받는다) ③ 한 번 저장한 파일은 서버에 묻지 않고 바로 쓴다(cacheFirst) — 새 판은 CACHE 번호가
+// 바뀌어 통째로 새로 받으므로 옛 파일이 섞이지 않는다. 고친 내용은 다음에 열 때 보인다.
+const PER_CHAPTER = /^chapters\/(ch\d|joseon\/j\d|modern\/k\d|colonial\/i\d|present\/h\d)\//;
+export const INSTALL = PRECACHE.filter(u => !PER_CHAPTER.test(u));
+// 서버에 바뀌었는지 물어 받는다(브라우저가 방금 받은 파일이면 '그대로'라는 짧은 답만 온다)
 export function precacheRequests() {
-  return PRECACHE.map(u => new Request(u, { cache: 'reload' }));
+  return INSTALL.map(u => new Request(u, { cache: 'no-cache' }));
+}
+// 목록을 size개씩 차례로 받아 저장한다. 실패한 것은 세어만 두고 넘어간다. 돌려주는 값: 저장한 수
+export async function precacheGently(reqs, { fetch, put, size = 4 }) {
+  let saved = 0;
+  for (let i = 0; i < reqs.length; i += size) {
+    await Promise.all(reqs.slice(i, i + size).map(async r => { try { const res = await fetch(r); if (res && res.ok) { await put(r, res); saved += 1; } } catch { /* 건너뛴다 */ } }));
+  }
+  return saved;
+}
+// 저장본이 있으면 바로 쓰고, 없을 때만 서버에서 받아 저장한다
+export function cacheFirst({ fetch, match, put }) {
+  return match().then(hit => hit || Promise.resolve().then(fetch).then(r => { if (r && r.ok) put(r.clone()); return r; }));
 }
 
-// 파일 받기: 인터넷이 되면 언제나 새 파일을 쓰고(고친 내용이 바로 보이게) 저장본도 바꾼다.
+// (예전 방식, 지금은 쓰지 않는다) 파일 받기: 인터넷이 되면 언제나 새 파일을 쓰고 저장본도 바꾼다.
 // 끊겼거나 timeoutMs 안에 오지 않으면 저장본을 쓴다(교실 와이파이가 느릴 때). 저장본이 없으면 새 파일을 끝까지 기다린다.
 export function networkFirst({ fetch, match, put, timeoutMs = 4000 }) {
   const fresh = Promise.resolve().then(fetch).then(r => { if (r && r.ok) put(r.clone()); return r; });

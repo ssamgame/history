@@ -309,7 +309,7 @@ function boot() {
 
 // 오프라인 캐시는 https 배포 주소에서만 쓴다(개발 중 localhost에서는 수정이 바로 보이도록). 실패해도 게임은 그대로.
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
-  navigator.serviceWorker.register('sw.js', { type: 'module', updateViaCache: 'none' }).catch(() => {}); // 새 판을 늘 서버에서 확인
+  setTimeout(() => navigator.serviceWorker.register('sw.js', { type: 'module', updateViaCache: 'none' }).catch(() => {}), 6000); // 새 판을 늘 서버에서 확인. 첫 화면이 뜬 뒤에 시작한다(접속이 몰릴 때 화면 파일과 겹치지 않게)
 }
 
 boot();
