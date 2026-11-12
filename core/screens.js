@@ -63,9 +63,9 @@ export function showTitle(root, { savedName, hasProgress, storageOk, courses = [
       h('p', {}, `${savedName || '앞 친구'}의 기록이 모두 지워져요(캐릭터·별·타임머신 부품·편지). 되돌릴 수 없어요. 정말 지울까요?`), // 실수 방지(2026-11-11 선생님)
       h('div', { class: 'row' },
         h('button', { class: 'btn danger', type: 'button', onclick: () => done('new') }, '지우기'),
-        h('button', { class: 'btn', type: 'button', onclick: () => { confirm.hidden = true; if (codeBtn) codeBtn.hidden = false; } }, '취소')));
+        h('button', { class: 'btn', type: 'button', onclick: () => { confirm.hidden = true; if (codeBtn) codeBtn.hidden = false; el.classList.remove('asking'); } }, '취소')));
     const codeBtn = onCode ? h('button', { class: 'btn title-code', type: 'button', onclick: () => done('code') }, '진행 코드') : null; // 다른 태블릿으로 옮기기(2026-11-11 선생님)
-    const startBtn = h('button', { class: `btn ${hasProgress ? '' : 'primary'} title-start`, type: 'button', onclick: () => { if (!hasProgress) return done('new'); confirm.hidden = false; if (codeBtn) codeBtn.hidden = true; } }, ''); // 묻는 동안은 진행 코드 단추를 숨겨 자리를 낸다
+    const startBtn = h('button', { class: `btn ${hasProgress ? '' : 'primary'} title-start`, type: 'button', onclick: () => { if (!hasProgress) return done('new'); confirm.hidden = false; if (codeBtn) codeBtn.hidden = true; el.classList.add('asking'); } }, ''); // 묻는 동안은 진행 코드 단추를 숨겨 자리를 낸다
     const label = () => { startBtn.textContent = hasProgress ? '새 캐릭터로 처음부터' : '캐릭터 생성하기 ▸'; startBtn.title = `${eraOf(picked)}편 처음부터`; };
     const cards = courses.map(c => {
       const results = save ? c.chapters.map(ch => save.chapterResult(ch.id)).filter(Boolean) : [];
@@ -81,7 +81,7 @@ export function showTitle(root, { savedName, hasProgress, storageOk, courses = [
       h('div', { class: 'title-inner' },
         h('div', { class: 'title-intro' },
           h('div', { class: 'eyebrow' }, '초등 5학년 사회 · 3D 역사 탐험'),
-          h('h1', {}, '역사 속으로 ', h('span', {}, '걸어가기')),
+          h('h1', {}, '시간 여행자, ', h('span', {}, '역사 속으로')), // 2026-11-12 선생님: 시간 여행 틀에 맞춘 제목(예전 「역사 속으로 걸어가기」)
           h('p', { class: 'lead' }, '시대를 골라 그때 사람이 되어 보세요. 직접 걷고, 이야기를 듣고, 역사의 현장을 겪어 봐요.'),
           !storageOk && h('p', { class: 'warn' }, '이 기기에서는 저장되지 않아요. 끝까지 한 번에 해 주세요.'),
           h('div', { class: 'title-actions' },

@@ -66,7 +66,7 @@ export function createPerfStats({ now = () => performance.now() } = {}) {
     segments: () => segments.slice(), times: () => times.slice(),
     // 붙여 넣기 좋은 글(표). device: 기기 정보(있는 것만)
     text(device = {}) {
-      const c = stats.current(), lines = ['[역사 속으로 걸어가기 성능 측정]'];
+      const c = stats.current(), lines = ['[시간 여행자, 역사 속으로 성능 측정]'];
       for (const [k, v] of Object.entries(device)) lines.push(`${k}: ${v ?? '알 수 없음'}`);
       lines.push(`지금 FPS ${fmt(c.fps, 0)} · 최근 5초 평균 ${fmt(c.fps5, 0)} · render() CPU ${fmt(c.render5, 2)}ms · 느린 프레임(>${SLOW_MS}ms) ${c.slow} · 멈칫(>${LONG_MS}ms) ${c.long}`);
       lines.push('', `장면별 (진입 직후 = 처음 ${ENTRY_S}초, 안정 = 그 뒤)`);

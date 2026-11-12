@@ -187,11 +187,11 @@ test('menu: pressing Esc again while the menu is open does not stack a second me
   } finally { el.remove(); }
 });
 
-test('title: 사이트 이름은 역사 속으로 걸어가기', () => {
+test('title: 사이트 이름은 시간 여행자, 역사 속으로', () => {
   const el = root();
   try {
     showTitle(el, { savedName: '', hasProgress: false, storageOk: true });
-    eq(el.querySelector('h1').textContent, '역사 속으로 걸어가기');
+    eq(el.querySelector('h1').textContent, '시간 여행자, 역사 속으로');
   } finally { el.remove(); }
 });
 
