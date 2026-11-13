@@ -103,7 +103,6 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .title-course[aria-pressed="true"] .title-course-era { color: var(--dan-red); }
 .title-course-name { font-family: var(--font-display); font-size: 16px; line-height: 1.25; word-break: keep-all; }
 .title-course-progress { font-size: 12px; opacity: .8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.title .copyright { margin: 0; }
 .title .controls { font-size: 13px; color: #a89f8c; margin: 0; line-height: 1.5; }
 @media (max-width: 760px) {
   .title { background: linear-gradient(rgba(10,12,11,.7), rgba(10,12,11,.9)); }
@@ -324,7 +323,6 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .dlg:not([hidden]):not(.mode-chip) ~ .play-toast { display: none; } /* 대화창이 열려 있으면 놀이 알림은 잠깐 숨는다(대화가 더 중요) */
 .play-toast.bad { border-color: var(--dan-red); }
 /* 저작권 표시: 첫 화면 맨 밑 */
-.copyright { margin: 2px 0 0; font-size: 13px; color: #a89f8c; letter-spacing: .02em; text-align: center; }
 /* 휴대폰 세로: 첫 화면을 위아래로 쌓고 글자·간격을 줄여 한 화면에 담는다 */
 @media (max-width: 760px) and (orientation: portrait) {
   .screen.title { place-items: start center; padding-top: calc(12px + env(safe-area-inset-top, 0px)); }

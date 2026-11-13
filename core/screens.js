@@ -96,8 +96,7 @@ export function showTitle(root, { savedName, hasProgress, storageOk, courses = [
           h('div', {}, h('b', {}, '키보드가 있을 때'), h('span', {}, '방향키(또는 W A S D)로 걷기 · E로 말 걸기와 행동 · Esc로 메뉴')),
           h('div', {}, h('b', {}, '키보드가 없을 때'), h('span', {}, '화면 왼쪽 아래를 누른 채 끌어서 걷기 · 오른쪽 아래 둥근 단추로 말 걸기와 행동 · 오른쪽 위 「메뉴」'))),
         fullscreenButton('title-fs'),
-        cards.length > 0 && h('div', { class: 'title-courses' }, cards),
-        h('p', { class: 'copyright' }, '© 2026 Jang ssam. All rights reserved.')));
+        cards.length > 0 && h('div', { class: 'title-courses' }, cards))); // 맨 밑 저작권 글은 뺐다(2026-11-13 선생님)
   });
 }
 

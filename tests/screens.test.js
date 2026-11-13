@@ -266,9 +266,7 @@ test('title: 태블릿 가로와 휴대폰 세로 화면에서 소개 판·시�
       const intro = d.querySelector('.title-intro').getBoundingClientRect(), list = d.querySelector('.title-courses').getBoundingClientRect(), acts = d.querySelector('.title-actions').getBoundingClientRect();
       ok(intro.bottom <= list.top + 1, `${w}x${h}: 소개 판이 시대 탭 위에`); // 2026-11-09 시안 C: 왼쪽 판 + 아래 탭
       ok(acts.top >= intro.top - 1 && acts.bottom <= intro.bottom + 1, `${w}x${h}: 시작 단추는 소개 판 안`);
-      const cr = d.querySelector('.copyright');
-      ok(cr && cr.textContent.includes('©') && cr.textContent.includes('Jang ssam'), `${w}x${h}: 저작권 표시`);
-      ok(cr && cr.getBoundingClientRect().top >= list.bottom - 1 && cr.getBoundingClientRect().bottom <= h + 1, `${w}x${h}: 저작권 표시가 맨 밑, 화면 안`);
+      ok(!d.querySelector('.copyright') && !d.body.textContent.includes('All rights reserved'), `${w}x${h}: 저작권 글은 없다(2026-11-13 선생님)`);
       for (const b of d.querySelectorAll('button')) {
         if (b.closest('[hidden]')) continue;
         const r = b.getBoundingClientRect();
