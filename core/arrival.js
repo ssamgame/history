@@ -70,7 +70,7 @@ export async function playArrival(ctx, { meta, chapter = null, role, roleLook: l
         p.position.set(mx + ux * 1.0, my, mz + uz * 1.0); p.rotation.y = Math.atan2(ux, uz); p.visible = true; world.autoMove = { x: ux, z: uz }; world.speedScale = 0.7;
       }
       if (world.autoMove && out && tm) { const left = (home.x - p.position.x) * world.autoMove.x + (home.z - p.position.z) * world.autoMove.z; p.position.y = home.y; if (left <= 0.05) { world.autoMove = null; world.speedScale = s0; p.position.copy(home); p.rotation.y = ry; beam.visible = true; tm.setDoor(false); } }
-      if (!said && t >= LAND_AT + 1.3) { said = true; dialogue?.say({ who: 'guide', text: arrivalLine(meta, role, short) }); } // 기다리지 않는 안내 칩
+      if (!said && t >= LAND_AT + 1.3) { said = true; dialogue?.say({ who: 'guide', text: arrivalLine(spec?.place ? { ...meta, place: spec.place } : meta, role, short) }); } // 기다리지 않는 안내 칩. spec.place: 내리는 곳이 장의 대표 장소와 다를 때(고려 4장은 개경에 내린다)
       const flash = Math.max(0, 1 - Math.abs(t - SWAP_AT) / 0.35); // 변장 순간 번쩍
       beam.material.opacity = (t < SWAP_AT ? 0.5 : Math.max(0, 0.5 * (1 - (t - SWAP_AT) / 1.1))) + flash * 0.4;
       beam.scale.x = beam.scale.z = 1 + Math.sin(t * 6) * 0.08 + flash * 0.5;

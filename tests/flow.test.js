@@ -95,3 +95,18 @@ test('flow: resume at quiz keeps easy mode used in the minigame', async () => {
   eq(r.easyModeUsed, true);
   eq(r.stars, 2);
 });
+
+// 2026-11-13 선생님: 고려 4장 — 이야기(저고여 사건)가 끝난 뒤에 타임머신에서 내린다
+test('flow: 장에 prelude가 있으면 도착 연출보다 먼저 돌고, 이어하기(탐험부터)에서는 돌지 않는다', async () => {
+  const log = [], save = memSave();
+  const ch = { ...fakeChapter(log), async prelude() { log.push('prelude'); } };
+  const ctx = { ...fakeCtx(log, [0, 1]), arrival: async () => { log.push('arrival'); } };
+  await runChapter(meta, ch, ctx, save);
+  ok(log.indexOf('prelude') >= 0 && log.indexOf('prelude') < log.indexOf('arrival') && log.indexOf('arrival') < log.indexOf('explore'), log.join(','));
+  log.length = 0;
+  await runChapter(meta, ch, { ...fakeCtx(log, [0, 1]), arrival: async () => { log.push('arrival'); } }, save, { resumeStage: 'explore' });
+  ok(!log.includes('prelude') && !log.includes('arrival') && log.includes('explore'), log.join(','));
+  const ch4 = (await import('../chapters/ch4/chapter.js')).default; eq(typeof ch4.prelude, 'function', '고려 4장은 저고여 사건을 먼저 본다');
+  const { arrivalLine } = await import('../content/avatar.js'); ok(arrivalLine({ years: '1231~1253', place: '개경' }, null).startsWith('1231년 개경에 도착했어'));
+  ok((await (await fetch('../chapters/ch4/chapter.js')).text()).includes("place: '개경'"), '고려 4장은 개경에 내린다고 말한다');
+});

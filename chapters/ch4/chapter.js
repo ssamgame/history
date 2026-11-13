@@ -417,6 +417,7 @@ async function talkTo(ctx, id, quest) {
   world.camMode = 'follow';
 }
 
+let jeogoSeen = false; // 이번 판에서 저고여 장면을 이미 보았는지(prelude → explore)
 export default {
   id: 'ch4',
   mood: 'overcast',
@@ -433,7 +434,7 @@ export default {
   // 장 도입: 첫 해설은 해설 카드로 보인다(D-62, 2026-10-31 선생님: 저고여가 걷는 장면은 뒤의 저고여 사건 장면과 겹쳐 뺐다)
   // 미니게임 뒤 빛나는 문(C-02): 개경 궁궐 마당 오른쪽 빈 땅, 학생 쪽(남쪽)을 본다
   portal: { at: [6, 5], ry: 0 },
-  spawn: () => ({ at: scene.areas.palace.introFrom, to: scene.areas.palace.start, gate: scene.palaceGate }), // 도착 연출 자리(타임머신 틀, 2026-11-09): 탐험이 시작되는 곳(문 밖 길)과 같게
+  spawn: () => ({ at: scene.areas.palace.introFrom, to: scene.areas.palace.start, gate: scene.palaceGate, place: '개경' }), // place: 내리는 곳은 강화도가 아니라 아직 개경이다(2026-11-13) // 도착 연출 자리(타임머신 틀, 2026-11-09): 탐험이 시작되는 곳(문 밖 길)과 같게
 
   enterStage(ctx, stage) {
     const P = scene.areas.palace;
@@ -451,12 +452,10 @@ export default {
     return { name: '처인성' };
   },
 
-  async explore(ctx) {
-    const { world, dialogue } = ctx;
-    const P = scene.areas.palace;
-    world.closeView = true;
-    // 저고여 사건(D-14): 압록강 가 길을 걷던 사신이 덤불 뒤 복면 병사의 화살에 쓰러진다(카메라가 길을 따라간다)
-    const J = scene.areas.jeogo;
+  // 저고여 사건(D-14): 압록강 가 길을 걷던 사신이 덤불 뒤 복면 병사의 화살에 쓰러진다(카메라가 길을 따라간다).
+  // 2026-11-13 선생님: 이 이야기가 끝난 뒤에 타임머신에서 내린다 — core/flow.js가 도착 연출 앞에 부른다. 끝나면 궁궐 문 밖 자리에 세워 둔다
+  async prelude(ctx) {
+    const { world, dialogue } = ctx, J = scene.areas.jeogo, P = scene.areas.palace;
     world.player.visible = false;
     world.setFixedCamera(J.cam.pos, J.cam.target);
     await sayAll(dialogue, script.jeogo.before);
@@ -464,11 +463,21 @@ export default {
     await J.play();
     await sayAll(dialogue, script.jeogo.after);
     dialogue.close();
-    // 짧은 장면 전환 뒤 개경: 궁궐 앞 문이 열리고 걸어 들어온다(상시 규칙, 누르면 건너뛴다)
     await ctx.fade(true);
     world.bounds = P.bounds;
     placePlayer(world, P.introFrom);
+    world.camMode = 'follow'; world.snapCamera?.();
     await ctx.fade(false);
+    jeogoSeen = true;
+  },
+  async explore(ctx) {
+    const { world, dialogue } = ctx;
+    const P = scene.areas.palace;
+    world.closeView = true;
+    // 저고여 사건은 타임머신에서 내리기 전에 먼저 본다(prelude). 이어하기로 탐험부터 시작하면(도착 연출 없음) 여기서 본다
+    if (!jeogoSeen) await this.prelude(ctx);
+    jeogoSeen = false;
+    // 개경: 궁궐 앞 문이 열리고 걸어 들어온다(상시 규칙, 누르면 건너뛴다)
     await enterThroughGate(ctx, { from: P.introFrom, to: P.start, gate: scene.palaceGate, speed: 1 });
     world.bounds = P.bounds;
     const heard = new Set();

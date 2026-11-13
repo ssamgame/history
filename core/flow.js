@@ -59,6 +59,7 @@ export async function runChapter(meta, chapter, ctx, save, { resumeStage = 'intr
     if (perf) { perf.time('장면 짓기', t2 - t1, meta.id); perf.time('장면 굳히기', performance.now() - t2, meta.id); }
     if (from > 0) chapter.enterStage?.(ctx, STAGES[from]);
     if (from === 0 && film) await playIntro(ctx, meta, chapter.script.intro, chapter.introScene(ctx));
+    if (from === 0 && chapter.prelude) await chapter.prelude(ctx); // 타임머신에서 내리기 전에 먼저 보는 이야기 장면(고려 4장 저고여 사건, 2026-11-13 선생님: 이야기가 끝난 뒤에 내린다)
     if (from === 0 && ctx.arrival) await ctx.arrival(meta, chapter); // 도착 연출(타임머신 틀, 2026-11-09): 시간의 문 앞에 내려서 변장(자리는 chapter.spawn)
 
     if (from <= 1) {
